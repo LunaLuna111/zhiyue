@@ -299,6 +299,21 @@ class _SearchHotSection extends StatelessWidget {
   }
 }
 
+class _EmptySearchPrompt extends StatelessWidget {
+  const _EmptySearchPrompt();
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    child: Text(
+      '请输入搜索内容',
+      style: Theme.of(
+        context,
+      ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
+    ),
+  );
+}
+
 class _InputAction extends StatelessWidget {
   const _InputAction({required this.onPressed});
 

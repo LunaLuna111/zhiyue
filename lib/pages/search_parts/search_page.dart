@@ -456,6 +456,13 @@ class _SearchPageState extends State<SearchPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final queryEmpty = _query.text.trim().isEmpty;
+    final historyVisible =
+        queryEmpty && widget.api.session.rememberSearchHistory;
+    final hotVisible =
+        queryEmpty &&
+        widget.api.session.showSearchHotSearch &&
+        (_hotSearchLoading || _hotSearchItems.isNotEmpty);
     return Scaffold(
       // Let the keyboard cover the lower history area instead of repeatedly
       // relaying out the entire search surface during the IME animation.
@@ -516,8 +523,7 @@ class _SearchPageState extends State<SearchPage>
                   },
                 ),
               ),
-              if (_query.text.trim().isEmpty &&
-                  widget.api.session.rememberSearchHistory) ...[
+              if (historyVisible) ...[
                 const SizedBox(height: 26),
                 _SectionHeading(title: '历史搜索', action: _searchHistoryMenu()),
                 const SizedBox(height: ZhSpace.sm),
@@ -542,8 +548,7 @@ class _SearchPageState extends State<SearchPage>
                     ],
                   ),
               ],
-              if (_query.text.trim().isEmpty &&
-                  widget.api.session.showSearchHotSearch) ...[
+              if (hotVisible) ...[
                 const SizedBox(height: 26),
                 _SearchHotSection(
                   items: _hotSearchItems,
@@ -552,6 +557,10 @@ class _SearchPageState extends State<SearchPage>
                   onSelected: _submit,
                   onOpenSettings: _openSearchSettings,
                 ),
+              ],
+              if (queryEmpty && !historyVisible && !hotVisible) ...[
+                const SizedBox(height: 26),
+                const _EmptySearchPrompt(),
               ],
             ],
           ),

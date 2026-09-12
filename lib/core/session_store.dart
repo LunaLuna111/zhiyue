@@ -244,6 +244,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       read(_rememberSearchKey),
       fallback: true,
     );
+    if (!rememberSearchHistory) searchHistory = const [];
     showSearchHotSearch = _decodeBool(read(_showSearchHotKey), fallback: true);
     imageCachePreset = _decodeEnum(
       read(_imageCachePresetKey),

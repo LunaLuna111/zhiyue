@@ -155,6 +155,7 @@ void registerSearchSessionTests() {
       await tester.pumpAndSettle();
       expect(find.text('历史搜索'), findsNothing);
       expect(find.text('热搜'), findsNothing);
+      expect(find.text('请输入搜索内容'), findsOneWidget);
 
       await session.setShowSearchHotSearch(true);
       await tester.pumpAndSettle();

@@ -60,21 +60,12 @@ class _SearchSuggestionController extends ChangeNotifier {
       return;
     }
 
-    // The official endpoint returns ordered completion phrases. Reuse a
-    // still-fresh shorter-query response when every retained item still
-    // matches the new prefix; this avoids a network round-trip for each IME
-    // keystroke without showing unrelated suggestions.
+    // A shorter-query response is useful as an immediate placeholder while
+    // the server resolves the exact query. Keep refreshing the exact prefix
+    // so a more specific response cannot be hidden by a stale cache subset.
     final prefixItems = _cachedPrefixItems(query);
-    if (prefixItems != null) {
-      _query = query;
-      _items = prefixItems;
-      _loading = false;
-      _notify();
-      return;
-    }
-
     _query = query;
-    final retainedItems = _matchingItems(_items, query);
+    final retainedItems = prefixItems ?? _matchingItems(_items, query);
     _items = retainedItems;
     _loading = true;
     _notify();
@@ -100,9 +91,11 @@ class _SearchSuggestionController extends ChangeNotifier {
     required List<zhihu_api.SearchSuggestion> fallback,
   }) async {
     final requestKey = _cacheKey(query);
+    // Future.sync also turns a synchronous transport/configuration throw into
+    // the same failed Future path used for asynchronous network errors.
     final request = _requests.putIfAbsent(
       requestKey,
-      () => api.fetchSearchSuggestions(keyword: query),
+      () => Future.sync(() => api.fetchSearchSuggestions(keyword: query)),
     );
     try {
       final items = _uniqueItems(await request);
@@ -211,7 +204,10 @@ class _SearchSuggestionController extends ChangeNotifier {
   ) {
     final seen = <String>{};
     return List.unmodifiable(
-      items.where((item) => seen.add(_cacheKey(item.query))),
+      items.where((item) {
+        final key = _cacheKey(item.query);
+        return key.isNotEmpty && seen.add(key);
+      }),
     );
   }
 

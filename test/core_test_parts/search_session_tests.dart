@@ -223,10 +223,11 @@ void registerSearchSessionTests() {
       hasLength(1),
     );
 
-    // A longer query can reuse the already returned ordered list when it is
-    // still a real prefix of those items. This keeps IME input responsive and
-    // avoids one request per keystroke.
+    // A longer query shows the cached prefix immediately but still refreshes
+    // the exact query so server-side completions are not lost.
     await tester.enterText(input, 'Flutt');
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Flutter 4.1'), findsOneWidget);
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     expect(find.text('Flutter 4.1'), findsOneWidget);
@@ -234,7 +235,7 @@ void registerSearchSessionTests() {
       transport.calls.where(
         (call) => call.uri.path == '/api/v4/search/suggest',
       ),
-      hasLength(1),
+      hasLength(2),
     );
 
     await tester.tap(

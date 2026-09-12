@@ -242,6 +242,7 @@ void registerSearchSessionTests() {
             'query': 'DeepSeek',
             'display_query': 'DeepSeek 热点',
             'heat_score': 12000,
+            'hot_show': '12 万热度',
           },
           {'query': 'deepseek'},
         ],
@@ -250,6 +251,7 @@ void registerSearchSessionTests() {
     expect(current, hasLength(1));
     expect(current.single.displayQuery, 'DeepSeek 热点');
     expect(current.single.heatScore, 12000);
+    expect(current.single.hotShow, '12 万热度');
 
     final reference = parseSearchHotItems({
       'hot_search_queries': [

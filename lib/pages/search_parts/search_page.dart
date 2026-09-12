@@ -119,11 +119,13 @@ class SearchHotItem {
     required this.query,
     required this.displayQuery,
     required this.heatScore,
+    this.hotShow = '',
   });
 
   final String query;
   final String displayQuery;
   final int heatScore;
+  final String hotShow;
 }
 
 /// Supports both the current `top_search.words` payload and the older
@@ -135,10 +137,16 @@ List<SearchHotItem> parseSearchHotItems(Object? value, {int limit = 15}) {
   final words = topSearch is Map
       ? topSearch['words'] ?? topSearch['items']
       : null;
+  final data = root['data'];
+  final nestedDataItems = data is Map
+      ? data['words'] ?? data['hot_search_queries'] ?? data['items']
+      : null;
   final rawItems = words is List
       ? words
       : root['hot_search_queries'] is List
       ? root['hot_search_queries'] as List
+      : nestedDataItems is List
+      ? nestedDataItems
       : root['data'] is List
       ? root['data'] as List
       : const <Object?>[];
@@ -150,6 +158,9 @@ List<SearchHotItem> parseSearchHotItems(Object? value, {int limit = 15}) {
     final query = plainText(item['query'] ?? item['display_query']);
     if (query.isEmpty || !seen.add(query.toLowerCase())) continue;
     final displayQuery = plainText(item['display_query'] ?? query);
+    final hotShow = plainText(
+      item['hot_show'] ?? item['hotShow'] ?? item['display_hot'],
+    );
     final scoreValue =
         item['heat_score'] ?? item['heatScore'] ?? item['hot_score'];
     final heatScore = scoreValue is num
@@ -160,6 +171,7 @@ List<SearchHotItem> parseSearchHotItems(Object? value, {int limit = 15}) {
         query: query,
         displayQuery: displayQuery.isEmpty ? query : displayQuery,
         heatScore: heatScore < 0 ? 0 : heatScore,
+        hotShow: hotShow,
       ),
     );
     if (result.length >= limit) break;

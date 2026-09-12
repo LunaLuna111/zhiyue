@@ -229,9 +229,12 @@ class _SearchHotSection extends StatelessWidget {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ),
-                    if (items[index].heatScore > 0)
+                    if (items[index].hotShow.isNotEmpty ||
+                        items[index].heatScore > 0)
                       Text(
-                        _formatHotScore(items[index].heatScore),
+                        items[index].hotShow.isNotEmpty
+                            ? items[index].hotShow
+                            : _formatHotScore(items[index].heatScore),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),

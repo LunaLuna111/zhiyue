@@ -23,3 +23,20 @@ part 'search_parts/result_content_cards.dart';
 part 'search_parts/entity_result_cards.dart';
 part 'search_parts/search_controls.dart';
 part 'search_parts/search_suggestions.dart';
+
+/// Coordinates activation of the persistent search page in the home shell.
+///
+/// The shell keeps every bottom-navigation page alive, so `autofocus` only
+/// runs during the first widget mount. Incrementing this controller when the
+/// search destination is selected gives the page a route-like activation
+/// event without rebuilding or replacing its state.
+class SearchPageController extends ChangeNotifier {
+  int _activation = 0;
+
+  int get activation => _activation;
+
+  void activate() {
+    _activation += 1;
+    notifyListeners();
+  }
+}

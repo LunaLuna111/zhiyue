@@ -159,6 +159,7 @@ class _HomeShellState extends State<HomeShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   final _drawerController = ZhPushDrawerController();
   final _feedController = HomeFeedController();
+  final _searchController = SearchPageController();
   late int _index;
   late final List<Widget> _pages = [
     Builder(
@@ -173,7 +174,7 @@ class _HomeShellState extends State<HomeShell> {
             : _drawerController.open,
       ),
     ),
-    SearchPage(api: widget.api),
+    SearchPage(api: widget.api, controller: _searchController),
     SaltPage(api: widget.api),
     MyPage(
       api: widget.api,
@@ -193,6 +194,7 @@ class _HomeShellState extends State<HomeShell> {
   void dispose() {
     _feedController.removeListener(_feedSelectionChanged);
     _feedController.dispose();
+    _searchController.dispose();
     _drawerController.dispose();
     super.dispose();
   }
@@ -202,6 +204,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   void _selectNavigation(int value) {
+    if (value == 1) _searchController.activate();
     if (value == _index) {
       if (value == 0 && widget.session.refreshHomeOnReselect) {
         _feedController.returnToTopAndRefresh();

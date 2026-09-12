@@ -212,10 +212,16 @@ List<SearchHotItem> parseSearchHotItems(Object? value, {int limit = 15}) {
 }
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key, required this.api, this.focusOnOpen = false});
+  const SearchPage({
+    super.key,
+    required this.api,
+    this.focusOnOpen = false,
+    this.controller,
+  });
 
   final ZhihuApiClient api;
   final bool focusOnOpen;
+  final SearchPageController? controller;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -246,6 +252,7 @@ class _SearchPageState extends State<SearchPage>
     super.initState();
     _suggestions = _SearchSuggestionController(widget.api);
     _queryFocus.addListener(_onQueryFocusChanged);
+    widget.controller?.addListener(_onControllerActivated);
     widget.api.session.addListener(_onSessionChanged);
     if (widget.api.session.showSearchHotSearch) {
       unawaited(_loadHotSearch());
@@ -256,6 +263,7 @@ class _SearchPageState extends State<SearchPage>
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_onControllerActivated);
     widget.api.session.removeListener(_onSessionChanged);
     _queryFocus.removeListener(_onQueryFocusChanged);
     _suggestions.dispose();
@@ -265,6 +273,17 @@ class _SearchPageState extends State<SearchPage>
     _content.dispose();
     _column.dispose();
     super.dispose();
+  }
+
+  void _onControllerActivated() {
+    if (!mounted || _query.text.trim().isNotEmpty) return;
+    // The search page is kept alive inside the home IndexedStack. Wait for
+    // the navigation selection to settle before requesting focus so the IME
+    // does not animate while the old page is still being hit-tested.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _query.text.trim().isNotEmpty) return;
+      _queryFocus.requestFocus();
+    });
   }
 
   void _onQueryChanged(String value) {

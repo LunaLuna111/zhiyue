@@ -256,6 +256,28 @@ void registerSearchSessionTests() {
     expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
   });
 
+  testWidgets(
+    'persistent search focuses when its navigation destination activates',
+    (tester) async {
+      final api = ZhihuApiClient(SessionStore());
+      final controller = SearchPageController();
+      addTearDown(api.close);
+      addTearDown(controller.dispose);
+
+      await tester.pumpWidget(
+        _testApp(SearchPage(api: api, controller: controller)),
+      );
+      final input = find.byKey(const ValueKey('search-input'));
+      expect(tester.widget<TextField>(input).focusNode!.hasFocus, isFalse);
+
+      controller.activate();
+      await tester.pump();
+      await tester.pump();
+
+      expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+    },
+  );
+
   testWidgets('search scope choices grow with large accessibility text', (
     tester,
   ) async {
@@ -277,6 +299,11 @@ void registerSearchSessionTests() {
     );
     await tester.pump();
 
+    await tester.enterText(
+      find.byKey(const ValueKey('search-input')),
+      'Flutter',
+    );
+    await tester.pump();
     final label = find.text('综合');
     final target = find.ancestor(of: label, matching: find.byType(InkWell));
     final targetRect = tester.getRect(target);
@@ -907,14 +934,8 @@ void registerSearchSessionTests() {
     );
     expect(frame, findsOneWidget);
     expect(tester.getSize(frame).height, SingleContentCardImage.previewHeight);
-    expect(
-      tester
-          .widget<Image>(
-            find.byKey(const ValueKey('content-preview-image-$imageUrl')),
-          )
-          .fit,
-      BoxFit.cover,
-    );
+    final image = find.descendant(of: frame, matching: find.byType(Image));
+    expect(tester.widget<Image>(image).fit, BoxFit.cover);
   });
 
   test('novel tab converts paid-column cards but still omits normal ads', () {

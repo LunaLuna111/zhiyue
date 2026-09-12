@@ -86,6 +86,13 @@ void registerSearchSessionTests() {
 
     expect(find.text('搜索知乎内容'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
+    expect(find.text('搜索范围'), findsNothing);
+    await tester.enterText(
+      find.byKey(const ValueKey('search-input')),
+      'Flutter',
+    );
+    await tester.pump();
+    expect(find.text('搜索范围'), findsOneWidget);
     expect(find.text('综合'), findsOneWidget);
     expect(find.text('实时'), findsOneWidget);
     expect(find.text('用户'), findsOneWidget);

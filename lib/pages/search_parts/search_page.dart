@@ -502,27 +502,29 @@ class _SearchPageState extends State<SearchPage>
                 controller: _suggestions,
                 onSelected: _submit,
               ),
-              const SizedBox(height: 20),
-              _SectionHeading(title: '搜索范围', trailing: '左右滑动查看更多'),
-              const SizedBox(height: 10),
-              SizedBox(
-                height: _SearchChoice.rowHeight(context),
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsets.only(right: 12),
-                  itemCount: officialSearchTabs.length,
-                  separatorBuilder: (_, _) => const SizedBox(width: 8),
-                  itemBuilder: (context, index) {
-                    final tab = officialSearchTabs[index];
-                    return _SearchChoice(
-                      label: tab.label,
-                      selected: tab.type == _type,
-                      onTap: () => setState(() => _type = tab.type),
-                    );
-                  },
+              if (!queryEmpty) ...[
+                const SizedBox(height: 20),
+                _SectionHeading(title: '搜索范围', trailing: '左右滑动查看更多'),
+                const SizedBox(height: 10),
+                SizedBox(
+                  height: _SearchChoice.rowHeight(context),
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.only(right: 12),
+                    itemCount: officialSearchTabs.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) {
+                      final tab = officialSearchTabs[index];
+                      return _SearchChoice(
+                        label: tab.label,
+                        selected: tab.type == _type,
+                        onTap: () => setState(() => _type = tab.type),
+                      );
+                    },
+                  ),
                 ),
-              ),
+              ],
               if (historyVisible) ...[
                 const SizedBox(height: 26),
                 _SectionHeading(title: '历史搜索', action: _searchHistoryMenu()),

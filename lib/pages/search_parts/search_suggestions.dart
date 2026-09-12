@@ -105,9 +105,7 @@ class _SearchSuggestionController extends ChangeNotifier {
       () => api.fetchSearchSuggestions(keyword: query),
     );
     try {
-      final items = List<zhihu_api.SearchSuggestion>.unmodifiable(
-        await request,
-      );
+      final items = _uniqueItems(await request);
       _remember(requestKey, items, const Duration(minutes: 5));
       if (_disposed || generation != _generation) return;
       _query = query;
@@ -205,6 +203,15 @@ class _SearchSuggestionController extends ChangeNotifier {
         final itemKey = _cacheKey(item.query);
         return itemKey.startsWith(queryKey) && seen.add(itemKey);
       }),
+    );
+  }
+
+  static List<zhihu_api.SearchSuggestion> _uniqueItems(
+    Iterable<zhihu_api.SearchSuggestion> items,
+  ) {
+    final seen = <String>{};
+    return List.unmodifiable(
+      items.where((item) => seen.add(_cacheKey(item.query))),
     );
   }
 

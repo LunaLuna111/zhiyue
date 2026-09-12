@@ -1938,6 +1938,7 @@ class _SearchSuggestionTransport extends ApiTransport {
         json: const {
           'suggest': [
             {'query': 'Flutter 4.1'},
+            {'query': 'flutter 4.1'},
           ],
         },
         headers: const {},

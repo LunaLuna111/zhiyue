@@ -131,6 +131,52 @@ void registerSearchSessionTests() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('search results offer keyword suggestions in the top field', (
+    tester,
+  ) async {
+    final transport = _SearchSuggestionTransport();
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+
+    final input = find.byKey(const ValueKey('search-input'));
+    await tester.enterText(input, 'Flu');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('search-suggestion-panel')),
+      findsOneWidget,
+    );
+    expect(find.text('Flutter 4.1'), findsOneWidget);
+    expect(
+      transport.calls.where(
+        (call) => call.uri.path == '/api/v4/search/suggest',
+      ),
+      hasLength(1),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('search-suggestion:Flutter 4.1')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      transport.calls
+          .where((call) => call.uri.path == '/search_v3')
+          .map((call) => call.uri.queryParameters['q']),
+      contains('Flutter 4.1'),
+    );
+  });
+
   test('official search tabs preserve APK database request types', () {
     expect({
       for (final tab in officialSearchTabs) tab.label: tab.type,
@@ -1751,6 +1797,51 @@ class _IncompleteQuestionSearchTransport extends ApiTransport {
           },
     headers: const {},
   );
+}
+
+class _SearchSuggestionTransport extends ApiTransport {
+  final List<_RecordedCall> calls = [];
+
+  @override
+  Future<ApiResponse> send({
+    required String method,
+    required Uri uri,
+    required Map<String, String> headers,
+    required List<int>? body,
+    required int maxResponseBytes,
+  }) async {
+    calls.add(
+      _RecordedCall(
+        method: method,
+        uri: uri,
+        headers: Map<String, String>.from(headers),
+        body: body == null ? null : List<int>.from(body),
+      ),
+    );
+    if (uri.path == '/api/v4/search/suggest') {
+      return ApiResponse(
+        uri: uri,
+        statusCode: 200,
+        bodyBytes: 64,
+        json: const {
+          'suggest': [
+            {'query': 'Flutter 4.1'},
+          ],
+        },
+        headers: const {},
+      );
+    }
+    return ApiResponse(
+      uri: uri,
+      statusCode: 200,
+      bodyBytes: 2,
+      json: const {
+        'data': <Object>[],
+        'paging': {'is_end': true},
+      },
+      headers: const {},
+    );
+  }
 }
 
 class _PublicationSearchTransport extends ApiTransport {

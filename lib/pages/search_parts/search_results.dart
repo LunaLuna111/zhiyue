@@ -19,6 +19,7 @@ class SearchResultsPage extends StatefulWidget {
 class _SearchResultsPageState extends State<SearchResultsPage> {
   late final TextEditingController _query;
   late final PageController _pages;
+  late final _SearchSuggestionController _suggestions;
   final _selectedFilters = <String, String>{};
   List<List<SearchFilterOption>> _filterGroups = officialSearchFilterGroups;
   late int _index;
@@ -30,6 +31,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     super.initState();
     _submittedQuery = widget.initialQuery.trim();
     _query = TextEditingController(text: _submittedQuery);
+    _suggestions = _SearchSuggestionController(widget.api);
     _index = officialSearchTabs.indexWhere(
       (tab) => tab.type == widget.initialType,
     );
@@ -40,14 +42,19 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
 
   @override
   void dispose() {
+    _suggestions.dispose();
     _query.dispose();
     _pages.dispose();
     super.dispose();
   }
 
+  void _onQueryChanged(String value) => _suggestions.onQueryChanged(value);
+
   void _submit(String value) {
     final normalized = value.trim();
     if (normalized.isEmpty) return;
+    _query.text = normalized;
+    _suggestions.dismiss();
     widget.api.session.rememberSearch(normalized);
     FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _submittedQuery = normalized);
@@ -155,11 +162,21 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       icon: const Icon(Icons.arrow_back_rounded),
                     ),
                     Expanded(
-                      child: _SearchField(
-                        controller: _query,
-                        hintText: '搜索知乎内容',
-                        compact: true,
-                        onSubmitted: _submit,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _SearchField(
+                            controller: _query,
+                            hintText: '搜索知乎内容',
+                            compact: true,
+                            onChanged: _onQueryChanged,
+                            onSubmitted: _submit,
+                          ),
+                          _SearchSuggestionPanel(
+                            controller: _suggestions,
+                            onSelected: _submit,
+                          ),
+                        ],
                       ),
                     ),
                   ],

@@ -10,19 +10,149 @@ class _SearchSuggestionCacheEntry {
   final DateTime expiresAt;
 }
 
-extension _SearchSuggestionPanel on _SearchPageState {
-  Widget _buildSearchSuggestionPanel(BuildContext context) {
-    final query = _suggestionsForQuery;
-    if (query.isEmpty || (!_suggestionsLoading && _suggestions.isEmpty)) {
-      return const SizedBox.shrink();
+class _SearchSuggestionController extends ChangeNotifier {
+  _SearchSuggestionController(this.api);
+
+  final ZhihuApiClient api;
+  final Map<String, _SearchSuggestionCacheEntry> _cache = {};
+  final Map<String, Future<List<zhihu_api.SearchSuggestion>>> _requests = {};
+  Timer? _debounce;
+  List<zhihu_api.SearchSuggestion> _items = const [];
+  String _query = '';
+  bool _loading = false;
+  int _generation = 0;
+  bool _disposed = false;
+
+  List<zhihu_api.SearchSuggestion> get items => _items;
+  String get query => _query;
+  bool get loading => _loading;
+
+  void onQueryChanged(String value) {
+    if (_disposed) return;
+    _debounce?.cancel();
+    final generation = ++_generation;
+    final query = value.trim();
+    if (query.isEmpty) {
+      _query = '';
+      _items = const [];
+      _loading = false;
+      _notify();
+      return;
     }
-    return _SearchSuggestionList(
-      query: query,
-      items: _suggestions,
-      loading: _suggestionsLoading,
-      onSelected: _submit,
-    );
+
+    final cached = _cache[query];
+    if (cached != null && cached.expiresAt.isAfter(DateTime.now())) {
+      _query = query;
+      _items = cached.items;
+      _loading = false;
+      _notify();
+      return;
+    }
+    if (cached != null) _cache.remove(query);
+
+    _query = query;
+    _items = const [];
+    _loading = true;
+    _notify();
+    _debounce = Timer(const Duration(milliseconds: 280), () {
+      _load(query, generation);
+    });
   }
+
+  void dismiss() {
+    if (_disposed) return;
+    _debounce?.cancel();
+    _generation++;
+    if (_query.isEmpty && _items.isEmpty && !_loading) return;
+    _query = '';
+    _items = const [];
+    _loading = false;
+    _notify();
+  }
+
+  Future<void> _load(String query, int generation) async {
+    final request = _requests.putIfAbsent(
+      query,
+      () => api.fetchSearchSuggestions(keyword: query),
+    );
+    try {
+      final items = List<zhihu_api.SearchSuggestion>.unmodifiable(
+        await request,
+      );
+      _remember(query, items, const Duration(minutes: 5));
+      if (_disposed || generation != _generation) return;
+      _query = query;
+      _items = items;
+      _loading = false;
+      _notify();
+    } catch (_) {
+      _remember(
+        query,
+        const <zhihu_api.SearchSuggestion>[],
+        const Duration(seconds: 8),
+      );
+      if (_disposed || generation != _generation) return;
+      _query = query;
+      _items = const [];
+      _loading = false;
+      _notify();
+    } finally {
+      if (identical(_requests[query], request)) _requests.remove(query);
+    }
+  }
+
+  void _remember(
+    String query,
+    List<zhihu_api.SearchSuggestion> items,
+    Duration ttl,
+  ) {
+    _cache[query] = _SearchSuggestionCacheEntry(
+      items: items,
+      expiresAt: DateTime.now().add(ttl),
+    );
+    while (_cache.length > 24) {
+      _cache.remove(_cache.keys.first);
+    }
+  }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    _debounce?.cancel();
+    _generation++;
+    super.dispose();
+  }
+}
+
+class _SearchSuggestionPanel extends StatelessWidget {
+  const _SearchSuggestionPanel({
+    required this.controller,
+    required this.onSelected,
+  });
+
+  final _SearchSuggestionController controller;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => AnimatedBuilder(
+    animation: controller,
+    builder: (context, _) {
+      if (controller.query.isEmpty ||
+          (!controller.loading && controller.items.isEmpty)) {
+        return const SizedBox.shrink();
+      }
+      return _SearchSuggestionList(
+        query: controller.query,
+        items: controller.items,
+        loading: controller.loading,
+        onSelected: onSelected,
+      );
+    },
+  );
 }
 
 class _SearchSuggestionList extends StatelessWidget {

@@ -139,9 +139,11 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   }
 
   void _openQuestionSearch() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => SearchPage(api: widget.api)));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
+      ),
+    );
   }
 
   void _openInviteAnswer() {

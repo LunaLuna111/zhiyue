@@ -382,7 +382,10 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
             onPersonTap: (person) => _openFollowingPersonRecent(person),
             onDiscoverTap: () {
               Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => SearchPage(api: widget.api)),
+                MaterialPageRoute(
+                  builder: (_) =>
+                      SearchPage(api: widget.api, focusOnOpen: true),
+                ),
               );
             },
           );

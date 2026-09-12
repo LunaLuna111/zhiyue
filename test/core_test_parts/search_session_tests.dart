@@ -135,6 +135,24 @@ void registerSearchSessionTests() {
     },
   );
 
+  testWidgets('route search focuses on open when explicitly requested', (
+    tester,
+  ) async {
+    final transport = _SearchSuggestionTransport();
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(_testApp(SearchPage(api: api, focusOnOpen: true)));
+    await tester.pump();
+
+    final input = find.byKey(const ValueKey('search-input'));
+    expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+  });
+
   testWidgets('search scope choices grow with large accessibility text', (
     tester,
   ) async {

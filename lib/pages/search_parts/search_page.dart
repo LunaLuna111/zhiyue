@@ -7,8 +7,7 @@ class SearchTabSpec {
   final String label;
 }
 
-/// Values read from the official 11.4.0 `zhihu_search.room/search_tabs`
-/// configuration. These are request `t` values, not UI-only guesses.
+/// Search scope labels and their corresponding request `t` values.
 const officialSearchTabs = <SearchTabSpec>[
   SearchTabSpec('general', '综合'),
   SearchTabSpec('recent', '实时'),
@@ -43,9 +42,9 @@ class _SearchHotCacheEntry {
   Future<List<SearchHotItem>>? request;
 }
 
-/// Public `GET /search/customize` response verified on 2026-08-20. The live
-/// response remains the source of truth; this snapshot keeps the controls
-/// usable if that non-content configuration request temporarily fails.
+/// Built-in fallback for the public `GET /search/customize` response. The
+/// live response remains the source of truth when the configuration request
+/// succeeds.
 const officialSearchFilterGroups = <List<SearchFilterOption>>[
   [
     SearchFilterOption(group: 'vertical', title: '不限类型', linkName: ''),
@@ -121,10 +120,8 @@ List<List<SearchFilterOption>> parseSearchFilterGroups(Object? value) {
   return List.unmodifiable(groups);
 }
 
-// Older GitHub API releases used by existing installations do not append the
-// native vertical_info tuple. Keep the compatibility fix in the client until
-// those installations can migrate; newer library releases are detected and
-// left untouched.
+// Keep the native tuple when the installed API package does not add it yet;
+// newer package releases are detected and left untouched.
 const _searchVerticalInfo = '0,0,0,0,0,0,0,0,0,0,0,0';
 
 Uri ensureSearchVerticalInfo(Uri uri, Map<String, String> filters) {
@@ -215,9 +212,10 @@ List<SearchHotItem> parseSearchHotItems(Object? value, {int limit = 15}) {
 }
 
 class SearchPage extends StatefulWidget {
-  const SearchPage({super.key, required this.api});
+  const SearchPage({super.key, required this.api, this.focusOnOpen = false});
 
   final ZhihuApiClient api;
+  final bool focusOnOpen;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -438,7 +436,7 @@ class _SearchPageState extends State<SearchPage>
               _SearchField(
                 controller: _query,
                 focusNode: _queryFocus,
-                autofocus: false,
+                autofocus: widget.focusOnOpen,
                 hintText: '搜索知乎内容',
                 onChanged: _onQueryChanged,
                 onSubmitted: _submit,

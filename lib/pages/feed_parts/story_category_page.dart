@@ -140,7 +140,9 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
           tooltip: '搜索故事',
           icon: const Icon(Icons.search_rounded),
           onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => SearchPage(api: widget.api)),
+            MaterialPageRoute(
+              builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
+            ),
           ),
         ),
       ],

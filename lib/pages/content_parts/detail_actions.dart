@@ -598,9 +598,11 @@ extension _ContentDetailActions on _ContentDetailPageState {
   }
 
   void _openSearch() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute(builder: (_) => SearchPage(api: widget.api)));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
+      ),
+    );
   }
 
   Future<void> _writeQuestionAnswer(String questionId, String title) async {

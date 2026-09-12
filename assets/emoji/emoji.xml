@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PopoEmoticons>
+    <Catalog TabIcon="emoji_tab_icon.webp" SelectedTabIcon="emoji_tab_icon.webp" Title="默认" Version="3" dir="emoji/default/">
+        <Emoticon File="emoji_56.webp" ID="emoticon_emoji_56" Tag="[感谢]" />
+        <Emoticon File="emoji_57.webp" ID="emoticon_emoji_57" Tag="[哇]" />
+        <Emoticon File="emoji_58.webp" ID="emoticon_emoji_58" Tag="[打招呼]" />
+        <Emoticon File="emoji_42.webp" ID="emoticon_emoji_42" Tag="[握手]" />
+        <Emoticon File="emoji_50.webp" ID="emoticon_emoji_50" Tag="[知乎益蜂]" />
+        <Emoticon File="emoji_51.webp" ID="emoticon_emoji_51" Tag="[百分百赞]" />
+        <Emoticon File="emoji_52.webp" ID="emoticon_emoji_52" Tag="[为爱发乎]" />
+        <Emoticon File="emoji_53.webp" ID="emoticon_emoji_53" Tag="[脑爆]" />
+        <Emoticon File="emoji_54.webp" ID="emoticon_emoji_54" Tag="[暗中学习]" />
+        <Emoticon File="emoji_55.webp" ID="emoticon_emoji_55" Tag="[匿了]" />
+        <Emoticon File="emoji_1.webp" ID="emoticon_emoji_01" Tag="[谢邀]" />
+        <Emoticon File="emoji_2.webp" ID="emoticon_emoji_02" Tag="[赞同]" />
+        <Emoticon File="emoji_49.webp" ID="emoticon_emoji_49" Tag="[蹲]" />
+        <Emoticon File="emoji_3.webp" ID="emoticon_emoji_03" Tag="[爱]" />
+        <Emoticon File="emoji_13.webp" ID="emoticon_emoji_13" Tag="[耶]" />
+        <Emoticon File="emoji_15.webp" ID="emoticon_emoji_15" Tag="[惊喜]" />
+        <Emoticon File="emoji_6.webp" ID="emoticon_emoji_06" Tag="[思考]" />
+        <Emoticon File="emoji_7.webp" ID="emoticon_emoji_07" Tag="[酷]" />
+        <Emoticon File="emoji_8.webp" ID="emoticon_emoji_08" Tag="[大笑]" />
+        <Emoticon File="emoji_9.webp" ID="emoticon_emoji_09" Tag="[微笑]" />
+        <Emoticon File="emoji_10.webp" ID="emoticon_emoji_10" Tag="[捂脸]" />
+        <Emoticon File="emoji_11.webp" ID="emoticon_emoji_11" Tag="[捂嘴]" />
+        <Emoticon File="emoji_12.webp" ID="emoticon_emoji_12" Tag="[飙泪笑]" />
+        <Emoticon File="emoji_4.webp" ID="emoticon_emoji_04" Tag="[害羞]" />
+        <Emoticon File="emoji_14.webp" ID="emoticon_emoji_14" Tag="[可怜]" />
+        <Emoticon File="emoji_5.webp" ID="emoticon_emoji_05" Tag="[好奇]" />
+        <Emoticon File="emoji_16.webp" ID="emoticon_emoji_16" Tag="[流泪]" />
+        <Emoticon File="emoji_17.webp" ID="emoticon_emoji_17" Tag="[大哭]" />
+        <Emoticon File="emoji_18.webp" ID="emoticon_emoji_18" Tag="[生气]" />
+        <Emoticon File="emoji_19.webp" ID="emoticon_emoji_19" Tag="[惊讶]" />
+        <Emoticon File="emoji_20.webp" ID="emoticon_emoji_20" Tag="[调皮]" />
+        <Emoticon File="emoji_21.webp" ID="emoticon_emoji_21" Tag="[衰]" />
+        <Emoticon File="emoji_22.webp" ID="emoticon_emoji_22" Tag="[发呆]" />
+        <Emoticon File="emoji_23.webp" ID="emoticon_emoji_23" Tag="[机智]" />
+        <Emoticon File="emoji_24.webp" ID="emoticon_emoji_24" Tag="[嘘]" />
+        <Emoticon File="emoji_25.webp" ID="emoticon_emoji_25" Tag="[尴尬]" />
+        <Emoticon File="emoji_26.webp" ID="emoticon_emoji_26" Tag="[小情绪]" />
+        <Emoticon File="emoji_27.webp" ID="emoticon_emoji_27" Tag="[为难]" />
+        <Emoticon File="emoji_28.webp" ID="emoticon_emoji_28" Tag="[吃瓜]" />
+        <Emoticon File="emoji_29.webp" ID="emoticon_emoji_29" Tag="[语塞]" />
+        <Emoticon File="emoji_30.webp" ID="emoticon_emoji_30" Tag="[看看你]" />
+        <Emoticon File="emoji_31.webp" ID="emoticon_emoji_31" Tag="[撇嘴]" />
+        <Emoticon File="emoji_32.webp" ID="emoticon_emoji_32" Tag="[魔性笑]" />
+        <Emoticon File="emoji_33.webp" ID="emoticon_emoji_33" Tag="[潜水]" />
+        <Emoticon File="emoji_34.webp" ID="emoticon_emoji_34" Tag="[口罩]" />
+        <Emoticon File="emoji_35.webp" ID="emoticon_emoji_35" Tag="[开心]" />
+        <Emoticon File="emoji_36.webp" ID="emoticon_emoji_36" Tag="[滑稽]" />
+        <Emoticon File="emoji_37.webp" ID="emoticon_emoji_37" Tag="[笑哭]" />
+        <Emoticon File="emoji_38.webp" ID="emoticon_emoji_38" Tag="[白眼]" />
+        <Emoticon File="emoji_39.webp" ID="emoticon_emoji_39" Tag="[红心]" />
+        <Emoticon File="emoji_40.webp" ID="emoticon_emoji_40" Tag="[柠檬]" />
+        <Emoticon File="emoji_41.webp" ID="emoticon_emoji_41" Tag="[拜托]" />
+        <Emoticon File="emoji_43.webp" ID="emoticon_emoji_43" Tag="[赞]" />
+        <Emoticon File="emoji_44.webp" ID="emoticon_emoji_44" Tag="[发火]" />
+        <Emoticon File="emoji_45.webp" ID="emoticon_emoji_45" Tag="[不抬杠]" />
+        <Emoticon File="emoji_46.webp" ID="emoticon_emoji_46" Tag="[种草]" />
+        <Emoticon File="emoji_47.webp" ID="emoticon_emoji_47" Tag="[抱抱]" />
+        <Emoticon File="emoji_48.webp" ID="emoticon_emoji_48" Tag="[doge]" />
+
+    </Catalog>
+</PopoEmoticons>

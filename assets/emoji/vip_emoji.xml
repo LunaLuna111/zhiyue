@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PopoEmoticons>
+    <Catalog TabIcon="emoji_tab_icon.webp" SelectedTabIcon="emoji_tab_icon_selected.webp"  Title="默认" Version="3" dir="emoji/vip/">
+        <Emoticon File="emoji_1.webp" ID="emoticon_vip_emoji_01" Tag="[666]" />
+        <Emoticon File="emoji_2.webp" ID="emoticon_vip_emoji_02" Tag="[闭嘴]" />
+        <Emoticon File="emoji_3.webp" ID="emoticon_vip_emoji_03" Tag="[吃瓜中]" />
+        <Emoticon File="emoji_4.webp" ID="emoticon_vip_emoji_04" Tag="[打脸]" />
+        <Emoticon File="emoji_24.webp" ID="emoticon_vip_emoji_24" Tag="[裂开]" />
+        <Emoticon File="emoji_6.webp" ID="emoticon_vip_emoji_06" Tag="[感谢]" />
+        <Emoticon File="emoji_7.webp" ID="emoticon_vip_emoji_07" Tag="[哈士奇]" />
+        <Emoticon File="emoji_8.webp" ID="emoticon_vip_emoji_08" Tag="[疑问]" />
+        <Emoticon File="emoji_9.webp" ID="emoticon_vip_emoji_09" Tag="[加油]" />
+        <Emoticon File="emoji_10.webp" ID="emoticon_vip_emoji_10" Tag="[纠结]" />
+        <Emoticon File="emoji_11.webp" ID="emoticon_vip_emoji_11" Tag="[哭]" />
+        <Emoticon File="emoji_12.webp" ID="emoticon_vip_emoji_12" Tag="[流口水]" />
+        <Emoticon File="emoji_13.webp" ID="emoticon_vip_emoji_13" Tag="[社会人]" />
+        <Emoticon File="emoji_14.webp" ID="emoticon_vip_emoji_14" Tag="[生气了]" />
+        <Emoticon File="emoji_15.webp" ID="emoticon_vip_emoji_15" Tag="[酸了]" />
+        <Emoticon File="emoji_16.webp" ID="emoticon_vip_emoji_16" Tag="[偷看]" />
+        <Emoticon File="emoji_17.webp" ID="emoticon_vip_emoji_17" Tag="[头秃]" />
+        <Emoticon File="emoji_18.webp" ID="emoticon_vip_emoji_18" Tag="[吐血]" />
+        <Emoticon File="emoji_19.webp" ID="emoticon_vip_emoji_19" Tag="[思考中]" />
+        <Emoticon File="emoji_20.webp" ID="emoticon_vip_emoji_20" Tag="[哇]" />
+        <Emoticon File="emoji_21.webp" ID="emoticon_vip_emoji_21" Tag="[旺柴]" />
+        <Emoticon File="emoji_22.webp" ID="emoticon_vip_emoji_22" Tag="[学到了]" />
+        <Emoticon File="emoji_23.webp" ID="emoticon_vip_emoji_23" Tag="[晕]" />
+    </Catalog>
+</PopoEmoticons>

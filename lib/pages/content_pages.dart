@@ -1,0 +1,53 @@
+import 'dart:async';
+import 'dart:math' as math;
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:video_player/video_player.dart';
+
+import '../core/api_client.dart';
+import '../core/api_response.dart';
+import '../core/answer_detail_cache.dart';
+import '../core/app_log.dart';
+import '../core/comment_link.dart';
+import '../core/content_export_service.dart';
+import '../core/image_export_service.dart';
+import '../core/json_tools.dart';
+import '../core/platform_environment.dart'
+    if (dart.library.io) '../core/platform_environment_io.dart';
+import '../core/recommendation_behavior.dart';
+import '../core/salt_chapter_export.dart';
+import '../core/tts_service.dart';
+import '../ui/zh_components.dart';
+import '../ui/zh_theme.dart';
+import '../widgets/api_views.dart';
+import '../widgets/comment_composer_sheet.dart';
+import 'paged_list_page.dart';
+import 'search_page.dart';
+import 'salt_page.dart';
+import 'user_page.dart';
+import 'web_page.dart';
+
+part 'content_parts/routing.dart';
+part 'content_parts/detail_page.dart';
+part 'content_parts/detail_state.dart';
+part 'content_parts/detail_actions.dart';
+part 'content_parts/detail_body.dart';
+part 'content_parts/detail_end_widgets.dart';
+part 'content_parts/detail_image_viewer.dart';
+part 'content_parts/video_detail.dart';
+part 'content_parts/detail_renderer.dart';
+part 'content_parts/detail_widgets.dart';
+part 'content_parts/inline_video.dart';
+part 'content_parts/inline_video_widgets.dart';
+part 'content_parts/question_answers.dart';
+part 'content_parts/question_answer_header.dart';
+part 'content_parts/question_answer_cards.dart';
+part 'content_parts/topic_feeds.dart';
+part 'content_parts/column_articles.dart';
+part 'content_parts/comments.dart';
+part 'content_parts/comment_context_widgets.dart';
+part 'content_parts/comment_replies.dart';
+part 'content_parts/object_inspector.dart';

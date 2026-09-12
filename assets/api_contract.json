@@ -1,0 +1,1809 @@
+[
+  {
+    "http_method": "GET",
+    "path": "topstory/recommend",
+    "host": "<base-url>",
+    "route": "topstory/recommend",
+    "dynamic_url": false,
+    "category": "feed",
+    "service": "com.zhihu.android.app.feed.ui2.feed.InterfaceC22645z",
+    "java_method": "m94365a",
+    "return_type": "Observable<Response<FeedList>>",
+    "response_model": "FeedList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [],
+    "line": 12,
+    "signature": "Observable<Response<FeedList>> m94365a();",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_recommendations_bootstrap",
+    "public_content_role": "recommendations-bootstrap",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "recommendations-bootstrap",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/topstory/recommend?tsp_ad_cardredesign=0&feed_card_exp=card_corner|1&v_serial=1&isDoubleFlow=0",
+    "host": "<base-url>",
+    "route": "/topstory/recommend?tsp_ad_cardredesign=0&feed_card_exp=card_corner|1&v_serial=1&isDoubleFlow=0",
+    "dynamic_url": false,
+    "category": "feed",
+    "service": "com.zhihu.android.app.feed.ui2.feed.InterfaceC22591f0",
+    "java_method": "m94178c",
+    "return_type": "Observable<Response<FeedList>>",
+    "response_model": "FeedList",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.1.8"
+    ],
+    "parameters": [
+      {
+        "binding": "query",
+        "name": "action",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "refresh_scene",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "scroll",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "String",
+        "java_name": "str3",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "start_type",
+        "java_type": "String",
+        "java_name": "str4",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "header",
+        "name": "x-close-recommend",
+        "java_type": "int",
+        "java_name": "i2",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "header",
+        "name": "x-ad-styles",
+        "java_type": "String",
+        "java_name": "str5",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "header",
+        "name": "x-feed-prefetch",
+        "java_type": "int",
+        "java_name": "i3",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "query",
+        "name": "device",
+        "java_type": "String",
+        "java_name": "str6",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "short_container_setting_value",
+        "java_type": "int",
+        "java_name": "i4",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "include_guide_relation",
+        "java_type": "boolean",
+        "java_name": "z",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "interest_tags",
+        "java_type": "String",
+        "java_name": "str7",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query_map",
+        "name": "",
+        "java_type": "Map<String, String>",
+        "java_name": "map",
+        "annotation": "InterfaceC84669u"
+      },
+      {
+        "binding": "query",
+        "name": "is_need_force_insert",
+        "java_type": "Boolean",
+        "java_name": "bool",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "force_insert_source",
+        "java_type": "String",
+        "java_name": "str8",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "force_insert_content_type",
+        "java_type": "String",
+        "java_name": "str9",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "force_insert_content_token",
+        "java_type": "String",
+        "java_name": "str10",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "is_feed_first_request",
+        "java_type": "Integer",
+        "java_name": "num",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 40,
+    "signature": "Observable<Response<FeedList>> m94178c(@InterfaceC84668t(\"action\") String str, @InterfaceC84668t(\"refresh_scene\") int i, @InterfaceC84668t(\"scroll\") String str2, @InterfaceC84668t(\"limit\") String str3, @InterfaceC84668t(\"start_type\") String str4, @InterfaceC84657i(\"x-close-recommend\") int i2, @InterfaceC84657i(\"x-ad-styles\") String str5, @InterfaceC84657i(\"x-feed-prefetch\") int i3, @InterfaceC84668t(\"device\") String str6, @InterfaceC84668t(\"short_container_setting_value\") int i4, @InterfaceC84668t(\"include_guide_relation\") boolean z, @InterfaceC84668t(\"interest_tags\") String str7, @InterfaceC84669u Map<String, String> map, @InterfaceC84668t(\"is_need_force_insert\") Boolean bool, @InterfaceC84668t(\"force_insert_source\") String str8, @InterfaceC84668t(\"force_insert_content_type\") String str9, @InterfaceC84668t(\"force_insert_content_token\") String str10, @InterfaceC84668t(\"is_feed_first_request\") Integer num);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_recommendations_app_page",
+    "public_content_role": "recommendations-app-page",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "recommendations-app-page",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "column/column_tab/feed",
+    "host": "<base-url>",
+    "route": "column/column_tab/feed",
+    "dynamic_url": false,
+    "category": "feed",
+    "service": "com.zhihu.android.feature.column_feature.api.InterfaceC40498a",
+    "java_method": "m144993a",
+    "return_type": "Observable<Response<ColumnFeedList>>",
+    "response_model": "ColumnFeedList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [],
+    "line": 18,
+    "signature": "Observable<Response<ColumnFeedList>> m144993a();",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_column_tab_feed",
+    "public_content_role": "column-tab-feed",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "column-tab-feed",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/columns",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/columns",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.answer.api.service.ProfileService",
+    "java_method": "getPeopleColumnsById",
+    "return_type": "Observable<Response<ColumnList>>",
+    "response_model": "ColumnList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 117,
+    "signature": "Observable<Response<ColumnList>> getPeopleColumnsById(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_people_columns",
+    "public_content_role": "people-columns",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "people-columns",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/following_columns",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/following_columns",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.answer.api.service.ProfileService",
+    "java_method": "getFollowingColumnsByUserId",
+    "return_type": "Observable<Response<ColumnList>>",
+    "response_model": "ColumnList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 96,
+    "signature": "Observable<Response<ColumnList>> getFollowingColumnsByUserId(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_people_following_columns",
+    "public_content_role": "people-following-columns",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "people-following-columns",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/comment_v5/{object_type}/{object_id}/root_comment",
+    "host": "<base-url>",
+    "route": "/comment_v5/{object_type}/{object_id}/root_comment",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.comment_for_v7.p1955c0.InterfaceC35554b",
+    "java_method": "m130992o",
+    "return_type": "Observable<Response<C35568k>>",
+    "response_model": "C35568k",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "object_type",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "path",
+        "name": "object_id",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "order_by",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "header",
+        "name": "x-ad-styles",
+        "java_type": "String",
+        "java_name": "str3",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "query",
+        "name": "type",
+        "java_type": "String",
+        "java_name": "str4",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "source",
+        "java_type": "String",
+        "java_name": "str5",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 90,
+    "signature": "Observable<Response<C35568k>> m130992o(@InterfaceC84667s(\"object_type\") String str, @InterfaceC84667s(\"object_id\") long j, @InterfaceC84668t(\"order_by\") String str2, @InterfaceC84657i(\"x-ad-styles\") String str3, @InterfaceC84668t(\"type\") String str4, @InterfaceC84668t(\"source\") String str5);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_root_comments",
+    "public_content_role": "root-comments",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "root-comments",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/comment_v5/{object_type}/{object_id}/list-headers",
+    "host": "<base-url>",
+    "route": "/comment_v5/{object_type}/{object_id}/list-headers",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.comment_for_v7.p1955c0.InterfaceC35554b",
+    "java_method": "m130991n",
+    "return_type": "Observable<Response<C35578u>>",
+    "response_model": "C35578u",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "object_id",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "path",
+        "name": "object_type",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 87,
+    "signature": "Observable<Response<C35578u>> m130991n(@InterfaceC84667s(\"object_id\") long j, @InterfaceC84667s(\"object_type\") String str);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_comment_list_headers",
+    "public_content_role": "comment-list-headers",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "comment-list-headers",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/comment_v5/comment/{comment_id}/child_comment",
+    "host": "<base-url>",
+    "route": "/comment_v5/comment/{comment_id}/child_comment",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.comment_for_v7.p1955c0.InterfaceC35554b",
+    "java_method": "m130994q",
+    "return_type": "Observable<Response<C35568k>>",
+    "response_model": "C35568k",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "comment_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 96,
+    "signature": "Observable<Response<C35568k>> m130994q(@InterfaceC84667s(\"comment_id\") String str);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_child_comments",
+    "public_content_role": "child-comments",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "child-comments",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/answers/v2/{id}",
+    "host": "<base-url>",
+    "route": "/answers/v2/{id}",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.service.short_container_service.dataflow.repo.p3323o.InterfaceC61340c",
+    "java_method": "m208268g",
+    "return_type": "Observable<Response<JsonNode>>",
+    "response_model": "JsonNode",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query_map",
+        "name": "",
+        "java_type": "Map<String, String>",
+        "java_name": "map",
+        "annotation": "InterfaceC84669u"
+      }
+    ],
+    "line": 60,
+    "signature": "Observable<Response<JsonNode>> m208268g(@InterfaceC84667s(\"id\") String str, @InterfaceC84669u Map<String, String> map);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_answer_detail_current",
+    "public_content_role": "answer-detail-current",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "answer-detail-current",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/articles/v2/{id}",
+    "host": "<base-url>",
+    "route": "/articles/v2/{id}",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.service.short_container_service.dataflow.repo.p3323o.InterfaceC61340c",
+    "java_method": "m208265d",
+    "return_type": "Observable<Response<JsonNode>>",
+    "response_model": "JsonNode",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query_map",
+        "name": "",
+        "java_type": "Map<String, String>",
+        "java_name": "map",
+        "annotation": "InterfaceC84669u"
+      }
+    ],
+    "line": 51,
+    "signature": "Observable<Response<JsonNode>> m208265d(@InterfaceC84667s(\"id\") String str, @InterfaceC84669u Map<String, String> map);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_article_detail_current",
+    "public_content_role": "article-detail-current",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "article-detail-current",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/pins/v2/{id}",
+    "host": "<base-url>",
+    "route": "/pins/v2/{id}",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.service.short_container_service.dataflow.repo.p3323o.InterfaceC61340c",
+    "java_method": "m208267f",
+    "return_type": "Observable<Response<JsonNode>>",
+    "response_model": "JsonNode",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "scene",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query_map",
+        "name": "",
+        "java_type": "Map<String, String>",
+        "java_name": "map",
+        "annotation": "InterfaceC84669u"
+      }
+    ],
+    "line": 57,
+    "signature": "Observable<Response<JsonNode>> m208267f(@InterfaceC84667s(\"id\") String str, @InterfaceC84668t(\"scene\") String str2, @InterfaceC84669u Map<String, String> map);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_pin_detail_current",
+    "public_content_role": "pin-detail-current",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "pin-detail-current",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/v4/answers/{answer_id}",
+    "host": "<base-url>",
+    "route": "/v4/answers/{answer_id}",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.answer.api.service.AnswerService",
+    "java_method": "getAnswerById",
+    "return_type": "Observable<Response<Answer>>",
+    "response_model": "Answer",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.0.89"
+    ],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "answer_id",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 36,
+    "signature": "Observable<Response<Answer>> getAnswerById(@InterfaceC84667s(\"answer_id\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_answer_detail_v4",
+    "public_content_role": "answer-detail-v4",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "answer-detail-v4",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/articles/{article_id}",
+    "host": "<base-url>",
+    "route": "/articles/{article_id}",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.article.p1824q1.p1825a.InterfaceC33714c",
+    "java_method": "m125244h",
+    "return_type": "Observable<Response<Article>>",
+    "response_model": "Article",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "article_id",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query_map",
+        "name": "",
+        "java_type": "Map<String, String>",
+        "java_name": "map",
+        "annotation": "InterfaceC84669u"
+      }
+    ],
+    "line": 38,
+    "signature": "Observable<Response<Article>> m125244h(@InterfaceC84667s(\"article_id\") long j, @InterfaceC84669u Map<String, String> map);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_article_detail_legacy",
+    "public_content_role": "article-detail-legacy",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "article-detail-legacy",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/v2/pins/{pin_id}",
+    "host": "<base-url>",
+    "route": "/v2/pins/{pin_id}",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.follow.repository.p2396r0.InterfaceC44723c",
+    "java_method": "m156994g",
+    "return_type": "Observable<Response<PinMeta>>",
+    "response_model": "PinMeta",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "pin_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 52,
+    "signature": "Observable<Response<PinMeta>> m156994g(@InterfaceC84667s(\"pin_id\") String str);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_pin_detail_legacy",
+    "public_content_role": "pin-detail-legacy",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "pin-detail-legacy",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/topic_square/categories",
+    "host": "<base-url>",
+    "route": "/topic_square/categories",
+    "dynamic_url": false,
+    "category": "misc",
+    "service": "com.zhihu.android.api.service2.InterfaceC19950i",
+    "java_method": "m85825i",
+    "return_type": "Observable<Response<TopicCategoryList>>",
+    "response_model": "TopicCategoryList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [],
+    "line": 32,
+    "signature": "Observable<Response<TopicCategoryList>> m85825i();",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_topic_categories",
+    "public_content_role": "topic-categories",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "topic-categories",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/topic_square/categories/{category_id}/topics",
+    "host": "<base-url>",
+    "route": "/topic_square/categories/{category_id}/topics",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.api.service2.InterfaceC19950i",
+    "java_method": "m85824h",
+    "return_type": "Observable<Response<TopicList>>",
+    "response_model": "TopicList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "category_id",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 29,
+    "signature": "Observable<Response<TopicList>> m85824h(@InterfaceC84667s(\"category_id\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_topics_in_category",
+    "public_content_role": "topics-in-category",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "topics-in-category",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/topics/{topic_id}/basic",
+    "host": "<base-url>",
+    "route": "/topics/{topic_id}/basic",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.api.service2.InterfaceC19950i",
+    "java_method": "m85822f",
+    "return_type": "Observable<Response<Topic>>",
+    "response_model": "Topic",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "topic_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 23,
+    "signature": "Observable<Response<Topic>> m85822f(@InterfaceC84667s(\"topic_id\") String str);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_topic_basic",
+    "public_content_role": "topic-basic",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "topic-basic",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/topics/{topic_id}/followers",
+    "host": "<base-url>",
+    "route": "/topics/{topic_id}/followers",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.api.service2.InterfaceC19950i",
+    "java_method": "m85823g",
+    "return_type": "Observable<Response<PeopleList>>",
+    "response_model": "PeopleList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "topic_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 26,
+    "signature": "Observable<Response<PeopleList>> m85823g(@InterfaceC84667s(\"topic_id\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_topic_followers",
+    "public_content_role": "topic-followers",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "topic-followers",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/topics/{topic_id}/unanswered_questions",
+    "host": "<base-url>",
+    "route": "/topics/{topic_id}/unanswered_questions",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.topic.p3395h3.InterfaceC62793e",
+    "java_method": "m211762r",
+    "return_type": "Observable<Response<QuestionList>>",
+    "response_model": "QuestionList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "topic_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 146,
+    "signature": "Observable<Response<QuestionList>> m211762r(@InterfaceC84667s(\"topic_id\") String str, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_topic_unanswered_questions",
+    "public_content_role": "topic-unanswered-questions",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "topic-unanswered-questions",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/columns/{column_id}/followers",
+    "host": "<base-url>",
+    "route": "/columns/{column_id}/followers",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.api.service2.InterfaceC19980s",
+    "java_method": "m85935a",
+    "return_type": "Observable<Response<PeopleList>>",
+    "response_model": "PeopleList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "column_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 11,
+    "signature": "Observable<Response<PeopleList>> m85935a(@InterfaceC84667s(\"column_id\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_column_followers",
+    "public_content_role": "column-followers",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "column-followers",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/hot/topics",
+    "host": "<base-url>",
+    "route": "/hot/topics",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.api.service2.InterfaceC19979r1",
+    "java_method": "m85919j",
+    "return_type": "Single<HotTopic>",
+    "response_model": "HotTopic",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [],
+    "line": 75,
+    "signature": "Single<HotTopic> m85919j();",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "public_hot_topics",
+    "public_content_role": "hot-topics",
+    "selection_note": "Exact APK Retrofit declaration selected by service, method and path.",
+    "flutter_role": "hot-topics",
+    "contract_origin": "apk-retrofit-public"
+  },
+  {
+    "http_method": "GET",
+    "path": "/moments_v3",
+    "host": "<base-url>",
+    "route": "/moments_v3",
+    "dynamic_url": false,
+    "category": "feed",
+    "service": "com.zhihu.android.follow.repository.p2396r0.InterfaceC44721a",
+    "java_method": "m156976R0",
+    "return_type": "Observable<Response<ZHFollowObjectList>>",
+    "response_model": "ZHFollowObjectList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "query",
+        "name": "feed_type",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "header",
+        "name": "X-Moments-Ab-Param",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "header",
+        "name": "need_debug",
+        "java_type": "String",
+        "java_name": "str3",
+        "annotation": "InterfaceC84657i"
+      }
+    ],
+    "line": 14,
+    "signature": "Observable<Response<ZHFollowObjectList>> m156976R0(@InterfaceC84668t(\"feed_type\") String str, @InterfaceC84657i(\"X-Moments-Ab-Param\") String str2, @InterfaceC84657i(\"need_debug\") String str3);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_home_following_feed",
+    "flutter_role": "home-following-feed",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/topstory/hot-lists/total",
+    "host": "<base-url>",
+    "route": "/topstory/hot-lists/total",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.api.service2.InterfaceC19979r1",
+    "java_method": "m85926q",
+    "return_type": "Observable<Response<RankFeedList>>",
+    "response_model": "RankFeedList",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.1.8"
+    ],
+    "parameters": [
+      {
+        "binding": "header",
+        "name": "isPreload",
+        "java_type": "boolean",
+        "java_name": "z",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "header",
+        "name": "x-ad-styles",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "query",
+        "name": "is_browse_model",
+        "java_type": "int",
+        "java_name": "i2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "new_hot_list",
+        "java_type": "boolean",
+        "java_name": "z2",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 100,
+    "signature": "Observable<Response<RankFeedList>> m85926q(@InterfaceC84657i(\"isPreload\") boolean z, @InterfaceC84668t(\"limit\") int i, @InterfaceC84657i(\"x-ad-styles\") String str, @InterfaceC84668t(\"is_browse_model\") int i2, @InterfaceC84668t(\"new_hot_list\") boolean z2);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_home_hot_list",
+    "flutter_role": "home-hot-list",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/search_v3",
+    "host": "<base-url>",
+    "route": "/search_v3",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.api.service2.InterfaceC19942f0",
+    "java_method": "m85791c",
+    "return_type": "Observable<Response<SearchResultNewAPIWithWarning>>",
+    "response_model": "SearchResultNewAPIWithWarning",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.0.65"
+    ],
+    "parameters": [
+      {
+        "binding": "query",
+        "name": "correction",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "t",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "q",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 21,
+    "signature": "Observable<Response<SearchResultNewAPIWithWarning>> m85791c(@InterfaceC84668t(\"correction\") int i, @InterfaceC84668t(\"t\") String str, @InterfaceC84668t(\"q\") String str2);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_search_initial",
+    "flutter_role": "search-initial",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "",
+    "host": "<dynamic-url>",
+    "route": "<dynamic-url>",
+    "dynamic_url": true,
+    "category": "misc",
+    "service": "com.zhihu.android.api.service2.InterfaceC19942f0",
+    "java_method": "m85792d",
+    "return_type": "Observable<Response<SearchResultNewAPIWithWarning>>",
+    "response_model": "SearchResultNewAPIWithWarning",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.0.65"
+    ],
+    "parameters": [
+      {
+        "binding": "url",
+        "name": "",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84672x"
+      }
+    ],
+    "line": 25,
+    "signature": "Observable<Response<SearchResultNewAPIWithWarning>> m85792d(@InterfaceC84672x String str);",
+    "evidence": "ANNOTATION",
+    "confidence": "C",
+    "endpoint_id": "flutter_search_next_dynamic",
+    "flutter_role": "search-next-dynamic",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/questions/{question_id}",
+    "host": "<base-url>",
+    "route": "/questions/{question_id}",
+    "dynamic_url": false,
+    "category": "content",
+    "service": "com.zhihu.android.answer.api.service.QuestionService",
+    "java_method": "getQuestionById",
+    "return_type": "Observable<Response<Question>>",
+    "response_model": "Question",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "question_id",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 14,
+    "signature": "Observable<Response<Question>> getQuestionById(@InterfaceC84667s(\"question_id\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_question_detail",
+    "flutter_role": "question-detail",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/questions/{question_id}/feeds?include=big_card_summary,media_detail,reaction_instruction,is_author,is_thanked,voting,is_favorited,label_info,content_text_length,reactions",
+    "host": "<base-url>",
+    "route": "/questions/{question_id}/feeds?include=big_card_summary,media_detail,reaction_instruction,is_author,is_thanked,voting,is_favorited,label_info,content_text_length,reactions",
+    "dynamic_url": false,
+    "category": "media",
+    "service": "com.zhihu.android.p2478i2.p2479a.p2480b.InterfaceC46188a",
+    "java_method": "getAnswerListByIdV2",
+    "return_type": "Observable<Response<AnswerListV2>>",
+    "response_model": "AnswerListV2",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.0.89"
+    ],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "question_id",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "header",
+        "name": "x-ad-styles",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84657i"
+      },
+      {
+        "binding": "query_map",
+        "name": "",
+        "java_type": "Map<String, String>",
+        "java_name": "map",
+        "annotation": "InterfaceC84669u"
+      }
+    ],
+    "line": 37,
+    "signature": "Observable<Response<AnswerListV2>> getAnswerListByIdV2(@InterfaceC84667s(\"question_id\") long j, @InterfaceC84657i(\"x-ad-styles\") String str, @InterfaceC84669u Map<String, String> map);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_question_answer_feeds",
+    "flutter_role": "question-answer-feeds",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "",
+    "host": "<dynamic-url>",
+    "route": "<dynamic-url>",
+    "dynamic_url": true,
+    "category": "misc",
+    "service": "com.zhihu.android.p2478i2.p2479a.p2480b.InterfaceC46188a",
+    "java_method": "getAnswerListByURL",
+    "return_type": "Observable<Response<AnswerListV2>>",
+    "response_model": "AnswerListV2",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.0.89"
+    ],
+    "parameters": [
+      {
+        "binding": "url",
+        "name": "",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84672x"
+      },
+      {
+        "binding": "header",
+        "name": "x-ad-styles",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84657i"
+      }
+    ],
+    "line": 41,
+    "signature": "Observable<Response<AnswerListV2>> getAnswerListByURL(@InterfaceC84672x String str, @InterfaceC84657i(\"x-ad-styles\") String str2);",
+    "evidence": "ANNOTATION",
+    "confidence": "C",
+    "endpoint_id": "flutter_question_answer_feeds_next_dynamic",
+    "flutter_role": "question-answer-feeds-next-dynamic",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}",
+    "host": "<base-url>",
+    "route": "/people/{member_id}",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "m195589L",
+    "return_type": "Observable<Response<ProfilePeople>>",
+    "response_model": "ProfilePeople",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      }
+    ],
+    "line": 99,
+    "signature": "Observable<Response<ProfilePeople>> m195589L(@InterfaceC84667s(\"member_id\") String str);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_profile_summary",
+    "flutter_role": "user-profile-summary",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{hash_id}/profile",
+    "host": "<base-url>",
+    "route": "/people/{hash_id}/profile",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "m195582E",
+    "return_type": "Observable<Response<ProfilePeople>>",
+    "response_model": "ProfilePeople",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "hash_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "profile_new_version",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "profile_v4",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "has_contacts_permission",
+        "java_type": "boolean",
+        "java_name": "z",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "recommend_ab",
+        "java_type": "int",
+        "java_name": "i2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "scene",
+        "java_type": "int",
+        "java_name": "i3",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "is_preview",
+        "java_type": "Integer",
+        "java_name": "num",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 77,
+    "signature": "Observable<Response<ProfilePeople>> m195582E(@InterfaceC84667s(\"hash_id\") String str, @InterfaceC84668t(\"profile_new_version\") String str2, @InterfaceC84668t(\"profile_v4\") int i, @InterfaceC84668t(\"has_contacts_permission\") boolean z, @InterfaceC84668t(\"recommend_ab\") int i2, @InterfaceC84668t(\"scene\") int i3, @InterfaceC84668t(\"is_preview\") Integer num);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_profile_full",
+    "flutter_role": "user-profile-full",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/followees",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/followees",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "getFollowees",
+    "return_type": "Observable<Response<PeopleList>>",
+    "response_model": "PeopleList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 186,
+    "signature": "Observable<Response<PeopleList>> getFollowees(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_followees",
+    "flutter_role": "user-followees",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/followers",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/followers",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "getFollowers",
+    "return_type": "Observable<Response<PeopleList>>",
+    "response_model": "PeopleList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 189,
+    "signature": "Observable<Response<PeopleList>> getFollowers(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_followers",
+    "flutter_role": "user-followers",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/answers",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/answers",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "getPeopleAnswersById",
+    "return_type": "Observable<Response<AnswerList>>",
+    "response_model": "AnswerList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "order_by",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 198,
+    "signature": "Observable<Response<AnswerList>> getPeopleAnswersById(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"order_by\") String str2, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_answers",
+    "flutter_role": "user-answers",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/articles",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/articles",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.answer.api.service.ProfileService",
+    "java_method": "getPeopleArticlesById",
+    "return_type": "Observable<Response<ArticleList>>",
+    "response_model": "ArticleList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 111,
+    "signature": "Observable<Response<ArticleList>> getPeopleArticlesById(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_articles",
+    "flutter_role": "user-articles",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{urlToken}/profile/creations/feed?type=article&limit=10",
+    "host": "<base-url>",
+    "route": "/people/{urlToken}/profile/creations/feed?type=article&limit=10",
+    "dynamic_url": false,
+    "category": "feed",
+    "service": "com.zhihu.android.column.p1921b.p1922a.InterfaceC35188a",
+    "java_method": "m129792a",
+    "return_type": "Observable<Response<ArticleModelList>>",
+    "response_model": "ArticleModelList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "urlToken",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 15,
+    "signature": "Observable<Response<ArticleModelList>> m129792a(@InterfaceC84667s(\"urlToken\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_created_article_feed",
+    "flutter_role": "user-created-article-feed",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/included-articles",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/included-articles",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.article.p1824q1.p1825a.InterfaceC33714c",
+    "java_method": "m125245i",
+    "return_type": "Observable<Response<ArticleList>>",
+    "response_model": "ArticleList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "sort_by",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 41,
+    "signature": "Observable<Response<ArticleList>> m125245i(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"sort_by\") String str2, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_included_articles",
+    "flutter_role": "user-included-articles",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/following_collections?with_deleted=1",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/following_collections?with_deleted=1",
+    "dynamic_url": false,
+    "category": "collections",
+    "service": "com.zhihu.android.collection.api.InterfaceC34879a",
+    "java_method": "m129074k",
+    "return_type": "Observable<Response<CollectionList>>",
+    "response_model": "CollectionList",
+    "encoding": "none",
+    "headers": [
+      "x-api-version:3.0.94"
+    ],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "sort",
+        "java_type": "String",
+        "java_name": "str2",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 101,
+    "signature": "Observable<Response<CollectionList>> m129074k(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"sort\") String str2);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_following_collections",
+    "flutter_role": "user-following-collections",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/following_questions",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/following_questions",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "getFollowingQuestionsByUserId",
+    "return_type": "Observable<Response<QuestionList>>",
+    "response_model": "QuestionList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 192,
+    "signature": "Observable<Response<QuestionList>> getFollowingQuestionsByUserId(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_following_questions",
+    "flutter_role": "user-following-questions",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/people/{member_id}/following_topics",
+    "host": "<base-url>",
+    "route": "/people/{member_id}/following_topics",
+    "dynamic_url": false,
+    "category": "people-social",
+    "service": "com.zhihu.android.profile.api.p3080h.InterfaceC57013a",
+    "java_method": "getFollowingTopicsByUserId",
+    "return_type": "Observable<Response<TopicList>>",
+    "response_model": "TopicList",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "member_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 195,
+    "signature": "Observable<Response<TopicList>> getFollowingTopicsByUserId(@InterfaceC84667s(\"member_id\") String str, @InterfaceC84668t(\"offset\") long j);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_user_following_topics",
+    "flutter_role": "user-following-topics",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "path": "/topics/{topic_id}/essence_feeds",
+    "host": "<base-url>",
+    "route": "/topics/{topic_id}/essence_feeds",
+    "dynamic_url": false,
+    "category": "search-discovery",
+    "service": "com.zhihu.android.topic.p3395h3.InterfaceC62793e",
+    "java_method": "m211765u",
+    "return_type": "Observable<Response<ZHObjectList<ZHObject>>>",
+    "response_model": "ZHObjectList<ZHObject>",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "topic_id",
+        "java_type": "String",
+        "java_name": "str",
+        "annotation": "InterfaceC84667s"
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "long",
+        "java_name": "j",
+        "annotation": "InterfaceC84668t"
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "java_name": "i",
+        "annotation": "InterfaceC84668t"
+      }
+    ],
+    "line": 155,
+    "signature": "Observable<Response<ZHObjectList<ZHObject>>> m211765u(@InterfaceC84667s(\"topic_id\") String str, @InterfaceC84668t(\"offset\") long j, @InterfaceC84668t(\"limit\") int i);",
+    "evidence": "ANNOTATION",
+    "confidence": "B",
+    "endpoint_id": "flutter_topic_essence_feeds",
+    "flutter_role": "topic-essence-feeds",
+    "contract_origin": "apk-retrofit",
+    "selection_note": "Exact APK declaration selected by service, method and path."
+  },
+  {
+    "http_method": "GET",
+    "host": "api.zhihu.com",
+    "dynamic_url": false,
+    "category": "content",
+    "java_method": "not-a-fixed-retrofit-declaration",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "column_token",
+        "java_type": "String",
+        "required": true
+      },
+      {
+        "binding": "query",
+        "name": "limit",
+        "java_type": "int",
+        "required": true
+      },
+      {
+        "binding": "query",
+        "name": "offset",
+        "java_type": "int",
+        "required": true
+      }
+    ],
+    "line": 0,
+    "evidence": "RUNTIME",
+    "confidence": "A-runtime-sample/B-contract",
+    "contract_origin": "runtime-discovered",
+    "path": "/columns/{column_token}/articles",
+    "route": "https://api.zhihu.com/columns/{column_token}/articles",
+    "service": "runtime-discovered-public-column-articles",
+    "return_type": "JSON data+paging",
+    "response_model": "runtime-observed Article list",
+    "signature": "GET /columns/{column_token}/articles?limit&offset",
+    "endpoint_id": "flutter_column_articles",
+    "flutter_role": "column-articles",
+    "selection_note": "Not present as a fixed Retrofit path in this APK. Verified 2026-08-12 on api.zhihu.com with public column token hackers: HTTP 200, data[10], paging."
+  },
+  {
+    "http_method": "GET",
+    "host": "api.zhihu.com",
+    "dynamic_url": false,
+    "category": "content",
+    "java_method": "not-a-fixed-retrofit-declaration",
+    "encoding": "none",
+    "headers": [],
+    "parameters": [
+      {
+        "binding": "path",
+        "name": "column_token",
+        "java_type": "String",
+        "required": true
+      }
+    ],
+    "line": 0,
+    "evidence": "RUNTIME",
+    "confidence": "A-runtime-sample/B-contract",
+    "contract_origin": "runtime-discovered",
+    "path": "/columns/{column_token}",
+    "route": "https://api.zhihu.com/columns/{column_token}",
+    "service": "runtime-discovered-public-column-detail",
+    "return_type": "JSON object",
+    "response_model": "runtime-observed Column",
+    "signature": "GET /columns/{column_token}",
+    "endpoint_id": "flutter_column_detail",
+    "flutter_role": "column-detail",
+    "selection_note": "The APK column detail screen is React/RN and has no fixed Retrofit GET annotation. Verified 2026-08-19 in the built Flutter Android client with public token hackers: OAuth-first 40353, bounded guest initialization, guest retry HTTP 200 with Column fields."
+  }
+]

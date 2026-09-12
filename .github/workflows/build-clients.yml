@@ -1,0 +1,129 @@
+name: Build clients
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+env:
+  FLUTTER_VERSION: 3.44.8
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: rsync -a --exclude .git "$GITHUB_WORKSPACE/" /tmp/zhiyue/
+      - run: flutter pub get
+        working-directory: /tmp/zhiyue
+      - run: flutter analyze --no-pub
+        working-directory: /tmp/zhiyue
+      - run: flutter test --no-pub test/app_update_service_test.dart
+        working-directory: /tmp/zhiyue
+      - run: flutter build apk --release --target-platform android-arm64 --obfuscate --split-debug-info=build/private-symbols/android --tree-shake-icons --extra-gen-snapshot-options=--strip
+        working-directory: /tmp/zhiyue
+      - name: Prepare APK
+        run: |
+          cd /tmp/zhiyue
+          version=$(sed -n 's/^version: *\([^+]*\)+\([0-9]*\)$/\1+\2/p' pubspec.yaml)
+          test -n "$version"
+          if unzip -p build/app/outputs/flutter-apk/app-release.apk | strings | grep -Eai 'cloudflare|workers\.dev|/Users/|/home/runner/|BEGIN [A-Z ]*PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9_]{20,}'; then
+            echo "Sensitive build string detected"
+            exit 1
+          fi
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          cp build/app/outputs/flutter-apk/app-release.apk "$GITHUB_WORKSPACE/dist/zhiyue-$version-arm64.apk"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zhiyue-android-arm64
+          path: dist/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: rsync -a --exclude .git "$GITHUB_WORKSPACE/" /tmp/zhiyue/
+      - run: flutter pub get
+        working-directory: /tmp/zhiyue
+      - run: flutter build macos --release
+        working-directory: /tmp/zhiyue
+      - name: Prepare macOS archive
+        run: |
+          cd /tmp/zhiyue
+          version=$(sed -n 's/^version: *\([^+]*\)+\([0-9]*\)$/\1+\2/p' pubspec.yaml)
+          test -n "$version"
+          app=$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -type d | head -n 1)
+          test -n "$app"
+          while IFS= read -r -d '' binary; do
+            if file "$binary" | grep -q 'Mach-O'; then
+              strip -S -x "$binary"
+            fi
+          done < <(find "$app" -type f -print0)
+          if grep -R -a -E -i 'cloudflare|workers\.dev|/Users/|/home/runner/|BEGIN [A-Z ]*PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9_]{20,}' "$app"; then
+            echo "Sensitive build string detected"
+            exit 1
+          fi
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          ditto -c -k --sequesterRsrc --keepParent "$app" "$GITHUB_WORKSPACE/dist/zhiyue-$version-macos.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zhiyue-macos
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - name: Prepare isolated source
+        shell: pwsh
+        run: Copy-Item -Recurse -Force "$env:GITHUB_WORKSPACE" C:\zhiyue
+      - run: flutter pub get
+        working-directory: C:\zhiyue
+      - run: flutter build windows --release
+        working-directory: C:\zhiyue
+      - name: Prepare Windows archive
+        shell: pwsh
+        run: |
+          Set-Location C:\zhiyue
+          $versionLine = Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$'
+          if (-not $versionLine) { throw 'Missing application version' }
+          $version = $versionLine.Matches[0].Groups[1].Value.Trim()
+          $releasePath = 'build\windows\x64\runner\Release'
+          $patterns = 'cloudflare|workers\.dev|C:\\a\\|C:\\Users\\runneradmin\\|BEGIN [A-Z ]*PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9_]{20,}'
+          $match = Get-ChildItem $releasePath -Recurse -File | Select-String -Pattern $patterns
+          if ($match) { throw 'Sensitive build string detected' }
+          New-Item -ItemType Directory -Force -Path "$env:GITHUB_WORKSPACE\dist" | Out-Null
+          Compress-Archive -Path "$releasePath\*" -DestinationPath "$env:GITHUB_WORKSPACE\dist\zhiyue-$version-windows-x64.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: zhiyue-windows-x64
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,362 @@
+part of '../content_pages.dart';
+
+/// The official mobile client keeps the first selection affordance focused on
+/// the two actions people use most often.  The platform menu remains available
+/// behind “更多”, which also preserves Android's share/read-aloud extensions
+/// without letting those actions crowd the initial toolbar.
+class _ZhihuSelectionToolbar extends StatefulWidget {
+  const _ZhihuSelectionToolbar({
+    required this.state,
+    this.onCommentSelection,
+    this.selectionContext = const ContentSelectionContext(),
+    this.segmentIdsForRange,
+  });
+
+  final EditableTextState state;
+  final ValueChanged<ContentSelection>? onCommentSelection;
+  final ContentSelectionContext selectionContext;
+  final List<String> Function(int start, int end)? segmentIdsForRange;
+
+  @override
+  State<_ZhihuSelectionToolbar> createState() => _ZhihuSelectionToolbarState();
+}
+
+class _ZhihuSelectionToolbarState extends State<_ZhihuSelectionToolbar> {
+  var _showPlatformActions = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final state = widget.state;
+    final selection = state.textEditingValue.selection;
+    final selectedText = selection.isValid && !selection.isCollapsed
+        ? selection.textInside(state.textEditingValue.text)
+        : '';
+    final items = _showPlatformActions
+        ? state.contextMenuButtonItems
+        : <ContextMenuButtonItem>[
+            ContextMenuButtonItem(
+              type: ContextMenuButtonType.custom,
+              label: '复制',
+              onPressed: () =>
+                  state.copySelection(SelectionChangedCause.toolbar),
+            ),
+            if (widget.onCommentSelection != null)
+              ContextMenuButtonItem(
+                type: ContextMenuButtonType.custom,
+                label: '评论这段话',
+                onPressed: () {
+                  final context = widget.selectionContext.withSegmentIds(
+                    widget.segmentIdsForRange?.call(
+                          selection.start,
+                          selection.end,
+                        ) ??
+                        const <String>[],
+                  );
+                  ContextMenuController.removeAny();
+                  state.hideToolbar();
+                  widget.onCommentSelection!(
+                    context.create(
+                      quote: selectedText,
+                      startOffset: selection.start,
+                      endOffset: selection.end,
+                    ),
+                  );
+                },
+              ),
+            ContextMenuButtonItem(
+              type: ContextMenuButtonType.custom,
+              label: '全选',
+              onPressed: () => state.selectAll(SelectionChangedCause.toolbar),
+            ),
+            ContextMenuButtonItem(
+              type: ContextMenuButtonType.custom,
+              label: '更多',
+              onPressed: () => setState(() => _showPlatformActions = true),
+            ),
+          ];
+    return AdaptiveTextSelectionToolbar.buttonItems(
+      anchors: state.contextMenuAnchors,
+      buttonItems: items,
+    );
+  }
+}
+
+class _ZhihuSelectableText extends StatefulWidget {
+  const _ZhihuSelectableText(
+    this.data, {
+    super.key,
+    this.style,
+    this.linkUrl = '',
+    this.onLink,
+    this.onCommentSelection,
+    this.selectionContext = const ContentSelectionContext(),
+  });
+
+  final String data;
+  final TextStyle? style;
+  final String linkUrl;
+  final void Function(String url, String title)? onLink;
+  final ValueChanged<ContentSelection>? onCommentSelection;
+  final ContentSelectionContext selectionContext;
+
+  @override
+  State<_ZhihuSelectableText> createState() => _ZhihuSelectableTextState();
+}
+
+class _ZhihuSelectableTextState extends State<_ZhihuSelectableText> {
+  TapGestureRecognizer? _recognizer;
+
+  @override
+  void dispose() {
+    _recognizer?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _recognizer?.dispose();
+    _recognizer = widget.linkUrl.isEmpty || widget.onLink == null
+        ? null
+        : (TapGestureRecognizer()
+            ..onTap = () => widget.onLink!(widget.linkUrl, widget.data));
+    return SelectableText.rich(
+      TextSpan(
+        text: widget.data,
+        style: widget.style?.merge(
+          widget.linkUrl.isEmpty
+              ? null
+              : const TextStyle(color: Color(0xFF175199)),
+        ),
+        recognizer: _recognizer,
+      ),
+      contextMenuBuilder: (context, editableTextState) =>
+          _ZhihuSelectionToolbar(
+            state: editableTextState,
+            onCommentSelection: widget.onCommentSelection,
+            selectionContext: widget.selectionContext,
+          ),
+    );
+  }
+}
+
+class _AuthorAvatar extends StatelessWidget {
+  const _AuthorAvatar({
+    required this.imageUrl,
+    required this.fallback,
+    this.size = 46,
+  });
+
+  final String imageUrl;
+  final String fallback;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final placeholder = CircleAvatar(
+      radius: size / 2,
+      backgroundColor: ZhPalette.ink,
+      foregroundColor: ZhPalette.background,
+      child: Text(
+        fallback,
+        style: const TextStyle(fontWeight: FontWeight.w800),
+      ),
+    );
+    if (imageUrl.isEmpty) return placeholder;
+    return ClipOval(
+      child: ZhihuImage.network(
+        imageUrl,
+        headers: zhihuImageRequestHeaders,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        cacheWidth: (size * 3).round(),
+        cacheHeight: (size * 3).round(),
+        loadingBuilder: (context, child, progress) =>
+            progress == null ? child : placeholder,
+        errorBuilder: (_, _, _) => placeholder,
+      ),
+    );
+  }
+}
+
+class DetailEngagementBar extends StatelessWidget {
+  const DetailEngagementBar({
+    super.key,
+    required this.metrics,
+    required this.onComments,
+    required this.onAction,
+    required this.onMore,
+    this.relationship = const AnswerRelationship(
+      voting: '',
+      isThanked: null,
+      isFavorited: null,
+      isAuthor: null,
+      isFollowingAuthor: null,
+    ),
+    this.busyAction = '',
+  });
+
+  final ContentMetrics metrics;
+  final VoidCallback onComments;
+  final ValueChanged<String> onAction;
+  final VoidCallback onMore;
+  final AnswerRelationship relationship;
+  final String busyAction;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      color: ZhPalette.background,
+      border: Border(top: BorderSide(color: ZhPalette.border)),
+    ),
+    child: SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(8, 5, 8, 4),
+        child: Row(
+          children: [
+            Expanded(
+              child: _DetailAction(
+                icon: Icons.change_history_outlined,
+                label: metrics.voteupCount == null
+                    ? '赞同'
+                    : compactCount(metrics.voteupCount!),
+                semanticLabel: metrics.voteupCount == null
+                    ? '赞同'
+                    : '赞同 ${compactCount(metrics.voteupCount!)}',
+                selected: relationship.isUpvoted,
+                onTap: busyAction.isEmpty ? () => onAction('赞同') : null,
+              ),
+            ),
+            Expanded(
+              child: _DetailAction(
+                icon: Icons.change_history_outlined,
+                iconQuarterTurns: 2,
+                label: '反对',
+                semanticLabel: relationship.isDownvoted ? '已反对' : '反对',
+                selected: relationship.isDownvoted,
+                onTap: busyAction.isEmpty ? () => onAction('反对') : null,
+              ),
+            ),
+            Expanded(
+              child: _DetailAction(
+                icon: Icons.chat_bubble_outline_rounded,
+                label: metrics.commentCount == null
+                    ? '评论'
+                    : compactCount(metrics.commentCount!),
+                semanticLabel: metrics.commentCount == null
+                    ? '查看评论'
+                    : '查看 ${compactCount(metrics.commentCount!)} 条评论',
+                onTap: onComments,
+              ),
+            ),
+            Expanded(
+              child: _DetailAction(
+                icon: Icons.star_border_rounded,
+                label: metrics.favoriteCount == null
+                    ? '收藏'
+                    : compactCount(metrics.favoriteCount!),
+                semanticLabel: metrics.favoriteCount == null
+                    ? '收藏'
+                    : '收藏 ${compactCount(metrics.favoriteCount!)}',
+                selected: relationship.isFavorited == true,
+                onTap: busyAction.isEmpty ? () => onAction('收藏') : null,
+              ),
+            ),
+            Expanded(
+              child: _DetailAction(
+                icon: Icons.more_horiz_rounded,
+                label: '更多',
+                semanticLabel: '更多操作',
+                onTap: onMore,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _DetailAction extends StatelessWidget {
+  const _DetailAction({
+    required this.icon,
+    required this.label,
+    required this.semanticLabel,
+    this.onTap,
+    this.iconQuarterTurns = 0,
+    this.selected = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final String semanticLabel;
+  final VoidCallback? onTap;
+  final int iconQuarterTurns;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = SizedBox(
+      width: double.infinity,
+      height: 46,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          RotatedBox(
+            quarterTurns: iconQuarterTurns,
+            child: Icon(
+              icon,
+              size: 21,
+              color: selected ? const Color(0xFF1677FF) : ZhPalette.ink,
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.fade,
+            softWrap: false,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: selected ? const Color(0xFF1677FF) : ZhPalette.mutedInk,
+              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              fontSize: 11,
+              letterSpacing: 0,
+            ),
+          ),
+        ],
+      ),
+    );
+    return Semantics(
+      button: onTap != null,
+      label: semanticLabel,
+      excludeSemantics: true,
+      child: onTap == null
+          ? content
+          : InkWell(
+              borderRadius: BorderRadius.circular(ZhRadius.input),
+              onTap: onTap,
+              child: content,
+            ),
+    );
+  }
+}
+
+String _mutationError(ApiResponse response) {
+  return response.failure.userMessage;
+}
+
+bool _objectAllowsDelete(Map<String, dynamic> value) {
+  final object = unwrapObject(value);
+  return object['can_delete'] == true || object['canDelete'] == true;
+}
+
+void _showWriteSessionRequired(BuildContext context) {
+  ScaffoldMessenger.of(context)
+    ..hideCurrentSnackBar()
+    ..showSnackBar(
+      const SnackBar(
+        content: Text('请先在“我”中登录。'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+}

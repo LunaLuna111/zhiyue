@@ -100,6 +100,41 @@ void registerSearchSessionTests() {
     expect(find.text('回答、文章、想法或视频'), findsOneWidget);
   });
 
+  testWidgets(
+    'search field clears the query and keeps completion state synced',
+    (tester) async {
+      final transport = _SearchSuggestionTransport();
+      final api = ZhihuApiClient(
+        SessionStore(),
+        transport: transport,
+        xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+      );
+      addTearDown(api.close);
+
+      await tester.pumpWidget(_testApp(SearchPage(api: api)));
+      final input = find.byKey(const ValueKey('search-input'));
+      await tester.enterText(input, 'Flu');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('search-clear')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('search-suggestion-panel')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('search-clear')));
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<TextField>(input).controller!.text, isEmpty);
+      expect(find.byKey(const ValueKey('search-clear')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('search-suggestion-panel')),
+        findsNothing,
+      );
+      expect(find.text('历史搜索'), findsOneWidget);
+    },
+  );
+
   testWidgets('search scope choices grow with large accessibility text', (
     tester,
   ) async {

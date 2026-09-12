@@ -130,6 +130,14 @@ class _SearchPageState extends State<SearchPage>
   final _question = TextEditingController();
   final _content = TextEditingController();
   final _column = TextEditingController();
+  final Map<String, _SearchSuggestionCacheEntry> _suggestionCache = {};
+  final Map<String, Future<List<zhihu_api.SearchSuggestion>>>
+  _suggestionRequests = {};
+  Timer? _suggestionDebounce;
+  List<zhihu_api.SearchSuggestion> _suggestions = const [];
+  String _suggestionsForQuery = '';
+  bool _suggestionsLoading = false;
+  int _suggestionGeneration = 0;
   String _type = 'general';
   String _contentType = 'answer';
 
@@ -138,12 +146,99 @@ class _SearchPageState extends State<SearchPage>
 
   @override
   void dispose() {
+    _suggestionDebounce?.cancel();
     _query.dispose();
     _queryFocus.dispose();
     _question.dispose();
     _content.dispose();
     _column.dispose();
     super.dispose();
+  }
+
+  void _onQueryChanged(String value) {
+    _suggestionDebounce?.cancel();
+    final generation = ++_suggestionGeneration;
+    final query = value.trim();
+    if (query.isEmpty) {
+      setState(() {
+        _suggestionsForQuery = '';
+        _suggestions = const [];
+        _suggestionsLoading = false;
+      });
+      return;
+    }
+
+    final cached = _suggestionCache[query];
+    if (cached != null && cached.expiresAt.isAfter(DateTime.now())) {
+      setState(() {
+        _suggestionsForQuery = query;
+        _suggestions = cached.items;
+        _suggestionsLoading = false;
+      });
+      return;
+    }
+    if (cached != null) _suggestionCache.remove(query);
+
+    setState(() {
+      _suggestionsForQuery = query;
+      _suggestions = const [];
+      _suggestionsLoading = true;
+    });
+    _suggestionDebounce = Timer(const Duration(milliseconds: 280), () {
+      _loadSearchSuggestions(query, generation);
+    });
+  }
+
+  Future<void> _loadSearchSuggestions(String query, int generation) async {
+    final request = _suggestionRequests.putIfAbsent(
+      query,
+      () => widget.api.fetchSearchSuggestions(keyword: query),
+    );
+    try {
+      final List<zhihu_api.SearchSuggestion> items = List.unmodifiable(
+        await request,
+      );
+      _rememberSearchSuggestions(query, items, const Duration(minutes: 5));
+      if (!mounted || generation != _suggestionGeneration) return;
+      setState(() {
+        _suggestionsForQuery = query;
+        _suggestions = items;
+        _suggestionsLoading = false;
+      });
+    } catch (_) {
+      // Keep the input usable when the public completion endpoint is blocked
+      // or temporarily unavailable. A short empty cache prevents a request
+      // on every rebuild while allowing a later retry.
+      _rememberSearchSuggestions(
+        query,
+        const <zhihu_api.SearchSuggestion>[],
+        const Duration(seconds: 8),
+      );
+      if (!mounted || generation != _suggestionGeneration) return;
+      setState(() {
+        _suggestionsForQuery = query;
+        _suggestions = const [];
+        _suggestionsLoading = false;
+      });
+    } finally {
+      if (identical(_suggestionRequests[query], request)) {
+        _suggestionRequests.remove(query);
+      }
+    }
+  }
+
+  void _rememberSearchSuggestions(
+    String query,
+    List<zhihu_api.SearchSuggestion> items,
+    Duration ttl,
+  ) {
+    _suggestionCache[query] = _SearchSuggestionCacheEntry(
+      items: items,
+      expiresAt: DateTime.now().add(ttl),
+    );
+    while (_suggestionCache.length > 24) {
+      _suggestionCache.remove(_suggestionCache.keys.first);
+    }
   }
 
   void _submit([String? query]) {
@@ -153,6 +248,9 @@ class _SearchPageState extends State<SearchPage>
       return;
     }
     _query.text = text;
+    _suggestionDebounce?.cancel();
+    _suggestionGeneration++;
+    _queryFocus.unfocus();
     widget.api.session.rememberSearch(text);
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -237,8 +335,10 @@ class _SearchPageState extends State<SearchPage>
                 focusNode: _queryFocus,
                 autofocus: false,
                 hintText: '搜索知乎内容',
+                onChanged: _onQueryChanged,
                 onSubmitted: _submit,
               ),
+              _buildSearchSuggestionPanel(context),
               const SizedBox(height: 20),
               _SectionHeading(title: '搜索范围', trailing: '左右滑动查看更多'),
               const SizedBox(height: 10),
@@ -260,42 +360,44 @@ class _SearchPageState extends State<SearchPage>
                   },
                 ),
               ),
-              const SizedBox(height: 26),
-              _SectionHeading(
-                title: '历史搜索',
-                action: widget.api.session.searchHistory.isEmpty
-                    ? null
-                    : IconButton(
-                        tooltip: '清空历史搜索',
-                        visualDensity: VisualDensity.compact,
-                        onPressed: widget.api.session.clearSearchHistory,
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          size: 21,
+              if (_query.text.trim().isEmpty) ...[
+                const SizedBox(height: 26),
+                _SectionHeading(
+                  title: '历史搜索',
+                  action: widget.api.session.searchHistory.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: '清空历史搜索',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: widget.api.session.clearSearchHistory,
+                          icon: const Icon(
+                            Icons.delete_outline_rounded,
+                            size: 21,
+                          ),
                         ),
-                      ),
-              ),
-              const SizedBox(height: ZhSpace.sm),
-              if (widget.api.session.searchHistory.isEmpty)
-                const _EmptyHistory()
-              else
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final item in widget.api.session.searchHistory)
-                      ActionChip(
-                        label: Text(item),
-                        onPressed: () => _submit(item),
-                        backgroundColor: ZhPalette.canvas,
-                        side: const BorderSide(color: ZhPalette.border),
-                        shape: const StadiumBorder(),
-                        visualDensity: VisualDensity.compact,
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        labelStyle: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                  ],
                 ),
+                const SizedBox(height: ZhSpace.sm),
+                if (widget.api.session.searchHistory.isEmpty)
+                  const _EmptyHistory()
+                else
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final item in widget.api.session.searchHistory)
+                        ActionChip(
+                          label: Text(item),
+                          onPressed: () => _submit(item),
+                          backgroundColor: ZhPalette.canvas,
+                          side: const BorderSide(color: ZhPalette.border),
+                          shape: const StadiumBorder(),
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          labelStyle: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                    ],
+                  ),
+              ],
             ],
           ),
         ),

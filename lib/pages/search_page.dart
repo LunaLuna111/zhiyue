@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:zhihu_api/zhihu_api.dart' as zhihu_api;
 
 import '../core/api_client.dart';
 import '../core/input_validation.dart';
@@ -18,3 +21,4 @@ part 'search_parts/result_sections.dart';
 part 'search_parts/result_content_cards.dart';
 part 'search_parts/entity_result_cards.dart';
 part 'search_parts/search_controls.dart';
+part 'search_parts/search_suggestions.dart';

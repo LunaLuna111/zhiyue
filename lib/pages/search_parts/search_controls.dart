@@ -6,6 +6,7 @@ class _SearchField extends StatelessWidget {
     required this.hintText,
     required this.onSubmitted,
     this.focusNode,
+    this.onChanged,
     this.autofocus = false,
     this.compact = false,
   });
@@ -14,6 +15,7 @@ class _SearchField extends StatelessWidget {
   final FocusNode? focusNode;
   final String hintText;
   final ValueChanged<String> onSubmitted;
+  final ValueChanged<String>? onChanged;
   final bool autofocus;
   final bool compact;
 
@@ -26,10 +28,12 @@ class _SearchField extends StatelessWidget {
       border: Border.all(color: ZhPalette.border),
     ),
     child: TextField(
+      key: const ValueKey('search-input'),
       controller: controller,
       focusNode: focusNode,
       autofocus: autofocus,
       textInputAction: TextInputAction.search,
+      onChanged: onChanged,
       onSubmitted: onSubmitted,
       decoration: InputDecoration(
         hintText: hintText,

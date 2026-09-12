@@ -4,7 +4,7 @@
 
 知阅是一款使用 Flutter 开发的第三方知乎客户端，侧重原生化阅读体验、完整内容展示、盐选故事阅读、评论交互、隐私保护和本地数据管理。
 
-> 当前版本：0.2.6<br>
+> 当前版本：0.2.7<br>
 > 支持平台：Android arm64、macOS、Windows x64<br>
 > Android / iOS 应用标识：`com.zhiyue.client`<br>
 > 接口库：[LunaLuna111/zhihu_api](https://github.com/LunaLuna111/zhihu_api)
@@ -32,7 +32,7 @@
 
 - 关注、推荐、热榜和故事频道
 - 问题、回答、文章、视频及用户主页
-- 搜索分类、筛选、历史记录和结果卡片
+- 搜索分类、筛选、历史记录、关键词补全和结果卡片
 - 浏览历史、稍后读、点赞及收藏状态
 - 图片预览、缩放和保存到系统相册
 - 阅读页顶部栏与底部栏自动隐藏
@@ -154,7 +154,7 @@ flutter pub get
 zhihu_api:
   git:
     url: https://github.com/LunaLuna111/zhihu_api.git
-    ref: v0.2.0
+    ref: v0.2.1
 ```
 
 阅读正文与书架使用独立的通用 `universal_reader` Flutter/Dart 库。客户端把书籍信息、目录、章节和正文格式，以及书架条目、加载状态和操作回调传入库；知乎接口、盐选传输解密、缓存和 Flutter 平台能力保留在客户端适配层。
@@ -244,8 +244,8 @@ APK 文件名：zhiyue-<versionName>+<versionCode>-arm64.apk
 例如：
 
 ```text
-Release 标签：v0.2.6
-APK 文件名：zhiyue-0.2.6+118-arm64.apk
+Release 标签：v0.2.7
+APK 文件名：zhiyue-0.2.7+119-arm64.apk
 ```
 
 下载和安装前会依次检查：

@@ -11,6 +11,7 @@ import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';
 import 'content_pages.dart';
+import 'my_page.dart';
 import 'salt_page.dart';
 import 'web_page.dart';
 

@@ -162,6 +162,38 @@ void registerSearchSessionTests() {
     },
   );
 
+  testWidgets('search history and hot-search menus expose aligned actions', (
+    tester,
+  ) async {
+    final session = SessionStore()..searchHistory = ['Flutter'];
+    final api = ZhihuApiClient(
+      session,
+      transport: _SearchSuggestionTransport(),
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(_testApp(SearchPage(api: api)));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('search-history-more')));
+    await tester.pumpAndSettle();
+    expect(find.text('清空搜索历史'), findsOneWidget);
+    expect(find.text('前往设置关闭搜索历史'), findsOneWidget);
+
+    await tester.tap(find.text('清空搜索历史'));
+    await tester.pumpAndSettle();
+    expect(session.searchHistory, isEmpty);
+
+    await tester.tap(find.byKey(const ValueKey('search-hot-more')));
+    await tester.pumpAndSettle();
+    expect(find.text('关闭热搜显示'), findsOneWidget);
+
+    await tester.tap(find.text('关闭热搜显示'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AppSettingsPage), findsOneWidget);
+  });
+
   testWidgets('route search focuses on open when explicitly requested', (
     tester,
   ) async {

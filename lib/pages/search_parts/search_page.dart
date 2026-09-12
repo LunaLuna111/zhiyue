@@ -289,6 +289,40 @@ class _SearchPageState extends State<SearchPage>
     setState(() {});
   }
 
+  Future<void> _clearSearchHistoryFromMenu() async {
+    await widget.api.session.clearSearchHistory();
+  }
+
+  void _openSearchSettings() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) =>
+            AppSettingsPage(session: widget.api.session, api: widget.api),
+      ),
+    );
+  }
+
+  Widget _searchHistoryMenu() => PopupMenuButton<String>(
+    key: const ValueKey('search-history-more'),
+    tooltip: '搜索历史更多操作',
+    icon: const Icon(Icons.more_horiz_rounded, size: 21),
+    onSelected: (value) {
+      switch (value) {
+        case 'clear':
+          unawaited(_clearSearchHistoryFromMenu());
+          return;
+        case 'settings':
+          _openSearchSettings();
+          return;
+      }
+    },
+    itemBuilder: (context) => [
+      if (widget.api.session.searchHistory.isNotEmpty)
+        const PopupMenuItem<String>(value: 'clear', child: Text('清空搜索历史')),
+      const PopupMenuItem<String>(value: 'settings', child: Text('前往设置关闭搜索历史')),
+    ],
+  );
+
   Future<List<SearchHotItem>> _requestHotSearch() async {
     final response = await widget.api.publicWebGet('/api/v4/search/hot_search');
     if (!response.isSuccess) throw response.failure;
@@ -485,20 +519,7 @@ class _SearchPageState extends State<SearchPage>
               if (_query.text.trim().isEmpty &&
                   widget.api.session.rememberSearchHistory) ...[
                 const SizedBox(height: 26),
-                _SectionHeading(
-                  title: '历史搜索',
-                  action: widget.api.session.searchHistory.isEmpty
-                      ? null
-                      : IconButton(
-                          tooltip: '清空历史搜索',
-                          visualDensity: VisualDensity.compact,
-                          onPressed: widget.api.session.clearSearchHistory,
-                          icon: const Icon(
-                            Icons.delete_outline_rounded,
-                            size: 21,
-                          ),
-                        ),
-                ),
+                _SectionHeading(title: '历史搜索', action: _searchHistoryMenu()),
                 const SizedBox(height: ZhSpace.sm),
                 if (widget.api.session.searchHistory.isEmpty)
                   const _EmptyHistory()
@@ -529,6 +550,7 @@ class _SearchPageState extends State<SearchPage>
                   loading: _hotSearchLoading,
                   onRefresh: _refreshHotSearch,
                   onSelected: _submit,
+                  onOpenSettings: _openSearchSettings,
                 ),
               ],
             ],

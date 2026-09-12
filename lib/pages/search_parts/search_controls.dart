@@ -181,12 +181,14 @@ class _SearchHotSection extends StatelessWidget {
     required this.loading,
     required this.onRefresh,
     required this.onSelected,
+    required this.onOpenSettings,
   });
 
   final List<SearchHotItem> items;
   final bool loading;
   final VoidCallback onRefresh;
   final ValueChanged<String> onSelected;
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -208,11 +210,30 @@ class _SearchHotSection extends StatelessWidget {
                   ),
                 ),
               ),
-              IconButton(
-                key: const ValueKey('search-hot-refresh'),
-                tooltip: '刷新热搜',
-                onPressed: loading ? null : onRefresh,
-                icon: const Icon(Icons.refresh_rounded, size: 21),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    key: const ValueKey('search-hot-refresh'),
+                    tooltip: '刷新热搜',
+                    onPressed: loading ? null : onRefresh,
+                    icon: const Icon(Icons.refresh_rounded, size: 21),
+                  ),
+                  PopupMenuButton<String>(
+                    key: const ValueKey('search-hot-more'),
+                    tooltip: '热搜更多操作',
+                    icon: const Icon(Icons.more_horiz_rounded, size: 21),
+                    onSelected: (value) {
+                      if (value == 'settings') onOpenSettings();
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem<String>(
+                        value: 'settings',
+                        child: Text('关闭热搜显示'),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

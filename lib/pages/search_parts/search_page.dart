@@ -36,6 +36,13 @@ class SearchFilterOption {
   final String linkName;
 }
 
+class _SearchHotCacheEntry {
+  List<SearchHotItem> items = const [];
+  DateTime expiresAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime emptyUntil = DateTime.fromMillisecondsSinceEpoch(0);
+  Future<List<SearchHotItem>>? request;
+}
+
 /// Public `GET /search/customize` response verified on 2026-08-20. The live
 /// response remains the source of truth; this snapshot keeps the controls
 /// usable if that non-content configuration request temporarily fails.
@@ -190,6 +197,9 @@ class SearchPage extends StatefulWidget {
 
 class _SearchPageState extends State<SearchPage>
     with AutomaticKeepAliveClientMixin {
+  static final Expando<_SearchHotCacheEntry> _hotCaches =
+      Expando<_SearchHotCacheEntry>();
+
   final _query = TextEditingController();
   final _queryFocus = FocusNode();
   final _question = TextEditingController();
@@ -198,6 +208,7 @@ class _SearchPageState extends State<SearchPage>
   late final _SearchSuggestionController _suggestions;
   final _hotSearchItems = <SearchHotItem>[];
   bool _hotSearchLoading = true;
+  int _hotSearchGeneration = 0;
   String _type = 'general';
   String _contentType = 'answer';
 
@@ -236,30 +247,76 @@ class _SearchPageState extends State<SearchPage>
     if (!_queryFocus.hasFocus) _suggestions.dismiss();
   }
 
-  Future<void> _loadHotSearch() async {
-    try {
-      final response = await widget.api.publicWebGet(
-        '/api/v4/search/hot_search',
-      );
-      if (!mounted) return;
-      final items = response.isSuccess
-          ? parseSearchHotItems(response.json)
-          : const <SearchHotItem>[];
+  Future<List<SearchHotItem>> _requestHotSearch() async {
+    final response = await widget.api.publicWebGet('/api/v4/search/hot_search');
+    if (!response.isSuccess) throw response.failure;
+    return parseSearchHotItems(response.json);
+  }
+
+  Future<void> _loadHotSearch({bool force = false}) async {
+    final generation = ++_hotSearchGeneration;
+    final cache = _hotCaches[widget.api] ??= _SearchHotCacheEntry();
+    final now = DateTime.now();
+    if (!force && cache.items.isNotEmpty && cache.expiresAt.isAfter(now)) {
+      if (!mounted || generation != _hotSearchGeneration) return;
       setState(() {
         _hotSearchItems
           ..clear()
-          ..addAll(items);
+          ..addAll(cache.items);
+        _hotSearchLoading = false;
+      });
+      return;
+    }
+    if (!force && cache.emptyUntil.isAfter(now)) {
+      if (mounted && generation == _hotSearchGeneration) {
+        setState(() {
+          _hotSearchItems
+            ..clear()
+            ..addAll(cache.items);
+          _hotSearchLoading = false;
+        });
+      }
+      return;
+    }
+    if (mounted && !_hotSearchLoading) {
+      setState(() => _hotSearchLoading = true);
+    }
+    final request = cache.request ??= _requestHotSearch();
+    try {
+      final items = await request;
+      if (items.isNotEmpty) {
+        cache.items = List.unmodifiable(items);
+        cache.expiresAt = DateTime.now().add(const Duration(minutes: 5));
+        cache.emptyUntil = DateTime.fromMillisecondsSinceEpoch(0);
+      } else {
+        cache.emptyUntil = DateTime.now().add(const Duration(seconds: 8));
+      }
+      if (!mounted || generation != _hotSearchGeneration) return;
+      setState(() {
+        // A temporary empty/invalid response must not erase useful stale
+        // hot-search rows already visible in the page.
+        final visible = items.isNotEmpty ? items : cache.items;
+        _hotSearchItems
+          ..clear()
+          ..addAll(visible);
         _hotSearchLoading = false;
       });
     } catch (_) {
-      if (mounted) setState(() => _hotSearchLoading = false);
+      cache.emptyUntil = DateTime.now().add(const Duration(seconds: 8));
+      if (mounted && generation == _hotSearchGeneration) {
+        // Keep the previous list on refresh failure; the page remains useful
+        // and the refresh button provides a bounded retry path.
+        setState(() => _hotSearchLoading = false);
+      }
+    } finally {
+      if (identical(cache.request, request)) cache.request = null;
     }
   }
 
   void _refreshHotSearch() {
     if (_hotSearchLoading) return;
     setState(() => _hotSearchLoading = true);
-    unawaited(_loadHotSearch());
+    unawaited(_loadHotSearch(force: true));
   }
 
   void _submit([String? query]) {

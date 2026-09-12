@@ -286,6 +286,31 @@ void registerSearchSessionTests() {
     expect(reference.single.query, 'Flutter');
   });
 
+  testWidgets('hot search keeps stale rows when refresh fails', (tester) async {
+    final transport = _SearchSuggestionTransport(failHotRefresh: true);
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(_testApp(SearchPage(api: api)));
+    await tester.pumpAndSettle();
+    expect(find.text('Flutter 热门话题'), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('search-hot-refresh')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Flutter 热门话题'), findsOneWidget);
+    expect(
+      transport.calls.where(
+        (call) => call.uri.path == '/api/v4/search/hot_search',
+      ),
+      hasLength(2),
+    );
+  });
+
   test('official search tabs preserve APK database request types', () {
     expect({
       for (final tab in officialSearchTabs) tab.label: tab.type,
@@ -1909,9 +1934,14 @@ class _IncompleteQuestionSearchTransport extends ApiTransport {
 }
 
 class _SearchSuggestionTransport extends ApiTransport {
-  _SearchSuggestionTransport({this.searchFailure = false});
+  _SearchSuggestionTransport({
+    this.searchFailure = false,
+    this.failHotRefresh = false,
+  });
 
   final bool searchFailure;
+  final bool failHotRefresh;
+  var _hotSearchCalls = 0;
   final List<_RecordedCall> calls = [];
 
   @override
@@ -1945,6 +1975,18 @@ class _SearchSuggestionTransport extends ApiTransport {
       );
     }
     if (uri.path == '/api/v4/search/hot_search') {
+      _hotSearchCalls++;
+      if (failHotRefresh && _hotSearchCalls > 1) {
+        return ApiResponse(
+          uri: uri,
+          statusCode: 503,
+          bodyBytes: 0,
+          json: const {
+            'error': {'code': 503},
+          },
+          headers: const {},
+        );
+      }
       return ApiResponse(
         uri: uri,
         statusCode: 200,

@@ -155,6 +155,106 @@ class _EmptyHistory extends StatelessWidget {
   );
 }
 
+class _SearchHotSection extends StatelessWidget {
+  const _SearchHotSection({
+    required this.items,
+    required this.loading,
+    required this.onRefresh,
+    required this.onSelected,
+  });
+
+  final List<SearchHotItem> items;
+  final bool loading;
+  final VoidCallback onRefresh;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty && !loading) return const SizedBox.shrink();
+    return Semantics(
+      container: true,
+      label: '热搜',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '热搜',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const ValueKey('search-hot-refresh'),
+                tooltip: '刷新热搜',
+                onPressed: loading ? null : onRefresh,
+                icon: const Icon(Icons.refresh_rounded, size: 21),
+              ),
+            ],
+          ),
+          if (loading)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: Colors.transparent,
+            ),
+          for (var index = 0; index < items.length; index++)
+            InkWell(
+              key: ValueKey('search-hot:${items[index].query}'),
+              onTap: () => onSelected(items[index].query),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 28,
+                      child: Text(
+                        '${index + 1}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: index < 3
+                              ? ZhPalette.ink
+                              : ZhPalette.subtleInk,
+                          fontWeight: index < 3 ? FontWeight.w700 : null,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        items[index].displayQuery,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                    if (items[index].heatScore > 0)
+                      Text(
+                        _formatHotScore(items[index].heatScore),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ZhPalette.subtleInk,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static String _formatHotScore(int score) {
+    if (score < 10000) return '$score';
+    final value = score / 10000;
+    final text = value >= 100
+        ? value.toStringAsFixed(0)
+        : value.toStringAsFixed(value >= 10 ? 1 : 2);
+    return '${text.replaceFirst(RegExp(r'\.0+$'), '')} 万';
+  }
+}
+
 class _InputAction extends StatelessWidget {
   const _InputAction({required this.onPressed});
 

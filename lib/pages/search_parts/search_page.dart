@@ -114,6 +114,59 @@ List<List<SearchFilterOption>> parseSearchFilterGroups(Object? value) {
   return List.unmodifiable(groups);
 }
 
+class SearchHotItem {
+  const SearchHotItem({
+    required this.query,
+    required this.displayQuery,
+    required this.heatScore,
+  });
+
+  final String query;
+  final String displayQuery;
+  final int heatScore;
+}
+
+/// Supports both the current `top_search.words` payload and the older
+/// `hot_search_queries` list used by the reference client.
+List<SearchHotItem> parseSearchHotItems(Object? value, {int limit = 15}) {
+  if (limit <= 0 || value is! Map) return const [];
+  final root = value.map((key, item) => MapEntry(key.toString(), item));
+  final topSearch = root['top_search'] ?? root['topSearch'];
+  final words = topSearch is Map
+      ? topSearch['words'] ?? topSearch['items']
+      : null;
+  final rawItems = words is List
+      ? words
+      : root['hot_search_queries'] is List
+      ? root['hot_search_queries'] as List
+      : root['data'] is List
+      ? root['data'] as List
+      : const <Object?>[];
+  final result = <SearchHotItem>[];
+  final seen = <String>{};
+  for (final raw in rawItems) {
+    if (raw is! Map) continue;
+    final item = raw.map((key, item) => MapEntry(key.toString(), item));
+    final query = plainText(item['query'] ?? item['display_query']);
+    if (query.isEmpty || !seen.add(query.toLowerCase())) continue;
+    final displayQuery = plainText(item['display_query'] ?? query);
+    final scoreValue =
+        item['heat_score'] ?? item['heatScore'] ?? item['hot_score'];
+    final heatScore = scoreValue is num
+        ? scoreValue.toInt()
+        : int.tryParse(plainText(scoreValue)) ?? 0;
+    result.add(
+      SearchHotItem(
+        query: query,
+        displayQuery: displayQuery.isEmpty ? query : displayQuery,
+        heatScore: heatScore < 0 ? 0 : heatScore,
+      ),
+    );
+    if (result.length >= limit) break;
+  }
+  return List.unmodifiable(result);
+}
+
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key, required this.api});
 
@@ -131,6 +184,8 @@ class _SearchPageState extends State<SearchPage>
   final _content = TextEditingController();
   final _column = TextEditingController();
   late final _SearchSuggestionController _suggestions;
+  final _hotSearchItems = <SearchHotItem>[];
+  bool _hotSearchLoading = true;
   String _type = 'general';
   String _contentType = 'answer';
 
@@ -142,6 +197,7 @@ class _SearchPageState extends State<SearchPage>
     super.initState();
     _suggestions = _SearchSuggestionController(widget.api);
     _queryFocus.addListener(_onQueryFocusChanged);
+    unawaited(_loadHotSearch());
   }
 
   @override
@@ -166,6 +222,32 @@ class _SearchPageState extends State<SearchPage>
 
   void _onQueryFocusChanged() {
     if (!_queryFocus.hasFocus) _suggestions.dismiss();
+  }
+
+  Future<void> _loadHotSearch() async {
+    try {
+      final response = await widget.api.publicWebGet(
+        '/api/v4/search/hot_search',
+      );
+      if (!mounted) return;
+      final items = response.isSuccess
+          ? parseSearchHotItems(response.json)
+          : const <SearchHotItem>[];
+      setState(() {
+        _hotSearchItems
+          ..clear()
+          ..addAll(items);
+        _hotSearchLoading = false;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _hotSearchLoading = false);
+    }
+  }
+
+  void _refreshHotSearch() {
+    if (_hotSearchLoading) return;
+    setState(() => _hotSearchLoading = true);
+    unawaited(_loadHotSearch());
   }
 
   void _submit([String? query]) {
@@ -326,6 +408,13 @@ class _SearchPageState extends State<SearchPage>
                         ),
                     ],
                   ),
+                const SizedBox(height: 26),
+                _SearchHotSection(
+                  items: _hotSearchItems,
+                  loading: _hotSearchLoading,
+                  onRefresh: _refreshHotSearch,
+                  onSelected: _submit,
+                ),
               ],
             ],
           ),

@@ -203,8 +203,10 @@ void registerSearchSessionTests() {
       addTearDown(api.close);
 
       await tester.pumpWidget(_testApp(SearchPage(api: api)));
-      await tester.pump();
+      await tester.pumpAndSettle();
       expect(find.text('历史搜索'), findsOneWidget);
+      expect(find.text('热搜'), findsOneWidget);
+      expect(find.text('Flutter 热门话题'), findsOneWidget);
 
       final input = find.byKey(const ValueKey('search-input'));
       await tester.tap(input);
@@ -231,6 +233,31 @@ void registerSearchSessionTests() {
       expect(find.text('历史搜索'), findsOneWidget);
     },
   );
+
+  test('search hot items accept current and reference payload shapes', () {
+    final current = parseSearchHotItems({
+      'top_search': {
+        'words': [
+          {
+            'query': 'DeepSeek',
+            'display_query': 'DeepSeek 热点',
+            'heat_score': 12000,
+          },
+          {'query': 'deepseek'},
+        ],
+      },
+    });
+    expect(current, hasLength(1));
+    expect(current.single.displayQuery, 'DeepSeek 热点');
+    expect(current.single.heatScore, 12000);
+
+    final reference = parseSearchHotItems({
+      'hot_search_queries': [
+        {'query': 'Flutter', 'hot_show': '9999'},
+      ],
+    });
+    expect(reference.single.query, 'Flutter');
+  });
 
   test('official search tabs preserve APK database request types', () {
     expect({
@@ -1881,6 +1908,19 @@ class _SearchSuggestionTransport extends ApiTransport {
         json: const {
           'suggest': [
             {'query': 'Flutter 4.1'},
+          ],
+        },
+        headers: const {},
+      );
+    }
+    if (uri.path == '/api/v4/search/hot_search') {
+      return ApiResponse(
+        uri: uri,
+        statusCode: 200,
+        bodyBytes: 64,
+        json: const {
+          'hot_search_queries': [
+            {'query': 'Flutter 热门话题', 'hot_show': '1.2 万'},
           ],
         },
         headers: const {},

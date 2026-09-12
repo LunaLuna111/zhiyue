@@ -77,7 +77,10 @@ void registerSearchSessionTests() {
   testWidgets('search page aligns official tabs and hides direct ID tools', (
     tester,
   ) async {
-    final api = ZhihuApiClient(SessionStore());
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: _SearchSuggestionTransport(),
+    );
     addTearDown(api.close);
     await tester.pumpWidget(_testApp(SearchPage(api: api)));
 
@@ -132,6 +135,30 @@ void registerSearchSessionTests() {
         findsNothing,
       );
       expect(find.text('历史搜索'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'search honors local history and hot-search visibility settings',
+    (tester) async {
+      final session = SessionStore()
+        ..rememberSearchHistory = false
+        ..showSearchHotSearch = false;
+      final api = ZhihuApiClient(
+        session,
+        transport: _SearchSuggestionTransport(),
+        xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+      );
+      addTearDown(api.close);
+
+      await tester.pumpWidget(_testApp(SearchPage(api: api)));
+      await tester.pumpAndSettle();
+      expect(find.text('历史搜索'), findsNothing);
+      expect(find.text('热搜'), findsNothing);
+
+      await session.setShowSearchHotSearch(true);
+      await tester.pumpAndSettle();
+      expect(find.text('热搜'), findsOneWidget);
     },
   );
 

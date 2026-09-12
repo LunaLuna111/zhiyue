@@ -42,6 +42,16 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     _notifyChanged();
   }
 
+  Future<void> setShowSearchHotSearch(bool value) async {
+    if (showSearchHotSearch == value) return;
+    showSearchHotSearch = value;
+    await _writePreference(
+      _SessionStoreCore._showSearchHotKey,
+      value.toString(),
+    );
+    _notifyChanged();
+  }
+
   Future<void> setImageCachePreset(ImageCachePreset value) async {
     if (imageCachePreset == value) return;
     imageCachePreset = value;
@@ -177,6 +187,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     reduceMotion = false;
     prefetchImages = true;
     rememberSearchHistory = true;
+    showSearchHotSearch = true;
     imageCachePreset = ImageCachePreset.standard;
     startupPage = AppStartupPage.recommend;
     homeFeedOrder = List<HomeFeedChannel>.from(
@@ -198,6 +209,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
         _safeDelete(_SessionStoreCore._reduceMotionKey),
         _safeDelete(_SessionStoreCore._prefetchImagesKey),
         _safeDelete(_SessionStoreCore._rememberSearchKey),
+        _safeDelete(_SessionStoreCore._showSearchHotKey),
         _safeDelete(_SessionStoreCore._imageCachePresetKey),
         _safeDelete(_SessionStoreCore._startupPageKey),
         _safeDelete(_SessionStoreCore._homeFeedOrderKey),

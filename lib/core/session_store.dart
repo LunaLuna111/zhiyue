@@ -42,6 +42,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   static const _reduceMotionKey = 'zh_setting_reduce_motion';
   static const _prefetchImagesKey = 'zh_setting_prefetch_images';
   static const _rememberSearchKey = 'zh_setting_remember_search';
+  static const _showSearchHotKey = 'zh_setting_show_search_hot';
   static const _imageCachePresetKey = 'zh_setting_image_cache_preset';
   static const _startupPageKey = 'zh_setting_startup_page';
   static const _homeFeedOrderKey = 'zh_setting_home_feed_order';
@@ -97,6 +98,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   bool reduceMotion = false;
   bool prefetchImages = true;
   bool rememberSearchHistory = true;
+  bool showSearchHotSearch = true;
   ImageCachePreset imageCachePreset = ImageCachePreset.standard;
   AppStartupPage startupPage = AppStartupPage.recommend;
   List<HomeFeedChannel> homeFeedOrder = List<HomeFeedChannel>.from(
@@ -242,6 +244,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       read(_rememberSearchKey),
       fallback: true,
     );
+    showSearchHotSearch = _decodeBool(read(_showSearchHotKey), fallback: true);
     imageCachePreset = _decodeEnum(
       read(_imageCachePresetKey),
       ImageCachePreset.values,

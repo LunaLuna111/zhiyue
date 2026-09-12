@@ -489,6 +489,17 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     onChanged: _toggleSearchHistory,
                   ),
                   const Divider(),
+                  _SwitchTile(
+                    key: const ValueKey('show-search-hot-setting'),
+                    icon: Icons.local_fire_department_outlined,
+                    title: '显示热搜',
+                    subtitle: session.showSearchHotSearch
+                        ? '在搜索页显示知乎热搜'
+                        : '搜索页不加载热搜内容',
+                    value: session.showSearchHotSearch,
+                    onChanged: session.setShowSearchHotSearch,
+                  ),
+                  const Divider(),
                   _ActionTile(
                     icon: Icons.delete_sweep_outlined,
                     title: '清空搜索记录',

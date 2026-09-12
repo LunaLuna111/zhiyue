@@ -246,11 +246,17 @@ class _SearchPageState extends State<SearchPage>
     super.initState();
     _suggestions = _SearchSuggestionController(widget.api);
     _queryFocus.addListener(_onQueryFocusChanged);
-    unawaited(_loadHotSearch());
+    widget.api.session.addListener(_onSessionChanged);
+    if (widget.api.session.showSearchHotSearch) {
+      unawaited(_loadHotSearch());
+    } else {
+      _hotSearchLoading = false;
+    }
   }
 
   @override
   void dispose() {
+    widget.api.session.removeListener(_onSessionChanged);
     _queryFocus.removeListener(_onQueryFocusChanged);
     _suggestions.dispose();
     _query.dispose();
@@ -271,6 +277,16 @@ class _SearchPageState extends State<SearchPage>
 
   void _onQueryFocusChanged() {
     if (!_queryFocus.hasFocus) _suggestions.dismiss();
+  }
+
+  void _onSessionChanged() {
+    if (!mounted) return;
+    if (widget.api.session.showSearchHotSearch &&
+        !_hotSearchLoading &&
+        _hotSearchItems.isEmpty) {
+      unawaited(_loadHotSearch());
+    }
+    setState(() {});
   }
 
   Future<List<SearchHotItem>> _requestHotSearch() async {
@@ -466,7 +482,8 @@ class _SearchPageState extends State<SearchPage>
                   },
                 ),
               ),
-              if (_query.text.trim().isEmpty) ...[
+              if (_query.text.trim().isEmpty &&
+                  widget.api.session.rememberSearchHistory) ...[
                 const SizedBox(height: 26),
                 _SectionHeading(
                   title: '历史搜索',
@@ -503,6 +520,9 @@ class _SearchPageState extends State<SearchPage>
                         ),
                     ],
                   ),
+              ],
+              if (_query.text.trim().isEmpty &&
+                  widget.api.session.showSearchHotSearch) ...[
                 const SizedBox(height: 26),
                 _SearchHotSection(
                   items: _hotSearchItems,

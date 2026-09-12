@@ -543,6 +543,26 @@ void registerSearchSessionTests() {
     expect(groups[2][1].linkName, 'a_day');
   });
 
+  test('search rows follow response index and drop repeated identities', () {
+    final rows = orderSearchRowsByResponseIndex([
+      {'type': 'answer', 'id': '2', 'title': '第二条', 'index': '2'},
+      {'type': 'answer', 'id': '1', 'title': '第一条', 'index': '0'},
+      {'type': 'answer', 'id': '1', 'title': '第一条重复项', 'index': '3'},
+      {'type': 'answer', 'id': '3', 'title': '第三条'},
+    ]);
+    final unique = uniqueNewSearchRows(const [], rows);
+
+    expect(unique.map(idOf), ['1', '2', '3']);
+    expect(searchResultIdentityKey(unique[0]), 'id:answer:1');
+    expect(
+      uniqueNewSearchRows(unique, [
+        {'type': 'answer', 'id': '2', 'title': '分页重复'},
+        {'type': 'answer', 'id': '4', 'title': '分页新结果'},
+      ]).map(idOf),
+      ['4'],
+    );
+  });
+
   testWidgets('search filter catalog is cached per api client', (tester) async {
     final transport = _SearchSuggestionTransport();
     final api = ZhihuApiClient(

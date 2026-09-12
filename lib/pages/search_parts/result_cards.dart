@@ -1,5 +1,62 @@
 part of '../search_page.dart';
 
+String searchResultIdentityKey(Map<String, dynamic> row) {
+  final type = typeOf(row).trim().toLowerCase();
+  final object = unwrapObject(row);
+  final objectId = idOf(object).trim();
+  final rowId = idOf(row).trim();
+  final id = objectId.isNotEmpty ? objectId : rowId;
+  if (id.isNotEmpty) return 'id:$type:$id';
+
+  final objectUrl = plainText(object['url']).trim();
+  final rowUrl = plainText(row['url']).trim();
+  final url = objectUrl.isNotEmpty ? objectUrl : rowUrl;
+  if (url.isNotEmpty) return 'url:$type:$url';
+
+  final objectTitle = plainText(object['title'] ?? object['name']).trim();
+  final rowTitle = plainText(row['title'] ?? row['name']).trim();
+  final title = (objectTitle.isNotEmpty ? objectTitle : rowTitle).toLowerCase();
+  if (title.isNotEmpty) return 'title:$type:$title';
+  return '';
+}
+
+List<Map<String, dynamic>> orderSearchRowsByResponseIndex(
+  Iterable<Map<String, dynamic>> rows,
+) {
+  final indexed = rows.toList(growable: false).asMap().entries.toList();
+  indexed.sort((left, right) {
+    int responseIndex(Map<String, dynamic> row, int fallback) {
+      final parsed = int.tryParse(plainText(row['index']));
+      return parsed ?? fallback;
+    }
+
+    final order = responseIndex(
+      left.value,
+      left.key,
+    ).compareTo(responseIndex(right.value, right.key));
+    return order == 0 ? left.key.compareTo(right.key) : order;
+  });
+  return List.unmodifiable(indexed.map((entry) => entry.value));
+}
+
+List<Map<String, dynamic>> uniqueNewSearchRows(
+  Iterable<Map<String, dynamic>> existing,
+  Iterable<Map<String, dynamic>> candidates,
+) {
+  final seen = <String>{};
+  for (final row in existing) {
+    final key = searchResultIdentityKey(row);
+    if (key.isNotEmpty) seen.add(key);
+  }
+  final result = <Map<String, dynamic>>[];
+  for (final row in candidates) {
+    final key = searchResultIdentityKey(row);
+    if (key.isNotEmpty && !seen.add(key)) continue;
+    result.add(row);
+  }
+  return List.unmodifiable(result);
+}
+
 class _SearchResultTab extends StatefulWidget {
   const _SearchResultTab({
     super.key,
@@ -105,12 +162,14 @@ class _SearchResultTabState extends State<_SearchResultTab> {
           return;
         }
         _loadedPageUris.add(requestKey);
-        final pageRows = extractSearchRows(
-          response.json,
-          includeNovelMarketCards: widget.type == 'km_general',
-          includePublicationMarketCards: widget.type == 'publication',
+        final pageRows = orderSearchRowsByResponseIndex(
+          extractSearchRows(
+            response.json,
+            includeNovelMarketCards: widget.type == 'km_general',
+            includePublicationMarketCards: widget.type == 'publication',
+          ),
         );
-        incoming.addAll(pageRows);
+        incoming.addAll(uniqueNewSearchRows([..._rows, ...incoming], pageRows));
         if (pageRows.isEmpty && widget.type == 'km_general') {
           // Structural only: useful when the hybrid novel tab changes its
           // container shape, without logging queries, IDs, text, or URLs.
@@ -170,6 +229,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         // transition frames.
         prefetchObjectImages(context, incoming, limit: 6, concurrency: 2);
       }
+      if (!mounted) return;
       setState(() {
         _rows.addAll(incoming);
         _next = resolvedNext;

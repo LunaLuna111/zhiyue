@@ -710,11 +710,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.2.0"
-      resolved-ref: "819f74a5329d749461b009806e32df92c9a97492"
+      ref: "v0.3.0"
+      resolved-ref: "99feef9201513cc50a58cc5b7c0bd6fe77296bf3"
       url: "https://github.com/LunaLuna111/universal_reader.git"
     source: git
-    version: "0.2.0"
+    version: "0.3.0"
   url_launcher:
     dependency: "direct main"
     description:

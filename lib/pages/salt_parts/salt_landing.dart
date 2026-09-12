@@ -16,18 +16,10 @@ class _SaltPageState extends State<SaltPage>
   bool _bookshelfLoading = false;
   Object? _bookshelfSyncError;
   int _shelfTabIndex = 0;
-  bool _shelfManageMode = false;
-  bool _shelfControlsVisible = true;
-  bool _shelfBatchBusy = false;
-  final _selectedShelfIds = <String>{};
-  bool _shelfDownloadedOnly = false;
   final _shelfDownloadCounts = <String, int>{};
-  String _shelfPropertyFilter = '';
   final _shelfRows = <int, List<Map<String, dynamic>>>{};
   final _shelfErrors = <int, Object?>{};
   final _shelfLoadingTabs = <int>{};
-
-  static const _shelfTabs = ['书架', '赞过', '弹评', '历史记录', '书单'];
 
   @override
   void initState() {
@@ -291,91 +283,319 @@ class _SaltPageState extends State<SaltPage>
 
   void _selectShelfTab(int index) {
     if (_shelfTabIndex == index) return;
-    setState(() {
-      _shelfTabIndex = index;
-      _shelfManageMode = false;
-      _selectedShelfIds.clear();
-      _shelfControlsVisible = true;
-    });
+    setState(() => _shelfTabIndex = index);
     unawaited(_loadShelfTab(index));
   }
 
-  void _toggleShelfManageMode() {
-    setState(() {
-      _shelfManageMode = !_shelfManageMode;
-      _selectedShelfIds.clear();
-      _shelfControlsVisible = true;
-    });
-  }
-
-  void _toggleShelfSelection(String businessId) {
-    setState(() {
-      if (!_selectedShelfIds.remove(businessId)) {
-        _selectedShelfIds.add(businessId);
-      }
-    });
-  }
-
-  List<SaltBookshelfEntry> get _selectedShelfEntries => _bookshelf.entries
-      .where((entry) => _selectedShelfIds.contains(entry.businessId))
-      .toList(growable: false);
-
-  void _toggleSelectAll() {
-    final ids = _bookshelf.entries.map((entry) => entry.businessId).toSet();
-    setState(() {
-      if (_selectedShelfIds.length == ids.length &&
-          _selectedShelfIds.containsAll(ids)) {
-        _selectedShelfIds.clear();
-      } else {
-        _selectedShelfIds
-          ..clear()
-          ..addAll(ids);
-      }
-    });
-  }
-
-  Future<void> _deleteSelectedShelfEntries() async {
-    final selected = _selectedShelfEntries;
-    if (selected.isEmpty || _shelfBatchBusy) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text('删除 ${selected.length} 本作品？'),
-        content: const Text('将从本地书架移除所选作品。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('取消'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('删除'),
-          ),
-        ],
+  List<ReaderShelfTab> get _readerShelfTabs => [
+    ReaderShelfTab(
+      id: 'bookshelf',
+      label: '书架',
+      entries: _bookshelf.entries
+          .map(_readerShelfEntryFromLocal)
+          .toList(growable: false),
+      canManage: true,
+      isLoading: _bookshelfLoading,
+      error: _bookshelfSyncError,
+    ),
+    for (var index = 1; index < 5; index++)
+      ReaderShelfTab(
+        id: switch (index) {
+          1 => 'liked',
+          2 => 'comments',
+          3 => 'history',
+          _ => 'lists',
+        },
+        label: switch (index) {
+          1 => '赞过',
+          2 => '弹评',
+          3 => '历史记录',
+          _ => '书单',
+        },
+        entries: (_shelfRows[index] ?? const <Map<String, dynamic>>[])
+            .asMap()
+            .entries
+            .map(
+              (entry) => _readerShelfEntryFromRemote(
+                tab: index,
+                index: entry.key,
+                row: entry.value,
+              ),
+            )
+            .toList(growable: false),
+        isLoading: _shelfLoadingTabs.contains(index),
+        error: _shelfErrors[index],
       ),
+  ];
+
+  ReaderShelfEntry _readerShelfEntryFromLocal(SaltBookshelfEntry entry) {
+    final object = entry.cardJson;
+    final book = _readerBookInfo(
+      businessId: entry.businessId,
+      fallbackTitle: entry.displayTitle,
+      fallbackArtwork: entry.artwork,
+      value: object,
     );
-    if (confirmed != true || !mounted) return;
-    setState(() => _shelfBatchBusy = true);
-    for (final entry in selected) {
-      await _bookshelf.remove(entry.businessId);
-    }
-    if (!mounted) return;
-    setState(() {
-      _selectedShelfIds.clear();
-      _shelfBatchBusy = false;
-    });
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('已删除 ${selected.length} 本作品')));
+    final total = book.totalChapterCount;
+    return ReaderShelfEntry(
+      id: entry.businessId,
+      book: book,
+      propertyType: entry.propertyType,
+      sectionId: entry.sectionId,
+      addedAt: entry.addedAt,
+      downloadedChapterCount: _shelfDownloadCounts[entry.businessId] ?? 0,
+      totalChapterCount: total,
+      isDownloaded: (_shelfDownloadCounts[entry.businessId] ?? 0) > 0,
+      metadata: _readerShelfMetadata(object),
+      payload: object,
+    );
   }
 
-  Future<void> _downloadSelectedShelfEntries() async {
-    final selected = _selectedShelfEntries;
-    if (selected.isEmpty || _shelfBatchBusy) return;
-    setState(() => _shelfBatchBusy = true);
-    final windowWidth = MediaQuery.sizeOf(context).width.round();
-    var completed = 0;
+  ReaderShelfEntry _readerShelfEntryFromRemote({
+    required int tab,
+    required int index,
+    required Map<String, dynamic> row,
+  }) {
+    final entry = _bookshelfEntryFromRemote(row);
+    final object = <String, dynamic>{
+      ...unwrapObject(row),
+      'business_id': entry.businessId,
+      'property_type': entry.propertyType,
+      'title': entry.displayTitle,
+      if (entry.artwork.isNotEmpty) 'artwork': entry.artwork,
+      if (entry.sectionId.isNotEmpty) 'section_id': entry.sectionId,
+    };
+    final book = _readerBookInfo(
+      businessId: entry.businessId,
+      fallbackTitle: entry.displayTitle,
+      fallbackArtwork: entry.artwork,
+      value: object,
+    );
+    final downloaded =
+        _readerShelfInt(object, const [
+          '_downloaded_section_count',
+          'downloaded_section_count',
+          'offline_section_count',
+        ]) ??
+        0;
+    final id = entry.businessId.isEmpty
+        ? 'remote-$tab-$index'
+        : entry.businessId;
+    return ReaderShelfEntry(
+      id: id,
+      book: book,
+      propertyType: entry.propertyType,
+      sectionId: entry.sectionId,
+      addedAt: entry.addedAt,
+      downloadedChapterCount: downloaded,
+      totalChapterCount: book.totalChapterCount,
+      isDownloaded:
+          object['offline'] == true ||
+          object['is_download'] == true ||
+          object['isDownload'] == true,
+      metadata: _readerShelfMetadata(object),
+      payload: row,
+    );
+  }
+
+  ReaderBookInfo _readerBookInfo({
+    required String businessId,
+    required String fallbackTitle,
+    required String fallbackArtwork,
+    required Map<String, dynamic> value,
+  }) {
+    final object = unwrapObject(value);
+    final parent = _saltMap(object['parent']) ?? const <String, dynamic>{};
+    final author = _saltMergePersonMaps([
+      object['author'],
+      object['author_info'],
+      object['producer'],
+      object['producer_info'],
+      parent['author'],
+      parent['author_info'],
+      parent['producer'],
+    ]);
+    String firstText(Iterable<Object?> values) {
+      for (final candidate in values) {
+        final text = saltProductValueText(candidate).trim();
+        if (text.isNotEmpty) return text;
+      }
+      return '';
+    }
+
+    String personText(List<String> keys) {
+      if (author == null) return '';
+      for (final key in keys) {
+        final text = saltProductValueText(author[key]).trim();
+        if (text.isNotEmpty) return text;
+      }
+      return '';
+    }
+
+    final authorName = firstText([
+      object['producer_name'],
+      object['author_name'],
+      object['producer'],
+      object['author'],
+      personText(const ['name', 'nickname', 'display_name', 'user_name']),
+      _findString(object, const ['author_name', 'producer_name']),
+    ]);
+    final description = firstText([
+      saltProductIntroduction(object),
+      saltProductIntroduction(parent),
+      object['description'],
+      object['summary'],
+    ]);
+    final artwork = firstText([
+      object['artwork'],
+      object['tab_artwork'],
+      object['cover_url'],
+      parent['artwork'],
+      parent['tab_artwork'],
+      fallbackArtwork,
+    ]);
+    final title = firstText([
+      object['title'],
+      object['content_title'],
+      parent['title'],
+      parent['name'],
+      fallbackTitle,
+    ]);
+    final total =
+        _readerShelfInt(object, const [
+          '_total_section_count',
+          'total_section_count',
+          'section_count',
+          'chapter_count',
+          'content_count',
+        ]) ??
+        _readerShelfInt(parent, const [
+          'total_section_count',
+          'section_count',
+          'chapter_count',
+          'content_count',
+        ]);
+    final labels = <String>[];
+    for (final label in [
+      ..._saltMetadataLabels(object, const ['labels', 'sell_labels', 'tags']),
+      ..._saltMetadataLabels(parent, const ['labels', 'sell_labels', 'tags']),
+    ]) {
+      if (label.trim().isNotEmpty && !labels.contains(label)) labels.add(label);
+    }
+    final metadata = <String, Object?>{
+      ..._readerShelfMetadata(object),
+      'business_id': businessId,
+      if (authorName.isNotEmpty) 'author_name': authorName,
+      if (personText(const ['headline', 'slogan']).isNotEmpty)
+        'author_headline': personText(const ['headline', 'slogan']),
+      if (personText(const ['bio', 'description', 'introduction']).isNotEmpty)
+        'author_bio': personText(const ['bio', 'description', 'introduction']),
+    };
+    return ReaderBookInfo(
+      id: businessId,
+      title: title.isEmpty ? '盐选作品' : title,
+      author: authorName,
+      description: description,
+      coverUrl: artwork,
+      totalChapterCount: total,
+      tags: labels,
+      updatedAt: _readerShelfDate(object) ?? _readerShelfDate(parent),
+      metadata: metadata,
+    );
+  }
+
+  Map<String, Object?> _readerShelfMetadata(Map<String, dynamic> value) => {
+    for (final entry in value.entries) entry.key: entry.value,
+  };
+
+  int? _readerShelfInt(Map<String, dynamic> value, List<String> keys) {
+    final result = _saltMetadataInt(value, keys);
+    if (result != null && result > 0) return result;
+    return null;
+  }
+
+  DateTime? _readerShelfDate(Map<String, dynamic> value) {
+    for (final key in const [
+      'updated_at',
+      'update_time',
+      'updated_timestamp',
+      'created_at',
+      'ctime',
+    ]) {
+      final raw = value[key];
+      if (raw is DateTime) return raw;
+      final number = raw is num ? raw.toInt() : int.tryParse(plainText(raw));
+      if (number != null && number > 0) {
+        final milliseconds = number < 100000000000 ? number * 1000 : number;
+        return DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+      }
+      final parsed = DateTime.tryParse(plainText(raw));
+      if (parsed != null) return parsed;
+    }
+    return null;
+  }
+
+  Map<String, dynamic> _readerShelfCardValue(ReaderShelfEntry entry) {
+    final source = entry.payload;
+    final value = source is Map
+        ? <String, dynamic>{
+            for (final item in source.entries) item.key.toString(): item.value,
+          }
+        : <String, dynamic>{};
+    return <String, dynamic>{
+      ...value,
+      'business_id': entry.book.id,
+      'property_type': entry.propertyType,
+      'title': entry.book.title,
+      if (entry.book.author.isNotEmpty) 'producer_name': entry.book.author,
+      if (entry.book.description.isNotEmpty)
+        'description': entry.book.description,
+      if (entry.book.coverUrl.isNotEmpty) 'artwork': entry.book.coverUrl,
+      if (entry.book.tags.isNotEmpty) 'labels': entry.book.tags,
+      if (entry.sectionId.isNotEmpty) 'section_id': entry.sectionId,
+      '_downloaded_section_count': entry.downloadedCount,
+      if (entry.totalCount != null) '_total_section_count': entry.totalCount,
+    };
+  }
+
+  Widget _buildReaderShelfCard(BuildContext context, ReaderShelfEntry entry) =>
+      SaltCatalogCard(
+        value: _readerShelfCardValue(entry),
+        coverWidth: 76,
+        coverHeight: 106,
+        onTap: () => _openReaderShelfEntry(entry),
+      );
+
+  void _openReaderShelfEntry(ReaderShelfEntry entry) {
+    _openSaltCard(_readerShelfCardValue(entry));
+  }
+
+  Future<void> _refreshShelf() => _loadBookshelf(refresh: true);
+
+  Future<void> _retryShelfTab(int index) => index == 0
+      ? _loadBookshelf(refresh: true)
+      : _loadShelfTab(index, refresh: true);
+
+  Future<void> _deleteSelectedShelfEntries(
+    List<ReaderShelfEntry> selected,
+  ) async {
     for (final entry in selected) {
+      final local = _bookshelf.entries
+          .where((item) => item.businessId == entry.id)
+          .firstOrNull;
+      if (local != null) await _bookshelf.remove(local.businessId);
+    }
+  }
+
+  Future<void> _downloadSelectedShelfEntries(
+    List<ReaderShelfEntry> selected,
+  ) async {
+    final windowWidth = MediaQuery.sizeOf(context).width.round();
+    for (final shelfEntry in selected) {
+      final entry = _bookshelf.entries
+          .where((item) => item.businessId == shelfEntry.id)
+          .firstOrNull;
+      if (entry == null) continue;
       try {
         var sectionId = entry.sectionId;
         var sectionTitle = entry.displayTitle;
@@ -402,83 +622,12 @@ class _SaltPageState extends State<SaltPage>
           sectionIndex: sectionIndex,
           windowWidth: windowWidth,
         );
-        completed++;
       } catch (_) {
         // Continue with the remaining selected works, matching the original
         // batch shelf action instead of aborting the whole queue.
       }
     }
-    if (!mounted) return;
     await _loadShelfDownloadCounts();
-    if (!mounted) return;
-    setState(() => _shelfBatchBusy = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('已下载 $completed/${selected.length} 本作品的当前章节')),
-    );
-  }
-
-  bool _handleShelfScroll(UserScrollNotification notification) {
-    if (_shelfManageMode || notification.direction == ScrollDirection.idle) {
-      return false;
-    }
-    final visible = notification.direction == ScrollDirection.forward;
-    if (visible != _shelfControlsVisible) {
-      setState(() => _shelfControlsVisible = visible);
-    }
-    return false;
-  }
-
-  List<Map<String, dynamic>> _visibleShelfRows() {
-    final rows = _shelfRows[_shelfTabIndex] ?? const <Map<String, dynamic>>[];
-    return rows
-        .where((row) {
-          if (_shelfPropertyFilter.isNotEmpty) {
-            final object = unwrapObject(row);
-            final type = plainText(
-              object['property_type'] ?? object['producer'] ?? object['type'],
-            );
-            if (type.isNotEmpty && type != _shelfPropertyFilter) return false;
-          }
-          if (_shelfDownloadedOnly) {
-            final object = unwrapObject(row);
-            final downloaded =
-                object['offline'] == true ||
-                object['is_download'] == true ||
-                object['isDownload'] == true;
-            if (!downloaded) return false;
-          }
-          return true;
-        })
-        .toList(growable: false);
-  }
-
-  Future<void> _showShelfFilter() async {
-    final selected = await showModalBottomSheet<String>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final option in const [
-              ('', '全部内容'),
-              ('paid_column', '知识专栏'),
-              ('ebook', '电子书'),
-              ('ebook_audio', '有声书'),
-              ('assessment', '测评'),
-            ])
-              ListTile(
-                title: Text(option.$2),
-                trailing: option.$1 == _shelfPropertyFilter
-                    ? const Icon(Icons.check_rounded, color: Colors.blue)
-                    : null,
-                onTap: () => Navigator.pop(sheetContext, option.$1),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (selected == null || !mounted) return;
-    setState(() => _shelfPropertyFilter = selected);
   }
 
   void _openSaltCard(Map<String, dynamic> value) {
@@ -539,12 +688,14 @@ class _SaltPageState extends State<SaltPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    final entries = _bookshelf.entries;
-    final remoteRows = _visibleShelfRows();
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 0,
-        title: _buildShelfTabs(),
+        title: ReaderShelfTabBar(
+          tabs: _readerShelfTabs,
+          activeIndex: _shelfTabIndex,
+          onChanged: _selectShelfTab,
+        ),
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 10),
@@ -565,158 +716,25 @@ class _SaltPageState extends State<SaltPage>
       body: ZhResponsiveFrame(
         maxWidth: 1120,
         desktopGutter: 24,
-        child: Column(
-          children: [
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              child: _shelfControlsVisible || _shelfManageMode
-                  ? _buildShelfControls()
-                  : const SizedBox.shrink(),
-            ),
-            Expanded(
-              child: NotificationListener<UserScrollNotification>(
-                onNotification: _handleShelfScroll,
-                child: RefreshIndicator(
-                  onRefresh: () async {
-                    await _loadBookshelf(refresh: true);
-                    if (_shelfTabIndex != 0) {
-                      await _loadShelfTab(_shelfTabIndex, refresh: true);
-                    }
-                  },
-                  child: SaltShelfContent(
-                    tabIndex: _shelfTabIndex,
-                    entries: entries,
-                    remoteRows: remoteRows,
-                    propertyFilter: _shelfPropertyFilter,
-                    downloadedOnly: _shelfDownloadedOnly,
-                    downloadCounts: _shelfDownloadCounts,
-                    manageMode: _shelfManageMode,
-                    selectedIds: _selectedShelfIds,
-                    loading: _bookshelfLoading,
-                    syncError: _bookshelfSyncError,
-                    loadingTabs: _shelfLoadingTabs,
-                    errors: _shelfErrors,
-                    onLoadTab: _loadShelfTab,
-                    onOpenCard: _openSaltCard,
-                    onToggleSelection: _toggleShelfSelection,
-                  ),
-                ),
-              ),
-            ),
+        child: ReaderShelfView(
+          tabs: _readerShelfTabs,
+          activeTabIndex: _shelfTabIndex,
+          onTabChanged: _selectShelfTab,
+          itemBuilder: _buildReaderShelfCard,
+          onOpenEntry: _openReaderShelfEntry,
+          onRefresh: _refreshShelf,
+          onRetryTab: _retryShelfTab,
+          onDeleteSelected: _deleteSelectedShelfEntries,
+          onDownloadSelected: _downloadSelectedShelfEntries,
+          filterOptions: const [
+            ReaderShelfFilterOption(value: 'paid_column', label: '知识专栏'),
+            ReaderShelfFilterOption(value: 'ebook', label: '电子书'),
+            ReaderShelfFilterOption(value: 'ebook_audio', label: '有声书'),
+            ReaderShelfFilterOption(value: 'assessment', label: '测评'),
           ],
+          emptyLabel: '本地书架暂无内容',
         ),
       ),
     );
   }
-
-  Widget _buildShelfTabs() => Material(
-    color: Colors.transparent,
-    child: SizedBox(
-      height: kToolbarHeight,
-      child: ListView.separated(
-        padding: const EdgeInsets.only(left: 18, right: 6),
-        scrollDirection: Axis.horizontal,
-        itemCount: _shelfTabs.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 22),
-        itemBuilder: (context, index) {
-          final selected = index == _shelfTabIndex;
-          return InkWell(
-            onTap: () => _selectShelfTab(index),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _shelfTabs[index],
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: selected
-                            ? FontWeight.w800
-                            : FontWeight.w500,
-                        color: selected ? ZhPalette.ink : ZhPalette.mutedInk,
-                      ),
-                    ),
-                    const SizedBox(height: 7),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 180),
-                      height: 3,
-                      width: selected ? 24 : 0,
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade700,
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    ),
-  );
-
-  Widget _buildShelfControls() => Container(
-    decoration: BoxDecoration(
-      border: Border(
-        top: BorderSide(color: Colors.grey.shade200),
-        bottom: BorderSide(color: Colors.grey.shade200),
-      ),
-    ),
-    padding: const EdgeInsets.fromLTRB(18, 9, 18, 9),
-    child: Row(
-      children: [
-        if (_shelfManageMode) ...[
-          TextButton(
-            onPressed: _shelfBatchBusy ? null : _toggleSelectAll,
-            child: const Text('全选'),
-          ),
-          TextButton.icon(
-            onPressed: _selectedShelfIds.isEmpty || _shelfBatchBusy
-                ? null
-                : _downloadSelectedShelfEntries,
-            icon: const Icon(Icons.download_outlined, size: 19),
-            label: const Text('下载'),
-          ),
-          TextButton.icon(
-            onPressed: _selectedShelfIds.isEmpty || _shelfBatchBusy
-                ? null
-                : _deleteSelectedShelfEntries,
-            icon: const Icon(Icons.delete_outline_rounded, size: 19),
-            label: const Text('删除'),
-            style: TextButton.styleFrom(foregroundColor: ZhPalette.danger),
-          ),
-          const Spacer(),
-          Text('已选 ${_selectedShelfIds.length}'),
-          TextButton(
-            onPressed: _toggleShelfManageMode,
-            child: const Text('完成'),
-          ),
-        ] else ...[
-          TextButton.icon(
-            onPressed: _showShelfFilter,
-            icon: const Icon(Icons.tune_rounded, size: 19),
-            label: const Text('筛选'),
-            style: TextButton.styleFrom(foregroundColor: ZhPalette.mutedInk),
-          ),
-          TextButton(
-            onPressed: _shelfTabIndex == 0 ? _toggleShelfManageMode : null,
-            child: const Text('管理'),
-          ),
-          const Spacer(),
-          FilterChip(
-            label: const Text('已下载'),
-            selected: _shelfDownloadedOnly,
-            onSelected: (value) => setState(() => _shelfDownloadedOnly = value),
-            visualDensity: VisualDensity.compact,
-            labelStyle: const TextStyle(fontSize: 13),
-          ),
-        ],
-      ],
-    ),
-  );
-
 }

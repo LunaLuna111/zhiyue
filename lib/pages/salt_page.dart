@@ -5,7 +5,7 @@ import 'dart:math' as math;
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show compute, kDebugMode;
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart' show ScrollDirection;
+import 'package:universal_reader/universal_reader_flutter.dart';
 
 import '../core/api_client.dart';
 import '../core/api_response.dart';
@@ -39,7 +39,6 @@ part 'salt_parts/salt_landing.dart';
 part 'salt_parts/story_home.dart';
 part 'salt_parts/story_modules.dart';
 part '../features/shelf/salt_story_support.dart';
-part '../features/shelf/salt_shelf_content.dart';
 part 'salt_parts/product_page.dart';
 part 'salt_parts/product_widgets.dart';
 part 'salt_parts/product_metadata.dart';

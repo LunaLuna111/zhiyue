@@ -138,22 +138,6 @@ class _CommentRichTextState extends State<CommentRichText> {
   static final Expando<Future<List<CommentEmoticonGroup>>> _remoteCatalogs =
       Expando();
   static final RegExp _tokenPattern = RegExp(r'\[[^\s\[\]\r\n]{1,32}\]');
-  static final RegExp _anchorPattern = RegExp(
-    r'''<a\b([^>]*)>([\s\S]*?)</a\s*>''',
-    caseSensitive: false,
-  );
-  static final RegExp _hrefPattern = RegExp(
-    r'''\bhref\s*=\s*["']([^"']+)["']''',
-    caseSensitive: false,
-  );
-  static final RegExp _classPattern = RegExp(
-    r'''\bclass\s*=\s*["']([^"']*)["']''',
-    caseSensitive: false,
-  );
-  // Keep the renderer and the native editor/parser on one URL grammar. This
-  // also recognizes bare domains such as `example.com/story`, not just
-  // Zhihu-hosted links.
-  static final RegExp _urlPattern = commentUrlPattern;
 
   late Map<String, CommentEmoticon> _lookup;
   late List<ContentNode> _segments;
@@ -411,124 +395,7 @@ class _CommentRichTextState extends State<CommentRichText> {
   }
 
   List<ContentNode> _parseSegments(String raw) {
-    if (raw.trim().isEmpty) return const [];
-    final result = <ContentNode>[];
-    var cursor = 0;
-    for (final match in _anchorPattern.allMatches(raw)) {
-      _appendPlainSegments(raw.substring(cursor, match.start), result);
-      final attributes = match.group(1) ?? '';
-      final classes = _classPattern.firstMatch(attributes)?.group(1) ?? '';
-      final href = normalizeCommentLink(
-        _hrefPattern.firstMatch(attributes)?.group(1),
-      );
-      final innerRaw = match.group(2) ?? '';
-      final inner = plainText(innerRaw);
-      final isSticker = RegExp(
-        r'(^|\s)comment_sticker(\s|$)',
-        caseSensitive: false,
-      ).hasMatch(classes);
-      final isMedia =
-          RegExp(
-            r'(^|\s)comment_(?:img|image|gif|inline_image)(\s|$)',
-            caseSensitive: false,
-          ).hasMatch(classes) ||
-          RegExp(r'<img\b', caseSensitive: false).hasMatch(innerRaw) ||
-          _isImagePlaceholder(inner, href);
-      if (isSticker) {
-        if (inner.isNotEmpty && href.isNotEmpty) {
-          result.add(
-            ContentNode.sticker(
-              inner,
-              url: href,
-              id: 'comment-sticker-${result.length}',
-              title: inner,
-            ),
-          );
-        } else if (inner.isNotEmpty) {
-          _appendPlainSegments(inner, result);
-        }
-      } else if (isMedia) {
-        // Image comments are rendered by _CommentMediaGallery. Rendering the
-        // placeholder anchor here produces a blue “[图片]”/URL text node.
-      } else if (href.isEmpty) {
-        if (inner.isNotEmpty) {
-          _appendPlainSegments(inner, result);
-        }
-      } else {
-        result.add(
-          ContentNode.link(
-            inner.isEmpty ? href : inner,
-            url: href,
-            id: 'comment-link-${result.length}',
-            title: inner,
-          ),
-        );
-      }
-      cursor = match.end;
-    }
-    _appendPlainSegments(raw.substring(cursor), result);
-    return List.unmodifiable(result);
-  }
-
-  bool _isImagePlaceholder(String text, String href) {
-    final label = text.trim().replaceAll(RegExp(r'\s+'), '');
-    if (label != '[图片]' && label != '图片' && label != '[照片]') return false;
-    final uri = Uri.tryParse(href);
-    if (uri == null) return false;
-    final path = uri.path.toLowerCase();
-    return path.endsWith('.jpg') ||
-        path.endsWith('.jpeg') ||
-        path.endsWith('.png') ||
-        path.endsWith('.webp') ||
-        path.endsWith('.gif') ||
-        uri.host.contains('zhimg.com');
-  }
-
-  void _appendPlainSegments(String raw, List<ContentNode> output) {
-    final text = plainText(raw);
-    if (text.isEmpty) return;
-    var cursor = 0;
-    for (final match in _urlPattern.allMatches(text)) {
-      if (match.start > cursor) {
-        output.add(
-          ContentNode.text(
-            text.substring(cursor, match.start),
-            id: 'comment-text-${output.length}',
-          ),
-        );
-      }
-      final consumed = match.group(0) ?? '';
-      final rawUrl = trimCommentLink(consumed);
-      final url = normalizeCommentLink(rawUrl);
-      if (url.isEmpty || rawUrl.isEmpty) {
-        output.add(
-          ContentNode.text(consumed, id: 'comment-text-${output.length}'),
-        );
-      } else {
-        final trailing = consumed.substring(rawUrl.length);
-        output.add(
-          ContentNode.link(
-            rawUrl,
-            url: url,
-            id: 'comment-link-${output.length}',
-          ),
-        );
-        if (trailing.isNotEmpty) {
-          output.add(
-            ContentNode.text(trailing, id: 'comment-text-${output.length}'),
-          );
-        }
-      }
-      cursor = match.end;
-    }
-    if (cursor < text.length) {
-      output.add(
-        ContentNode.text(
-          text.substring(cursor),
-          id: 'comment-text-${output.length}',
-        ),
-      );
-    }
+    return parseCommentContent(raw).nodes;
   }
 
   String _normalizeText(String value) => normalizeCommentEmoticonToken(value);

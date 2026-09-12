@@ -8,6 +8,7 @@ import '../core/api_client.dart';
 import '../core/api_response.dart';
 import '../core/comment_link.dart';
 import '../core/comment_emoticon_assets.dart';
+import '../core/comment_content_parser.dart';
 import '../core/image_export_service.dart';
 import '../core/json_tools.dart';
 import '../ui/zh_components.dart';

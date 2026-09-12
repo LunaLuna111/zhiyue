@@ -1369,6 +1369,31 @@ void registerDetailCommentTests() {
     },
   );
 
+  test('comment DOM parser separates media and protects version text', () {
+    final document = parseCommentContent(
+      'ERNIE 5.0 / Qwen3.5 4.5B '
+      '<a class="comment_img" href="https://pic.example/no-extension">[图片]</a>'
+      '，继续看 example.com/story。'
+      '<a class="comment_sticker" href="https://pic.example/sticker">[赞同]</a>',
+    );
+
+    expect(document.mediaUrls, [
+      'https://pic.example/no-extension',
+      'https://pic.example/sticker',
+    ]);
+    expect(
+      document.nodes.where((node) => node.isLink).map((node) => node.url),
+      ['https://example.com/story'],
+    );
+    final visible = document.nodes
+        .where((node) => node.isText)
+        .map((node) => node.text)
+        .join();
+    expect(visible, contains('ERNIE 5.0 / Qwen3.5 4.5B'));
+    expect(visible, isNot(contains('[图片]')));
+    expect(visible, isNot(contains('[赞同]')));
+  });
+
   test('comment links match native host detection and link-tag fields', () {
     expect(
       extractCommentLinkUrls(
@@ -1455,26 +1480,29 @@ void registerDetailCommentTests() {
     },
   );
 
-  testWidgets('comment sticker anchors retain their server image', (
+  testWidgets('comment sticker anchors render through the media gallery', (
     tester,
   ) async {
     const image = 'https://pic.example/sticker.webp';
     await tester.pumpWidget(
       _testApp(
         const Scaffold(
-          body: CommentRichText(
-            text: '前<a href="$image" class="comment_sticker">[新表情]</a>后',
+          body: CommentCard(
+            compact: true,
+            value: {
+              'id': 'sticker-comment',
+              'content': '前<a href="$image" class="comment_sticker">[新表情]</a>后',
+              'author': {'name': '表情评论用户'},
+            },
           ),
         ),
       ),
     );
     await tester.pump();
-    expect(
-      find.byKey(const ValueKey('comment-remote-emoticon-$image')),
-      findsWidgets,
-    );
+    expect(find.byKey(const ValueKey('comment-image-$image')), findsOneWidget);
+    expect(find.text('[新表情]'), findsNothing);
     final richText = tester.widget<RichText>(find.byType(RichText).last);
-    expect(richText.text.toPlainText(), isNot(contains('[新表情]')));
+    expect(richText.text.toPlainText(), contains('前后'));
   });
 
   testWidgets('comment images render inline and open a safe native preview', (

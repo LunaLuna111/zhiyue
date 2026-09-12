@@ -129,7 +129,10 @@ class _CommentCardState extends State<CommentCard> {
     final replyTarget = commentReplyTargetNameOf(widget.value);
     final content = commentContentOf(widget.value);
     final rawContent = commentRawContentOf(widget.value);
-    final mediaUrls = contentImageUrlsOf(widget.value, limit: 6);
+    final mediaUrls = _commentMediaUrls(
+      widget.value,
+      rawContent.isEmpty ? content : rawContent,
+    );
     final linkTags = commentLinkTagsOf(widget.value);
     final metrics = ContentMetrics.from(widget.value);
     final dateLabel = contentDateLabel(metrics);
@@ -505,6 +508,14 @@ class _CompactCommentRow extends StatelessWidget {
       ),
     ),
   );
+}
+
+List<String> _commentMediaUrls(Map<String, dynamic> value, String rawContent) {
+  final urls = <String>[...contentImageUrlsOf(value, limit: 6)];
+  for (final url in parseCommentContent(rawContent).mediaUrls) {
+    if (!urls.contains(url) && urls.length < 6) urls.add(url);
+  }
+  return List.unmodifiable(urls);
 }
 
 Widget _commentBodyText(

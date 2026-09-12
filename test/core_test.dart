@@ -16,6 +16,7 @@ import 'package:zhiyue_client/core/api_response.dart';
 import 'package:zhiyue_client/core/api_transport_io.dart';
 import 'package:zhiyue_client/core/cloud_id_signer.dart';
 import 'package:zhiyue_client/core/comment_emoticon_assets.dart';
+import 'package:zhiyue_client/core/comment_content_parser.dart';
 import 'package:zhiyue_client/core/comment_link.dart';
 import 'package:zhiyue_client/core/content_filter_stats.dart';
 import 'package:zhiyue_client/core/follow_item_group.dart';

@@ -13,6 +13,8 @@ class _SearchSuggestionCacheEntry {
 class _SearchSuggestionController extends ChangeNotifier {
   _SearchSuggestionController(this.api);
 
+  static const maxQueryLength = 128;
+
   final ZhihuApiClient api;
   final Map<String, _SearchSuggestionCacheEntry> _cache = {};
   final Map<String, Future<List<zhihu_api.SearchSuggestion>>> _requests = {};
@@ -40,22 +42,44 @@ class _SearchSuggestionController extends ChangeNotifier {
       return;
     }
 
-    final cached = _cache[query];
-    if (cached != null && cached.expiresAt.isAfter(DateTime.now())) {
+    if (query.length > maxQueryLength) {
+      _query = query;
+      _items = const [];
+      _loading = false;
+      _notify();
+      return;
+    }
+
+    final cacheKey = _cacheKey(query);
+    final cached = _validCache(cacheKey);
+    if (cached != null) {
       _query = query;
       _items = cached.items;
       _loading = false;
       _notify();
       return;
     }
-    if (cached != null) _cache.remove(query);
+
+    // The official endpoint returns ordered completion phrases. Reuse a
+    // still-fresh shorter-query response when every retained item still
+    // matches the new prefix; this avoids a network round-trip for each IME
+    // keystroke without showing unrelated suggestions.
+    final prefixItems = _cachedPrefixItems(query);
+    if (prefixItems != null) {
+      _query = query;
+      _items = prefixItems;
+      _loading = false;
+      _notify();
+      return;
+    }
 
     _query = query;
-    _items = const [];
+    final retainedItems = _matchingItems(_items, query);
+    _items = retainedItems;
     _loading = true;
     _notify();
     _debounce = Timer(const Duration(milliseconds: 280), () {
-      _load(query, generation);
+      _load(query, generation, fallback: retainedItems);
     });
   }
 
@@ -70,16 +94,21 @@ class _SearchSuggestionController extends ChangeNotifier {
     _notify();
   }
 
-  Future<void> _load(String query, int generation) async {
+  Future<void> _load(
+    String query,
+    int generation, {
+    required List<zhihu_api.SearchSuggestion> fallback,
+  }) async {
+    final requestKey = _cacheKey(query);
     final request = _requests.putIfAbsent(
-      query,
+      requestKey,
       () => api.fetchSearchSuggestions(keyword: query),
     );
     try {
       final items = List<zhihu_api.SearchSuggestion>.unmodifiable(
         await request,
       );
-      _remember(query, items, const Duration(minutes: 5));
+      _remember(requestKey, items, const Duration(minutes: 5));
       if (_disposed || generation != _generation) return;
       _query = query;
       _items = items;
@@ -87,32 +116,96 @@ class _SearchSuggestionController extends ChangeNotifier {
       _notify();
     } catch (_) {
       _remember(
-        query,
+        requestKey,
         const <zhihu_api.SearchSuggestion>[],
         const Duration(seconds: 8),
       );
       if (_disposed || generation != _generation) return;
       _query = query;
-      _items = const [];
+      _items = fallback;
       _loading = false;
       _notify();
     } finally {
-      if (identical(_requests[query], request)) _requests.remove(query);
+      if (identical(_requests[requestKey], request)) {
+        _requests.remove(requestKey);
+      }
     }
   }
 
   void _remember(
-    String query,
+    String cacheKey,
     List<zhihu_api.SearchSuggestion> items,
     Duration ttl,
   ) {
-    _cache[query] = _SearchSuggestionCacheEntry(
+    // Reinsert the key so a frequently used query is not evicted merely
+    // because it was created earlier than the rest of the small LRU window.
+    _cache.remove(cacheKey);
+    _cache[cacheKey] = _SearchSuggestionCacheEntry(
       items: items,
       expiresAt: DateTime.now().add(ttl),
     );
     while (_cache.length > 24) {
       _cache.remove(_cache.keys.first);
     }
+  }
+
+  _SearchSuggestionCacheEntry? _validCache(String cacheKey) {
+    final cached = _cache[cacheKey];
+    if (cached == null) return null;
+    if (cached.expiresAt.isBefore(DateTime.now())) {
+      _cache.remove(cacheKey);
+      return null;
+    }
+    // Promote exact hits so active searches remain in the bounded cache.
+    _cache.remove(cacheKey);
+    _cache[cacheKey] = cached;
+    return cached;
+  }
+
+  List<zhihu_api.SearchSuggestion>? _cachedPrefixItems(String query) {
+    final queryKey = _cacheKey(query);
+    String? bestKey;
+    List<zhihu_api.SearchSuggestion>? bestItems;
+    final now = DateTime.now();
+    for (final entry in List<MapEntry<String, _SearchSuggestionCacheEntry>>.of(
+      _cache.entries,
+    )) {
+      final sourceKey = entry.key;
+      final cached = entry.value;
+      if (cached.expiresAt.isBefore(now)) {
+        _cache.remove(sourceKey);
+        continue;
+      }
+      if (sourceKey.isEmpty || sourceKey.length >= queryKey.length) continue;
+      if (!queryKey.startsWith(sourceKey)) continue;
+      final filtered = _matchingItems(cached.items, query);
+      if (filtered.isEmpty) continue;
+      if (bestKey == null || sourceKey.length > bestKey.length) {
+        bestKey = sourceKey;
+        bestItems = filtered;
+      }
+    }
+    if (bestKey == null || bestItems == null) return null;
+    final cached = _cache.remove(bestKey);
+    if (cached != null) _cache[bestKey] = cached;
+    return bestItems;
+  }
+
+  static String _cacheKey(String query) => query.trim().toLowerCase();
+
+  static List<zhihu_api.SearchSuggestion> _matchingItems(
+    Iterable<zhihu_api.SearchSuggestion> items,
+    String query,
+  ) {
+    final queryKey = _cacheKey(query);
+    if (queryKey.isEmpty) return const [];
+    final seen = <String>{};
+    return List.unmodifiable(
+      items.where((item) {
+        final itemKey = _cacheKey(item.query);
+        return itemKey.startsWith(queryKey) && seen.add(itemKey);
+      }),
+    );
   }
 
   void _notify() {

@@ -164,6 +164,20 @@ void registerSearchSessionTests() {
       hasLength(1),
     );
 
+    // A longer query can reuse the already returned ordered list when it is
+    // still a real prefix of those items. This keeps IME input responsive and
+    // avoids one request per keystroke.
+    await tester.enterText(input, 'Flutt');
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(find.text('Flutter 4.1'), findsOneWidget);
+    expect(
+      transport.calls.where(
+        (call) => call.uri.path == '/api/v4/search/suggest',
+      ),
+      hasLength(1),
+    );
+
     await tester.tap(
       find.byKey(const ValueKey('search-suggestion:Flutter 4.1')),
     );
@@ -176,6 +190,47 @@ void registerSearchSessionTests() {
       contains('Flutter 4.1'),
     );
   });
+
+  testWidgets(
+    'search page rebuilds history and dismisses suggestions with focus',
+    (tester) async {
+      final transport = _SearchSuggestionTransport();
+      final api = ZhihuApiClient(
+        SessionStore(),
+        transport: transport,
+        xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+      );
+      addTearDown(api.close);
+
+      await tester.pumpWidget(_testApp(SearchPage(api: api)));
+      await tester.pump();
+      expect(find.text('历史搜索'), findsOneWidget);
+
+      final input = find.byKey(const ValueKey('search-input'));
+      await tester.tap(input);
+      await tester.showKeyboard(input);
+      expect(tester.widget<TextField>(input).focusNode!.hasFocus, isTrue);
+      await tester.enterText(input, 'Flu');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+      expect(find.text('历史搜索'), findsNothing);
+      expect(
+        find.byKey(const ValueKey('search-suggestion-panel')),
+        findsOneWidget,
+      );
+
+      tester.widget<TextField>(input).focusNode!.unfocus();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('search-suggestion-panel')),
+        findsNothing,
+      );
+
+      await tester.enterText(input, '');
+      await tester.pump();
+      expect(find.text('历史搜索'), findsOneWidget);
+    },
+  );
 
   test('official search tabs preserve APK database request types', () {
     expect({

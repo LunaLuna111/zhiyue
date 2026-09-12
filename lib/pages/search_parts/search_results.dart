@@ -18,6 +18,7 @@ class SearchResultsPage extends StatefulWidget {
 
 class _SearchResultsPageState extends State<SearchResultsPage> {
   late final TextEditingController _query;
+  late final FocusNode _queryFocus;
   late final PageController _pages;
   late final _SearchSuggestionController _suggestions;
   final _selectedFilters = <String, String>{};
@@ -31,6 +32,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     super.initState();
     _submittedQuery = widget.initialQuery.trim();
     _query = TextEditingController(text: _submittedQuery);
+    _queryFocus = FocusNode()..addListener(_onQueryFocusChanged);
     _suggestions = _SearchSuggestionController(widget.api);
     _index = officialSearchTabs.indexWhere(
       (tab) => tab.type == widget.initialType,
@@ -42,13 +44,19 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
 
   @override
   void dispose() {
+    _queryFocus.removeListener(_onQueryFocusChanged);
     _suggestions.dispose();
     _query.dispose();
+    _queryFocus.dispose();
     _pages.dispose();
     super.dispose();
   }
 
   void _onQueryChanged(String value) => _suggestions.onQueryChanged(value);
+
+  void _onQueryFocusChanged() {
+    if (!_queryFocus.hasFocus) _suggestions.dismiss();
+  }
 
   void _submit(String value) {
     final normalized = value.trim();
@@ -167,6 +175,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                         children: [
                           _SearchField(
                             controller: _query,
+                            focusNode: _queryFocus,
                             hintText: '搜索知乎内容',
                             compact: true,
                             onChanged: _onQueryChanged,

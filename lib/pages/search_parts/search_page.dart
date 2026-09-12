@@ -141,10 +141,12 @@ class _SearchPageState extends State<SearchPage>
   void initState() {
     super.initState();
     _suggestions = _SearchSuggestionController(widget.api);
+    _queryFocus.addListener(_onQueryFocusChanged);
   }
 
   @override
   void dispose() {
+    _queryFocus.removeListener(_onQueryFocusChanged);
     _suggestions.dispose();
     _query.dispose();
     _queryFocus.dispose();
@@ -154,7 +156,17 @@ class _SearchPageState extends State<SearchPage>
     super.dispose();
   }
 
-  void _onQueryChanged(String value) => _suggestions.onQueryChanged(value);
+  void _onQueryChanged(String value) {
+    _suggestions.onQueryChanged(value);
+    // The history section is part of this state object rather than the
+    // TextField. Rebuild it with the field so it disappears as soon as the
+    // user starts composing a query and returns when the query is cleared.
+    if (mounted) setState(() {});
+  }
+
+  void _onQueryFocusChanged() {
+    if (!_queryFocus.hasFocus) _suggestions.dismiss();
+  }
 
   void _submit([String? query]) {
     final text = (query ?? _query.text).trim();

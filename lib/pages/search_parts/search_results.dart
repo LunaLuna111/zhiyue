@@ -16,7 +16,17 @@ class SearchResultsPage extends StatefulWidget {
   State<SearchResultsPage> createState() => _SearchResultsPageState();
 }
 
+class _SearchFilterCacheEntry {
+  List<List<SearchFilterOption>> groups = const [];
+  DateTime expiresAt = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime emptyUntil = DateTime.fromMillisecondsSinceEpoch(0);
+  Future<List<List<SearchFilterOption>>>? request;
+}
+
 class _SearchResultsPageState extends State<SearchResultsPage> {
+  static final Expando<_SearchFilterCacheEntry> _filterCaches =
+      Expando<_SearchFilterCacheEntry>();
+
   late final TextEditingController _query;
   late final FocusNode _queryFocus;
   late final PageController _pages;
@@ -26,6 +36,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   late int _index;
   late String _submittedQuery;
   bool _showFilters = false;
+  int _filterCatalogGeneration = 0;
 
   @override
   void initState() {
@@ -68,17 +79,49 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     setState(() => _submittedQuery = normalized);
   }
 
-  Future<void> _loadFilterCatalog() async {
+  Future<List<List<SearchFilterOption>>> _requestFilterCatalog() async {
+    final response = await widget.api.getUri(
+      widget.api.searchCustomizeUri(),
+      headers: const {'x-api-version': '3.0.91'},
+    );
+    if (!response.isSuccess) throw response.failure;
+    return parseSearchFilterGroups(response.json);
+  }
+
+  Future<void> _loadFilterCatalog({bool force = false}) async {
+    final generation = ++_filterCatalogGeneration;
+    final cache = _filterCaches[widget.api] ??= _SearchFilterCacheEntry();
+    final now = DateTime.now();
+    if (!force && cache.groups.isNotEmpty && cache.expiresAt.isAfter(now)) {
+      if (mounted && generation == _filterCatalogGeneration) {
+        setState(() => _filterGroups = cache.groups);
+      }
+      return;
+    }
+    if (!force && cache.emptyUntil.isAfter(now)) return;
+
+    final request = cache.request ??= _requestFilterCatalog();
     try {
-      final response = await widget.api.getUri(
-        widget.api.searchCustomizeUri(),
-        headers: const {'x-api-version': '3.0.91'},
-      );
-      final groups = parseSearchFilterGroups(response.json);
-      if (!mounted || !response.isSuccess || groups.isEmpty) return;
-      setState(() => _filterGroups = groups);
+      final groups = await request;
+      if (groups.isNotEmpty) {
+        cache.groups = List.unmodifiable(
+          groups.map(List<SearchFilterOption>.unmodifiable),
+        );
+        cache.expiresAt = DateTime.now().add(const Duration(minutes: 5));
+        cache.emptyUntil = DateTime.fromMillisecondsSinceEpoch(0);
+      } else {
+        // Keep a previously valid server catalog visible when the edge sends
+        // an empty configuration during a transient refresh.
+        cache.emptyUntil = DateTime.now().add(const Duration(seconds: 8));
+      }
+      if (!mounted || generation != _filterCatalogGeneration) return;
+      if (groups.isNotEmpty) setState(() => _filterGroups = cache.groups);
     } catch (_) {
-      // The verified contract snapshot remains available offline.
+      cache.emptyUntil = DateTime.now().add(const Duration(seconds: 8));
+      // The built-in contract snapshot remains available offline. A failed
+      // configuration read must never remove already-rendered filters.
+    } finally {
+      if (identical(cache.request, request)) cache.request = null;
     }
   }
 

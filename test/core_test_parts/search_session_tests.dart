@@ -143,7 +143,13 @@ void registerSearchSessionTests() {
     addTearDown(api.close);
 
     await tester.pumpWidget(
-      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+      _testApp(
+        SearchResultsPage(
+          key: const ValueKey('search-cache-first'),
+          api: api,
+          initialQuery: 'Flutter',
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -481,6 +487,46 @@ void registerSearchSessionTests() {
     expect(groups[0][1].linkName, 'answer');
     expect(groups[1][1].linkName, 'upvoted_count');
     expect(groups[2][1].linkName, 'a_day');
+  });
+
+  testWidgets('search filter catalog is cached per api client', (tester) async {
+    final transport = _SearchSuggestionTransport();
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('search-filter-toggle')));
+    await tester.pumpAndSettle();
+    expect(find.text('只看回答'), findsOneWidget);
+    expect(
+      transport.calls.where((call) => call.uri.path == '/search/customize'),
+      hasLength(1),
+    );
+
+    await tester.pumpWidget(
+      _testApp(
+        SearchResultsPage(
+          key: const ValueKey('search-cache-second'),
+          api: api,
+          initialQuery: 'Dart',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('search-filter-toggle')));
+    await tester.pumpAndSettle();
+    expect(find.text('只看回答'), findsOneWidget);
+    expect(
+      transport.calls.where((call) => call.uri.path == '/search/customize'),
+      hasLength(1),
+    );
   });
 
   test(
@@ -1994,6 +2040,26 @@ class _SearchSuggestionTransport extends ApiTransport {
         json: const {
           'hot_search_queries': [
             {'query': 'Flutter 热门话题', 'hot_show': '1.2 万'},
+          ],
+        },
+        headers: const {},
+      );
+    }
+    if (uri.path == '/search/customize') {
+      return ApiResponse(
+        uri: uri,
+        statusCode: 200,
+        bodyBytes: 64,
+        json: const {
+          'data': [
+            [
+              {'group': 'vertical', 'title': '不限类型', 'link_name': ''},
+              {'group': 'vertical', 'title': '只看回答', 'link_name': 'answer'},
+            ],
+            [
+              {'group': 'sort', 'title': '综合排序', 'link_name': ''},
+              {'group': 'sort', 'title': '最多赞同', 'link_name': 'upvoted_count'},
+            ],
           ],
         },
         headers: const {},

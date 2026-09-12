@@ -96,7 +96,10 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         if (!response.isSuccess) {
           setState(() {
             _next = requestKey;
-            _error = response;
+            // Search is a public read route. A stale/missing mobile context
+            // must remain retryable and must not be presented as an account
+            // requirement; preserve real network challenges separately.
+            _error = zhihu_api.ApiFailure.forAnonymousRead(response);
           });
           return;
         }
@@ -296,8 +299,6 @@ class _SearchResultTabState extends State<_SearchResultTab> {
               child: ApiErrorView(
                 error: _error!,
                 onRetry: () => _load(reset: true),
-                titleOverride: '请先登录',
-                detailOverride: '登录后即可搜索。',
               ),
             ),
           ],

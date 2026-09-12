@@ -191,6 +191,31 @@ void registerSearchSessionTests() {
     );
   });
 
+  testWidgets('public search failures do not require account login', (
+    tester,
+  ) async {
+    final transport = _SearchSuggestionTransport(searchFailure: true);
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('暂时无法加载'), findsOneWidget);
+    expect(find.text('登录后即可搜索。'), findsNothing);
+    expect(find.text('匿名内容服务暂时不可用，请稍后重试。'), findsOneWidget);
+    expect(
+      transport.calls.where((call) => call.uri.path == '/search_v3'),
+      isNotEmpty,
+    );
+  });
+
   testWidgets(
     'search page rebuilds history and dismisses suggestions with focus',
     (tester) async {
@@ -1884,6 +1909,9 @@ class _IncompleteQuestionSearchTransport extends ApiTransport {
 }
 
 class _SearchSuggestionTransport extends ApiTransport {
+  _SearchSuggestionTransport({this.searchFailure = false});
+
+  final bool searchFailure;
   final List<_RecordedCall> calls = [];
 
   @override
@@ -1924,6 +1952,17 @@ class _SearchSuggestionTransport extends ApiTransport {
           'hot_search_queries': [
             {'query': 'Flutter 热门话题', 'hot_show': '1.2 万'},
           ],
+        },
+        headers: const {},
+      );
+    }
+    if (searchFailure && uri.path == '/search_v3') {
+      return ApiResponse(
+        uri: uri,
+        statusCode: 401,
+        bodyBytes: 48,
+        json: const {
+          'error': {'code': 101, 'message': '需要登录'},
         },
         headers: const {},
       );

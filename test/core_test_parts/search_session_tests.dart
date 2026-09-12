@@ -195,6 +195,42 @@ void registerSearchSessionTests() {
     expect(find.byType(AppSettingsPage), findsOneWidget);
   });
 
+  testWidgets('submitting a new search resets tab and filter state', (
+    tester,
+  ) async {
+    final transport = _SearchSuggestionTransport();
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('search-filter-toggle')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('只看回答'));
+    await tester.pumpAndSettle();
+    expect(find.text('筛选 1'), findsOneWidget);
+
+    await tester.enterText(find.byKey(const ValueKey('search-input')), 'Dart');
+    await tester.tap(find.byTooltip('搜索'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('筛选 1'), findsNothing);
+    expect(find.text('筛选'), findsOneWidget);
+    expect(
+      transport.calls
+          .where((call) => call.uri.path == '/search_v3')
+          .map((call) => call.uri.queryParameters['q']),
+      contains('Dart'),
+    );
+  });
+
   testWidgets('route search focuses on open when explicitly requested', (
     tester,
   ) async {

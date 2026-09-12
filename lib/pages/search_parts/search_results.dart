@@ -76,7 +76,21 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     _suggestions.dismiss();
     widget.api.session.rememberSearch(normalized);
     FocusManager.instance.primaryFocus?.unfocus();
-    setState(() => _submittedQuery = normalized);
+    if (normalized == _submittedQuery &&
+        _index == 0 &&
+        _selectedFilters.isEmpty) {
+      return;
+    }
+    setState(() {
+      _submittedQuery = normalized;
+      _selectedFilters.clear();
+      _showFilters = false;
+      _index = 0;
+    });
+    // A new query is a new search session. Re-enter the default result tab so
+    // filters and a tab-specific result stream from the previous query cannot
+    // leak into the newly submitted completion.
+    if (_pages.hasClients) _pages.jumpToPage(0);
   }
 
   Future<List<List<SearchFilterOption>>> _requestFilterCatalog() async {

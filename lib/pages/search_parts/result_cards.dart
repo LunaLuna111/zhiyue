@@ -76,6 +76,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
               filters: widget.filters,
             )
           : widget.api.validatePagingUri(_next!);
+      if (reset) uri = ensureSearchVerticalInfo(uri, widget.filters);
       final incoming = <Map<String, dynamic>>[];
       String? resolvedNext;
       for (

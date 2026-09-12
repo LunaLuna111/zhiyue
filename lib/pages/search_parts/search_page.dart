@@ -121,6 +121,34 @@ List<List<SearchFilterOption>> parseSearchFilterGroups(Object? value) {
   return List.unmodifiable(groups);
 }
 
+// Older GitHub API releases used by existing installations do not append the
+// native vertical_info tuple. Keep the compatibility fix in the client until
+// those installations can migrate; newer library releases are detected and
+// left untouched.
+const _searchVerticalInfo = '0,0,0,0,0,0,0,0,0,0,0,0';
+
+Uri ensureSearchVerticalInfo(Uri uri, Map<String, String> filters) {
+  final vertical = filters['vertical']?.trim() ?? '';
+  if (vertical.isEmpty || uri.queryParameters.containsKey('vertical_info')) {
+    return uri;
+  }
+  final encodedVertical = Uri.encodeComponent(vertical);
+  final encodedInfo = Uri.encodeComponent(_searchVerticalInfo);
+  final raw = uri.toString();
+  for (final marker in [
+    '&vertical=$encodedVertical',
+    '?vertical=$encodedVertical',
+  ]) {
+    final start = raw.indexOf(marker);
+    if (start < 0) continue;
+    final end = start + marker.length;
+    return Uri.parse(
+      '${raw.substring(0, end)}&vertical_info=$encodedInfo${raw.substring(end)}',
+    );
+  }
+  return Uri.parse('$raw&vertical_info=$encodedInfo');
+}
+
 class SearchHotItem {
   const SearchHotItem({
     required this.query,

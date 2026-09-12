@@ -529,6 +529,37 @@ void registerSearchSessionTests() {
     );
   });
 
+  testWidgets('search content filter includes native vertical info', (
+    tester,
+  ) async {
+    final transport = _SearchSuggestionTransport();
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('search-filter-toggle')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('只看回答'));
+    await tester.pumpAndSettle();
+
+    final filtered = transport.calls.lastWhere(
+      (call) =>
+          call.uri.path == '/search_v3' &&
+          call.uri.queryParameters['vertical'] == 'answer',
+    );
+    expect(
+      filtered.uri.queryParameters['vertical_info'],
+      '0,0,0,0,0,0,0,0,0,0,0,0',
+    );
+  });
+
   test(
     'search content card keeps title excerpt statistics and answer route',
     () {

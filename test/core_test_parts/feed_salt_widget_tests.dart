@@ -746,6 +746,36 @@ void registerFeedSaltWidgetTests() {
     expect(find.text('发布于 2024-01-02'), findsOneWidget);
   });
 
+  testWidgets('comment author name shares the reply target with the avatar', (
+    tester,
+  ) async {
+    var authorTapped = false;
+    await tester.pumpWidget(
+      _testApp(
+        Scaffold(
+          body: CommentCard(
+            compact: true,
+            value: const {
+              'type': 'comment',
+              'id': 'author-name-target',
+              'content': '点击作者名进行回复',
+              'author': {'name': '可回复作者'},
+            },
+            onAuthor: () => authorTapped = true,
+          ),
+        ),
+      ),
+    );
+
+    final author = find.byKey(
+      const ValueKey('comment-author-name-author-name-target'),
+    );
+    expect(author, findsOneWidget);
+    await tester.tap(author);
+    expect(authorTapped, isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('compact Salt comment row is flat and keeps reply metadata', (
     tester,
   ) async {

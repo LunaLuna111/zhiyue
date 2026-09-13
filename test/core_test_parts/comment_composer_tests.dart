@@ -214,10 +214,12 @@ void registerCommentComposerTests() {
     final logicalInset = MediaQuery.viewInsetsOf(
       tester.element(surfaceFinder),
     ).bottom;
-    expect(
-      tester.getTopLeft(surfaceFinder).dy,
-      closeTo(surfaceTop - logicalInset, .1),
-    );
+    expect(logicalInset, greaterThan(0));
+    // The modal route already keeps its child above the IME. The composer
+    // now uses normal layout padding instead of a negative Transform, so its
+    // render box remains at the same logical origin in this direct Scaffold
+    // harness while its real bottom-sheet hit rectangle stays stable.
+    expect(tester.getTopLeft(surfaceFinder).dy, closeTo(surfaceTop, .1));
     await tester.tap(find.byKey(const Key('comment-composer-emoticons')));
     // Mirror Android's global-layout callback after the retiring IME reports
     // a zero inset. Only then should the original-style panel become visible.
@@ -299,6 +301,63 @@ void registerCommentComposerTests() {
     await tester.pump();
 
     expect(tester.widget<TextField>(field).controller?.text, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('editor paints longer official emoji tokens as images', (
+    tester,
+  ) async {
+    final api = ZhihuApiClient(
+      _MemorySessionStore(),
+      transport: _RecordingTransport(),
+    );
+    addTearDown(api.close);
+    const token = '[aaaaaaaaaaaaaaaaaaaaaaaaa]';
+
+    await tester.pumpWidget(
+      _testApp(
+        Scaffold(
+          body: CommentComposerSheet(
+            api: api,
+            title: '写评论',
+            initialEmoticonGroups: const [
+              CommentEmoticonGroup(
+                id: 'long-token-group',
+                title: '默认',
+                type: 'official',
+                iconUrl: '',
+                selectedIconUrl: '',
+                version: 1,
+                emoticons: [
+                  CommentEmoticon(
+                    id: 'long-token',
+                    title: token,
+                    groupId: 'long-token-group',
+                    groupType: 'official',
+                    staticImageUrl: '',
+                    dynamicImageUrl: '',
+                    stickerType: 1,
+                    status: 1,
+                    assetImagePath: 'assets/emoji/default/emoji_2.webp',
+                  ),
+                ],
+              ),
+            ],
+            onSubmit: (_) async => null,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.byKey(const Key('comment-composer-field'));
+    await tester.tap(field);
+    tester.testTextInput.enterText(token);
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey('comment-editor-emoticon-$token')),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
   });
 

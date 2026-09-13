@@ -1,10 +1,13 @@
 part of '../../../widgets/comment_composer_sheet.dart';
 
-/// Moves only the already-laid-out composer surface with the platform IME.
+/// Places the composer above the platform IME.
 ///
-/// Keeping the view-inset dependency in this tiny widget means Android's IME
-/// animation no longer rebuilds or lays out the editor and emoji catalog for
-/// each intermediate inset value.
+/// This used to use [Transform.translate] to move a bottom-aligned editor.
+/// That paints the editor in the right place, but on some Android IME/window
+/// combinations its transformed semantic bounds and pointer hit-test bounds
+/// diverge. A toolbar button can therefore be visible above the keyboard yet
+/// never receive the tap. Padding participates in normal layout and keeps the
+/// visual and interactive rectangles identical during inset changes.
 class _KeyboardInsetLift extends StatelessWidget {
   const _KeyboardInsetLift({required this.enabled, required this.child});
 
@@ -14,7 +17,10 @@ class _KeyboardInsetLift extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = enabled ? MediaQuery.viewInsetsOf(context).bottom : 0.0;
-    return Transform.translate(offset: Offset(0, -bottom), child: child);
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottom),
+      child: child,
+    );
   }
 }
 

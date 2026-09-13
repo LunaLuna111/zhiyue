@@ -53,29 +53,53 @@ class _CommentAuthorIdentityLine extends StatelessWidget {
   const _CommentAuthorIdentityLine({
     required this.authorName,
     required this.labels,
+    this.onTap,
+    this.semanticKey,
   });
 
   final String authorName;
   final List<String> labels;
+  final VoidCallback? onTap;
+  final Key? semanticKey;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 5,
-    runSpacing: 2,
-    crossAxisAlignment: WrapCrossAlignment.center,
-    children: [
-      Text(
-        authorName.isEmpty ? '知乎用户' : authorName,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: Theme.of(
-          context,
-        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-      ),
-      for (final label in labels)
-        _CommentIdentityBadge(scope: 'author', label: label),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final name = authorName.isEmpty ? '知乎用户' : authorName;
+    final nameText = Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(
+        context,
+      ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
+    );
+    final callback = onTap;
+    final author = callback == null
+        ? nameText
+        : Semantics(
+            key: semanticKey,
+            button: true,
+            label: '评论作者 $name',
+            child: InkWell(
+              onTap: callback,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: nameText,
+              ),
+            ),
+          );
+    return Wrap(
+      spacing: 5,
+      runSpacing: 2,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        author,
+        for (final label in labels)
+          _CommentIdentityBadge(scope: 'author', label: label),
+      ],
+    );
+  }
 }
 
 class _CommentReplyIdentityLine extends StatelessWidget {
@@ -111,54 +135,78 @@ class _CompactCommentIdentityLine extends StatelessWidget {
     required this.authorLabels,
     required this.replyTarget,
     required this.replyAuthorLabels,
+    this.onTap,
+    this.semanticKey,
   });
 
   final String authorName;
   final List<String> authorLabels;
   final String replyTarget;
   final List<String> replyAuthorLabels;
+  final VoidCallback? onTap;
+  final Key? semanticKey;
 
   @override
-  Widget build(BuildContext context) => Wrap(
-    spacing: 4,
-    runSpacing: 3,
-    crossAxisAlignment: WrapCrossAlignment.center,
-    children: [
-      Text(
-        authorName.isEmpty ? '知乎用户' : authorName,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(
-          color: Color(0xFF373A40),
-          fontSize: 14,
-          fontWeight: FontWeight.w700,
-          height: 1.25,
-        ),
+  Widget build(BuildContext context) {
+    final name = authorName.isEmpty ? '知乎用户' : authorName;
+    final nameText = Text(
+      name,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(
+        color: Color(0xFF373A40),
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+        height: 1.25,
       ),
-      for (final label in authorLabels)
-        _CommentIdentityBadge(scope: 'author', label: label),
-      if (replyTarget.isNotEmpty) ...[
-        const Icon(
-          Icons.arrow_right_rounded,
-          size: 14,
-          color: Color(0xFF9196A1),
-        ),
-        Text(
-          replyTarget,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xFF373A40),
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            height: 1.25,
+    );
+    final callback = onTap;
+    final author = callback == null
+        ? nameText
+        : Semantics(
+            key: semanticKey,
+            button: true,
+            label: '评论作者 $name',
+            child: InkWell(
+              onTap: callback,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: nameText,
+              ),
+            ),
+          );
+    return Wrap(
+      spacing: 4,
+      runSpacing: 3,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        author,
+        for (final label in authorLabels)
+          _CommentIdentityBadge(scope: 'author', label: label),
+        if (replyTarget.isNotEmpty) ...[
+          const Icon(
+            Icons.arrow_right_rounded,
+            size: 14,
+            color: Color(0xFF9196A1),
           ),
-        ),
-        for (final label in replyAuthorLabels)
-          _CommentIdentityBadge(scope: 'reply', label: label),
+          Text(
+            replyTarget,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF373A40),
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              height: 1.25,
+            ),
+          ),
+          for (final label in replyAuthorLabels)
+            _CommentIdentityBadge(scope: 'reply', label: label),
+        ],
       ],
-    ],
-  );
+    );
+  }
 }
 
 class _CommentIdentityBadge extends StatelessWidget {

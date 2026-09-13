@@ -163,6 +163,7 @@ class _CommentCardState extends State<CommentCard> {
       return KeyedSubtree(
         key: ValueKey('comment-card-$stableId'),
         child: _CompactCommentRow(
+          stableId: stableId,
           authorName: authorName,
           authorAvatar: authorAvatar,
           avatarFallback: avatarFallback,
@@ -219,6 +220,10 @@ class _CommentCardState extends State<CommentCard> {
                         child: _CommentAuthorIdentityLine(
                           authorName: authorName,
                           labels: authorLabels,
+                          onTap: widget.onAuthor,
+                          semanticKey: ValueKey(
+                            'comment-author-name-$stableId',
+                          ),
                         ),
                       ),
                       if (widget.inlineReplyAction && widget.onReply != null)
@@ -326,6 +331,7 @@ class _CommentCardState extends State<CommentCard> {
 
 class _CompactCommentRow extends StatelessWidget {
   const _CompactCommentRow({
+    required this.stableId,
     required this.authorName,
     required this.authorAvatar,
     required this.avatarFallback,
@@ -353,6 +359,7 @@ class _CompactCommentRow extends StatelessWidget {
     required this.onAuthor,
   });
 
+  final String stableId;
   final String authorName;
   final String authorAvatar;
   final String avatarFallback;
@@ -412,6 +419,10 @@ class _CompactCommentRow extends StatelessWidget {
                           authorLabels: authorLabels,
                           replyTarget: replyTarget,
                           replyAuthorLabels: replyAuthorLabels,
+                          onTap: onAuthor,
+                          semanticKey: ValueKey(
+                            'comment-author-name-$stableId',
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),

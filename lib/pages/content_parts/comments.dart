@@ -367,6 +367,18 @@ class _CommentThreadViewState extends State<CommentThreadView> {
       useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
+      // The editor switches from the IME to its own emoji panel after the
+      // toolbar pointer goes down. If this route remains draggable, the
+      // bottom-sheet recognizer interprets the layout movement caused by the
+      // retiring IME as a downward drag and dismisses the editor instead of
+      // letting the pending panel state finish.
+      enableDrag: false,
+      // While the IME is being replaced, the editor surface moves with the
+      // insets. The original pointer can therefore finish outside the moved
+      // surface; a dismissible barrier would treat that finish as an outside
+      // tap and pop the editor before the emoji panel is shown. Back still
+      // dismisses the route, while toolbar transitions remain stable.
+      isDismissible: false,
       showDragHandle: false,
       requestFocus: !showEmoticons,
       backgroundColor: Colors.transparent,

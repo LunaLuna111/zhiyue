@@ -301,16 +301,47 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     _emoticonTransitionStartedAt = DateTime.now();
     _focusNode.unfocus();
     final transition = ++_surfaceTransition;
+    _schedulePendingEmoticonPoll(transition);
+  }
+
+  static const _imePollInterval = Duration(milliseconds: 60);
+  static const _imeTransitionTimeout = Duration(milliseconds: 1400);
+
+  void _schedulePendingEmoticonPoll(int transition) {
     _imeTransitionTimer?.cancel();
-    _imeTransitionTimer = Timer(const Duration(milliseconds: 180), () {
-      if (mounted && _pendingEmoticons && transition == _surfaceTransition) {
-        _showPendingEmoticons(transition);
+    _imeTransitionTimer = Timer(_imePollInterval, () {
+      if (!mounted || !_pendingEmoticons || transition != _surfaceTransition) {
+        return;
       }
+      final startedAt = _emoticonTransitionStartedAt;
+      final elapsed = startedAt == null
+          ? Duration.zero
+          : DateTime.now().difference(startedAt);
+      final timedOut = elapsed >= _imeTransitionTimeout;
+      if (_imeIsVisible && !timedOut) {
+        _schedulePendingEmoticonPoll(transition);
+        return;
+      }
+      _showPendingEmoticons(transition, allowVisibleIme: timedOut);
     });
   }
 
-  void _showPendingEmoticons(int transition) {
+  bool get _imeIsVisible {
+    final view = View.maybeOf(context);
+    if (view != null) return view.viewInsets.bottom > 0.5;
+    return MediaQuery.viewInsetsOf(context).bottom > 0.5;
+  }
+
+  void _showPendingEmoticons(int transition, {bool allowVisibleIme = false}) {
     if (!mounted || !_pendingEmoticons || transition != _surfaceTransition) {
+      return;
+    }
+    // A metric callback can arrive one frame before the IME surface has
+    // actually left the window. Do not let that transient zero/positive
+    // sequence lay out the panel underneath the keyboard; the poll above
+    // will retry until the insets are stable, with a bounded timeout.
+    if (_imeIsVisible && !allowVisibleIme) {
+      _schedulePendingEmoticonPoll(transition);
       return;
     }
     _imeTransitionTimer?.cancel();
@@ -687,7 +718,11 @@ class _CommentEditingController extends TextEditingController {
       );
     }
     final spans = <InlineSpan>[];
-    final pattern = RegExp(r'\[[^\]\n]{1,24}\]');
+    // Keep the editor's paint matcher in lockstep with the deletion matcher
+    // and the comment renderers. Remote catalogs may contain longer labels;
+    // rendering only the first 24 characters leaves a visible bracket token
+    // even though the controller correctly treats the full token atomically.
+    final pattern = RegExp(r'\[[^\]\n]{1,32}\]');
     var offset = 0;
     for (final match in pattern.allMatches(text)) {
       final emoticon = _inlineEmoticons[match.group(0)];
@@ -716,6 +751,7 @@ class _CommentEditingController extends TextEditingController {
     if (emoticon.assetImagePath.isNotEmpty) {
       return Image.asset(
         emoticon.assetImagePath,
+        key: ValueKey('comment-editor-emoticon-$token'),
         width: 22,
         height: 22,
         fit: BoxFit.contain,
@@ -727,6 +763,7 @@ class _CommentEditingController extends TextEditingController {
     if (emoticon.imageUrl.isNotEmpty) {
       return ZhihuImage.network(
         emoticon.imageUrl,
+        key: ValueKey('comment-editor-emoticon-$token'),
         headers: zhihuImageRequestHeaders,
         width: 22,
         height: 22,

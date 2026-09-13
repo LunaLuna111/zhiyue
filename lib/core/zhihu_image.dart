@@ -116,6 +116,7 @@ class ZhihuImage extends StatelessWidget {
   const ZhihuImage.network(
     this.src, {
     super.key,
+    this.imageKey,
     this.scale = 1.0,
     this.frameBuilder,
     this.loadingBuilder,
@@ -142,6 +143,14 @@ class ZhihuImage extends StatelessWidget {
        assert(cacheHeight == null || cacheHeight > 0);
 
   final String src;
+
+  /// Key forwarded to the concrete [Image] widget.
+  ///
+  /// [key] belongs to this reusable wrapper. Keeping the two keys separate
+  /// avoids exposing the same semantic node twice in the widget tree while
+  /// still allowing image-focused tests and accessibility tooling to target
+  /// the rendered image.
+  final Key? imageKey;
   final double scale;
   final ImageFrameBuilder? frameBuilder;
   final ImageLoadingBuilder? loadingBuilder;
@@ -167,7 +176,7 @@ class ZhihuImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Image(
-    key: key,
+    key: imageKey,
     image: ResizeImage.resizeIfNeeded(
       cacheWidth,
       cacheHeight,

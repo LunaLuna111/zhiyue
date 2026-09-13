@@ -90,6 +90,42 @@ String normalizeCommentLink(Object? value) {
   return result;
 }
 
+/// Returns whether a normalized comment target is safe to expose as a
+/// navigable link node.  The comment endpoint occasionally wraps ordinary
+/// model/version text in an `<a>` tag (for example `https://5.0` or
+/// `https://Qwen3.5`).  Those values are not real web hosts and must remain
+/// ordinary text; otherwise the renderer paints a spurious blue link and the
+/// safety page opens for a non-link.
+bool isCommentNavigableLink(Object? value) {
+  final normalized = normalizeCommentLink(value);
+  final uri = Uri.tryParse(normalized);
+  if (uri == null) return false;
+  final scheme = uri.scheme.toLowerCase();
+  if (scheme == 'zhihu') return uri.host.isNotEmpty;
+  if (scheme != 'http' && scheme != 'https') return false;
+
+  final host = uri.host.toLowerCase();
+  if (host.isEmpty || host == 'localhost' || _isIpv4Host(host)) return true;
+  final labels = host.split('.');
+  if (labels.length < 2 || labels.any((label) => label.isEmpty)) return false;
+  final tld = labels.last;
+  return RegExp(
+    r'^(?:[a-z]{2,63}|xn--[a-z0-9-]{2,59})$',
+    caseSensitive: false,
+  ).hasMatch(tld);
+}
+
+bool _isIpv4Host(String host) {
+  final parts = host.split('.');
+  if (parts.length != 4) return false;
+  for (final part in parts) {
+    if (!RegExp(r'^\d{1,3}$').hasMatch(part)) return false;
+    final value = int.tryParse(part);
+    if (value == null || value > 255) return false;
+  }
+  return true;
+}
+
 /// This follows the native `LinkDetectionResult` matcher.  The native client
 /// intentionally accepts both fully-qualified URLs and bare domains, because
 /// users frequently paste `example.com/path` into a comment.
@@ -126,7 +162,7 @@ List<String> extractCommentLinkUrls(String value) {
   for (final match in commentUrlPattern.allMatches(source)) {
     final raw = trimCommentLink(match.group(0) ?? '');
     var url = normalizeCommentLink(raw);
-    if (url.isEmpty) continue;
+    if (url.isEmpty || !isCommentNavigableLink(url)) continue;
     if (url.isEmpty || result.contains(url)) continue;
     result.add(url);
   }
@@ -189,7 +225,7 @@ List<CommentLinkTag> _commentLinkTagsFromValues(
     final url = normalizeCommentLink(
       tag['target_url'] ?? tag['targetUrl'] ?? tag['url'] ?? tag['link'],
     );
-    if (url.isEmpty) continue;
+    if (url.isEmpty || !isCommentNavigableLink(url)) continue;
     final text = plainText(tag['text'] ?? tag['name'] ?? tag['label']);
     final title = plainText(tag['title']).isNotEmpty
         ? plainText(tag['title'])

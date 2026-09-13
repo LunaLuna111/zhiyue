@@ -10,14 +10,21 @@ class _SearchSuggestionCacheEntry {
   final DateTime expiresAt;
 }
 
+class _SearchSuggestionSession {
+  final Map<String, _SearchSuggestionCacheEntry> cache = {};
+  final Map<String, Future<List<zhihu_api.SearchSuggestion>>> requests = {};
+}
+
 class _SearchSuggestionController extends ChangeNotifier {
-  _SearchSuggestionController(this.api);
+  _SearchSuggestionController(this.api)
+    : _session = _sessions[api] ??= _SearchSuggestionSession();
 
   static const maxQueryLength = 128;
+  static final Expando<_SearchSuggestionSession> _sessions =
+      Expando<_SearchSuggestionSession>();
 
   final ZhihuApiClient api;
-  final Map<String, _SearchSuggestionCacheEntry> _cache = {};
-  final Map<String, Future<List<zhihu_api.SearchSuggestion>>> _requests = {};
+  final _SearchSuggestionSession _session;
   Timer? _debounce;
   List<zhihu_api.SearchSuggestion> _items = const [];
   String _query = '';
@@ -28,6 +35,11 @@ class _SearchSuggestionController extends ChangeNotifier {
   List<zhihu_api.SearchSuggestion> get items => _items;
   String get query => _query;
   bool get loading => _loading;
+
+  Map<String, _SearchSuggestionCacheEntry> get _cache => _session.cache;
+
+  Map<String, Future<List<zhihu_api.SearchSuggestion>>> get _requests =>
+      _session.requests;
 
   void onQueryChanged(String value) {
     if (_disposed) return;

@@ -44,7 +44,6 @@ class _CommentContentParser {
     'comment_image',
     'comment_gif',
     'comment_inline_image',
-    'comment_sticker',
   };
   static const _imageAttributes = <String>[
     'data-original',
@@ -86,11 +85,33 @@ class _CommentContentParser {
     if (tag == 'a') {
       final href = normalizeCommentLink(node.attributes['href']);
       final label = _visibleText(node);
+      if (_isStickerAnchor(node)) {
+        if (label.isNotEmpty && isCommentNavigableLink(href)) {
+          final rawStickerId = node.attributes['data-sticker-id']?.trim() ?? '';
+          final stickerId =
+              RegExp(r'^[A-Za-z0-9._:-]{1,160}$').hasMatch(rawStickerId)
+              ? rawStickerId
+              : 'index-${_nodes.length}';
+          _nodes.add(
+            ContentNode.sticker(
+              label,
+              url: href,
+              id: 'comment-sticker-$stickerId',
+              title: label,
+            ),
+          );
+        } else if (label.isNotEmpty) {
+          appendText(label);
+        } else {
+          addMedia(_mediaUrl(node));
+        }
+        return;
+      }
       if (_isMediaAnchor(node, href, label)) {
         addMedia(_mediaUrl(node));
         return;
       }
-      if (href.isNotEmpty && label.isNotEmpty) {
+      if (isCommentNavigableLink(href) && label.isNotEmpty) {
         _nodes.add(
           ContentNode.link(
             label,
@@ -148,6 +169,15 @@ class _CommentContentParser {
     if (!_isImageTarget(href)) return false;
     final compactLabel = label.replaceAll(RegExp(r'\s+'), '').toLowerCase();
     return const {'[图片]', '图片', '[照片]', '照片'}.contains(compactLabel);
+  }
+
+  bool _isStickerAnchor(dom.Element element) {
+    if (element.classes.any(
+      (value) => value.toLowerCase() == 'comment_sticker',
+    )) {
+      return true;
+    }
+    return element.attributes['data-sticker-id']?.trim().isNotEmpty == true;
   }
 
   String _visibleText(dom.Node node) {

@@ -58,7 +58,7 @@ void openCommentLink(
   String title = '',
 }) {
   final url = normalizeCommentLink(rawUrl);
-  if (url.isEmpty) return;
+  if (url.isEmpty || !isCommentNavigableLink(url)) return;
   final redirectTarget = _commentRedirectTarget(url);
   if (redirectTarget != null) {
     openCommentLink(context, api, redirectTarget, title: title);

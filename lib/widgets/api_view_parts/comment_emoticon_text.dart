@@ -164,12 +164,26 @@ class _CommentRichTextState extends State<CommentRichText> {
   }
 
   Future<void> _loadLookup() async {
+    final api = widget.api;
+    Map<String, CommentEmoticon> bundled = _lookup;
     try {
-      final bundled = await loadBundledCommentEmoticonLookup();
-      final remoteGroups = widget.api == null
-          ? const <CommentEmoticonGroup>[]
-          : await (_remoteCatalogs[widget.api!] ??= widget.api!
-                .loadCommentEmoticonGroups());
+      bundled = await loadBundledCommentEmoticonLookup();
+      // The bundled catalog is authoritative for the official inline emoji.
+      // Publish it as soon as the local asset parse finishes; waiting for the
+      // optional remote sticker catalog made normal `[表情]` tokens remain
+      // literal whenever that request was slow or rejected.
+      if (mounted && identical(api, widget.api) && bundled.isNotEmpty) {
+        setState(() => _lookup = bundled);
+      }
+    } catch (_) {
+      // Keep the current lookup. A missing asset bundle must not prevent the
+      // plain-text fallback from being displayed.
+    }
+
+    if (api == null || !mounted || !identical(api, widget.api)) return;
+    try {
+      final remoteGroups = await (_remoteCatalogs[api] ??= api
+          .loadCommentEmoticonGroups());
       final merged = <String, CommentEmoticon>{...bundled};
       for (final group in remoteGroups) {
         for (final emoticon in group.emoticons) {
@@ -180,10 +194,12 @@ class _CommentRichTextState extends State<CommentRichText> {
           }
         }
       }
-      if (mounted && merged.isNotEmpty) setState(() => _lookup = merged);
+      if (mounted && identical(api, widget.api) && merged.isNotEmpty) {
+        setState(() => _lookup = Map.unmodifiable(merged));
+      }
     } catch (_) {
-      // Plain text remains a correct fallback when the asset catalog is not
-      // available (for example in a restricted widget test environment).
+      // Remote stickers are optional. The bundled lookup already published
+      // above remains usable when the catalog endpoint is unavailable.
     }
   }
 

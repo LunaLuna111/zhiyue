@@ -543,11 +543,131 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
 }
 
 class _CommentEditingController extends TextEditingController {
+  static final RegExp _emoticonPattern = RegExp(r'\[[^\]\n]{1,32}\]');
+
   Map<String, CommentEmoticon> _inlineEmoticons = const {};
 
   void setInlineEmoticons(Map<String, CommentEmoticon> value) {
     _inlineEmoticons = Map.unmodifiable(value);
     notifyListeners();
+  }
+
+  /// Keeps an inline emoji atomic when the platform IME sends a deletion.
+  ///
+  /// The editor stores the official token (for example `[赞同]`) as text so
+  /// the request body remains compatible with Zhihu. Its [buildTextSpan]
+  /// replaces that token with an image only at paint time. A normal Android
+  /// backspace therefore used to remove just the final `]`, leaving the
+  /// invisible token half behind as `[赞同`. Repair the edit at the controller
+  /// boundary so hardware keyboards, Android IMEs, and pasted selection edits
+  /// all share the same atomic-token behavior.
+  @override
+  set value(TextEditingValue newValue) {
+    super.value = _repairAtomicDeletion(super.value, newValue);
+  }
+
+  TextEditingValue _repairAtomicDeletion(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (_inlineEmoticons.isEmpty ||
+        newValue.text.length >= oldValue.text.length ||
+        oldValue.text == newValue.text) {
+      return newValue;
+    }
+
+    final edit = _pureDeletion(oldValue.text, newValue.text);
+    if (edit == null) return newValue;
+
+    final ranges = <({int start, int end})>[(start: edit.start, end: edit.end)];
+    for (final match in _emoticonPattern.allMatches(oldValue.text)) {
+      final token = match.group(0) ?? '';
+      if (!_inlineEmoticons.containsKey(token)) continue;
+      if (match.start < edit.end && match.end > edit.start) {
+        ranges.add((start: match.start, end: match.end));
+      }
+    }
+    final merged = _mergeRanges(ranges);
+    final repairedText = _removeRanges(oldValue.text, merged);
+    if (repairedText == newValue.text) return newValue;
+
+    final caret = _mapOffset(edit.start, merged);
+    return newValue.copyWith(
+      text: repairedText,
+      selection: TextSelection.collapsed(
+        offset: caret,
+        affinity: newValue.selection.affinity,
+      ),
+      composing: TextRange.empty,
+    );
+  }
+
+  ({int start, int end})? _pureDeletion(String oldText, String newText) {
+    var prefix = 0;
+    final prefixLimit = oldText.length < newText.length
+        ? oldText.length
+        : newText.length;
+    while (prefix < prefixLimit &&
+        oldText.codeUnitAt(prefix) == newText.codeUnitAt(prefix)) {
+      prefix++;
+    }
+
+    var suffix = 0;
+    while (suffix < oldText.length - prefix &&
+        suffix < newText.length - prefix &&
+        oldText.codeUnitAt(oldText.length - suffix - 1) ==
+            newText.codeUnitAt(newText.length - suffix - 1)) {
+      suffix++;
+    }
+    final oldEnd = oldText.length - suffix;
+    final newEnd = newText.length - suffix;
+    if (newEnd != prefix) return null;
+    return (start: prefix, end: oldEnd);
+  }
+
+  List<({int start, int end})> _mergeRanges(
+    List<({int start, int end})> ranges,
+  ) {
+    ranges.sort((a, b) {
+      final start = a.start.compareTo(b.start);
+      return start == 0 ? a.end.compareTo(b.end) : start;
+    });
+    final merged = <({int start, int end})>[];
+    for (final range in ranges) {
+      if (range.start >= range.end) continue;
+      if (merged.isEmpty || range.start > merged.last.end) {
+        merged.add(range);
+      } else if (range.end > merged.last.end) {
+        final previous = merged.removeLast();
+        merged.add((start: previous.start, end: range.end));
+      }
+    }
+    return merged;
+  }
+
+  String _removeRanges(String text, List<({int start, int end})> ranges) {
+    final buffer = StringBuffer();
+    var cursor = 0;
+    for (final range in ranges) {
+      if (range.start > cursor) {
+        buffer.write(text.substring(cursor, range.start));
+      }
+      cursor = range.end;
+    }
+    if (cursor < text.length) {
+      buffer.write(text.substring(cursor));
+    }
+    return buffer.toString();
+  }
+
+  int _mapOffset(int offset, List<({int start, int end})> ranges) {
+    var removed = 0;
+    for (final range in ranges) {
+      if (offset <= range.start) break;
+      if (offset < range.end) return range.start - removed;
+      removed += range.end - range.start;
+    }
+    return (offset - removed).clamp(0, super.value.text.length);
   }
 
   @override

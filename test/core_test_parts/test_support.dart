@@ -5,11 +5,15 @@ Widget _testApp(Widget home) => ShadTheme(
   child: MaterialApp(theme: ZhTheme.material, home: home),
 );
 
-Finder _networkImageFinder(String url) => find.byWidgetPredicate((widget) {
-  if (widget is! Image) return false;
-  final provider = widget.image;
+String _imageProviderUrl(ImageProvider provider) {
   final unwrapped = provider is ResizeImage ? provider.imageProvider : provider;
-  return unwrapped is NetworkImage && unwrapped.url == url;
+  if (unwrapped is NetworkImage) return unwrapped.url;
+  if (unwrapped is ZhihuCachedNetworkImageProvider) return unwrapped.url;
+  return '';
+}
+
+Finder _networkImageFinder(String url) => find.byWidgetPredicate((widget) {
+  return widget is Image && _imageProviderUrl(widget.image) == url;
 });
 
 void _noop() {}

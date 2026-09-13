@@ -57,6 +57,7 @@ class _SearchField extends StatelessWidget {
                       icon: const Icon(Icons.clear_rounded, size: 20),
                     ),
                   IconButton(
+                    key: const ValueKey('search-submit'),
                     tooltip: '搜索',
                     onPressed: () => onSubmitted(controller.text),
                     icon: const Icon(Icons.arrow_forward_rounded, size: 21),
@@ -243,44 +244,48 @@ class _SearchHotSection extends StatelessWidget {
               backgroundColor: Colors.transparent,
             ),
           for (var index = 0; index < items.length; index++)
-            InkWell(
-              key: ValueKey('search-hot:${items[index].query}'),
-              onTap: () => onSelected(items[index].query),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                child: Row(
-                  children: [
-                    SizedBox(
-                      width: 28,
-                      child: Text(
-                        '${index + 1}',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: index < 3
-                              ? ZhPalette.ink
-                              : ZhPalette.subtleInk,
-                          fontWeight: index < 3 ? FontWeight.w700 : null,
+            Semantics(
+              button: true,
+              label: '热搜 ${items[index].displayQuery}',
+              child: InkWell(
+                key: ValueKey('search-hot:${items[index].query}'),
+                onTap: () => onSelected(items[index].query),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  child: Row(
+                    children: [
+                      SizedBox(
+                        width: 28,
+                        child: Text(
+                          '${index + 1}',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(
+                                color: index < 3
+                                    ? ZhPalette.ink
+                                    : ZhPalette.subtleInk,
+                                fontWeight: index < 3 ? FontWeight.w700 : null,
+                              ),
                         ),
                       ),
-                    ),
-                    Expanded(
-                      child: Text(
-                        items[index].displayQuery,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ),
-                    if (items[index].hotShow.isNotEmpty ||
-                        items[index].heatScore > 0)
-                      Text(
-                        items[index].hotShow.isNotEmpty
-                            ? items[index].hotShow
-                            : _formatHotScore(items[index].heatScore),
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: ZhPalette.subtleInk,
+                      Expanded(
+                        child: Text(
+                          items[index].displayQuery,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ),
-                  ],
+                      if (items[index].hotShow.isNotEmpty ||
+                          items[index].heatScore > 0)
+                        Text(
+                          items[index].hotShow.isNotEmpty
+                              ? items[index].hotShow
+                              : _formatHotScore(items[index].heatScore),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: ZhPalette.subtleInk),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

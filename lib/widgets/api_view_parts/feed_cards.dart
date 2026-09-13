@@ -367,7 +367,7 @@ class SingleContentCardImage extends StatelessWidget {
     child: ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: ZhihuImage.network(
-        key: ValueKey('content-preview-image-$url'),
+        imageKey: ValueKey('content-preview-image-$url'),
         url,
         headers: zhihuImageRequestHeaders,
         fit: BoxFit.cover,
@@ -404,7 +404,7 @@ class _CardContentImage extends StatelessWidget {
   Widget build(BuildContext context) => ClipRRect(
     borderRadius: BorderRadius.circular(10),
     child: ZhihuImage.network(
-      key: ValueKey('content-preview-image-$url'),
+      imageKey: ValueKey('content-preview-image-$url'),
       url,
       headers: zhihuImageRequestHeaders,
       fit: BoxFit.cover,

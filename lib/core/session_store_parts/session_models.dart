@@ -102,12 +102,12 @@ extension ImageCachePresetValue on ImageCachePreset {
   int get maximumEntries => switch (this) {
     ImageCachePreset.economy => 120,
     ImageCachePreset.standard => 512,
-    ImageCachePreset.roomy => 768,
+    ImageCachePreset.roomy => 600,
   };
 
   int get maximumBytes => switch (this) {
     ImageCachePreset.economy => 48 * 1024 * 1024,
-    ImageCachePreset.standard => 160 * 1024 * 1024,
+    ImageCachePreset.standard => 100 * 1024 * 1024,
     ImageCachePreset.roomy => 240 * 1024 * 1024,
   };
 }

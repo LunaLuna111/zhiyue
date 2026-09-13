@@ -219,13 +219,7 @@ void registerDetailCommentTests() {
 
       final networkUrls = tester
           .widgetList<Image>(find.byType(Image, skipOffstage: false))
-          .map((image) {
-            final provider = image.image;
-            final unwrapped = provider is ResizeImage
-                ? provider.imageProvider
-                : provider;
-            return unwrapped is NetworkImage ? unwrapped.url : '';
-          })
+          .map((image) => _imageProviderUrl(image.image))
           .where((url) => url.isNotEmpty)
           .toList();
       expect(
@@ -1377,10 +1371,12 @@ void registerDetailCommentTests() {
       '<a class="comment_sticker" href="https://pic.example/sticker">[赞同]</a>',
     );
 
-    expect(document.mediaUrls, [
-      'https://pic.example/no-extension',
+    expect(document.mediaUrls, ['https://pic.example/no-extension']);
+    expect(document.nodes.where((node) => node.isSticker), hasLength(1));
+    expect(
+      document.nodes.where((node) => node.isSticker).single.url,
       'https://pic.example/sticker',
-    ]);
+    );
     expect(
       document.nodes.where((node) => node.isLink).map((node) => node.url),
       ['https://example.com/story'],
@@ -1393,6 +1389,48 @@ void registerDetailCommentTests() {
     expect(visible, isNot(contains('[图片]')));
     expect(visible, isNot(contains('[赞同]')));
   });
+
+  test('comment DOM parser rejects version-like hrefs as links', () {
+    final document = parseCommentContent(
+      '<a href="https://5.0">https://5.0 Thinking Preview</a> | '
+      '<a href="https://Qwen3.5">https://Qwen3.5 4B</a> | '
+      '<a href="https://www.zhihu.com/question/2">正常知乎链接</a>',
+    );
+
+    expect(
+      document.nodes.where((node) => node.isLink).map((node) => node.url),
+      ['https://www.zhihu.com/question/2'],
+    );
+    final visible = document.nodes
+        .where((node) => node.isText)
+        .map((node) => node.text)
+        .join();
+    expect(visible, contains('https://5.0 Thinking Preview'));
+    expect(visible, contains('https://Qwen3.5 4B'));
+  });
+
+  test(
+    'comment DOM parser keeps stickers inline and images in media output',
+    () {
+      final document = parseCommentContent(
+        '前缀'
+        '<a data-sticker-id="s1" class="comment_sticker vip" '
+        'href="https://pic.example/sticker.png">[贴纸名称]</a>'
+        '<a class="comment_img" href="https://pic.example/photo.png">[图片]</a>',
+      );
+
+      expect(document.nodes.where((node) => node.isSticker), hasLength(1));
+      expect(
+        document.nodes.where((node) => node.isSticker).single.url,
+        'https://pic.example/sticker.png',
+      );
+      expect(
+        document.nodes.where((node) => node.isSticker).single.id,
+        'comment-sticker-s1',
+      );
+      expect(document.mediaUrls, ['https://pic.example/photo.png']);
+    },
+  );
 
   test('comment links match native host detection and link-tag fields', () {
     expect(
@@ -1476,6 +1514,37 @@ void registerDetailCommentTests() {
       expect(plain, isNot(contains('[赞同]')));
       expect(plain, contains('[未收录]'));
       expect(plain, contains('[这是一个超过十个字的未知关键字]'));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'rich comments publish bundled emoticons before optional remote catalog',
+    (tester) async {
+      await loadBundledCommentEmoticonLookup();
+      final api = ZhihuApiClient(
+        SessionStore(),
+        transport: _RecordingTransport(),
+      );
+      addTearDown(api.close);
+
+      await tester.pumpWidget(
+        _testApp(
+          Scaffold(
+            body: CommentRichText(text: '前[捂脸][思考]后', api: api),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.byKey(const ValueKey('comment-rich-emoticon-emoticon_emoji_10-0')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('comment-rich-emoticon-emoticon_emoji_06-1')),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );

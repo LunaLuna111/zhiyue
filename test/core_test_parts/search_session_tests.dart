@@ -238,6 +238,66 @@ void registerSearchSessionTests() {
     );
   });
 
+  testWidgets('search exposes stable tab and filter interaction nodes', (
+    tester,
+  ) async {
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: _SearchSuggestionTransport(),
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('search-tab:general')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-filter-toggle')), findsOneWidget);
+
+    await tester.tap(find.byKey(const ValueKey('search-filter-toggle')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('search-filter:vertical:all')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('search-filter:vertical:answer')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('search-filter:sort:upvoted_count')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('vertical search tabs hide the general filter action', (
+    tester,
+  ) async {
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: _SearchSuggestionTransport(),
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(
+        SearchResultsPage(
+          api: api,
+          initialQuery: 'Flutter',
+          initialType: 'zvideo',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('search-tab:zvideo')), findsOneWidget);
+    expect(find.byKey(const ValueKey('search-filter-toggle')), findsNothing);
+  });
+
   testWidgets('route search focuses on open when explicitly requested', (
     tester,
   ) async {
@@ -378,6 +438,49 @@ void registerSearchSessionTests() {
           .where((call) => call.uri.path == '/search_v3')
           .map((call) => call.uri.queryParameters['q']),
       contains('Flutter 4.1'),
+    );
+  });
+
+  testWidgets('search completion cache is shared across search pages', (
+    tester,
+  ) async {
+    final transport = _SearchSuggestionTransport();
+    final api = ZhihuApiClient(
+      SessionStore(),
+      transport: transport,
+      xZseSigner: XZseSigner(cipher: _FakeXZseCipher()),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(_testApp(SearchPage(api: api)));
+    await tester.enterText(
+      find.byKey(const ValueKey('search-input')),
+      'Flu',
+    );
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pumpAndSettle();
+    expect(
+      transport.calls.where(
+        (call) => call.uri.path == '/api/v4/search/suggest',
+      ),
+      hasLength(1),
+    );
+
+    await tester.pumpWidget(
+      _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('search-input')),
+      'Flu',
+    );
+    await tester.pump();
+    expect(find.byKey(const ValueKey('search-suggestion-panel')), findsOneWidget);
+    expect(
+      transport.calls.where(
+        (call) => call.uri.path == '/api/v4/search/suggest',
+      ),
+      hasLength(1),
     );
   });
 

@@ -237,6 +237,71 @@ void registerCommentComposerTests() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('platform backspace removes an inline emoji as one token', (
+    tester,
+  ) async {
+    final api = ZhihuApiClient(
+      _MemorySessionStore(),
+      transport: _RecordingTransport(),
+    );
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(
+        Scaffold(
+          body: CommentComposerSheet(
+            api: api,
+            title: '写评论',
+            initialEmoticonGroups: const [
+              CommentEmoticonGroup(
+                id: 'EMOJI_GROUP_ID',
+                title: '默认',
+                type: 'official',
+                iconUrl: '',
+                selectedIconUrl: '',
+                version: 3,
+                emoticons: [
+                  CommentEmoticon(
+                    id: 'emoticon_emoji_02',
+                    title: '[赞同]',
+                    groupId: 'EMOJI_GROUP_ID',
+                    groupType: 'official',
+                    staticImageUrl: '',
+                    dynamicImageUrl: '',
+                    stickerType: 1,
+                    status: 1,
+                    assetImagePath: 'assets/emoji/default/emoji_2.webp',
+                  ),
+                ],
+              ),
+            ],
+            onSubmit: (_) async => null,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final field = find.byKey(const Key('comment-composer-field'));
+    await tester.tap(field);
+    tester.testTextInput.enterText('[赞同]');
+    await tester.pump();
+    expect(tester.widget<TextField>(field).controller?.text, '[赞同]');
+
+    // Android sends the final bracket as a separate deletion. The editor
+    // must repair that partial update back to a complete token deletion.
+    tester.testTextInput.updateEditingValue(
+      const TextEditingValue(
+        text: '[赞同',
+        selection: TextSelection.collapsed(offset: 3),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.widget<TextField>(field).controller?.text, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('guest can edit comments but submit never reaches transport', (
     tester,
   ) async {

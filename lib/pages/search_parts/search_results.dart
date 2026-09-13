@@ -265,40 +265,48 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                         itemBuilder: (context, index) {
                           final tab = officialSearchTabs[index];
                           final selected = index == _index;
-                          return InkWell(
-                            onTap: () => _switchToTab(index),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    tab.label,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(
-                                          color: selected
-                                              ? ZhPalette.ink
-                                              : ZhPalette.mutedInk,
-                                          fontWeight: selected
-                                              ? FontWeight.w700
-                                              : FontWeight.w500,
-                                        ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  AnimatedContainer(
-                                    duration: const Duration(milliseconds: 160),
-                                    width: selected ? 20 : 0,
-                                    height: 3,
-                                    decoration: BoxDecoration(
-                                      color: ZhPalette.ink,
-                                      borderRadius: BorderRadius.circular(99),
+                          return Semantics(
+                            button: true,
+                            selected: selected,
+                            label: '搜索范围 ${tab.label}',
+                            child: InkWell(
+                              key: ValueKey('search-tab:${tab.type}'),
+                              onTap: () => _switchToTab(index),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      tab.label,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            color: selected
+                                                ? ZhPalette.ink
+                                                : ZhPalette.mutedInk,
+                                            fontWeight: selected
+                                                ? FontWeight.w700
+                                                : FontWeight.w500,
+                                          ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    AnimatedContainer(
+                                      duration: const Duration(
+                                        milliseconds: 160,
+                                      ),
+                                      width: selected ? 20 : 0,
+                                      height: 3,
+                                      decoration: BoxDecoration(
+                                        color: ZhPalette.ink,
+                                        borderRadius: BorderRadius.circular(99),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );
@@ -306,11 +314,12 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       ),
                     ),
                   ),
-                  _SearchFilterToggle(
-                    active: _showFilters,
-                    selectedCount: _selectedFilters.length,
-                    onTap: _toggleFilters,
-                  ),
+                  if (_index == 0)
+                    _SearchFilterToggle(
+                      active: _showFilters || _selectedFilters.isNotEmpty,
+                      selectedCount: _selectedFilters.length,
+                      onTap: _toggleFilters,
+                    ),
                 ],
               ),
             ),
@@ -379,49 +388,60 @@ class _SearchFilterToggle extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: selectedCount == 0 ? 82 : 96,
-    height: 45,
-    child: DecoratedBox(
-      decoration: const BoxDecoration(
-        color: ZhPalette.background,
-        border: Border(left: BorderSide(color: ZhPalette.border, width: .7)),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: const ValueKey('search-filter-toggle'),
-          onTap: onTap,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
+  Widget build(BuildContext context) {
+    final label = selectedCount == 0 ? '筛选' : '筛选 $selectedCount';
+    final semanticLabel = selectedCount == 0 ? '筛选' : '筛选，已选择 $selectedCount 项';
+    return Semantics(
+      button: true,
+      toggled: active,
+      label: semanticLabel,
+      child: SizedBox(
+        width: selectedCount == 0 ? 82 : 96,
+        height: 45,
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: ZhPalette.background,
+            border: Border(
+              left: BorderSide(color: ZhPalette.border, width: .7),
+            ),
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const ValueKey('search-filter-toggle'),
+              onTap: onTap,
+              child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    active
-                        ? Icons.filter_alt_rounded
-                        : Icons.filter_alt_outlined,
-                    size: 19,
-                    color: ZhPalette.ink,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        active
+                            ? Icons.filter_alt_rounded
+                            : Icons.filter_alt_outlined,
+                        size: 19,
+                        color: ZhPalette.ink,
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        label,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: ZhPalette.ink,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 5),
-                  Text(
-                    selectedCount == 0 ? '筛选' : '筛选 $selectedCount',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: ZhPalette.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                  const SizedBox(height: 7),
                 ],
               ),
-              const SizedBox(height: 7),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _SearchFilterPanel extends StatelessWidget {
@@ -442,51 +462,74 @@ class _SearchFilterPanel extends StatelessWidget {
     child: Column(
       children: [
         for (final group in groups)
-          SizedBox(
-            height: 42,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: group.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 4),
-              itemBuilder: (context, index) {
-                final option = group[index];
-                final active =
-                    (selected[option.group] ?? '') == option.linkName;
-                return Center(
-                  child: Material(
-                    color: active ? ZhPalette.canvas : Colors.transparent,
-                    borderRadius: BorderRadius.circular(9),
-                    child: InkWell(
-                      onTap: () => onSelected(option),
-                      borderRadius: BorderRadius.circular(9),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 11,
-                          vertical: 7,
-                        ),
-                        child: Text(
-                          option.title,
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(
-                                color: active
-                                    ? ZhPalette.ink
-                                    : ZhPalette.mutedInk,
-                                fontWeight: active
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                              ),
+          Semantics(
+            container: true,
+            label: '${_groupLabel(group)}筛选',
+            child: SizedBox(
+              height: 42,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: group.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 4),
+                itemBuilder: (context, index) {
+                  final option = group[index];
+                  final active =
+                      (selected[option.group] ?? '') == option.linkName;
+                  final optionKey = option.linkName.isEmpty
+                      ? 'all'
+                      : option.linkName;
+                  return Center(
+                    child: Semantics(
+                      button: true,
+                      selected: active,
+                      label: active ? '${option.title}，已选择' : option.title,
+                      child: Material(
+                        color: active ? ZhPalette.canvas : Colors.transparent,
+                        borderRadius: BorderRadius.circular(9),
+                        child: InkWell(
+                          key: ValueKey(
+                            'search-filter:${option.group}:$optionKey',
+                          ),
+                          onTap: () => onSelected(option),
+                          borderRadius: BorderRadius.circular(9),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 11,
+                              vertical: 7,
+                            ),
+                            child: Text(
+                              option.title,
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: active
+                                        ? ZhPalette.ink
+                                        : ZhPalette.mutedInk,
+                                    fontWeight: active
+                                        ? FontWeight.w700
+                                        : FontWeight.w500,
+                                  ),
+                            ),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
       ],
     ),
   );
+
+  static String _groupLabel(List<SearchFilterOption> group) =>
+      switch (group.firstOrNull?.group) {
+        'vertical' => '内容类型',
+        'sort' => '排序',
+        'time_interval' => '时间范围',
+        _ => '搜索',
+      };
 }
 
 class _SearchDesktopRail extends StatelessWidget {

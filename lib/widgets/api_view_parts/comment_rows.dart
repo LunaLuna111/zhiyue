@@ -511,11 +511,29 @@ class _CompactCommentRow extends StatelessWidget {
 }
 
 List<String> _commentMediaUrls(Map<String, dynamic> value, String rawContent) {
-  final urls = <String>[...contentImageUrlsOf(value, limit: 6)];
-  for (final url in parseCommentContent(rawContent).mediaUrls) {
-    if (!urls.contains(url) && urls.length < 6) urls.add(url);
+  final document = parseCommentContent(rawContent);
+  final stickerKeys = <String>{
+    for (final node in document.nodes)
+      if (node.isSticker && node.url.isNotEmpty) _commentMediaKey(node.url),
+  };
+  final urls = <String>[];
+  void add(String url) {
+    if (urls.length >= 6 || stickerKeys.contains(_commentMediaKey(url))) return;
+    if (!urls.contains(url)) urls.add(url);
+  }
+
+  for (final url in contentImageUrlsOf(value, limit: 6)) {
+    add(url);
+  }
+  for (final url in document.mediaUrls) {
+    add(url);
   }
   return List.unmodifiable(urls);
+}
+
+String _commentMediaKey(String value) {
+  final uri = Uri.tryParse(value);
+  return uri?.replace(fragment: '').toString() ?? value;
 }
 
 Widget _commentBodyText(
@@ -530,6 +548,17 @@ Widget _commentBodyText(
   final rich =
       rawContent.contains('<a') ||
       extractCommentLinkUrls(rawContent).isNotEmpty;
+  final hasEmoticonToken = RegExp(
+    r'\[[^\s\[\]\r\n]{1,32}\]',
+  ).hasMatch(fallback);
+  // Keep ordinary comments as a real Text widget. This preserves native
+  // text-selection/accessibility behavior and avoids rebuilding every plain
+  // row as an asynchronous rich-text surface just because an API client is
+  // available. Rich parsing remains enabled for links, media markup and
+  // bracketed emoticons.
+  if (!rich && !hasEmoticonToken) {
+    return Text(fallback, style: style, textAlign: TextAlign.start);
+  }
   // A plain `[表情]` token still needs the remote catalog when the API is
   // available. The old branch bypassed that catalog and made the same row
   // alternate between an image and literal bracket text after refresh.

@@ -140,34 +140,37 @@ class _DetailImageTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(ZhRadius.card),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ZhRadius.card),
-        child: ColoredBox(
-          color: ZhPalette.canvas,
-          child: ZhihuImage.network(
-            url,
-            headers: zhihuImageRequestHeaders,
-            width: double.infinity,
-            // The intrinsic dimensions preserve the complete aspect ratio.
-            fit: BoxFit.contain,
-            alignment: Alignment.center,
-            cacheWidth: 1440,
-            filterQuality: FilterQuality.medium,
-            loadingBuilder: (_, child, progress) => progress == null
-                ? child
-                : const SizedBox(
-                    height: 96,
-                    child: Center(
-                      child: SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 96),
+          child: ColoredBox(
+            color: ZhPalette.canvas,
+            child: ZhihuImage.network(
+              url,
+              headers: zhihuImageRequestHeaders,
+              width: double.infinity,
+              // The intrinsic dimensions preserve the complete aspect ratio.
+              fit: BoxFit.contain,
+              alignment: Alignment.center,
+              cacheWidth: 1440,
+              filterQuality: FilterQuality.medium,
+              loadingBuilder: (_, child, progress) => progress == null
+                  ? child
+                  : const SizedBox(
+                      height: 96,
+                      child: Center(
+                        child: SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
                       ),
                     ),
+              errorBuilder: (_, _, _) => const SizedBox(
+                height: 96,
+                child: Center(
+                  child: Icon(
+                    Icons.image_not_supported_outlined,
+                    color: ZhPalette.subtleInk,
                   ),
-            errorBuilder: (_, _, _) => const SizedBox(
-              height: 96,
-              child: Center(
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: ZhPalette.subtleInk,
                 ),
               ),
             ),

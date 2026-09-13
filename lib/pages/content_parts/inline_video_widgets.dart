@@ -34,7 +34,7 @@ Widget _buildInlineVideoPoster(_InlineAnswerVideoState state, String duration) {
     children: [
       if (state._posterUrl.isNotEmpty)
         ZhihuImage.network(
-          key: ValueKey(
+          imageKey: ValueKey(
             'video-poster-${state.widget.video.videoId.isEmpty ? state._posterUrl : state.widget.video.videoId}',
           ),
           state._posterUrl,

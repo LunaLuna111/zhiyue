@@ -1,3 +1,5 @@
+import 'package:html/dom.dart' as dom;
+import 'package:html/parser.dart' as html_parser;
 import 'package:universal_reader/universal_reader.dart';
 
 import 'salt_transport_decoder.dart';
@@ -86,7 +88,10 @@ class SaltTextChapter {
         cause: '$error\n$stackTrace',
       );
     }
-    final textParagraphs = _saltParagraphs(document);
+    final textParagraphs = _saltParagraphs(
+      document,
+      sectionTitleTexts: _sectionTitleTexts(xhtml),
+    );
     if (textParagraphs.isEmpty) {
       throw const SaltTextChapterException('章节正文中没有可显示的文本段落。');
     }
@@ -148,26 +153,50 @@ class SaltTextChapter {
         format: ReaderContentFormat.html,
       ),
     );
-    return List.unmodifiable(_saltParagraphs(document));
+    return List.unmodifiable(
+      _saltParagraphs(document, sectionTitleTexts: _sectionTitleTexts(xhtml)),
+    );
   }
 
-  static List<SaltTextParagraph> _saltParagraphs(ReaderDocument document) =>
-      _saltParagraphsWithSequentialIndexes(document);
+  static List<SaltTextParagraph> _saltParagraphs(
+    ReaderDocument document, {
+    Iterable<String> sectionTitleTexts = const <String>[],
+  }) => _saltParagraphsWithSequentialIndexes(
+    document,
+    sectionTitleTexts: sectionTitleTexts,
+  );
 
   static List<SaltTextParagraph> _saltParagraphsWithSequentialIndexes(
-    ReaderDocument document,
-  ) {
+    ReaderDocument document, {
+    Iterable<String> sectionTitleTexts = const <String>[],
+  }) {
     final paragraphs = <SaltTextParagraph>[];
+    final titles = sectionTitleTexts
+        .map((value) => value.trim())
+        .where((value) => value.isNotEmpty)
+        .toList(growable: false);
+    var titleIndex = 0;
     for (final node in document.textNodes) {
       final text = node.text.trim();
       if (text.isEmpty) continue;
+      var isSectionTitle =
+          node.kind == ReaderNodeKind.heading ||
+          node.blockKey == 'paragraphTitle';
+      // universal_reader deliberately preserves data-block-key over CSS
+      // classes. Salt XHTML often combines both attributes, so retain the
+      // public block key while recovering the paragraphTitle semantic from
+      // the source class list as a compatibility fallback.
+      if (!isSectionTitle &&
+          titleIndex < titles.length &&
+          text == titles[titleIndex]) {
+        isSectionTitle = true;
+        titleIndex++;
+      }
       paragraphs.add(
         SaltTextParagraph(
           text: text,
           index: paragraphs.length,
-          kind:
-              node.kind == ReaderNodeKind.heading ||
-                  node.blockKey == 'paragraphTitle'
+          kind: isSectionTitle
               ? SaltTextParagraphKind.sectionTitle
               : SaltTextParagraphKind.body,
           blockKey: node.blockKey,
@@ -176,6 +205,23 @@ class SaltTextChapter {
     }
     return List.unmodifiable(paragraphs);
   }
+
+  static List<String> _sectionTitleTexts(String xhtml) {
+    try {
+      final fragment = html_parser.parseFragment(xhtml);
+      return List.unmodifiable(
+        fragment
+            .querySelectorAll('.paragraphTitle')
+            .map((element) => _elementText(element))
+            .where((value) => value.isNotEmpty),
+      );
+    } on Object {
+      return const <String>[];
+    }
+  }
+
+  static String _elementText(dom.Element element) =>
+      element.text.replaceAll(RegExp(r'[ \t\r\n]+'), ' ').trim();
 
   /// Rebuilds only the generic document context after the asynchronous
   /// catalog request completes.  The decoded XHTML and compatibility fields

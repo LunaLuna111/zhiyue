@@ -26,7 +26,8 @@ bool get zhUsesSqliteCache {
 /// key/value plugin may be unavailable, while `shared_preferences` provides
 /// persistence whenever the platform implementation is registered.  Values
 /// are non-sensitive UI/content cache data only; session credentials remain in
-/// [SessionStore]'s secure storage and are never routed through this helper.
+/// the dedicated app-private credential database and are never routed through
+/// this helper.
 class ZhPlatformCache {
   ZhPlatformCache._();
 

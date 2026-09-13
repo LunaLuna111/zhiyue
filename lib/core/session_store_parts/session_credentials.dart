@@ -32,6 +32,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     final normalizedZse96 = xZse96.trim();
     final normalizedExtraHeaders = extraHeadersJson.trim();
     _credentialRevision += 1;
+    _clearPendingAccountCleanup();
     this.authorization = normalizedAuthorization;
     this.udid = normalizedUdid;
     this.cookie = normalizedCookie;
@@ -89,6 +90,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     _SessionStoreCore._validateHeaderValue('x-udid', normalizedUdid);
     _SessionStoreCore._validateHeaderValue('Cookie', normalizedCookie);
     _credentialRevision += 1;
+    _clearPendingAccountCleanup();
     authorization = 'Bearer $normalizedAccessToken';
     this.udid = normalizedUdid;
     cookie = normalizedCookie;
@@ -114,6 +116,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
   Future<void> clearGuestSession() async {
     if (sessionKind != 'guest') return;
     _credentialRevision += 1;
+    _clearPendingAccountCleanup();
     authorization = '';
     udid = '';
     cookie = '';
@@ -212,6 +215,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
       normalizedUnlockTicket,
     );
     _credentialRevision += 1;
+    _clearPendingAccountCleanup();
     authorization = 'Bearer $normalizedAccessToken';
     this.refreshToken = normalizedRefreshToken;
     this.udid = normalizedUdid;
@@ -271,6 +275,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     _SessionStoreCore._validateHeaderValue('account uid', normalizedUid);
     _SessionStoreCore._validateHeaderValue('account user_id', normalizedUserId);
     _credentialRevision += 1;
+    _clearPendingAccountCleanup();
     authorization = CloudIdSigner.oauthAuthorization;
     this.udid = normalizedUdid;
     this.cookie = normalizedCookie;
@@ -294,18 +299,211 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     return true;
   }
 
-  Future<void> clear() async {
-    _credentialRevision += 1;
-    _resetValues();
-    if (kIsWeb) {
-      _notifyChanged();
-      return;
+  Future<bool> requestAccountSessionCleanup(
+    zhihu_api.ApiSessionCleanupRequest request,
+  ) async {
+    if (!hasRefreshableAccountSession ||
+        request.credentialRevision != _credentialRevision) {
+      _recordAuthenticationLog(
+        '忽略过期的账号清理请求，当前会话已经变化',
+        level: AppLogLevel.warning,
+        details: {
+          'source': request.source,
+          'request_revision': request.credentialRevision,
+          'current_revision': _credentialRevision,
+          'action': 'retained',
+        },
+      );
+      return false;
     }
-    final snapshot = _credentialSnapshot();
+    final existing = _pendingAccountCleanup;
+    if (existing != null &&
+        existing.credentialRevision == request.credentialRevision) {
+      return true;
+    }
+    final dismissedAt = _lastDismissedCleanupAt;
+    if (_lastDismissedCleanupRevision == request.credentialRevision &&
+        dismissedAt != null &&
+        DateTime.now().difference(dismissedAt) < const Duration(minutes: 10)) {
+      return false;
+    }
+    _pendingAccountCleanup = request;
+    _recordAuthenticationLog(
+      '检测到账号会话可能失效，等待用户确认是否清理',
+      level: AppLogLevel.warning,
+      details: {
+        'source': request.source,
+        'status_code': ?request.statusCode,
+        'business_code': ?request.businessCode,
+        'credential_revision': request.credentialRevision,
+        'action': 'confirmation_required',
+      },
+    );
+    _notifyChanged();
+    return true;
+  }
+
+  /// Confirms a pending server-side logout signal. The credentials are first
+  /// copied to the recovery table, then removed from the active session.
+  Future<bool> confirmPendingAccountCleanup() async {
+    final request = _pendingAccountCleanup;
+    if (request == null) return false;
+    if (!hasRefreshableAccountSession ||
+        request.credentialRevision != _credentialRevision) {
+      _pendingAccountCleanup = null;
+      _recordAuthenticationLog(
+        '账号清理确认已失效，保留当前会话',
+        level: AppLogLevel.warning,
+        details: const {'action': 'retained', 'reason': 'session_changed'},
+      );
+      _notifyChanged();
+      return false;
+    }
+    final cleared = await _clearCredentials(
+      reason: 'confirmed_server_logout',
+      expectedCredentialRevision: request.credentialRevision,
+    );
+    if (cleared) {
+      _recordAuthenticationLog(
+        '用户确认清理账号会话，凭据已进入可恢复区',
+        details: {'source': request.source, 'action': 'archived_and_cleared'},
+      );
+    }
+    return cleared;
+  }
+
+  Future<void> dismissPendingAccountCleanup() async {
+    final request = _pendingAccountCleanup;
+    if (request == null) return;
+    _pendingAccountCleanup = null;
+    _lastDismissedCleanupRevision = request.credentialRevision;
+    _lastDismissedCleanupAt = DateTime.now();
+    _recordAuthenticationLog(
+      '用户保留账号会话，取消本次自动清理',
+      details: {
+        'source': request.source,
+        'credential_revision': request.credentialRevision,
+        'action': 'retained',
+      },
+    );
+    _notifyChanged();
+  }
+
+  Future<bool> restoreLastClearedAccountSession() async {
+    final recovery = _storage is CredentialRecoveryStore
+        ? _storage as CredentialRecoveryStore
+        : null;
+    if (recovery == null) return false;
+    final values = await recovery.readLatestCredentialSnapshot();
+    final snapshot = values == null
+        ? null
+        : _CredentialSnapshot.fromStoredValues(values);
+    if (snapshot == null || !snapshot.isAccountSession) {
+      _recordAuthenticationLog(
+        '恢复区没有可用的账号会话',
+        level: AppLogLevel.warning,
+        details: const {'action': 'restore_failed'},
+      );
+      return false;
+    }
+    _credentialRevision += 1;
+    _clearPendingAccountCleanup();
+    _applyCredentialSnapshot(snapshot);
     final persistence = _queueCredentialPersistence(
       () => _persistCredentialSnapshot(snapshot),
     );
     _notifyChanged();
     await persistence;
+    await recovery.removeLatestCredentialSnapshot();
+    _hasRecoverableAccountSession = await recovery.hasCredentialRecovery();
+    _recordAuthenticationLog(
+      '已从恢复区恢复账号会话',
+      details: const {'action': 'restored'},
+    );
+    _notifyChanged();
+    return true;
+  }
+
+  Future<void> permanentlyClearRecoveredAccountSessions() async {
+    final recovery = _storage is CredentialRecoveryStore
+        ? _storage as CredentialRecoveryStore
+        : null;
+    if (recovery == null) return;
+    await recovery.clearCredentialRecovery();
+    _hasRecoverableAccountSession = false;
+    _recordAuthenticationLog(
+      '用户彻底清理恢复区中的账号凭据',
+      details: const {'action': 'permanently_deleted'},
+    );
+    _notifyChanged();
+  }
+
+  Future<void> clear() async {
+    await _clearCredentials(reason: 'manual_logout');
+  }
+
+  Future<bool> _clearCredentials({
+    required String reason,
+    int? expectedCredentialRevision,
+  }) async {
+    final revisionAtStart = _credentialRevision;
+    if (expectedCredentialRevision != null &&
+        expectedCredentialRevision != revisionAtStart) {
+      return false;
+    }
+    final snapshot = _credentialSnapshot();
+    final recovery = _storage is CredentialRecoveryStore
+        ? _storage as CredentialRecoveryStore
+        : null;
+    // Flutter widget tests intentionally use an in-memory/session adapter and
+    // do not have a registered path-provider host. Production mobile/desktop
+    // builds always archive into the private recovery table before clearing.
+    if (snapshot.isAccountSession && recovery != null && !zhIsFlutterTest) {
+      try {
+        await recovery.archiveCredentialSnapshot(
+          values: snapshot.toStoredValues(),
+          reason: reason,
+          detectedAt: DateTime.now().toUtc(),
+        );
+        _hasRecoverableAccountSession = true;
+      } on Object catch (error) {
+        _recordAuthenticationLog(
+          '账号凭据备份到恢复区失败，已取消清理',
+          level: AppLogLevel.error,
+          details: {
+            'action': 'retained',
+            'error_type': error.runtimeType.toString(),
+          },
+        );
+        return false;
+      }
+    }
+    if (revisionAtStart != _credentialRevision ||
+        (expectedCredentialRevision != null &&
+            expectedCredentialRevision != _credentialRevision)) {
+      return false;
+    }
+    _credentialRevision += 1;
+    _clearPendingAccountCleanup();
+    _resetValues();
+    if (kIsWeb) {
+      _recordAuthenticationLog(
+        '账号会话已清理',
+        details: {'reason': reason, 'action': 'cleared'},
+      );
+      _notifyChanged();
+      return true;
+    }
+    final emptySnapshot = _credentialSnapshot();
+    final persistence = _queueCredentialPersistence(
+      () => _persistCredentialSnapshot(emptySnapshot),
+    );
+    _recordAuthenticationLog(
+      reason == 'manual_logout' ? '用户退出登录' : '账号会话已清理',
+      details: {'reason': reason, 'action': 'cleared'},
+    );
+    _notifyChanged();
+    await persistence;
+    return true;
   }
 }

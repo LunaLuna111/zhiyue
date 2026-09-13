@@ -280,7 +280,7 @@ void registerAccountShellTests() {
     expect(find.byKey(const ValueKey('message-composer')), findsOneWidget);
   });
 
-  testWidgets('my page replaces rejected account session with login', (
+  testWidgets('my page retains rejected account session for confirmation', (
     tester,
   ) async {
     final session = _MemorySessionStore()
@@ -289,6 +289,7 @@ void registerAccountShellTests() {
       ..udid = 'account-udid'
       ..sessionKind = 'account'
       ..accountUid = 'member-id';
+    session.authenticationLoggingEnabled = false;
     final transport = _RecordingTransport()
       ..responses.addAll([
         _response(
@@ -320,10 +321,11 @@ void registerAccountShellTests() {
     await tester.pumpWidget(_testApp(MyPage(api: api, session: session)));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NativeLoginPage), findsOneWidget);
-    expect(find.byKey(const ValueKey('embedded-native-login')), findsOneWidget);
-    expect(find.text('个人资料加载失败'), findsNothing);
-    expect(session.hasAccountSession, isFalse);
+    expect(find.byType(NativeLoginPage), findsNothing);
+    expect(find.byKey(const ValueKey('embedded-native-login')), findsNothing);
+    expect(find.text('个人资料加载失败'), findsOneWidget);
+    expect(session.hasAccountSession, isTrue);
+    expect(session.hasPendingAccountCleanup, isTrue);
   });
 
   testWidgets('my page retains account for unclassified 401 response', (

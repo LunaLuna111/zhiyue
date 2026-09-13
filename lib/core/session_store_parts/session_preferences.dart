@@ -182,6 +182,16 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     _notifyChanged();
   }
 
+  Future<void> setAuthenticationLoggingEnabled(bool value) async {
+    if (authenticationLoggingEnabled == value) return;
+    authenticationLoggingEnabled = value;
+    await _writePreference(
+      _SessionStoreCore._authenticationLoggingEnabledKey,
+      value.toString(),
+    );
+    _notifyChanged();
+  }
+
   Future<void> resetAppPreferences() async {
     readingTextSize = ReadingTextSize.standard;
     reduceMotion = false;
@@ -203,6 +213,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     appLoggingEnabled = false;
     networkLoggingEnabled = false;
     performanceLoggingEnabled = false;
+    authenticationLoggingEnabled = true;
     if (!kIsWeb) {
       await Future.wait([
         _safeDelete(_SessionStoreCore._readingTextSizeKey),
@@ -223,6 +234,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
         _safeDelete(_SessionStoreCore._appLoggingEnabledKey),
         _safeDelete(_SessionStoreCore._networkLoggingEnabledKey),
         _safeDelete(_SessionStoreCore._performanceLoggingEnabledKey),
+        _safeDelete(_SessionStoreCore._authenticationLoggingEnabledKey),
       ]);
     }
     _notifyChanged();

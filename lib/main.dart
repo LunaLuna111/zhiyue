@@ -6,10 +6,12 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'core/api_client.dart';
 import 'core/api_contract.dart';
+import 'core/account_session_store.dart';
 import 'core/app_log.dart';
 import 'core/json_tools.dart';
 import 'core/session_store.dart';
 import 'pages/account_page.dart';
+import 'pages/account_sessions_page.dart';
 import 'pages/app_update_page.dart';
 import 'pages/browsing_history_page.dart';
 import 'pages/discover_page.dart';
@@ -24,13 +26,22 @@ import 'pages/user_page.dart';
 import 'ui/zh_scroll_behavior.dart';
 import 'ui/zh_theme.dart';
 import 'widgets/app_drawer.dart';
+import 'widgets/account_session_cleanup_prompt.dart';
 import 'widgets/desktop_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final session = SessionStore();
-  await session.load();
+  // Initialize diagnostics before loading the credential database so a
+  // migration/read failure is persisted instead of being recorded only in a
+  // pre-initialization in-memory buffer.
   await AppLogStore.instance.initialize(session: session);
+  await session.load();
+  final accountSessions = AccountSessionStore.instance;
+  await accountSessions.load();
+  if (session.hasAccountSession) {
+    await accountSessions.rememberCurrent(session);
+  }
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     unawaited(
@@ -127,11 +138,14 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
             child: child ?? const SizedBox.shrink(),
           );
         },
-        home: AppUpdatePromptGate(
-          child: HomeShell(
-            api: _api,
-            session: widget.session,
-            contract: widget.contract,
+        home: AccountSessionCleanupPrompt(
+          session: widget.session,
+          child: AppUpdatePromptGate(
+            child: HomeShell(
+              api: _api,
+              session: widget.session,
+              contract: widget.contract,
+            ),
           ),
         ),
       ),
@@ -160,6 +174,7 @@ class _HomeShellState extends State<HomeShell> {
   final _drawerController = ZhPushDrawerController();
   final _feedController = HomeFeedController();
   final _searchController = SearchPageController();
+  final _accountStore = AccountSessionStore.instance;
   late int _index;
   late final List<Widget> _pages = [
     Builder(
@@ -271,6 +286,33 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 
+  Future<void> _switchAccount(String id) async {
+    final closed = await _drawerController.close();
+    if (!closed || !mounted) return;
+    final account = _accountStore.accounts
+        .where((item) => item.id == id)
+        .firstOrNull;
+    final switched = await _accountStore.activate(id, widget.session);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text(
+            switched
+                ? '已切换到 ${account?.displayName ?? '所选账号'}'
+                : '账号会话已过期，请重新登录',
+          ),
+        ),
+      );
+  }
+
+  void _openAccountManager() {
+    _openDrawerPage(
+      () => AccountSessionsPage(api: widget.api, session: widget.session),
+    );
+  }
+
   void _openUserSearch() {
     unawaited(
       _runAfterDrawerClosed(() {
@@ -344,6 +386,7 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final drawer = ZhAppDrawer(
       session: widget.session,
+      accountStore: _accountStore,
       selectedNavigationIndex: _index,
       onColumns: () => _openDrawerPage(() => discoverColumnsPage(widget.api)),
       onTopicCategories: () =>
@@ -357,6 +400,8 @@ class _HomeShellState extends State<HomeShell> {
       onBookshelf: _openBookshelf,
       onUsers: _openUserSearch,
       onSettings: _openSettings,
+      onAccountSelected: _switchAccount,
+      onManageAccounts: _openAccountManager,
       onClose: _closeDrawer,
     );
     final desktopSidebar = ZhDesktopSidebar(

@@ -97,6 +97,42 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
     if (mounted) _message('已删除本机账号槽位');
   }
 
+  Future<void> _restore() async {
+    final restored = await widget.session.restoreLastClearedAccountSession();
+    if (restored) {
+      // Recreate/update the multi-account slot as well. This keeps recovery
+      // useful even if the slot was removed after the active credentials were
+      // cleared.
+      await _store.rememberCurrent(widget.session);
+    }
+    if (mounted) {
+      _message(restored ? '已恢复最近一次清理的账号会话' : '没有可恢复的账号会话');
+    }
+  }
+
+  Future<void> _permanentlyClearRecovery() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('彻底清理恢复凭据？'),
+        content: const Text('这会永久删除最近清理后保留的恢复副本，之后无法恢复。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('彻底删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await widget.session.permanentlyClearRecoveredAccountSessions();
+    if (mounted) _message('恢复凭据已彻底删除');
+  }
+
   void _message(String value) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -118,7 +154,7 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
       ],
     ),
     body: AnimatedBuilder(
-      animation: _store,
+      animation: Listenable.merge([_store, widget.session]),
       builder: (context, _) {
         final accounts = _store.accounts;
         return ZhPageWidth(
@@ -134,13 +170,60 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
               ZhSurface(
                 padding: const EdgeInsets.all(ZhSpace.md),
                 child: Text(
-                  '扫码登录或手机号登录后的会话会安全保存在本机账号槽位中。切换前会重新验证 /people/self；不会主动退出其他设备。',
+                  '扫码登录或手机号登录后的会话会保存在本机私有凭据数据库中。切换前会重新验证 /people/self；不会主动退出其他设备。',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: ZhPalette.mutedInk,
                     height: 1.45,
                   ),
                 ),
               ),
+              if (widget.session.hasRecoverableAccountSession) ...[
+                const SizedBox(height: ZhSpace.md),
+                ZhSurface(
+                  key: const ValueKey('account-session-recovery'),
+                  padding: const EdgeInsets.all(ZhSpace.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '最近清理的登录信息',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '服务器失效确认后清理的账号仍保留在本机恢复区。可以恢复，也可以在这里永久删除。',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: ZhPalette.mutedInk,
+                          height: 1.45,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ZhOutlineButton(
+                              key: const ValueKey('account-session-restore'),
+                              onPressed: _restore,
+                              icon: Icons.restore_rounded,
+                              label: '恢复',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: TextButton(
+                              key: const ValueKey(
+                                'account-session-purge-recovery',
+                              ),
+                              onPressed: _permanentlyClearRecovery,
+                              child: const Text('彻底删除'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: ZhSpace.md),
               if (accounts.isEmpty)
                 ZhSurface(

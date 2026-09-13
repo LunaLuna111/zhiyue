@@ -453,10 +453,7 @@ void registerSearchSessionTests() {
     addTearDown(api.close);
 
     await tester.pumpWidget(_testApp(SearchPage(api: api)));
-    await tester.enterText(
-      find.byKey(const ValueKey('search-input')),
-      'Flu',
-    );
+    await tester.enterText(find.byKey(const ValueKey('search-input')), 'Flu');
     await tester.pump(const Duration(milliseconds: 350));
     await tester.pumpAndSettle();
     expect(
@@ -470,12 +467,12 @@ void registerSearchSessionTests() {
       _testApp(SearchResultsPage(api: api, initialQuery: 'Flutter')),
     );
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const ValueKey('search-input')),
-      'Flu',
-    );
+    await tester.enterText(find.byKey(const ValueKey('search-input')), 'Flu');
     await tester.pump();
-    expect(find.byKey(const ValueKey('search-suggestion-panel')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('search-suggestion-panel')),
+      findsOneWidget,
+    );
     expect(
       transport.calls.where(
         (call) => call.uri.path == '/api/v4/search/suggest',
@@ -2170,7 +2167,7 @@ void registerSearchSessionTests() {
     expect(session.hasGuestSession, isTrue);
   });
 
-  test('passive refresh transport response failure clears account', () async {
+  test('passive refresh transport response failure retains account', () async {
     final session = _MemorySessionStore()
       ..authorization = 'Bearer old-access'
       ..refreshToken = 'old-refresh'
@@ -2207,11 +2204,12 @@ void registerSearchSessionTests() {
     final response = await api.get('/people/self');
 
     expect(response.statusCode, 401);
-    expect(session.hasAccountSession, isFalse);
+    expect(session.hasAccountSession, isTrue);
+    expect(session.hasPendingAccountCleanup, isFalse);
   });
 
   test(
-    'concurrent passive rejections share refresh and account clear',
+    'concurrent passive rejections share refresh and cleanup prompt',
     () async {
       final session = _MemorySessionStore()
         ..authorization = 'Bearer old-access'
@@ -2256,7 +2254,11 @@ void registerSearchSessionTests() {
         ),
         hasLength(1),
       );
-      expect(session.clearCalls, 1);
+      expect(session.clearCalls, 0);
+      expect(session.hasAccountSession, isTrue);
+      expect(session.hasPendingAccountCleanup, isTrue);
+
+      expect(await session.confirmPendingAccountCleanup(), isTrue);
       expect(session.hasAccountSession, isFalse);
     },
   );

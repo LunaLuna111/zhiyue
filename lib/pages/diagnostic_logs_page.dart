@@ -109,7 +109,7 @@ class _DiagnosticLogsPageState extends State<DiagnosticLogsPage> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    '日志只保存脱敏的接口路径、状态码和耗时，不保存 Cookie、令牌、正文或图片。默认关闭。',
+                    '认证失效、恢复和清理决定默认记录；其它诊断日志可单独开关。日志只保存脱敏状态，不保存 Cookie、令牌、正文或图片。',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const Divider(height: 24),
@@ -119,6 +119,13 @@ class _DiagnosticLogsPageState extends State<DiagnosticLogsPage> {
                     subtitle: const Text('开启后保留最近 600 条诊断记录'),
                     value: session.appLoggingEnabled,
                     onChanged: session.setAppLoggingEnabled,
+                  ),
+                  SwitchListTile.adaptive(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('认证状态日志'),
+                    subtitle: const Text('记录登录失效、恢复、保留和清理决定，默认开启'),
+                    value: session.authenticationLoggingEnabled,
+                    onChanged: session.setAuthenticationLoggingEnabled,
                   ),
                   SwitchListTile.adaptive(
                     contentPadding: EdgeInsets.zero,

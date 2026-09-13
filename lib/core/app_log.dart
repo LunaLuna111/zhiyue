@@ -11,12 +11,12 @@ import 'session_store.dart';
 
 const diagnosticLogAppVersion = String.fromEnvironment(
   'ZH_APP_VERSION',
-  defaultValue: '0.3.101+107',
+  defaultValue: '0.3.7+160',
 );
 
 enum AppLogLevel { debug, info, warning, error }
 
-enum AppLogCategory { app, network, performance, error }
+enum AppLogCategory { app, network, performance, error, authentication }
 
 extension AppLogLevelLabel on AppLogLevel {
   String get label => switch (this) {
@@ -33,6 +33,7 @@ extension AppLogCategoryLabel on AppLogCategory {
     AppLogCategory.network => '网络',
     AppLogCategory.performance => '性能',
     AppLogCategory.error => '错误',
+    AppLogCategory.authentication => '认证',
   };
 }
 
@@ -170,6 +171,12 @@ class AppLogStore extends ChangeNotifier {
 
   bool _isEnabled(AppLogCategory category) {
     final session = _session;
+    if (category == AppLogCategory.authentication) {
+      // Authentication failures and cleanup decisions are enabled by default
+      // so a lost session can be diagnosed. The user can explicitly disable
+      // only this category without enabling the other diagnostic streams.
+      return session?.authenticationLoggingEnabled ?? true;
+    }
     if (session == null || !session.appLoggingEnabled) return false;
     return switch (category) {
       AppLogCategory.network => session.networkLoggingEnabled,
@@ -211,7 +218,10 @@ class AppLogStore extends ChangeNotifier {
     _notifySoon();
     // Persistence is debounced and queued below.  Return an already-complete
     // future so existing fire-and-forget call sites never wait for disk I/O.
-    _persistQueued();
+    // Tests and very early startup can record an event before the store has
+    // loaded its persistent backend. Keep the bounded in-memory entry, but do
+    // not create a delayed disk timer until initialization has completed.
+    if (_initialized) _persistQueued();
     return Future<void>.value();
   }
 

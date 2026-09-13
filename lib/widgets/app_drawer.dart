@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../core/account_session_store.dart';
 import '../core/session_store.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
+
+void _ignoreDrawerAccount(String _) {}
 
 class ZhAppDrawer extends StatelessWidget {
   const ZhAppDrawer({
     super.key,
     required this.session,
+    this.accountStore,
     required this.selectedNavigationIndex,
     required this.onColumns,
     required this.onTopicCategories,
@@ -18,10 +22,13 @@ class ZhAppDrawer extends StatelessWidget {
     required this.onBookshelf,
     required this.onUsers,
     required this.onSettings,
+    this.onAccountSelected = _ignoreDrawerAccount,
+    this.onManageAccounts = _ignoreDrawerAction,
     this.onClose,
   });
 
   final SessionStore session;
+  final AccountSessionStore? accountStore;
   final int selectedNavigationIndex;
   final VoidCallback onColumns;
   final VoidCallback onTopicCategories;
@@ -32,7 +39,12 @@ class ZhAppDrawer extends StatelessWidget {
   final VoidCallback onBookshelf;
   final VoidCallback onUsers;
   final VoidCallback onSettings;
+  final ValueChanged<String> onAccountSelected;
+  final VoidCallback onManageAccounts;
   final VoidCallback? onClose;
+
+  AccountSessionStore get _accountStore =>
+      accountStore ?? AccountSessionStore.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -149,6 +161,24 @@ class ZhAppDrawer extends StatelessWidget {
                         onTap: onUsers,
                       ),
                       const SizedBox(height: 13),
+                      AnimatedBuilder(
+                        animation: _accountStore,
+                        builder: (context, _) {
+                          if (_accountStore.accounts.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+                          return Column(
+                            children: [
+                              _DrawerAccounts(
+                                store: _accountStore,
+                                onAccountSelected: onAccountSelected,
+                                onManageAccounts: onManageAccounts,
+                              ),
+                              const SizedBox(height: 13),
+                            ],
+                          );
+                        },
+                      ),
                       const _DrawerSectionLabel('应用'),
                       _DrawerTile(
                         key: const ValueKey('drawer-settings'),
@@ -164,7 +194,7 @@ class ZhAppDrawer extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        '知阅 0.3.101',
+                        '知阅 0.3.7',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),
@@ -179,6 +209,45 @@ class ZhAppDrawer extends StatelessWidget {
       ),
     );
   }
+}
+
+void _ignoreDrawerAction() {}
+
+class _DrawerAccounts extends StatelessWidget {
+  const _DrawerAccounts({
+    required this.store,
+    required this.onAccountSelected,
+    required this.onManageAccounts,
+  });
+
+  final AccountSessionStore store;
+  final ValueChanged<String> onAccountSelected;
+  final VoidCallback onManageAccounts;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const _DrawerSectionLabel('账号'),
+      for (final account in store.accounts)
+        _DrawerTile(
+          key: ValueKey('drawer-account-${account.id}'),
+          icon: account.isQr
+              ? Icons.qr_code_2_rounded
+              : Icons.account_circle_outlined,
+          label: account.displayName,
+          selected: account.id == store.activeId,
+          badge: account.isExpired && !account.isQr ? '过期' : null,
+          onTap: () => onAccountSelected(account.id),
+        ),
+      _DrawerTile(
+        key: const ValueKey('drawer-account-manager'),
+        icon: Icons.manage_accounts_outlined,
+        label: store.accounts.isEmpty ? '登录或添加账号' : '账号管理',
+        onTap: onManageAccounts,
+      ),
+    ],
+  );
 }
 
 class _DrawerSectionLabel extends StatelessWidget {

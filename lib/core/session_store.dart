@@ -8,6 +8,8 @@ import 'package:zhihu_api/zhihu_api.dart' as zhihu_api;
 import 'platform_environment.dart'
     if (dart.library.io) 'platform_environment_io.dart';
 import 'cloud_id_signer.dart';
+import 'app_log.dart';
+import 'private_app_storage.dart';
 import 'recommendation_engine.dart';
 
 part 'session_store_parts/session_models.dart';
@@ -19,7 +21,9 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   _SessionStoreCore({
     FlutterSecureStorage? storage,
     required this._persistInFlutterTests,
-  }) : _storage = storage ?? const FlutterSecureStorage();
+  }) : _storage = storage == null
+           ? PrivateAppStorage.instance
+           : FlutterSecureKeyValueStore(storage);
 
   static const _authorizationKey = 'zh_authorization';
   static const _udidKey = 'zh_udid';
@@ -62,6 +66,8 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   static const _networkLoggingEnabledKey = 'zh_setting_network_logging_enabled';
   static const _performanceLoggingEnabledKey =
       'zh_setting_performance_logging_enabled';
+  static const _authenticationLoggingEnabledKey =
+      'zh_setting_authentication_logging_enabled';
 
   static const List<HomeFeedChannel> defaultHomeFeedOrder = [
     HomeFeedChannel.following,
@@ -70,13 +76,17 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     HomeFeedChannel.story,
   ];
 
-  final FlutterSecureStorage _storage;
+  final SessionKeyValueStore _storage;
   final bool _persistInFlutterTests;
   final _browsingHistoryChanges = _SessionChangeSignal();
   Future<void> _browsingHistoryWrite = Future<void>.value();
   Future<void> _credentialPersistence = Future<void>.value();
   int _credentialRevision = 0;
   bool _storageUnavailable = false;
+  zhihu_api.ApiSessionCleanupRequest? _pendingAccountCleanup;
+  bool _hasRecoverableAccountSession = false;
+  int _lastDismissedCleanupRevision = -1;
+  DateTime? _lastDismissedCleanupAt;
 
   String authorization = '';
   String udid = '';
@@ -114,11 +124,14 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   List<BrowsingHistoryEntry> browsingHistory = const [];
   bool rememberBrowsingHistory = true;
 
-  /// Enables bounded, redacted diagnostics stored on this device.  Logging is
-  /// opt-in so credentials and content are never collected unexpectedly.
+  /// Enables bounded, redacted diagnostics stored on this device. General
+  /// diagnostics remain user configurable; authentication events have their
+  /// own opt-out and default to enabled so unexpected session changes remain
+  /// explainable.
   bool appLoggingEnabled = false;
   bool networkLoggingEnabled = false;
   bool performanceLoggingEnabled = false;
+  bool authenticationLoggingEnabled = true;
 
   /// Emits only when the local browsing-history collection changes.
   ///
@@ -150,7 +163,12 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       refreshToken.isNotEmpty &&
       accessTokenRefreshAt != null &&
       !DateTime.now().isBefore(accessTokenRefreshAt!);
+  zhihu_api.ApiSessionCleanupRequest? get pendingAccountCleanup =>
+      _pendingAccountCleanup;
+  bool get hasPendingAccountCleanup => _pendingAccountCleanup != null;
+  bool get hasRecoverableAccountSession => _hasRecoverableAccountSession;
   String get sessionLabel {
+    if (hasPendingAccountCleanup) return '登录状态待确认';
     if (hasAccountSession) {
       return isAccessTokenExpired ? '登录已过期' : '已登录';
     }
@@ -177,6 +195,27 @@ abstract class _SessionStoreCore extends ChangeNotifier {
 
   void _notifyChanged() => notifyListeners();
 
+  void _clearPendingAccountCleanup() {
+    _pendingAccountCleanup = null;
+    _lastDismissedCleanupRevision = -1;
+    _lastDismissedCleanupAt = null;
+  }
+
+  void _recordAuthenticationLog(
+    String message, {
+    AppLogLevel level = AppLogLevel.info,
+    Map<String, Object?> details = const {},
+  }) {
+    unawaited(
+      AppLogStore.instance.record(
+        category: AppLogCategory.authentication,
+        level: level,
+        message: message,
+        details: details,
+      ),
+    );
+  }
+
   Future<void> load() async {
     if (kIsWeb || zhIsFlutterTest) {
       // The widget-test VM has no secure-storage host registrar.  Treat it as
@@ -187,19 +226,43 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       notifyListeners();
       return;
     }
-    // Android secure storage crosses a platform channel and decrypts its
-    // backing preferences. Reading every setting separately makes startup
-    // scale linearly with the number of preferences, so take one consistent
-    // snapshot and decode all account and UI values from it.
+    // Read one consistent private-database snapshot and decode all account and
+    // UI values from it. This also prevents a transient database error from
+    // being mistaken for an empty account.
     Map<String, String> stored;
     try {
-      stored = await _storage.readAll().timeout(const Duration(seconds: 3));
-    } on Object {
-      // Linux/Windows hosts may not have a keyring service (and widget test
-      // engines do not register the plugin).  Keep the session in memory and
-      // let the app continue; no credential is ever copied to plain storage.
+      stored = await _storage.readAll().timeout(const Duration(seconds: 5));
+      _storageUnavailable = false;
+      if (_storage case final PrivateAppStorage privateStorage
+          when privateStorage.consumeMigrationNotice()) {
+        _recordAuthenticationLog(
+          '已将旧版登录信息迁移到应用私有凭据数据库',
+          details: const {
+            'source': 'legacy_secure_storage',
+            'destination': 'private_app_database',
+          },
+        );
+      }
+      if (_storage case final CredentialRecoveryStore recoveryStore) {
+        _hasRecoverableAccountSession = await recoveryStore
+            .hasCredentialRecovery();
+      }
+    } on Object catch (error) {
       _storageUnavailable = true;
-      stored = const <String, String>{};
+      // Never translate a storage read failure into an empty credential set.
+      // The in-memory values are left untouched and the private database keeps
+      // its original bytes for a later retry/recovery.
+      _recordAuthenticationLog(
+        '本地登录数据库读取失败，保留现有会话且未清理凭据',
+        level: AppLogLevel.error,
+        details: {
+          'storage': 'private_app_database',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained',
+        },
+      );
+      notifyListeners();
+      return;
     }
     String? read(String key) => stored[key];
 
@@ -294,6 +357,10 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     performanceLoggingEnabled = _decodeBool(
       read(_performanceLoggingEnabledKey),
       fallback: false,
+    );
+    authenticationLoggingEnabled = _decodeBool(
+      read(_authenticationLoggingEnabledKey),
+      fallback: true,
     );
     notifyListeners();
   }
@@ -444,6 +511,25 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     accountLockInSeconds: accountLockInSeconds,
   );
 
+  void _applyCredentialSnapshot(_CredentialSnapshot snapshot) {
+    authorization = snapshot.authorization;
+    udid = snapshot.udid;
+    cookie = snapshot.cookie;
+    msId = snapshot.msId;
+    xZse96 = snapshot.xZse96;
+    xZse96Target = snapshot.xZse96Target;
+    extraHeadersJson = snapshot.extraHeadersJson;
+    sessionKind = snapshot.sessionKind;
+    refreshToken = snapshot.refreshToken;
+    accessTokenExpiry = snapshot.accessTokenExpiry;
+    accessTokenRefreshAt = snapshot.accessTokenRefreshAt;
+    accountUid = snapshot.accountUid;
+    accountUserId = snapshot.accountUserId;
+    accountScope = snapshot.accountScope;
+    accountUnlockTicket = snapshot.accountUnlockTicket;
+    accountLockInSeconds = snapshot.accountLockInSeconds;
+  }
+
   Future<void> _persistCredentialSnapshot(_CredentialSnapshot snapshot) async {
     await _writeOrDelete(_authorizationKey, snapshot.authorization);
     await _writeOrDelete(_udidKey, snapshot.udid);
@@ -493,26 +579,54 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       kIsWeb ? Future<void>.value() : _safeWrite(key: key, value: value);
 
   Future<void> _safeWrite({required String key, required String value}) async {
-    if (_storageUnavailable || (zhIsFlutterTest && !_persistInFlutterTests)) {
+    if (zhIsFlutterTest && !_persistInFlutterTests) {
       return;
     }
     try {
       await _storage
           .write(key: key, value: value)
           .timeout(const Duration(seconds: 3));
-    } on Object {
+      _storageUnavailable = false;
+    } on Object catch (error) {
+      final firstFailure = !_storageUnavailable;
       _storageUnavailable = true;
+      if (firstFailure) {
+        _recordAuthenticationLog(
+          '本地登录数据库写入失败，将在下次凭据变更时重试',
+          level: AppLogLevel.error,
+          details: {
+            'operation': 'write',
+            'key': key,
+            'error_type': error.runtimeType.toString(),
+            'action': 'retained',
+          },
+        );
+      }
     }
   }
 
   Future<void> _safeDelete(String key) async {
-    if (_storageUnavailable || (zhIsFlutterTest && !_persistInFlutterTests)) {
+    if (zhIsFlutterTest && !_persistInFlutterTests) {
       return;
     }
     try {
       await _storage.delete(key: key).timeout(const Duration(seconds: 3));
-    } on Object {
+      _storageUnavailable = false;
+    } on Object catch (error) {
+      final firstFailure = !_storageUnavailable;
       _storageUnavailable = true;
+      if (firstFailure) {
+        _recordAuthenticationLog(
+          '本地登录数据库删除失败，将在下次凭据变更时重试',
+          level: AppLogLevel.error,
+          details: {
+            'operation': 'delete',
+            'key': key,
+            'error_type': error.runtimeType.toString(),
+            'action': 'retained',
+          },
+        );
+      }
     }
   }
 
@@ -614,7 +728,7 @@ class SessionStore extends _SessionStoreCore
         _SessionStoreHistoryMixin,
         _SessionStorePreferencesMixin,
         _SessionStoreCredentialsMixin
-    implements zhihu_api.ApiSession {
+    implements zhihu_api.ApiSession, zhihu_api.ApiSessionCleanupDelegate {
   SessionStore({super.storage}) : super(persistInFlutterTests: false);
 
   @visibleForTesting
@@ -678,4 +792,84 @@ class _CredentialSnapshot {
   final String accountScope;
   final String accountUnlockTicket;
   final int accountLockInSeconds;
+
+  bool get isAccountSession {
+    if (sessionKind == 'account') {
+      return authorization.trim().isNotEmpty &&
+          udid.trim().isNotEmpty &&
+          refreshToken.trim().isNotEmpty;
+    }
+    if (sessionKind != 'qr' || authorization.trim().isEmpty || udid.isEmpty) {
+      return false;
+    }
+    return cookie.split(';').any((part) {
+      final separator = part.indexOf('=');
+      return separator > 0 &&
+          part.substring(0, separator).trim().toLowerCase() == 'z_c0' &&
+          part.substring(separator + 1).trim().isNotEmpty;
+    });
+  }
+
+  Map<String, String> toStoredValues() => {
+    if (authorization.isNotEmpty)
+      _SessionStoreCore._authorizationKey: authorization,
+    if (udid.isNotEmpty) _SessionStoreCore._udidKey: udid,
+    if (cookie.isNotEmpty) _SessionStoreCore._cookieKey: cookie,
+    if (msId.isNotEmpty) _SessionStoreCore._msIdKey: msId,
+    if (xZse96.isNotEmpty) _SessionStoreCore._zse96Key: xZse96,
+    if (xZse96Target.isNotEmpty)
+      _SessionStoreCore._zse96TargetKey: xZse96Target,
+    if (extraHeadersJson.isNotEmpty)
+      _SessionStoreCore._extraHeadersKey: extraHeadersJson,
+    if (sessionKind.isNotEmpty) _SessionStoreCore._sessionKindKey: sessionKind,
+    if (refreshToken.isNotEmpty)
+      _SessionStoreCore._refreshTokenKey: refreshToken,
+    if (accessTokenExpiry != null)
+      _SessionStoreCore._accessTokenExpiryKey: accessTokenExpiry!
+          .toIso8601String(),
+    if (accessTokenRefreshAt != null)
+      _SessionStoreCore._accessTokenRefreshAtKey: accessTokenRefreshAt!
+          .toIso8601String(),
+    if (accountUid.isNotEmpty) _SessionStoreCore._accountUidKey: accountUid,
+    if (accountUserId.isNotEmpty)
+      _SessionStoreCore._accountUserIdKey: accountUserId,
+    if (accountScope.isNotEmpty)
+      _SessionStoreCore._accountScopeKey: accountScope,
+    if (accountUnlockTicket.isNotEmpty)
+      _SessionStoreCore._accountUnlockTicketKey: accountUnlockTicket,
+    if (accountLockInSeconds > 0)
+      _SessionStoreCore._accountLockInSecondsKey: accountLockInSeconds
+          .toString(),
+  };
+
+  static _CredentialSnapshot? fromStoredValues(Map<String, String> values) {
+    final snapshot = _CredentialSnapshot(
+      authorization: values[_SessionStoreCore._authorizationKey] ?? '',
+      udid: values[_SessionStoreCore._udidKey] ?? '',
+      cookie: values[_SessionStoreCore._cookieKey] ?? '',
+      msId: values[_SessionStoreCore._msIdKey] ?? '',
+      xZse96: values[_SessionStoreCore._zse96Key] ?? '',
+      xZse96Target: values[_SessionStoreCore._zse96TargetKey] ?? '',
+      extraHeadersJson: values[_SessionStoreCore._extraHeadersKey] ?? '',
+      sessionKind: values[_SessionStoreCore._sessionKindKey] ?? '',
+      refreshToken: values[_SessionStoreCore._refreshTokenKey] ?? '',
+      accessTokenExpiry: DateTime.tryParse(
+        values[_SessionStoreCore._accessTokenExpiryKey] ?? '',
+      ),
+      accessTokenRefreshAt: DateTime.tryParse(
+        values[_SessionStoreCore._accessTokenRefreshAtKey] ?? '',
+      ),
+      accountUid: values[_SessionStoreCore._accountUidKey] ?? '',
+      accountUserId: values[_SessionStoreCore._accountUserIdKey] ?? '',
+      accountScope: values[_SessionStoreCore._accountScopeKey] ?? '',
+      accountUnlockTicket:
+          values[_SessionStoreCore._accountUnlockTicketKey] ?? '',
+      accountLockInSeconds:
+          int.tryParse(
+            values[_SessionStoreCore._accountLockInSecondsKey] ?? '',
+          ) ??
+          0,
+    );
+    return snapshot.isAccountSession ? snapshot : null;
+  }
 }

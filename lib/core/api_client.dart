@@ -25,7 +25,7 @@ export 'package:zhihu_api/zhihu_api.dart'
         ZhihuApiClientSaltRoutes,
         ZhihuApiClientTransport;
 
-/// The application adapter keeps secure storage, native HTTP channels and
+/// The application adapter keeps the private credential database, native HTTP channels and
 /// Flutter diagnostics in the app, while all endpoint/routing/signing logic
 /// is provided by the reusable pure-Dart package.
 class ZhihuApiClient extends zhihu_api.ZhihuApiClient {
@@ -162,6 +162,7 @@ class _FlutterApiLogger implements zhihu_api.ApiLogger {
     'performance' => AppLogCategory.performance,
     'upload' => AppLogCategory.network,
     'error' => AppLogCategory.error,
+    'authentication' => AppLogCategory.authentication,
     _ => AppLogCategory.app,
   };
 

@@ -3,12 +3,12 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import 'app_log.dart';
+import 'private_app_storage.dart';
 import 'session_store.dart';
 
-/// A local account slot, kept in secure storage and never rendered with token
+/// A local account slot, kept in the app-private credential database and never rendered with token
 /// values. Multiple slots let a user switch between accounts or QR sessions
 /// without logging out of every device/session.
 class StoredAccountSession {
@@ -105,7 +105,7 @@ class AccountSessionStore extends ChangeNotifier {
   static const _storageKey = 'zh_account_sessions_v1';
   static const _maximumAccounts = 5;
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final PrivateAppStorage _storage = PrivateAppStorage.instance;
   final _accounts = <StoredAccountSession>[];
   Future<void>? _loading;
   Future<void> _writing = Future<void>.value();
@@ -129,39 +129,46 @@ class AccountSessionStore extends ChangeNotifier {
   Future<void> _loadOnce() async {
     try {
       final raw = await _storage
-          .read(key: _storageKey)
-          .timeout(const Duration(seconds: 3));
+          .read(_storageKey)
+          .timeout(const Duration(seconds: 5));
+      final loadedAccounts = <StoredAccountSession>[];
+      var loadedActiveId = '';
       if (raw != null && raw.isNotEmpty) {
         final decoded = jsonDecode(raw);
-        if (decoded is Map) {
-          _activeId = decoded['active_id']?.toString() ?? '';
-          final values = decoded['accounts'];
-          if (values is List) {
-            for (final value in values) {
-              try {
-                final entry = StoredAccountSession.fromJson(value);
-                if (entry.id.isNotEmpty &&
-                    !_accounts.any((item) => item.id == entry.id)) {
-                  _accounts.add(entry);
-                }
-              } on Object {
-                // One malformed legacy slot must not hide the other accounts.
+        if (decoded is! Map) throw const FormatException('账号槽位不是对象');
+        loadedActiveId = decoded['active_id']?.toString() ?? '';
+        final values = decoded['accounts'];
+        if (values is List) {
+          for (final value in values) {
+            try {
+              final entry = StoredAccountSession.fromJson(value);
+              if (entry.id.isNotEmpty &&
+                  !loadedAccounts.any((item) => item.id == entry.id)) {
+                loadedAccounts.add(entry);
               }
+            } on Object {
+              // One malformed legacy slot must not hide the other accounts.
             }
           }
         }
       }
+      _accounts
+        ..clear()
+        ..addAll(loadedAccounts);
+      _activeId = _accounts.any((item) => item.id == loadedActiveId)
+          ? loadedActiveId
+          : '';
+      _loaded = true;
     } on Object catch (error, stackTrace) {
       unawaited(
         AppLogStore.instance.recordError(
           error,
           stackTrace,
-          message: '账号槽位读取失败，使用空列表',
-          category: AppLogCategory.app,
+          message: '账号槽位读取失败，保留已有列表并等待重试',
+          category: AppLogCategory.authentication,
         ),
       );
     } finally {
-      _loaded = true;
       notifyListeners();
     }
   }

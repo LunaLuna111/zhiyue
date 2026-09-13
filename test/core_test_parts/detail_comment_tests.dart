@@ -1271,6 +1271,42 @@ void registerDetailCommentTests() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('segment comment alias uses the sentence wire filter', (
+    tester,
+  ) async {
+    final requestedTypes = <String>[];
+    final api = ZhihuApiClient(SessionStore());
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(
+        CommentThreadView(
+          api: api,
+          title: '评论',
+          contentType: 'answer',
+          contentId: '7',
+          initialCommentType: 'segment',
+          loadInitial: (order, type) async {
+            requestedTypes.add(type);
+            return _response(
+              '/comment_v5/answers/7/root_comment',
+              json: const {
+                'counts': {'total_counts': 0},
+                'data': <Object>[],
+                'paging': {'is_end': true},
+              },
+            );
+          },
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(requestedTypes, ['sentence']);
+    expect(find.text('句子评论'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'comment latest sorter reloads the root page and stays selected',
     (tester) async {

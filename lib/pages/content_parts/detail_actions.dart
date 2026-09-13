@@ -57,6 +57,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
       contentAuthorIds: personIdentityKeys(object['author']),
       questionAuthorIds: personIdentityKeys(question?['author']),
       initialCommentType: 'segment',
+      segmentId: sentenceIds.join(','),
       contextQuote: quote,
     );
   }

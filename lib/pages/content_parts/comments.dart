@@ -59,6 +59,14 @@ int? _commentTotalCountOf(Object? value) {
   return null;
 }
 
+String _normalizeCommentType(String value) {
+  final normalized = value.trim().toLowerCase();
+  // `segment` is the UI/content-renderer name. The actual filtered route is
+  // selected separately with `segmentId`; keep this normalized value for the
+  // title and legacy callers that do not yet have a locator.
+  return normalized == 'segment' ? 'sentence' : normalized;
+}
+
 class CommentThreadController {
   _CommentThreadViewState? _state;
 
@@ -77,6 +85,7 @@ class CommentsPage extends StatelessWidget {
     this.onCommentCountChanged,
     this.sheetMode = false,
     this.initialCommentType = '',
+    this.segmentId = '',
     this.contextQuote = '',
   });
 
@@ -89,6 +98,7 @@ class CommentsPage extends StatelessWidget {
   final ValueChanged<int>? onCommentCountChanged;
   final bool sheetMode;
   final String initialCommentType;
+  final String segmentId;
   final String contextQuote;
 
   @override
@@ -103,14 +113,22 @@ class CommentsPage extends StatelessWidget {
       fallbackCount: fallbackCount,
       sheetMode: sheetMode,
       initialCommentType: initialCommentType,
+      segmentId: segmentId,
       contextQuote: contextQuote,
       loadInitial: (orderBy, commentType) => api.getUri(
-        api.commentsInitialUri(
-          contentType: contentType,
-          contentId: contentId,
-          orderBy: orderBy,
-          type: commentType,
-        ),
+        segmentId.trim().isNotEmpty
+            ? api.segmentCommentsInitialUri(
+                contentType: contentType,
+                contentId: contentId,
+                segmentId: segmentId,
+                orderBy: orderBy,
+              )
+            : api.commentsInitialUri(
+                contentType: contentType,
+                contentId: contentId,
+                orderBy: orderBy,
+                type: commentType,
+              ),
       ),
       loadContextHeader: () => api.getUri(
         api.commentListHeadersUri(
@@ -149,6 +167,7 @@ Future<void> showOfficialCommentsSheet(
   int? fallbackCount,
   ValueChanged<int>? onCommentCountChanged,
   String initialCommentType = '',
+  String segmentId = '',
   String contextQuote = '',
 }) => showModalBottomSheet<void>(
   context: context,
@@ -174,6 +193,7 @@ Future<void> showOfficialCommentsSheet(
         onCommentCountChanged: onCommentCountChanged,
         sheetMode: true,
         initialCommentType: initialCommentType,
+        segmentId: segmentId,
         contextQuote: contextQuote,
       ),
     ),
@@ -200,6 +220,7 @@ class CommentThreadView extends StatefulWidget {
     this.fallbackCount,
     this.emptyMessage = '还没有评论',
     this.initialCommentType = '',
+    this.segmentId = '',
     this.contextQuote = '',
   });
 
@@ -220,6 +241,7 @@ class CommentThreadView extends StatefulWidget {
   final int? fallbackCount;
   final String emptyMessage;
   final String initialCommentType;
+  final String segmentId;
   final String contextQuote;
 
   @override
@@ -239,7 +261,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
   @override
   void initState() {
     super.initState();
-    _commentType = widget.initialCommentType;
+    _commentType = _normalizeCommentType(widget.initialCommentType);
     _totalCount = widget.fallbackCount;
     widget.controller?._state = this;
     if (widget.loadContextHeader != null) _loadListHeaders();
@@ -257,6 +279,11 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     if (oldWidget.fallbackCount != widget.fallbackCount &&
         _totalCount == oldWidget.fallbackCount) {
       _totalCount = widget.fallbackCount;
+    }
+    if (oldWidget.initialCommentType != widget.initialCommentType) {
+      _commentType = _normalizeCommentType(widget.initialCommentType);
+      _orderBy = 'score';
+      _revision++;
     }
   }
 
@@ -481,7 +508,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     return response;
   }
 
-  String get _resolvedTitle => widget.initialCommentType == 'segment'
+  String get _resolvedTitle => _commentType == 'sentence'
       ? '句子评论'
       : widget.embedded
       ? widget.title
@@ -489,7 +516,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
 
   Widget? get _resolvedTitleWidget {
     if (widget.embedded) return null;
-    if (widget.initialCommentType == 'segment') {
+    if (_commentType == 'sentence') {
       return const Text(
         '句子评论',
         style: TextStyle(
@@ -527,7 +554,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     return PagedListPage(
       key: ValueKey(
         'comments-${widget.contentType}-${widget.contentId}-'
-        '$_commentType-$_orderBy-$_revision',
+        '${widget.segmentId}-$_commentType-$_orderBy-$_revision',
       ),
       title: _resolvedTitle,
       titleWidget: _resolvedTitleWidget,

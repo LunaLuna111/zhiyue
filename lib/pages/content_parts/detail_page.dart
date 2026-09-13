@@ -8,6 +8,7 @@ class ContentDetailPage extends StatefulWidget {
     required this.contentId,
     this.initialValue,
     this.previousAnswer,
+    this.answerHistory = const [],
   });
 
   final ZhihuApiClient api;
@@ -15,6 +16,7 @@ class ContentDetailPage extends StatefulWidget {
   final String contentId;
   final Map<String, dynamic>? initialValue;
   final Map<String, dynamic>? previousAnswer;
+  final List<Map<String, dynamic>> answerHistory;
 
   @override
   State<ContentDetailPage> createState() => _ContentDetailPageState();

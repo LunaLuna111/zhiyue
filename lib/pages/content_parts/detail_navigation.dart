@@ -148,24 +148,26 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
       // can still load the same answer from its regular cache/API path.
     }
     if (!mounted) return;
+    final answerHistory = <Map<String, dynamic>>[
+      for (final value in widget.answerHistory)
+        Map<String, dynamic>.from(value),
+      if (widget.previousAnswer case final previous?)
+        Map<String, dynamic>.from(previous),
+    ];
     final source = Map<String, dynamic>.from(
       prefetched == null ? answer : mergeListMetadata(prefetched, answer),
     )..putIfAbsent('type', () => 'answer');
-    final result = await Navigator.of(context).push(
-      _nextAnswerRoute(
-        api: widget.api,
-        answerId: answerId,
-        initialValue: source,
-        previousAnswer: _document ?? _initialSemantic,
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        _nextAnswerRoute(
+          api: widget.api,
+          answerId: answerId,
+          initialValue: source,
+          previousAnswer: _document ?? _initialSemantic,
+          answerHistory: answerHistory,
+        ),
       ),
     );
-    if (!mounted) return;
-    _answerSwitchBusy = false;
-    _answerOverscrollRaw = 0;
-    _setAnswerOverscroll(0);
-    if (result == answerSwitchPreviousResult && _scrollController.hasClients) {
-      _scrollController.jumpTo(_scrollController.position.minScrollExtent);
-    }
   }
 
   Future<void> _switchToPreviousAnswer() async {
@@ -174,9 +176,25 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
     _answerOverscrollRaw = -answerSwitchTriggerDistance;
     _setAnswerOverscroll(answerSwitchMaxDistance);
     await Future<void>.delayed(const Duration(milliseconds: 80));
-    if (mounted) {
-      Navigator.of(context).pop(answerSwitchPreviousResult);
-    }
+    if (!mounted) return;
+    final history = [
+      for (final value in widget.answerHistory)
+        Map<String, dynamic>.from(value),
+    ];
+    final previous = history.isEmpty ? null : history.removeLast();
+    final source = Map<String, dynamic>.from(_previousAnswerPreview!)
+      ..putIfAbsent('type', () => 'answer');
+    unawaited(
+      Navigator.of(context).pushReplacement(
+        _nextAnswerRoute(
+          api: widget.api,
+          answerId: idOf(source),
+          initialValue: source,
+          previousAnswer: previous,
+          answerHistory: history,
+        ),
+      ),
+    );
   }
 
   PageRoute<String> _nextAnswerRoute({
@@ -184,6 +202,7 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
     required String answerId,
     required Map<String, dynamic> initialValue,
     required Map<String, dynamic>? previousAnswer,
+    required List<Map<String, dynamic>> answerHistory,
   }) => PageRouteBuilder<String>(
     settings: RouteSettings(name: '/answer/$answerId'),
     transitionDuration: const Duration(milliseconds: 220),
@@ -194,6 +213,7 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
       contentId: answerId,
       initialValue: initialValue,
       previousAnswer: previousAnswer,
+      answerHistory: answerHistory,
     ),
     transitionsBuilder: (_, animation, _, child) {
       final curved = CurvedAnimation(

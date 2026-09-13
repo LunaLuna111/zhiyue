@@ -2,7 +2,6 @@ part of '../content_pages.dart';
 
 const answerSwitchTriggerDistance = 80.0;
 const answerSwitchMaxDistance = 200.0;
-const answerSwitchPreviousResult = 'answer-switch-previous';
 
 double dampedAnswerOverscroll(double rawDistance) {
   final sign = rawDistance < 0 ? -1.0 : 1.0;

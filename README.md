@@ -4,7 +4,6 @@
 
 知阅是一款使用 Flutter 开发的第三方知乎客户端，侧重原生化阅读体验、完整内容展示、盐选故事阅读、评论交互、隐私保护和本地数据管理。
 
-> 当前版本：0.2.39<br>
 > 支持平台：Android arm64、macOS、Windows x64<br>
 > Android / iOS 应用标识：`com.zhiyue.client`<br>
 > 接口库：[LunaLuna111/zhihu_api](https://github.com/LunaLuna111/zhihu_api)
@@ -128,9 +127,9 @@ macOS 构建目前未经过 Apple 公证。Windows 和 macOS 压缩包解压后�
 ## 环境要求
 
 - Flutter stable
-- Dart 3.12 或更高版本
-- Java 17
-- Android 构建需要 Android SDK 和 Java 17
+- Dart stable
+- Java LTS
+- Android 构建需要 Android SDK 和 Java LTS
 - macOS 构建需要完整 Xcode
 - Windows 构建需要 Visual Studio 的 Desktop development with C++ 工作负载
 
@@ -148,13 +147,13 @@ cd zhiyue
 flutter pub get
 ```
 
-`zhihu_api` 通过 GitHub tag 获取，不依赖本机相对路径：
+`zhihu_api` 通过 GitHub 获取，不依赖本机相对路径：
 
 ```yaml
 zhihu_api:
   git:
     url: https://github.com/LunaLuna111/zhihu_api.git
-    ref: v0.2.1
+    ref: main
 ```
 
 阅读正文与书架使用独立的通用 `universal_reader` Flutter/Dart 库。客户端把书籍信息、目录、章节和正文格式，以及书架条目、加载状态和操作回调传入库；知乎接口、盐选传输解密、缓存和 Flutter 平台能力保留在客户端适配层。
@@ -163,7 +162,7 @@ zhihu_api:
 universal_reader:
   git:
     url: https://github.com/LunaLuna111/universal_reader.git
-    ref: v0.3.0
+    ref: main
 ```
 
 ## 运行
@@ -239,13 +238,6 @@ Release 必须满足以下约定：
 ```text
 Release 标签：v<versionName>
 APK 文件名：zhiyue-<versionName>+<versionCode>-arm64.apk
-```
-
-例如：
-
-```text
-Release 标签：v0.2.39
-APK 文件名：zhiyue-0.2.39+151-arm64.apk
 ```
 
 下载和安装前会依次检查：

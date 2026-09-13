@@ -124,6 +124,7 @@ class CommentsPage extends StatelessWidget {
         content: value.text,
         replyCommentId: target.replyCommentId,
         sticker: value.sticker,
+        imageUrl: value.image?.url,
       ),
       onCommentCountChanged: onCommentCountChanged,
     );

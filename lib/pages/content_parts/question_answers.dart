@@ -263,6 +263,8 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
         api: widget.api,
         title: '写回答',
         maxLength: 100000,
+        enableImage: false,
+        enableGift: false,
         onSubmit: (value) async {
           if (value.text.trim().isEmpty) return '回答内容不能为空';
           final resolvedQuestion = _resolvedQuestion;

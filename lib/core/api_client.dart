@@ -75,11 +75,17 @@ class ZhihuApiClient extends zhihu_api.ZhihuApiClient {
     String replyCommentId = '',
     CommentEmoticon? sticker,
     ContentSelection? selection,
+    String? imageUrl,
+    int imageWidth = 0,
+    int imageHeight = 0,
   }) => zhihu_api.ZhihuApiClient.buildCommentBody(
     content: content,
     replyCommentId: replyCommentId,
     sticker: sticker,
     selection: selection,
+    imageUrl: imageUrl,
+    imageWidth: imageWidth,
+    imageHeight: imageHeight,
   );
 
   static Map<String, Object?> buildAnswerEditorBody({

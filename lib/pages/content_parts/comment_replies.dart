@@ -136,6 +136,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
                   content: value.text,
                   replyCommentId: resolvedTarget.replyCommentId,
                   sticker: value.sticker,
+                  imageUrl: value.image?.url,
                 )
               : await widget.submitComment!(value, resolvedTarget);
           return response.isSuccess ? null : _mutationError(response);

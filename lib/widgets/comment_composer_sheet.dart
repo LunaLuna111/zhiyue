@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -7,20 +8,45 @@ import '../core/api_response.dart';
 import '../core/app_log.dart';
 import '../core/comment_emoticon_assets.dart';
 import '../core/json_tools.dart';
+import '../core/native_image_picker.dart';
 import '../ui/zh_theme.dart';
 
 part '../features/comments/comment_composer_parts/composer_surface.dart';
+part '../features/comments/comment_composer_parts/editing_controller.dart';
+
+class CommentImageAttachment {
+  const CommentImageAttachment({
+    required this.bytes,
+    required this.fileName,
+    required this.mimeType,
+    this.url = '',
+  });
+
+  final Uint8List bytes;
+  final String fileName;
+  final String mimeType;
+  final String url;
+
+  CommentImageAttachment copyWith({String? url}) => CommentImageAttachment(
+    bytes: bytes,
+    fileName: fileName,
+    mimeType: mimeType,
+    url: url ?? this.url,
+  );
+}
 
 class CommentComposerValue {
   const CommentComposerValue({
     required this.text,
     this.sticker,
     this.replyTarget,
+    this.image,
   });
 
   final String text;
   final CommentEmoticon? sticker;
   final CommentReplyTarget? replyTarget;
+  final CommentImageAttachment? image;
 }
 
 class CommentComposerSheet extends StatefulWidget {
@@ -34,6 +60,8 @@ class CommentComposerSheet extends StatefulWidget {
     this.initialEmoticonGroups,
     this.initialShowEmoticons = false,
     this.replyTarget,
+    this.enableImage = true,
+    this.enableGift = true,
   });
 
   final ZhihuApiClient api;
@@ -43,6 +71,8 @@ class CommentComposerSheet extends StatefulWidget {
   final List<CommentEmoticonGroup>? initialEmoticonGroups;
   final bool initialShowEmoticons;
   final CommentReplyTarget? replyTarget;
+  final bool enableImage;
+  final bool enableGift;
   final Future<String?> Function(CommentComposerValue value) onSubmit;
 
   @override
@@ -66,6 +96,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
   Timer? _imeTransitionTimer;
   Timer? _tipTimer;
   OverlayEntry? _tipOverlay;
+  CommentImageAttachment? _image;
+  Future<void>? _imageUploadFuture;
+  bool _imageUploading = false;
+  bool _giftPanelPending = false;
   DateTime? _emoticonTransitionStartedAt;
   bool _emoticonFrameScheduled = false;
   bool _loadingCatalog = true;
@@ -175,6 +209,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     _imeTransitionTimer?.cancel();
     _tipTimer?.cancel();
     _tipOverlay?.remove();
+    _imageUploadFuture = null;
     _controller
       ..removeListener(_refresh)
       ..dispose();
@@ -182,7 +217,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     super.dispose();
   }
 
-  bool get _canSubmit => !_sending && (_hasText || _selectedSticker != null);
+  bool get _canSubmit =>
+      !_sending &&
+      !_imageUploading &&
+      (_hasText || _selectedSticker != null || _image != null);
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
@@ -195,11 +233,23 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
           details: {
             'has_text': _hasText,
             'has_sticker': _selectedSticker != null,
+            'has_image': _image != null,
           },
         ),
       );
       _showTip('请先登录后再发布');
       return;
+    }
+    if (_image != null && _image!.url.isEmpty) {
+      try {
+        await _ensureImageUploaded();
+      } catch (error) {
+        if (mounted) {
+          setState(() => _error = ApiFailure.from(error).userMessage);
+        }
+        return;
+      }
+      if (!mounted || _image?.url.isEmpty == true) return;
     }
     setState(() {
       _sending = true;
@@ -211,6 +261,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
           text: _controller.text,
           sticker: _selectedSticker,
           replyTarget: widget.replyTarget,
+          image: _image,
         ),
       );
       if (!mounted) return;
@@ -416,6 +467,165 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     setState(() => _selectedSticker = value);
   }
 
+  void _mention() {
+    if (_showEmoticons) {
+      setState(() => _showEmoticons = false);
+    }
+    final targetName = widget.replyTarget?.targetUserName.trim() ?? '';
+    if (targetName.isEmpty) {
+      _insertText('@');
+      _showTip('请输入用户名完成提及');
+    } else {
+      _insertText('@$targetName ');
+      _showTip('已提及 $targetName');
+    }
+    _focusNode.requestFocus();
+  }
+
+  int? get _giftGroupIndex {
+    for (var index = 0; index < _groups.length; index++) {
+      if (_groups[index].emoticons.any((value) => !value.isInlineEmoji)) {
+        return index;
+      }
+    }
+    for (var index = 0; index < _groups.length; index++) {
+      if (_groups[index].type.trim().toLowerCase() == 'vip') return index;
+    }
+    return _groups.isEmpty ? null : 0;
+  }
+
+  void _openGiftPanel() {
+    final index = _giftGroupIndex;
+    if (index == null) {
+      if (_loadingCatalog) {
+        if (_giftPanelPending) return;
+        _giftPanelPending = true;
+        _showTip('正在加载礼物');
+        unawaited(
+          _loadCatalog().whenComplete(() {
+            if (!mounted || !_giftPanelPending) return;
+            _giftPanelPending = false;
+            _openGiftPanel();
+          }),
+        );
+      } else {
+        _showTip('暂无可用礼物');
+      }
+      return;
+    }
+    _giftPanelPending = false;
+    if (_showEmoticons) {
+      setState(() => _selectedGroup = index);
+      return;
+    }
+    _selectedGroup = index;
+    _toggleEmoticons();
+  }
+
+  Future<void> _pickImage() async {
+    if (_imageUploading || _sending) return;
+    try {
+      final picked = await NativeImagePicker.pickSingleImage();
+      if (!mounted || picked == null) return;
+      final attachment = CommentImageAttachment(
+        bytes: picked.bytes,
+        fileName: picked.fileName,
+        mimeType: picked.mimeType,
+      );
+      setState(() {
+        _image = attachment;
+        _showEmoticons = false;
+        _pendingEmoticons = false;
+        _error = '';
+      });
+      if (widget.api.canWrite) {
+        await _ensureImageUploaded();
+      } else {
+        _showTip('图片已添加，登录后可发布');
+      }
+      if (!mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _focusNode.requestFocus();
+      });
+    } catch (error) {
+      if (mounted) {
+        setState(() => _error = ApiFailure.from(error).userMessage);
+      }
+    }
+  }
+
+  Future<void> _ensureImageUploaded() {
+    final current = _image;
+    if (current == null || current.url.isNotEmpty) return Future.value();
+    final pending = _imageUploadFuture;
+    if (pending != null) return pending;
+    final future = _uploadImage(current);
+    _imageUploadFuture = future;
+    return future.whenComplete(() {
+      if (identical(_imageUploadFuture, future)) _imageUploadFuture = null;
+    });
+  }
+
+  Future<void> _uploadImage(CommentImageAttachment attachment) async {
+    if (!widget.api.canWrite) {
+      throw const ApiTransportException('请先登录后再发布图片');
+    }
+    if (mounted) setState(() => _imageUploading = true);
+    try {
+      final response = await widget.api.uploadCommentImage(
+        bytes: attachment.bytes,
+        fileName: attachment.fileName,
+        mimeType: attachment.mimeType,
+      );
+      if (!response.isSuccess) throw response;
+      final url = _uploadedImageUrl(response.json);
+      if (url.isEmpty) {
+        throw const ApiTransportException('图片上传未返回地址');
+      }
+      if (mounted && identical(_image, attachment)) {
+        setState(() => _image = attachment.copyWith(url: url));
+      }
+    } finally {
+      if (mounted) setState(() => _imageUploading = false);
+    }
+  }
+
+  String _uploadedImageUrl(Object? value, [int depth = 0]) {
+    if (depth > 5) return '';
+    if (value is Map) {
+      for (final key in const [
+        'url',
+        'src',
+        'original_src',
+        'original_url',
+        'image_url',
+      ]) {
+        final candidate = value[key]?.toString().trim() ?? '';
+        final uri = Uri.tryParse(candidate);
+        if (uri != null &&
+            uri.scheme == 'https' &&
+            uri.host.isNotEmpty &&
+            uri.userInfo.isEmpty) {
+          return candidate;
+        }
+      }
+      for (final key in const ['data', 'image', 'images', 'result']) {
+        final found = _uploadedImageUrl(value[key], depth + 1);
+        if (found.isNotEmpty) return found;
+      }
+      for (final child in value.values) {
+        final found = _uploadedImageUrl(child, depth + 1);
+        if (found.isNotEmpty) return found;
+      }
+    } else if (value is List) {
+      for (final child in value) {
+        final found = _uploadedImageUrl(child, depth + 1);
+        if (found.isNotEmpty) return found;
+      }
+    }
+    return '';
+  }
+
   void _backspace() {
     final text = _controller.text;
     final selection = _controller.selection;
@@ -458,7 +668,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     // The official editor uses a compact 164dp bottom surface and grows only
     // when its own emoticon panel is visible. It is not a second titled page.
     final collapsedHeight =
-        164.0 + (_selectedSticker == null ? 0 : 48) + (_error.isEmpty ? 0 : 36);
+        164.0 +
+        (_selectedSticker == null ? 0 : 48) +
+        (_image == null ? 0 : 64) +
+        (_error.isEmpty ? 0 : 36);
     final targetHeight = _showEmoticons
         ? maxHeight.clamp(390.0, 520.0)
         : collapsedHeight.clamp(164.0, maxHeight);
@@ -527,6 +740,12 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   value: _selectedSticker!,
                   onRemove: () => setState(() => _selectedSticker = null),
                 ),
+              if (_image != null)
+                _SelectedImage(
+                  value: _image!,
+                  uploading: _imageUploading,
+                  onRemove: () => setState(() => _image = null),
+                ),
               if (_error.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(top: ZhSpace.xs),
@@ -546,11 +765,9 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   canSubmit: _canSubmit,
                   sending: _sending,
                   onEmoticons: _toggleEmoticons,
-                  onMention: () {
-                    _insertText('@');
-                    if (_showEmoticons) setState(() => _showEmoticons = false);
-                    _focusNode.requestFocus();
-                  },
+                  onMention: _mention,
+                  onImage: widget.enableImage ? _pickImage : null,
+                  onGift: widget.enableGift ? _openGiftPanel : null,
                   onSubmit: _submit,
                 ),
               ),
@@ -570,211 +787,5 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         ),
       ),
     );
-  }
-}
-
-class _CommentEditingController extends TextEditingController {
-  static final RegExp _emoticonPattern = RegExp(r'\[[^\]\n]{1,32}\]');
-
-  Map<String, CommentEmoticon> _inlineEmoticons = const {};
-
-  void setInlineEmoticons(Map<String, CommentEmoticon> value) {
-    _inlineEmoticons = Map.unmodifiable(value);
-    notifyListeners();
-  }
-
-  /// Keeps an inline emoji atomic when the platform IME sends a deletion.
-  ///
-  /// The editor stores the official token (for example `[赞同]`) as text so
-  /// the request body remains compatible with Zhihu. Its [buildTextSpan]
-  /// replaces that token with an image only at paint time. A normal Android
-  /// backspace therefore used to remove just the final `]`, leaving the
-  /// invisible token half behind as `[赞同`. Repair the edit at the controller
-  /// boundary so hardware keyboards, Android IMEs, and pasted selection edits
-  /// all share the same atomic-token behavior.
-  @override
-  set value(TextEditingValue newValue) {
-    super.value = _repairAtomicDeletion(super.value, newValue);
-  }
-
-  TextEditingValue _repairAtomicDeletion(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    if (_inlineEmoticons.isEmpty ||
-        newValue.text.length >= oldValue.text.length ||
-        oldValue.text == newValue.text) {
-      return newValue;
-    }
-
-    final edit = _pureDeletion(oldValue.text, newValue.text);
-    if (edit == null) return newValue;
-
-    final ranges = <({int start, int end})>[(start: edit.start, end: edit.end)];
-    for (final match in _emoticonPattern.allMatches(oldValue.text)) {
-      final token = match.group(0) ?? '';
-      if (!_inlineEmoticons.containsKey(token)) continue;
-      if (match.start < edit.end && match.end > edit.start) {
-        ranges.add((start: match.start, end: match.end));
-      }
-    }
-    final merged = _mergeRanges(ranges);
-    final repairedText = _removeRanges(oldValue.text, merged);
-    if (repairedText == newValue.text) return newValue;
-
-    final caret = _mapOffset(edit.start, merged);
-    return newValue.copyWith(
-      text: repairedText,
-      selection: TextSelection.collapsed(
-        offset: caret,
-        affinity: newValue.selection.affinity,
-      ),
-      composing: TextRange.empty,
-    );
-  }
-
-  ({int start, int end})? _pureDeletion(String oldText, String newText) {
-    var prefix = 0;
-    final prefixLimit = oldText.length < newText.length
-        ? oldText.length
-        : newText.length;
-    while (prefix < prefixLimit &&
-        oldText.codeUnitAt(prefix) == newText.codeUnitAt(prefix)) {
-      prefix++;
-    }
-
-    var suffix = 0;
-    while (suffix < oldText.length - prefix &&
-        suffix < newText.length - prefix &&
-        oldText.codeUnitAt(oldText.length - suffix - 1) ==
-            newText.codeUnitAt(newText.length - suffix - 1)) {
-      suffix++;
-    }
-    final oldEnd = oldText.length - suffix;
-    final newEnd = newText.length - suffix;
-    if (newEnd != prefix) return null;
-    return (start: prefix, end: oldEnd);
-  }
-
-  List<({int start, int end})> _mergeRanges(
-    List<({int start, int end})> ranges,
-  ) {
-    ranges.sort((a, b) {
-      final start = a.start.compareTo(b.start);
-      return start == 0 ? a.end.compareTo(b.end) : start;
-    });
-    final merged = <({int start, int end})>[];
-    for (final range in ranges) {
-      if (range.start >= range.end) continue;
-      if (merged.isEmpty || range.start > merged.last.end) {
-        merged.add(range);
-      } else if (range.end > merged.last.end) {
-        final previous = merged.removeLast();
-        merged.add((start: previous.start, end: range.end));
-      }
-    }
-    return merged;
-  }
-
-  String _removeRanges(String text, List<({int start, int end})> ranges) {
-    final buffer = StringBuffer();
-    var cursor = 0;
-    for (final range in ranges) {
-      if (range.start > cursor) {
-        buffer.write(text.substring(cursor, range.start));
-      }
-      cursor = range.end;
-    }
-    if (cursor < text.length) {
-      buffer.write(text.substring(cursor));
-    }
-    return buffer.toString();
-  }
-
-  int _mapOffset(int offset, List<({int start, int end})> ranges) {
-    var removed = 0;
-    for (final range in ranges) {
-      if (offset <= range.start) break;
-      if (offset < range.end) return range.start - removed;
-      removed += range.end - range.start;
-    }
-    return (offset - removed).clamp(0, super.value.text.length);
-  }
-
-  @override
-  TextSpan buildTextSpan({
-    required BuildContext context,
-    TextStyle? style,
-    required bool withComposing,
-  }) {
-    if (_inlineEmoticons.isEmpty ||
-        (withComposing &&
-            value.composing.isValid &&
-            !value.composing.isCollapsed)) {
-      return super.buildTextSpan(
-        context: context,
-        style: style,
-        withComposing: withComposing,
-      );
-    }
-    final spans = <InlineSpan>[];
-    // Keep the editor's paint matcher in lockstep with the deletion matcher
-    // and the comment renderers. Remote catalogs may contain longer labels;
-    // rendering only the first 24 characters leaves a visible bracket token
-    // even though the controller correctly treats the full token atomically.
-    final pattern = RegExp(r'\[[^\]\n]{1,32}\]');
-    var offset = 0;
-    for (final match in pattern.allMatches(text)) {
-      final emoticon = _inlineEmoticons[match.group(0)];
-      if (emoticon == null) continue;
-      if (match.start > offset) {
-        spans.add(TextSpan(text: text.substring(offset, match.start)));
-      }
-      spans.add(
-        WidgetSpan(
-          alignment: PlaceholderAlignment.middle,
-          baseline: TextBaseline.alphabetic,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1),
-            child: _editorEmoticonImage(emoticon, match.group(0) ?? ''),
-          ),
-        ),
-      );
-      offset = match.end;
-    }
-    if (offset < text.length) spans.add(TextSpan(text: text.substring(offset)));
-    return TextSpan(style: style, children: spans);
-  }
-
-  Widget _editorEmoticonImage(CommentEmoticon emoticon, String token) {
-    Widget fallback() => Text(token);
-    if (emoticon.assetImagePath.isNotEmpty) {
-      return Image.asset(
-        emoticon.assetImagePath,
-        key: ValueKey('comment-editor-emoticon-$token'),
-        width: 22,
-        height: 22,
-        fit: BoxFit.contain,
-        gaplessPlayback: true,
-        semanticLabel: token,
-        errorBuilder: (_, _, _) => fallback(),
-      );
-    }
-    if (emoticon.imageUrl.isNotEmpty) {
-      return ZhihuImage.network(
-        emoticon.imageUrl,
-        key: ValueKey('comment-editor-emoticon-$token'),
-        headers: zhihuImageRequestHeaders,
-        width: 22,
-        height: 22,
-        fit: BoxFit.contain,
-        cacheWidth: 66,
-        cacheHeight: 66,
-        loadingBuilder: (_, child, progress) =>
-            progress == null ? child : fallback(),
-        errorBuilder: (_, _, _) => fallback(),
-      );
-    }
-    return fallback();
   }
 }

@@ -91,12 +91,14 @@ extension _ContentDetailActions on _ContentDetailPageState {
                   content: value.text,
                   selection: selection,
                   sticker: value.sticker,
+                  imageUrl: value.image?.url,
                 )
               : await widget.api.createComment(
                   contentType: widget.contentType,
                   contentId: widget.contentId,
                   content: value.text,
                   sticker: value.sticker,
+                  imageUrl: value.image?.url,
                 );
           return response.isSuccess ? null : _mutationError(response);
         },
@@ -622,6 +624,8 @@ extension _ContentDetailActions on _ContentDetailPageState {
         api: widget.api,
         title: '写回答',
         maxLength: 100000,
+        enableImage: false,
+        enableGift: false,
         onSubmit: (value) async {
           if (value.text.trim().isEmpty) return '回答内容不能为空';
           final response = await widget.api.publishAnswer(

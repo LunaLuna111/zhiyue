@@ -164,6 +164,12 @@ void registerCommentComposerTests() {
           body: CommentComposerSheet(
             api: api,
             title: '回复 @测试用户',
+            replyTarget: const CommentReplyTarget(
+              contentType: 'answers',
+              contentId: '7',
+              replyCommentId: '8',
+              targetUserName: '测试用户',
+            ),
             initialEmoticonGroups: const [
               CommentEmoticonGroup(
                 id: 'EMOJI_GROUP_ID',
@@ -232,10 +238,10 @@ void registerCommentComposerTests() {
     await tester.pump();
 
     final field = tester.widget<TextField>(fieldFinder);
-    expect(field.controller!.text, '[赞同]@');
+    expect(field.controller!.text, '[赞同]@测试用户 ');
     await tester.tap(find.byKey(const Key('comment-composer-submit')));
     await tester.pump();
-    expect(submitted?.text, '[赞同]@');
+    expect(submitted?.text, '[赞同]@测试用户 ');
     expect(tester.takeException(), isNull);
   });
 

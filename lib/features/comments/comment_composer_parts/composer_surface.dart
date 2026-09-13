@@ -31,6 +31,8 @@ class _ComposerToolbar extends StatelessWidget {
     required this.sending,
     required this.onEmoticons,
     required this.onMention,
+    required this.onImage,
+    required this.onGift,
     required this.onSubmit,
   });
 
@@ -39,6 +41,8 @@ class _ComposerToolbar extends StatelessWidget {
   final bool sending;
   final VoidCallback onEmoticons;
   final VoidCallback onMention;
+  final VoidCallback? onImage;
+  final VoidCallback? onGift;
   final VoidCallback onSubmit;
 
   @override
@@ -63,15 +67,17 @@ class _ComposerToolbar extends StatelessWidget {
           onPointerDown: onMention,
           icon: const Icon(Icons.alternate_email_rounded, size: 26),
         ),
-        const IconButton(
-          tooltip: '图片评论',
-          onPressed: null,
-          icon: Icon(Icons.image_outlined, size: 26),
+        _ComposerToolbarIcon(
+          key: const Key('comment-composer-image'),
+          semanticLabel: '图片评论',
+          onPointerDown: onImage,
+          icon: const Icon(Icons.image_outlined, size: 26),
         ),
-        const IconButton(
-          tooltip: '礼物',
-          onPressed: null,
-          icon: Icon(Icons.card_giftcard_outlined, size: 25),
+        _ComposerToolbarIcon(
+          key: const Key('comment-composer-gift'),
+          semanticLabel: '礼物',
+          onPointerDown: onGift,
+          icon: const Icon(Icons.card_giftcard_outlined, size: 25),
         ),
         const Spacer(),
         SizedBox(
@@ -114,20 +120,33 @@ class _ComposerToolbarIcon extends StatelessWidget {
   });
 
   final String semanticLabel;
-  final VoidCallback onPointerDown;
+  final VoidCallback? onPointerDown;
   final Widget icon;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     label: semanticLabel,
+    enabled: onPointerDown != null,
     onTap: onPointerDown,
     child: Tooltip(
       message: semanticLabel,
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
-        onTapDown: (_) => onPointerDown(),
-        child: SizedBox.square(dimension: 48, child: Center(child: icon)),
+        onTapDown: onPointerDown != null ? (_) => onPointerDown!() : null,
+        child: SizedBox.square(
+          dimension: 48,
+          child: Center(
+            child: IconTheme(
+              data: IconTheme.of(context).copyWith(
+                color: onPointerDown != null
+                    ? null
+                    : Theme.of(context).disabledColor,
+              ),
+              child: icon,
+            ),
+          ),
+        ),
       ),
     ),
   );
@@ -160,6 +179,60 @@ class _SelectedSticker extends StatelessWidget {
           visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.close_rounded, size: 18),
         ),
+      ],
+    ),
+  );
+}
+
+class _SelectedImage extends StatelessWidget {
+  const _SelectedImage({
+    required this.value,
+    required this.uploading,
+    required this.onRemove,
+  });
+
+  final CommentImageAttachment value;
+  final bool uploading;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: ZhSpace.xs),
+    child: Row(
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            value.bytes,
+            width: 44,
+            height: 44,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            semanticLabel: '已选择的评论图片',
+          ),
+        ),
+        const SizedBox(width: ZhSpace.xs),
+        Expanded(
+          child: Text(
+            uploading ? '正在上传图片…' : '图片已添加',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+        if (uploading)
+          const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        else
+          IconButton(
+            key: const Key('comment-composer-image-remove'),
+            tooltip: '移除图片',
+            onPressed: onRemove,
+            visualDensity: VisualDensity.compact,
+            icon: const Icon(Icons.close_rounded, size: 18),
+          ),
       ],
     ),
   );

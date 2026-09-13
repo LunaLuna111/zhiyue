@@ -102,22 +102,278 @@ class _DetailMetaItem extends StatelessWidget {
   );
 }
 
-class _DetailImageGallery extends StatelessWidget {
-  const _DetailImageGallery({required this.urls});
+@immutable
+class _DetailImageSource {
+  const _DetailImageSource({required this.url, this.width, this.height});
 
-  final List<String> urls;
+  final String url;
+  final double? width;
+  final double? height;
+
+  double get aspectRatio {
+    final sourceRatio =
+        width != null && height != null && width! > 0 && height! > 0
+        ? width! / height!
+        : null;
+    // Unknown dimensions still get a stable box. The image is rendered with
+    // BoxFit.contain inside it, so its first decoded frame cannot reflow the
+    // answer column. Extreme server values are bounded to avoid a malformed
+    // payload creating an unusably tall placeholder.
+    return (sourceRatio ?? 4 / 3).clamp(.28, 3.5).toDouble();
+  }
+
+  String get identity {
+    final uri = Uri.tryParse(url);
+    return uri == null ? url : uri.replace(query: '', fragment: '').toString();
+  }
+}
+
+class _DetailImageDimensions {
+  const _DetailImageDimensions({this.width, this.height});
+
+  final double? width;
+  final double? height;
+}
+
+double? _positiveImageDimension(Object? value) {
+  final raw = value is num
+      ? value.toDouble()
+      : double.tryParse(
+          (value?.toString() ?? '').trim().replaceFirst(
+            RegExp(r'px$', caseSensitive: false),
+            '',
+          ),
+        );
+  return raw != null && raw.isFinite && raw > 0 ? raw : null;
+}
+
+_DetailImageDimensions? _detailImageDimensionsFromMap(
+  Object? value, [
+  int depth = 0,
+]) {
+  if (value is! Map || depth > 2) return null;
+  final map = value.map((key, value) => MapEntry(key.toString(), value));
+  const widthKeys = [
+    'width',
+    'raw_width',
+    'rawWidth',
+    'original_width',
+    'originalWidth',
+    'image_width',
+    'imageWidth',
+    'data-rawwidth',
+    'data_raw_width',
+    'natural_width',
+    'naturalWidth',
+  ];
+  const heightKeys = [
+    'height',
+    'raw_height',
+    'rawHeight',
+    'original_height',
+    'originalHeight',
+    'image_height',
+    'imageHeight',
+    'data-rawheight',
+    'data_raw_height',
+    'natural_height',
+    'naturalHeight',
+  ];
+  double? read(List<String> keys) {
+    for (final key in keys) {
+      final dimension = _positiveImageDimension(map[key]);
+      if (dimension != null) return dimension;
+    }
+    return null;
+  }
+
+  var width = read(widthKeys);
+  var height = read(heightKeys);
+  if (width != null && height != null) {
+    return _DetailImageDimensions(width: width, height: height);
+  }
+  for (final key in const [
+    'size',
+    'dimensions',
+    'original',
+    'original_size',
+    'originalSize',
+    'image_size',
+    'imageSize',
+    'metadata',
+  ]) {
+    final nested = _detailImageDimensionsFromMap(map[key], depth + 1);
+    if (nested == null) continue;
+    width ??= nested.width;
+    height ??= nested.height;
+    if (width != null && height != null) break;
+  }
+  return width == null && height == null
+      ? null
+      : _DetailImageDimensions(width: width, height: height);
+}
+
+String _detailImageAttribute(String tag, String name) {
+  final match = RegExp(
+    "\\b${RegExp.escape(name)}\\s*=\\s*(?:\"([^\"]*)\"|'([^']*)')",
+    caseSensitive: false,
+  ).firstMatch(tag);
+  return (match?.group(1) ?? match?.group(2) ?? '').trim();
+}
+
+String _detailImageUrl(Object? value) {
+  var raw = value?.toString().trim() ?? '';
+  if (raw.startsWith('//')) raw = 'https:$raw';
+  final uri = Uri.tryParse(raw.replaceAll('&amp;', '&'));
+  if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty) {
+    return '';
+  }
+  return uri.toString();
+}
+
+Map<String, _DetailImageDimensions> _detailHtmlImageDimensions(String html) {
+  final result = <String, _DetailImageDimensions>{};
+  final imageTags = RegExp(r'<img\b[^>]*>', caseSensitive: false);
+  for (final match in imageTags.allMatches(html)) {
+    final tag = match.group(0) ?? '';
+    var url = '';
+    for (final attribute in const [
+      'data-original',
+      'data-original-src',
+      'data-original-url',
+      'data-actualsrc',
+      'data-src',
+      'src',
+    ]) {
+      url = _detailImageUrl(_detailImageAttribute(tag, attribute));
+      if (url.isNotEmpty) break;
+    }
+    if (url.isEmpty) continue;
+    final width =
+        _positiveImageDimension(_detailImageAttribute(tag, 'data-rawwidth')) ??
+        _positiveImageDimension(_detailImageAttribute(tag, 'width'));
+    final height =
+        _positiveImageDimension(_detailImageAttribute(tag, 'data-rawheight')) ??
+        _positiveImageDimension(_detailImageAttribute(tag, 'height'));
+    if (width != null || height != null) {
+      final uri = Uri.parse(url).replace(query: '', fragment: '').toString();
+      result[uri] = _DetailImageDimensions(width: width, height: height);
+    }
+  }
+  return result;
+}
+
+_DetailImageSource _detailImageSource(
+  String url, {
+  Object? metadata,
+  Map<String, _DetailImageDimensions>? htmlDimensions,
+}) {
+  final mapDimensions = _detailImageDimensionsFromMap(metadata);
+  final htmlDimension = htmlDimensions == null
+      ? null
+      : htmlDimensions[(Uri.tryParse(
+              url,
+            )?.replace(query: '', fragment: '').toString() ??
+            url)];
+  return _DetailImageSource(
+    url: url,
+    width: mapDimensions?.width ?? htmlDimension?.width,
+    height: mapDimensions?.height ?? htmlDimension?.height,
+  );
+}
+
+int _detailImageCacheWidth(BuildContext context) {
+  final mediaQuery = MediaQuery.of(context);
+  final physicalWidth = mediaQuery.size.width * mediaQuery.devicePixelRatio;
+  return physicalWidth.round().clamp(480, 1920).toInt();
+}
+
+class _DetailImageWarmup extends StatefulWidget {
+  const _DetailImageWarmup({required this.sources, required this.child});
+
+  final List<_DetailImageSource> sources;
+  final Widget child;
+
+  @override
+  State<_DetailImageWarmup> createState() => _DetailImageWarmupState();
+}
+
+class _DetailImageWarmupState extends State<_DetailImageWarmup> {
+  final _scheduled = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _schedulePending();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DetailImageWarmup oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _schedulePending();
+  }
+
+  void _schedulePending() {
+    final pending = <_DetailImageSource>[];
+    for (final source in widget.sources) {
+      if (source.url.isEmpty || !_scheduled.add(source.identity)) continue;
+      pending.add(source);
+    }
+    if (pending.isEmpty) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_precacheConcurrently(pending));
+    });
+  }
+
+  Future<void> _precacheConcurrently(List<_DetailImageSource> sources) async {
+    var cursor = 0;
+    final workerCount = math.min(3, sources.length);
+    Future<void> worker() async {
+      while (true) {
+        if (!mounted || cursor >= sources.length) return;
+        final source = sources[cursor++];
+        try {
+          final provider = ResizeImage.resizeIfNeeded(
+            _detailImageCacheWidth(context),
+            null,
+            ZhihuCachedNetworkImageProvider(
+              source.url,
+              headers: zhihuImageRequestHeaders,
+            ),
+          );
+          await precacheImage(provider, context);
+        } catch (_) {
+          // The visible tile keeps its reserved placeholder and owns the
+          // normal ImageProvider retry/eviction behaviour.
+        }
+      }
+    }
+
+    await Future.wait(
+      List<Future<void>>.generate(workerCount, (_) => worker()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
+}
+
+class _DetailImageGallery extends StatelessWidget {
+  const _DetailImageGallery({required this.sources});
+
+  final List<_DetailImageSource> sources;
 
   @override
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: '${urls.length} 张正文图片',
+      label: '${sources.length} 张正文图片',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var index = 0; index < urls.length; index++) ...[
-            _DetailImageTile(url: urls[index]),
-            if (index != urls.length - 1) const SizedBox(height: 14),
+          for (var index = 0; index < sources.length; index++) ...[
+            _DetailImageTile(source: sources[index]),
+            if (index != sources.length - 1) const SizedBox(height: 14),
           ],
         ],
       ),
@@ -126,57 +382,60 @@ class _DetailImageGallery extends StatelessWidget {
 }
 
 class _DetailImageTile extends StatelessWidget {
-  const _DetailImageTile({required this.url});
+  const _DetailImageTile({required this.source});
 
-  final String url;
+  final _DetailImageSource source;
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     label: '查看正文图片原图',
     child: InkWell(
-      key: ValueKey('answer-image-$url'),
-      onTap: () => _showDetailImagePreview(context, url),
+      key: ValueKey('answer-image-${source.url}'),
+      onTap: () => _showDetailImagePreview(context, source.url),
       borderRadius: BorderRadius.circular(ZhRadius.card),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ZhRadius.card),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: 96),
-          child: ColoredBox(
-            color: ZhPalette.canvas,
-            child: ZhihuImage.network(
-              url,
-              headers: zhihuImageRequestHeaders,
-              width: double.infinity,
-              // The intrinsic dimensions preserve the complete aspect ratio.
-              fit: BoxFit.contain,
-              alignment: Alignment.center,
-              cacheWidth: 1440,
-              filterQuality: FilterQuality.medium,
-              loadingBuilder: (_, child, progress) => progress == null
-                  ? child
-                  : const SizedBox(
-                      height: 96,
-                      child: Center(
-                        child: SizedBox.square(
-                          dimension: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      ),
-                    ),
-              errorBuilder: (_, _, _) => const SizedBox(
-                height: 96,
-                child: Center(
-                  child: Icon(
-                    Icons.image_not_supported_outlined,
-                    color: ZhPalette.subtleInk,
-                  ),
-                ),
-              ),
-            ),
+        child: AspectRatio(
+          aspectRatio: source.aspectRatio,
+          child: ZhihuImage.network(
+            source.url,
+            headers: zhihuImageRequestHeaders,
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.contain,
+            alignment: Alignment.center,
+            cacheWidth: _detailImageCacheWidth(context),
+            filterQuality: FilterQuality.medium,
+            loadingBuilder: (_, child, progress) =>
+                progress == null ? child : const _DetailImagePlaceholder(),
+            errorBuilder: (_, _, _) =>
+                const _DetailImagePlaceholder(failed: true),
           ),
         ),
       ),
+    ),
+  );
+}
+
+class _DetailImagePlaceholder extends StatelessWidget {
+  const _DetailImagePlaceholder({this.failed = false});
+
+  final bool failed;
+
+  @override
+  Widget build(BuildContext context) => ColoredBox(
+    color: const Color(0xFFF4F5F6),
+    child: Center(
+      child: failed
+          ? const Icon(
+              Icons.image_not_supported_outlined,
+              color: ZhPalette.subtleInk,
+            )
+          : const SizedBox.square(
+              dimension: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
     ),
   );
 }

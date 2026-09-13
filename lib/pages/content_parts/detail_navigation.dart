@@ -130,8 +130,27 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
     _setAnswerOverscroll(-answerSwitchMaxDistance);
     await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted) return;
-    final source = Map<String, dynamic>.from(answer)
-      ..putIfAbsent('type', () => 'answer');
+    // The first related answer is warmed as soon as this route opens. Reuse
+    // that request here and give it a short head start so the pushed route
+    // normally receives the complete author/body payload instead of first
+    // painting the compact feed row and then reflowing after the detail call.
+    final detailKey = 'answer:$answerId';
+    final detailFuture =
+        _ContentDetailPageState._relatedDetailPrefetches[detailKey] ??=
+            _fetchRelatedAnswerDetail(answerId, answer);
+    Map<String, dynamic>? prefetched;
+    try {
+      prefetched = await detailFuture.timeout(
+        const Duration(milliseconds: 1200),
+      );
+    } catch (_) {
+      // A slow or failed warmup must never block navigation. The next route
+      // can still load the same answer from its regular cache/API path.
+    }
+    if (!mounted) return;
+    final source = Map<String, dynamic>.from(
+      prefetched == null ? answer : mergeListMetadata(prefetched, answer),
+    )..putIfAbsent('type', () => 'answer');
     final result = await Navigator.of(context).push(
       _nextAnswerRoute(
         api: widget.api,

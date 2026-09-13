@@ -60,6 +60,9 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final authorFollowing =
         _authorFollowingOverride ?? relationship.isFollowingAuthor == true;
     final images = contentImageUrlsOf(object, limit: 20);
+    final fallbackImageSources = [
+      for (final url in images) _DetailImageSource(url: url),
+    ];
     final videos = contentVideosOf(object);
     final dateLabel = contentDateLabel(metrics);
     final contentEndLabel = contentEndInfoLabel(object, fallback: dateLabel);
@@ -294,7 +297,10 @@ extension _ContentDetailBody on _ContentDetailPageState {
             ),
           if (images.isNotEmpty) ...[
             const SizedBox(height: ZhSpace.md),
-            _DetailImageGallery(urls: images),
+            _DetailImageWarmup(
+              sources: fallbackImageSources,
+              child: _DetailImageGallery(sources: fallbackImageSources),
+            ),
           ],
         ],
         if (contentEndLabel.isNotEmpty)

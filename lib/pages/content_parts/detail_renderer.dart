@@ -61,6 +61,7 @@ class StructuredAnswerContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = <Widget>[];
+    final imageSources = <_DetailImageSource>[];
     var videoCursor = 0;
     for (var index = 0; index < segments.length; index++) {
       final segment = segments[index];
@@ -70,11 +71,13 @@ class StructuredAnswerContent extends StatelessWidget {
         final url = _imageUrl(segment);
         if (url.isNotEmpty) {
           final image = _contentMap(segment['image']);
+          final source = _detailImageSource(url, metadata: image);
+          imageSources.add(source);
           final caption = plainText(image?['description']);
           child = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _DetailImageTile(url: url),
+              _DetailImageTile(source: source),
               if (caption.isNotEmpty) ...[
                 const SizedBox(height: 7),
                 Text(
@@ -177,10 +180,13 @@ class StructuredAnswerContent extends StatelessWidget {
         InlineAnswerVideo(video: videos[videoCursor++], api: videoApi),
       );
     }
-    return Column(
-      key: const Key('structured-answer-content'),
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: children,
+    return _DetailImageWarmup(
+      sources: imageSources,
+      child: Column(
+        key: const Key('structured-answer-content'),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: children,
+      ),
     );
   }
 }
@@ -448,6 +454,12 @@ class InlineRichContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final blocks = richContentBlocks(html, videos: videos);
+    final htmlDimensions = _detailHtmlImageDimensions(html);
+    final sourcesByUrl = <String, _DetailImageSource>{};
+    _DetailImageSource sourceFor(String url) => sourcesByUrl.putIfAbsent(
+      url,
+      () => _detailImageSource(url, htmlDimensions: htmlDimensions),
+    );
     final inlineKeys = blocks
         .expand(
           (block) => [
@@ -461,51 +473,61 @@ class InlineRichContent extends StatelessWidget {
     final remainingImages = fallbackImages
         .where((url) => !inlineKeys.contains(_imageKey(url)))
         .toList(growable: false);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var index = 0; index < blocks.length; index++) ...[
-          if (blocks[index].isVideo)
-            InlineAnswerVideo(
-              key: ValueKey(
-                'answer-video-'
-                '${blocks[index].video!.videoId.isNotEmpty
-                    ? blocks[index].video!.videoId
-                    : blocks[index].video!.sourceUrls.isNotEmpty
-                    ? blocks[index].video!.sourceUrls.first
-                    : 'anonymous'}-$index',
+    final imageSources = <_DetailImageSource>[
+      for (final block in blocks)
+        if (block.isImage) sourceFor(block.imageUrl),
+      for (final url in remainingImages) sourceFor(url),
+    ];
+    return _DetailImageWarmup(
+      sources: imageSources,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var index = 0; index < blocks.length; index++) ...[
+            if (blocks[index].isVideo)
+              InlineAnswerVideo(
+                key: ValueKey(
+                  'answer-video-'
+                  '${blocks[index].video!.videoId.isNotEmpty
+                      ? blocks[index].video!.videoId
+                      : blocks[index].video!.sourceUrls.isNotEmpty
+                      ? blocks[index].video!.sourceUrls.first
+                      : 'anonymous'}-$index',
+                ),
+                video: blocks[index].video!,
+                api: videoApi,
+              )
+            else if (blocks[index].isImage)
+              _DetailImageTile(source: sourceFor(blocks[index].imageUrl))
+            else
+              _ZhihuSelectableText(
+                key: ValueKey(
+                  'answer-content-node-${blocks[index].node.id.isNotEmpty ? blocks[index].node.id : index}',
+                ),
+                blocks[index].text,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(height: 1.78),
+                linkUrl: blocks[index].linkUrl,
+                onLink: onLink,
+                onCommentSelection: onCommentSelection,
+                selectionContext: ContentSelectionContext(
+                  contentType: contentType,
+                  contentId: contentId,
+                  nodeId: blocks[index].node.id,
+                  source: 'html',
+                ),
               ),
-              video: blocks[index].video!,
-              api: videoApi,
-            )
-          else if (blocks[index].isImage)
-            _DetailImageTile(url: blocks[index].imageUrl)
-          else
-            _ZhihuSelectableText(
-              key: ValueKey(
-                'answer-content-node-${blocks[index].node.id.isNotEmpty ? blocks[index].node.id : index}',
-              ),
-              blocks[index].text,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(height: 1.78),
-              linkUrl: blocks[index].linkUrl,
-              onLink: onLink,
-              onCommentSelection: onCommentSelection,
-              selectionContext: ContentSelectionContext(
-                contentType: contentType,
-                contentId: contentId,
-                nodeId: blocks[index].node.id,
-                source: 'html',
-              ),
+            if (index != blocks.length - 1) const SizedBox(height: 16),
+          ],
+          if (remainingImages.isNotEmpty) ...[
+            if (blocks.isNotEmpty) const SizedBox(height: ZhSpace.md),
+            _DetailImageGallery(
+              sources: remainingImages.map(sourceFor).toList(growable: false),
             ),
-          if (index != blocks.length - 1) const SizedBox(height: 16),
+          ],
         ],
-        if (remainingImages.isNotEmpty) ...[
-          if (blocks.isNotEmpty) const SizedBox(height: ZhSpace.md),
-          _DetailImageGallery(urls: remainingImages),
-        ],
-      ],
+      ),
     );
   }
 }

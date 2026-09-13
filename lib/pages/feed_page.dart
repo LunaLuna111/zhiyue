@@ -492,7 +492,9 @@ class _HomeFeedPreloadPool {
 
   Future<ApiResponse> _request(HomeFeedChannel channel) => switch (channel) {
     HomeFeedChannel.following => api.getUri(
-      api.followingFeedInitialUri(feedType: '精选'),
+      api.followingFeedInitialUri(
+        feedType: _followingFeedTypeForLabel(_followingChoice),
+      ),
       headers: _homeFeedRequestHeaders(channel),
     ),
     HomeFeedChannel.hot => api.getUri(

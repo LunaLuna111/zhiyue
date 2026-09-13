@@ -623,7 +623,7 @@ void registerFeedSaltWidgetTests() {
     final following = transport.calls.singleWhere(
       (call) => call.uri.path == '/moments_v3',
     );
-    expect(following.uri.queryParameters['feed_type'], 'all');
+    expect(following.uri.queryParameters['feed_type'], 'recommend');
     expect(following.headers['need_debug'], '0');
     expect(following.headers['x-api-version'], '3.0.93');
   });

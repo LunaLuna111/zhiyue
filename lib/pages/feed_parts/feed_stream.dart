@@ -1,5 +1,25 @@
 part of '../feed_page.dart';
 
+const _followingChoice = '精选';
+const _followingLatest = '最新';
+const _followingIdeas = '想法';
+const _followingFilters = <String>[
+  _followingChoice,
+  _followingLatest,
+  _followingIdeas,
+];
+
+// The tab label is presentation-only.  FollowSubFragment passes the native
+// feed type to /moments_v3, so never send the Chinese label as the query value.
+const _followingFeedTypes = <String, String>{
+  _followingChoice: 'recommend',
+  _followingLatest: 'latest',
+  _followingIdeas: 'pin',
+};
+
+String _followingFeedTypeForLabel(String label) =>
+    _followingFeedTypes[label] ?? 'recommend';
+
 class _FeedStreamTab extends StatefulWidget {
   const _FeedStreamTab({
     super.key,
@@ -31,14 +51,6 @@ class _FeedStreamTab extends StatefulWidget {
 class _FeedStreamTabState extends State<_FeedStreamTab>
     with AutomaticKeepAliveClientMixin {
   static const _feedbackCacheLimit = 24;
-  static const _followingChoice = '精选';
-  static const _followingLatest = '最新';
-  static const _followingIdeas = '想法';
-  static const _followingFilters = <String>[
-    _followingChoice,
-    _followingLatest,
-    _followingIdeas,
-  ];
   final _rows = <Map<String, dynamic>>[];
   final _seenRows = <String>{};
   final _rowKeys = Map<Map<String, dynamic>, String>.identity();
@@ -169,7 +181,9 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
       _homeFeedRequestHeaders(widget.channel);
   Future<ApiResponse> _initialRequest() => switch (widget.channel) {
     HomeFeedChannel.following => widget.api.getUri(
-      widget.api.followingFeedInitialUri(feedType: _followingFilter),
+      widget.api.followingFeedInitialUri(
+        feedType: _followingFeedTypeForLabel(_followingFilter),
+      ),
       headers: _requestHeaders,
     ),
     HomeFeedChannel.hot => widget.api.getUri(

@@ -38,6 +38,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   static const _accountUnlockTicketKey = 'zh_account_unlock_ticket';
   static const _accountLockInSecondsKey = 'zh_account_lock_in_seconds';
   static const _searchHistoryKey = 'zh_search_history';
+  static const _maxSearchHistoryItems = 20;
   static const _readingTextSizeKey = 'zh_setting_reading_text_size';
   static const _reduceMotionKey = 'zh_setting_reduce_motion';
   static const _prefetchImagesKey = 'zh_setting_prefetch_images';
@@ -306,7 +307,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
           .whereType<String>()
           .map((item) => item.trim())
           .where((item) => item.isNotEmpty && item.length <= 512)
-          .take(10)
+          .take(_maxSearchHistoryItems)
           .toList(growable: false);
     } catch (_) {
       return const [];

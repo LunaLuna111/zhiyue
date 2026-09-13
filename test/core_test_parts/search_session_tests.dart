@@ -449,6 +449,25 @@ void registerSearchSessionTests() {
     },
   );
 
+  test('search history keeps the reference-sized bounded list', () async {
+    final session = SessionStore();
+    for (var index = 0; index < 22; index++) {
+      await session.rememberSearch('query-$index');
+    }
+
+    expect(session.searchHistory, hasLength(20));
+    expect(session.searchHistory.first, 'query-21');
+    expect(session.searchHistory.last, 'query-2');
+
+    await session.rememberSearch('QUERY-10');
+    expect(session.searchHistory, hasLength(20));
+    expect(session.searchHistory.first, 'QUERY-10');
+    expect(
+      session.searchHistory.where((item) => item.toLowerCase() == 'query-10'),
+      hasLength(1),
+    );
+  });
+
   test('search hot items accept current and reference payload shapes', () {
     final current = parseSearchHotItems({
       'top_search': {

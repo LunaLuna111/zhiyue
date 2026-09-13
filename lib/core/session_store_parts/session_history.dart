@@ -10,7 +10,7 @@ mixin _SessionStoreHistoryMixin on _SessionStoreCore {
       ...searchHistory.where(
         (item) => item.toLowerCase() != normalized.toLowerCase(),
       ),
-    ].take(10).toList(growable: false);
+    ].take(_SessionStoreCore._maxSearchHistoryItems).toList(growable: false);
     if (!kIsWeb) {
       await _safeWrite(
         key: _SessionStoreCore._searchHistoryKey,

@@ -7,10 +7,12 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       <String, Future<Map<String, dynamic>?>>{};
   final _scrollController = ScrollController();
   final _answerOverscrollNotifier = ValueNotifier<double>(0);
+  final _answerAtBottomNotifier = ValueNotifier<bool>(false);
   late final AnimationController _answerOverscrollResetAnimation;
   final _relatedAnswers = <Map<String, dynamic>>[];
   Map<String, dynamic>? _document;
   Map<String, dynamic>? _initialSemantic;
+  Map<String, dynamic>? _previousAnswerPreview;
   Object? _error;
   Object? _relatedError;
   String _source = '';
@@ -21,6 +23,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   String? _relatedNext;
   double _answerOverscrollRaw = 0;
   bool _answerSwitchBusy = false;
+  bool _answerJumpInProgress = false;
   String _busyAction = '';
   bool _authorFollowBusy = false;
   bool? _authorFollowingOverride;
@@ -46,6 +49,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         _source = '推荐/列表响应随附内容';
       }
     }
+    _previousAnswerPreview = widget.previousAnswer;
     // Start the question feed as soon as an answer is opened. The request is
     // deliberately detached from the detail request so the bottom section is
     // already available by the time the reader reaches it. The first page is
@@ -62,6 +66,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   void dispose() {
     _answerOverscrollResetAnimation.dispose();
     _answerOverscrollNotifier.dispose();
+    _answerAtBottomNotifier.dispose();
     _scrollController
       ..removeListener(_maybeLoadRelatedAnswers)
       ..dispose();
@@ -223,6 +228,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   }
 
   void _maybeLoadRelatedAnswers() {
+    _updateAnswerJumpPosition();
     if (!mounted || widget.contentType != 'answer' || _relatedLoading) return;
     if (!_relatedStarted && _document == null) return;
     // The first page is prefetched when the answer route opens. Only later
@@ -395,119 +401,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     }
   }
 
-  bool _handleAnswerScrollNotification(ScrollNotification notification) {
-    if (widget.contentType != 'answer') return false;
-    if (notification is ScrollStartNotification) {
-      _answerOverscrollRaw = 0;
-      _answerOverscrollResetAnimation.stop();
-      _setAnswerOverscroll(0);
-      return false;
-    }
-    if (notification is OverscrollNotification &&
-        !_answerSwitchBusy &&
-        _nextAnswerPreview != null &&
-        notification.metrics.pixels >=
-            notification.metrics.maxScrollExtent - 1 &&
-        notification.overscroll > 0) {
-      _answerOverscrollRaw = (_answerOverscrollRaw + notification.overscroll)
-          .clamp(0, 10000)
-          .toDouble();
-      _setAnswerOverscroll(-dampedAnswerOverscroll(_answerOverscrollRaw));
-      return false;
-    }
-    if (notification is ScrollEndNotification && !_answerSwitchBusy) {
-      final next = _nextAnswerPreview;
-      if (next != null && _answerOverscrollRaw >= answerSwitchTriggerDistance) {
-        unawaited(_switchToNextAnswer(next));
-      } else if (_answerOverscrollRaw != 0) {
-        _answerOverscrollRaw = 0;
-        _animateAnswerOverscrollBack();
-      }
-    }
-    return false;
-  }
-
-  void _setAnswerOverscroll(double value) {
-    if (!mounted) return;
-    final clamped = value.clamp(-answerSwitchMaxDistance, 0).toDouble();
-    if ((_answerOverscrollNotifier.value - clamped).abs() < .5) return;
-    _answerOverscrollNotifier.value = clamped;
-  }
-
-  void _animateAnswerOverscrollBack() {
-    final begin = _answerOverscrollNotifier.value;
-    if (begin == 0) return;
-    _answerOverscrollResetAnimation
-      ..stop()
-      ..reset();
-    void listener() {
-      _answerOverscrollNotifier.value =
-          begin * (1 - _answerOverscrollResetAnimation.value);
-    }
-
-    _answerOverscrollResetAnimation.addListener(listener);
-    void statusListener(AnimationStatus status) {
-      if (status == AnimationStatus.completed ||
-          status == AnimationStatus.dismissed) {
-        _answerOverscrollResetAnimation.removeListener(listener);
-        _answerOverscrollResetAnimation.removeStatusListener(statusListener);
-        if (mounted) _answerOverscrollNotifier.value = 0;
-      }
-    }
-
-    _answerOverscrollResetAnimation.addStatusListener(statusListener);
-    unawaited(_answerOverscrollResetAnimation.forward());
-  }
-
-  Future<void> _switchToNextAnswer(Map<String, dynamic> answer) async {
-    if (_answerSwitchBusy) return;
-    final answerId = idOf(answer);
-    if (answerId.isEmpty) return;
-    _answerSwitchBusy = true;
-    _answerOverscrollRaw = answerSwitchTriggerDistance;
-    _setAnswerOverscroll(-answerSwitchMaxDistance);
-    await Future<void>.delayed(const Duration(milliseconds: 80));
-    if (!mounted) return;
-    final source = Map<String, dynamic>.from(answer)
-      ..putIfAbsent('type', () => 'answer');
-    await Navigator.of(context).pushReplacement(
-      _nextAnswerRoute(
-        api: widget.api,
-        answerId: answerId,
-        initialValue: source,
-      ),
-    );
-  }
-
-  PageRoute<void> _nextAnswerRoute({
-    required ZhihuApiClient api,
-    required String answerId,
-    required Map<String, dynamic> initialValue,
-  }) => PageRouteBuilder<void>(
-    settings: RouteSettings(name: '/answer/$answerId'),
-    transitionDuration: const Duration(milliseconds: 220),
-    reverseTransitionDuration: const Duration(milliseconds: 180),
-    pageBuilder: (_, _, _) => ContentDetailPage(
-      api: api,
-      contentType: 'answer',
-      contentId: answerId,
-      initialValue: initialValue,
-    ),
-    transitionsBuilder: (_, animation, _, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      );
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0, .12),
-          end: Offset.zero,
-        ).animate(curved),
-        child: FadeTransition(opacity: curved, child: child),
-      );
-    },
-  );
-
   Future<ApiResponse> _loadRelatedFirstPage(String questionId) {
     final cached = _relatedFirstPageCache[questionId];
     if (cached != null) return cached;
@@ -657,6 +550,27 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             ),
           )
         : ZhResponsiveFrame(maxWidth: 920, child: _body());
+    final bodyWithAnswerJump =
+        widget.contentType == 'answer' && document != null
+        ? Stack(
+            fit: StackFit.expand,
+            children: [
+              body,
+              Positioned(
+                right: 14,
+                bottom: 14,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _answerAtBottomNotifier,
+                  builder: (context, atBottom, _) => _AnswerJumpButton(
+                    atBottom: atBottom,
+                    onJumpToTop: _jumpAnswerToTop,
+                    onJumpToBottom: _jumpAnswerToBottom,
+                  ),
+                ),
+              ),
+            ],
+          )
+        : body;
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: showQuestionInAppBar
@@ -724,7 +638,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
               )
             : Text(pageTitle),
       ),
-      body: body,
+      body: bodyWithAnswerJump,
       bottomNavigationBar: document == null
           ? null
           : DetailEngagementBar(

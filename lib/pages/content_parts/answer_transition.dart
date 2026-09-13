@@ -2,13 +2,17 @@ part of '../content_pages.dart';
 
 const answerSwitchTriggerDistance = 80.0;
 const answerSwitchMaxDistance = 200.0;
+const answerSwitchPreviousResult = 'answer-switch-previous';
 
 double dampedAnswerOverscroll(double rawDistance) {
+  final sign = rawDistance < 0 ? -1.0 : 1.0;
   final normalized = rawDistance / (answerSwitchMaxDistance * 1.2);
   // Dart's math library does not expose tanh on every Flutter channel. This
   // rational curve has the same useful properties for the gesture: it starts
   // linearly, then approaches the maximum distance without a hard edge.
-  return answerSwitchMaxDistance * (normalized.abs() / (1 + normalized.abs()));
+  return sign *
+      answerSwitchMaxDistance *
+      (normalized.abs() / (1 + normalized.abs()));
 }
 
 class _AnswerSwitchPreview extends StatelessWidget {
@@ -18,12 +22,14 @@ class _AnswerSwitchPreview extends StatelessWidget {
     required this.progress,
     required this.triggered,
     required this.onTap,
+    this.previous = false,
   });
 
   final Map<String, dynamic> value;
   final double progress;
   final bool triggered;
   final VoidCallback onTap;
+  final bool previous;
 
   @override
   Widget build(BuildContext context) {
@@ -31,12 +37,18 @@ class _AnswerSwitchPreview extends StatelessWidget {
     final question = titleOf(value);
     final excerpt = _answerListExcerpt(value);
     final avatar = authorAvatarOf(value);
-    final label = triggered ? '松开切换' : '继续上滑查看下一个回答';
+    final label = triggered
+        ? '松开切换'
+        : previous
+        ? '继续下拉查看上一个回答'
+        : '继续上滑查看下一个回答';
     return Semantics(
       container: true,
       button: true,
       label: triggered
-          ? '松开切换到${author.isEmpty ? '下一个' : author}的回答'
+          ? '松开切换到${author.isEmpty ? (previous ? '上一个' : '下一个') : author}的回答'
+          : previous
+          ? '继续下拉查看上一个回答'
           : '继续上滑查看下一个回答',
       child: Opacity(
         opacity: progress.clamp(0, 1).toDouble(),
@@ -48,7 +60,9 @@ class _AnswerSwitchPreview extends StatelessWidget {
                 : const Color(0xFFF4F5F6),
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
-              key: const ValueKey('answer-switch-next-preview'),
+              key: ValueKey(
+                'answer-switch-${previous ? 'previous' : 'next'}-preview',
+              ),
               onTap: onTap,
               borderRadius: BorderRadius.circular(16),
               child: Padding(
@@ -56,7 +70,9 @@ class _AnswerSwitchPreview extends StatelessWidget {
                 child: Row(
                   children: [
                     Icon(
-                      Icons.arrow_downward_rounded,
+                      previous
+                          ? Icons.arrow_upward_rounded
+                          : Icons.arrow_downward_rounded,
                       size: 18,
                       color: triggered
                           ? const Color(0xFF175199)
@@ -127,4 +143,100 @@ class _AnswerSwitchPreview extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AnswerJumpButton extends StatefulWidget {
+  const _AnswerJumpButton({
+    required this.atBottom,
+    required this.onJumpToTop,
+    required this.onJumpToBottom,
+  });
+
+  final bool atBottom;
+  final VoidCallback onJumpToTop;
+  final VoidCallback onJumpToBottom;
+
+  @override
+  State<_AnswerJumpButton> createState() => _AnswerJumpButtonState();
+}
+
+class _AnswerJumpButtonState extends State<_AnswerJumpButton> {
+  bool _showTopButton = false;
+
+  void _handleMainTap() {
+    setState(() => _showTopButton = false);
+    if (widget.atBottom) {
+      widget.onJumpToTop();
+    } else {
+      widget.onJumpToBottom();
+    }
+  }
+
+  void _handleLongPress() {
+    HapticFeedback.mediumImpact();
+    setState(() => _showTopButton = true);
+  }
+
+  void _handleTopTap() {
+    setState(() => _showTopButton = false);
+    widget.onJumpToTop();
+  }
+
+  Widget _circleButton({
+    required Key key,
+    required String label,
+    required IconData icon,
+    required VoidCallback onTap,
+    VoidCallback? onLongPress,
+  }) => Semantics(
+    button: true,
+    label: label,
+    child: Material(
+      color: ZhPalette.ink,
+      elevation: 4,
+      shape: const CircleBorder(),
+      child: InkWell(
+        key: key,
+        onTap: onTap,
+        onLongPress: onLongPress,
+        customBorder: const CircleBorder(),
+        child: SizedBox.square(
+          dimension: 44,
+          child: Icon(icon, color: Colors.white, size: 22),
+        ),
+      ),
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 48,
+    height: _showTopButton ? 100 : 48,
+    child: Stack(
+      alignment: Alignment.bottomRight,
+      clipBehavior: Clip.none,
+      children: [
+        if (_showTopButton)
+          Positioned(
+            right: 0,
+            bottom: 54,
+            child: _circleButton(
+              key: const ValueKey('answer-jump-top'),
+              label: '回到回答顶部',
+              icon: Icons.arrow_upward_rounded,
+              onTap: _handleTopTap,
+            ),
+          ),
+        _circleButton(
+          key: const ValueKey('answer-jump-button'),
+          label: widget.atBottom ? '回到回答顶部' : '跳到回答底部',
+          icon: widget.atBottom
+              ? Icons.arrow_upward_rounded
+              : Icons.arrow_downward_rounded,
+          onTap: _handleMainTap,
+          onLongPress: _handleLongPress,
+        ),
+      ],
+    ),
+  );
 }

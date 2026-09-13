@@ -323,9 +323,12 @@ extension _ContentDetailBody on _ContentDetailPageState {
       valueListenable: _answerOverscrollNotifier,
       builder: (context, overscroll, _) {
         final next = _nextAnswerPreview;
-        final showingPreview = next != null && overscroll < 0;
+        final previous = _previousAnswerPreview;
+        final showingNextPreview = next != null && overscroll < 0;
+        final showingPreviousPreview = previous != null && overscroll > 0;
+        final showingPreview = showingNextPreview || showingPreviousPreview;
         final progress = showingPreview
-            ? (-overscroll / answerSwitchTriggerDistance)
+            ? (overscroll.abs() / answerSwitchTriggerDistance)
                   .clamp(0, 1.5)
                   .toDouble()
             : 0.0;
@@ -335,13 +338,32 @@ extension _ContentDetailBody on _ContentDetailPageState {
           child: Stack(
             clipBehavior: Clip.hardEdge,
             children: [
+              if (previous != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  child: IgnorePointer(
+                    ignoring: !showingPreviousPreview,
+                    child: _AnswerSwitchPreview(
+                      key: ValueKey('answer-switch-previous-${idOf(previous)}'),
+                      value: previous,
+                      progress: progress,
+                      triggered:
+                          _answerOverscrollRaw.abs() >=
+                          answerSwitchTriggerDistance,
+                      previous: true,
+                      onTap: _switchToPreviousAnswer,
+                    ),
+                  ),
+                ),
               if (next != null)
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
                   child: IgnorePointer(
-                    ignoring: !showingPreview,
+                    ignoring: !showingNextPreview,
                     child: _AnswerSwitchPreview(
                       key: ValueKey('answer-switch-next-${idOf(next)}'),
                       value: next,

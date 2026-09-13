@@ -7,12 +7,14 @@ class ContentDetailPage extends StatefulWidget {
     required this.contentType,
     required this.contentId,
     this.initialValue,
+    this.previousAnswer,
   });
 
   final ZhihuApiClient api;
   final String contentType;
   final String contentId;
   final Map<String, dynamic>? initialValue;
+  final Map<String, dynamic>? previousAnswer;
 
   @override
   State<ContentDetailPage> createState() => _ContentDetailPageState();

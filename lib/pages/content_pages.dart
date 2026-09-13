@@ -33,6 +33,7 @@ import 'web_page.dart';
 part 'content_parts/routing.dart';
 part 'content_parts/detail_page.dart';
 part 'content_parts/detail_state.dart';
+part 'content_parts/answer_transition.dart';
 part 'content_parts/detail_actions.dart';
 part 'content_parts/detail_body.dart';
 part 'content_parts/detail_end_widgets.dart';

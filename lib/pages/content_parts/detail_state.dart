@@ -1,8 +1,13 @@
 part of '../content_pages.dart';
 
-class _ContentDetailPageState extends State<ContentDetailPage> {
+class _ContentDetailPageState extends State<ContentDetailPage>
+    with SingleTickerProviderStateMixin {
   static final _relatedFirstPageCache = <String, Future<ApiResponse>>{};
+  static final _relatedDetailPrefetches =
+      <String, Future<Map<String, dynamic>?>>{};
   final _scrollController = ScrollController();
+  final _answerOverscrollNotifier = ValueNotifier<double>(0);
+  late final AnimationController _answerOverscrollResetAnimation;
   final _relatedAnswers = <Map<String, dynamic>>[];
   Map<String, dynamic>? _document;
   Map<String, dynamic>? _initialSemantic;
@@ -12,7 +17,10 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
   bool _loading = false;
   bool _relatedLoading = false;
   bool _relatedStarted = false;
+  bool _relatedCurrentSeen = false;
   String? _relatedNext;
+  double _answerOverscrollRaw = 0;
+  bool _answerSwitchBusy = false;
   String _busyAction = '';
   bool _authorFollowBusy = false;
   bool? _authorFollowingOverride;
@@ -24,6 +32,10 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
   @override
   void initState() {
     super.initState();
+    _answerOverscrollResetAnimation = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 220),
+    );
     _scrollController.addListener(_maybeLoadRelatedAnswers);
     final initial = widget.initialValue;
     if (initial != null) {
@@ -48,6 +60,8 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
 
   @override
   void dispose() {
+    _answerOverscrollResetAnimation.dispose();
+    _answerOverscrollNotifier.dispose();
     _scrollController
       ..removeListener(_maybeLoadRelatedAnswers)
       ..dispose();
@@ -254,17 +268,36 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
         currentId,
         for (final answer in _relatedAnswers) idOf(answer),
       };
+      final rows = extractRows(response.json);
+      if (firstPage &&
+          !_relatedCurrentSeen &&
+          !rows.any((row) => idOf(unwrapObject(row)) == currentId)) {
+        // Some anonymous feeds omit the currently opened answer. In that
+        // case there is no reliable position marker, so keep the returned
+        // order usable rather than waiting through every page forever.
+        _relatedCurrentSeen = true;
+      }
       final incoming = <Map<String, dynamic>>[];
-      for (final row in extractRows(response.json)) {
+      for (final row in rows) {
         final answer = unwrapObject(row);
         final id = idOf(answer);
-        if (id.isEmpty || !existing.add(id)) continue;
+        if (id.isEmpty) continue;
+        if (id == currentId) {
+          _relatedCurrentSeen = true;
+          continue;
+        }
+        // Keep the server's forward order. Once the current answer is found,
+        // rows before it belong to the previous-answer side of the native
+        // navigator and must not become the next preview after a replacement
+        // route is opened.
+        if (!_relatedCurrentSeen || !existing.add(id)) continue;
         incoming.add(answer);
       }
       setState(() {
         _relatedAnswers.addAll(incoming);
         _relatedNext = pagingNext(response.json);
       });
+      _prefetchNextAnswerDetail();
       if (firstPage &&
           widget.api.session.prefetchImages &&
           incoming.isNotEmpty) {
@@ -291,6 +324,189 @@ class _ContentDetailPageState extends State<ContentDetailPage> {
       if (mounted) setState(() => _relatedLoading = false);
     }
   }
+
+  Map<String, dynamic>? get _nextAnswerPreview =>
+      _relatedAnswers.isEmpty ? null : _relatedAnswers.first;
+
+  void _prefetchNextAnswerDetail() {
+    final answer = _nextAnswerPreview;
+    if (answer == null) return;
+    final answerId = idOf(answer);
+    if (answerId.isEmpty) return;
+    final key = 'answer:$answerId';
+    final request = _relatedDetailPrefetches[key] ??= _fetchRelatedAnswerDetail(
+      answerId,
+      answer,
+    );
+    unawaited(() async {
+      final detail = await request;
+      if (detail == null) {
+        if (identical(request, _relatedDetailPrefetches[key])) {
+          _relatedDetailPrefetches.remove(key);
+        }
+        return;
+      }
+      if (!mounted) return;
+      final index = _relatedAnswers.indexWhere(
+        (candidate) => idOf(candidate) == answerId,
+      );
+      if (index < 0) return;
+      final current = _relatedAnswers[index];
+      final merged = mergeListMetadata(detail, current);
+      if (_readableLength(merged) <= _readableLength(current)) return;
+      setState(() => _relatedAnswers[index] = merged);
+    }());
+  }
+
+  Future<Map<String, dynamic>?> _fetchRelatedAnswerDetail(
+    String answerId,
+    Map<String, dynamic> source,
+  ) async {
+    try {
+      final cached = await AnswerDetailCache.instance.read(
+        contentType: 'answer',
+        contentId: answerId,
+      );
+      if (cached != null && cached.isFresh(DateTime.now())) {
+        return cached.document;
+      }
+      final response = await widget.api.get(
+        '/answers/v2/${Uri.encodeComponent(answerId)}',
+        query: contentDetailRequestParameters(source),
+      );
+      if (!response.isSuccess || response.jsonMap == null) return null;
+      final normalized = mergeListMetadata(response.jsonMap!, source);
+      if (!contentIdentityMatches(
+        candidate: normalized,
+        contentType: 'answer',
+        contentId: answerId,
+        expectedQuestionId: questionIdOf(source),
+      )) {
+        return null;
+      }
+      await AnswerDetailCache.instance.write(
+        contentType: 'answer',
+        contentId: answerId,
+        document: normalized,
+      );
+      return normalized;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  bool _handleAnswerScrollNotification(ScrollNotification notification) {
+    if (widget.contentType != 'answer') return false;
+    if (notification is ScrollStartNotification) {
+      _answerOverscrollRaw = 0;
+      _answerOverscrollResetAnimation.stop();
+      _setAnswerOverscroll(0);
+      return false;
+    }
+    if (notification is OverscrollNotification &&
+        !_answerSwitchBusy &&
+        _nextAnswerPreview != null &&
+        notification.metrics.pixels >=
+            notification.metrics.maxScrollExtent - 1 &&
+        notification.overscroll > 0) {
+      _answerOverscrollRaw = (_answerOverscrollRaw + notification.overscroll)
+          .clamp(0, 10000)
+          .toDouble();
+      _setAnswerOverscroll(-dampedAnswerOverscroll(_answerOverscrollRaw));
+      return false;
+    }
+    if (notification is ScrollEndNotification && !_answerSwitchBusy) {
+      final next = _nextAnswerPreview;
+      if (next != null && _answerOverscrollRaw >= answerSwitchTriggerDistance) {
+        unawaited(_switchToNextAnswer(next));
+      } else if (_answerOverscrollRaw != 0) {
+        _answerOverscrollRaw = 0;
+        _animateAnswerOverscrollBack();
+      }
+    }
+    return false;
+  }
+
+  void _setAnswerOverscroll(double value) {
+    if (!mounted) return;
+    final clamped = value.clamp(-answerSwitchMaxDistance, 0).toDouble();
+    if ((_answerOverscrollNotifier.value - clamped).abs() < .5) return;
+    _answerOverscrollNotifier.value = clamped;
+  }
+
+  void _animateAnswerOverscrollBack() {
+    final begin = _answerOverscrollNotifier.value;
+    if (begin == 0) return;
+    _answerOverscrollResetAnimation
+      ..stop()
+      ..reset();
+    void listener() {
+      _answerOverscrollNotifier.value =
+          begin * (1 - _answerOverscrollResetAnimation.value);
+    }
+
+    _answerOverscrollResetAnimation.addListener(listener);
+    void statusListener(AnimationStatus status) {
+      if (status == AnimationStatus.completed ||
+          status == AnimationStatus.dismissed) {
+        _answerOverscrollResetAnimation.removeListener(listener);
+        _answerOverscrollResetAnimation.removeStatusListener(statusListener);
+        if (mounted) _answerOverscrollNotifier.value = 0;
+      }
+    }
+
+    _answerOverscrollResetAnimation.addStatusListener(statusListener);
+    unawaited(_answerOverscrollResetAnimation.forward());
+  }
+
+  Future<void> _switchToNextAnswer(Map<String, dynamic> answer) async {
+    if (_answerSwitchBusy) return;
+    final answerId = idOf(answer);
+    if (answerId.isEmpty) return;
+    _answerSwitchBusy = true;
+    _answerOverscrollRaw = answerSwitchTriggerDistance;
+    _setAnswerOverscroll(-answerSwitchMaxDistance);
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!mounted) return;
+    final source = Map<String, dynamic>.from(answer)
+      ..putIfAbsent('type', () => 'answer');
+    await Navigator.of(context).pushReplacement(
+      _nextAnswerRoute(
+        api: widget.api,
+        answerId: answerId,
+        initialValue: source,
+      ),
+    );
+  }
+
+  PageRoute<void> _nextAnswerRoute({
+    required ZhihuApiClient api,
+    required String answerId,
+    required Map<String, dynamic> initialValue,
+  }) => PageRouteBuilder<void>(
+    settings: RouteSettings(name: '/answer/$answerId'),
+    transitionDuration: const Duration(milliseconds: 220),
+    reverseTransitionDuration: const Duration(milliseconds: 180),
+    pageBuilder: (_, _, _) => ContentDetailPage(
+      api: api,
+      contentType: 'answer',
+      contentId: answerId,
+      initialValue: initialValue,
+    ),
+    transitionsBuilder: (_, animation, _, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      return SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(0, .12),
+          end: Offset.zero,
+        ).animate(curved),
+        child: FadeTransition(opacity: curved, child: child),
+      );
+    },
+  );
 
   Future<ApiResponse> _loadRelatedFirstPage(String questionId) {
     final cached = _relatedFirstPageCache[questionId];

@@ -65,8 +65,11 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final contentEndLabel = contentEndInfoLabel(object, fallback: dateLabel);
     final sourceNeedsWarning =
         _source.isNotEmpty && (truncated || listCompletenessUnknown);
-    return ListView(
+    final contentList = ListView(
       controller: _scrollController,
+      physics: const ClampingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
       padding: const EdgeInsets.all(18),
       children: [
         if (sourceNeedsWarning)
@@ -296,25 +299,6 @@ extension _ContentDetailBody on _ContentDetailPageState {
         ],
         if (contentEndLabel.isNotEmpty)
           _AnswerContentEndInfo(label: contentEndLabel),
-        if (_relatedAnswers.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          const Divider(height: 1, color: ZhPalette.border),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(0, 18, 0, 6),
-            child: Text(
-              '该问题的其他回答',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
-            ),
-          ),
-          for (final answer in _relatedAnswers)
-            _QuestionAnswerRow(
-              value: answer,
-              onTap: () => openDetectedObject(context, widget.api, answer),
-              onAuthorTap: authorIdOf(answer).isEmpty
-                  ? null
-                  : () => openContentAuthor(context, widget.api, answer),
-            ),
-        ],
         if (_relatedLoading)
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 22),
@@ -334,6 +318,48 @@ extension _ContentDetailBody on _ContentDetailPageState {
           ),
         const SizedBox(height: ZhSpace.sm),
       ],
+    );
+    return ValueListenableBuilder<double>(
+      valueListenable: _answerOverscrollNotifier,
+      builder: (context, overscroll, _) {
+        final next = _nextAnswerPreview;
+        final showingPreview = next != null && overscroll < 0;
+        final progress = showingPreview
+            ? (-overscroll / answerSwitchTriggerDistance)
+                  .clamp(0, 1.5)
+                  .toDouble()
+            : 0.0;
+        return NotificationListener<ScrollNotification>(
+          key: const ValueKey('answer-switch-viewport'),
+          onNotification: _handleAnswerScrollNotification,
+          child: Stack(
+            clipBehavior: Clip.hardEdge,
+            children: [
+              if (next != null)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: IgnorePointer(
+                    ignoring: !showingPreview,
+                    child: _AnswerSwitchPreview(
+                      key: ValueKey('answer-switch-next-${idOf(next)}'),
+                      value: next,
+                      progress: progress,
+                      triggered:
+                          _answerOverscrollRaw >= answerSwitchTriggerDistance,
+                      onTap: () => _switchToNextAnswer(next),
+                    ),
+                  ),
+                ),
+              Transform.translate(
+                offset: Offset(0, overscroll),
+                child: contentList,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -787,6 +787,67 @@ void registerDetailCommentTests() {
     expect(find.byType(UserProfileDetailPage), findsNothing);
   });
 
+  testWidgets(
+    'next answer reuses the shared prefetch without showing a second detail request',
+    (tester) async {
+      final prefetch = Completer<Map<String, dynamic>?>();
+      const initial = {
+        'type': 'answer',
+        'id': 'prefetch-answer-158',
+        'excerpt': '列表摘要应在详情到达前立即显示',
+        'author': {'name': '预加载作者'},
+        'question': {'id': '158', 'title': '预加载测试问题'},
+      };
+      const detail = {
+        'type': 'answer',
+        'id': 'prefetch-answer-158',
+        'content': '<p>完整的预加载回答正文</p>',
+        'author': {'name': '预加载作者'},
+        'question': {'id': '158', 'title': '预加载测试问题'},
+      };
+      final transport = _RecordingTransport();
+      final api = ZhihuApiClient(SessionStore(), transport: transport);
+      addTearDown(api.close);
+
+      await tester.pumpWidget(
+        _testApp(
+          ContentDetailPage(
+            api: api,
+            contentType: 'answer',
+            contentId: 'prefetch-answer-158',
+            initialValue: initial,
+            prefetchedDetail: prefetch.future,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(find.text('列表摘要应在详情到达前立即显示'), findsOneWidget);
+      expect(
+        transport.calls.any(
+          (call) => call.uri.path == '/answers/v2/prefetch-answer-158',
+        ),
+        isFalse,
+      );
+
+      prefetch.complete(detail);
+      await tester.pumpAndSettle();
+      expect(find.text('完整的预加载回答正文'), findsOneWidget);
+      expect(
+        transport.calls.any(
+          (call) => call.uri.path == '/answers/v2/prefetch-answer-158',
+        ),
+        isFalse,
+      );
+      expect(
+        transport.calls.any(
+          (call) => call.uri.path == '/v4/answers/prefetch-answer-158',
+        ),
+        isFalse,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets('embedded list keeps rows while pull refresh is pending', (
     tester,
   ) async {

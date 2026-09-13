@@ -305,16 +305,11 @@ extension _ContentDetailBody on _ContentDetailPageState {
         ],
         if (contentEndLabel.isNotEmpty)
           _AnswerContentEndInfo(label: contentEndLabel),
-        if (_relatedLoading)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 22),
-            child: Center(
-              child: SizedBox.square(
-                dimension: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              ),
-            ),
-          ),
+        // The related-answer request is a hidden warm-up. Showing its
+        // progress ring at the end of a short answer makes the already
+        // rendered next-answer detail look like it is still loading. Keep
+        // the body stable while the warm-up runs; failures still expose the
+        // explicit retry action below.
         if (_relatedError != null && !_relatedLoading)
           Center(
             child: TextButton(

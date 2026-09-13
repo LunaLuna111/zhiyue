@@ -130,33 +130,22 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
     _setAnswerOverscroll(-answerSwitchMaxDistance);
     await Future<void>.delayed(const Duration(milliseconds: 80));
     if (!mounted) return;
-    // The first related answer is warmed as soon as this route opens. Reuse
-    // that request here and give it a short head start so the pushed route
-    // normally receives the complete author/body payload instead of first
-    // painting the compact feed row and then reflowing after the detail call.
+    // The first related answer is warmed as soon as this route opens. Pass
+    // the exact same future to the replacement route; waiting here would
+    // leave the old page frozen, while starting a second request in the new
+    // route makes the preload ineffective.
     final detailKey = 'answer:$answerId';
     final detailFuture =
         _ContentDetailPageState._relatedDetailPrefetches[detailKey] ??=
             _fetchRelatedAnswerDetail(answerId, answer);
-    Map<String, dynamic>? prefetched;
-    try {
-      prefetched = await detailFuture.timeout(
-        const Duration(milliseconds: 1200),
-      );
-    } catch (_) {
-      // A slow or failed warmup must never block navigation. The next route
-      // can still load the same answer from its regular cache/API path.
-    }
-    if (!mounted) return;
+    final source = Map<String, dynamic>.from(answer)
+      ..putIfAbsent('type', () => 'answer');
     final answerHistory = <Map<String, dynamic>>[
       for (final value in widget.answerHistory)
         Map<String, dynamic>.from(value),
       if (widget.previousAnswer case final previous?)
         Map<String, dynamic>.from(previous),
     ];
-    final source = Map<String, dynamic>.from(
-      prefetched == null ? answer : mergeListMetadata(prefetched, answer),
-    )..putIfAbsent('type', () => 'answer');
     unawaited(
       Navigator.of(context).pushReplacement(
         _nextAnswerRoute(
@@ -165,6 +154,7 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
           initialValue: source,
           previousAnswer: _document ?? _initialSemantic,
           answerHistory: answerHistory,
+          prefetchedDetail: detailFuture,
         ),
       ),
     );
@@ -203,6 +193,7 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
     required Map<String, dynamic> initialValue,
     required Map<String, dynamic>? previousAnswer,
     required List<Map<String, dynamic>> answerHistory,
+    Future<Map<String, dynamic>?>? prefetchedDetail,
   }) => PageRouteBuilder<String>(
     settings: RouteSettings(name: '/answer/$answerId'),
     transitionDuration: const Duration(milliseconds: 220),
@@ -214,6 +205,7 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
       initialValue: initialValue,
       previousAnswer: previousAnswer,
       answerHistory: answerHistory,
+      prefetchedDetail: prefetchedDetail,
     ),
     transitionsBuilder: (_, animation, _, child) {
       final curved = CurvedAnimation(

@@ -9,6 +9,7 @@ class ContentDetailPage extends StatefulWidget {
     this.initialValue,
     this.previousAnswer,
     this.answerHistory = const [],
+    this.prefetchedDetail,
   });
 
   final ZhihuApiClient api;
@@ -17,6 +18,13 @@ class ContentDetailPage extends StatefulWidget {
   final Map<String, dynamic>? initialValue;
   final Map<String, dynamic>? previousAnswer;
   final List<Map<String, dynamic>> answerHistory;
+
+  /// A detail request started by the previous answer page.
+  ///
+  /// The next page consumes this same future instead of issuing a second
+  /// request. The compact [initialValue] is still rendered immediately while
+  /// the future is pending.
+  final Future<Map<String, dynamic>?>? prefetchedDetail;
 
   @override
   State<ContentDetailPage> createState() => _ContentDetailPageState();

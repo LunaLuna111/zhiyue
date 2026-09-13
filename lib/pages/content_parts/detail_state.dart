@@ -44,7 +44,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     if (initial != null) {
       final object = unwrapObject(initial);
       _initialSemantic = object;
-      if (_readableLength(object) > 0) {
+      if (_readableLength(object) > 0 || _hasUsablePreview(object)) {
         _document = object;
         _source = '推荐/列表响应随附内容';
       }
@@ -79,6 +79,76 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     'pin' => '/pins/v2/${Uri.encodeComponent(widget.contentId)}',
     _ => throw StateError('unsupported content type'),
   };
+
+  bool _hasUsablePreview(Map<String, dynamic> value) {
+    if (widget.contentType != 'answer') return false;
+    return subtitleOf(value).isNotEmpty ||
+        (authorNameOf(value).isNotEmpty && titleOf(value).isNotEmpty);
+  }
+
+  void _startRelatedAnswerPreload() {
+    if (widget.contentType != 'answer' ||
+        _relatedStarted ||
+        _relatedLoading ||
+        !mounted) {
+      return;
+    }
+    final object = unwrapObject(_document ?? _initialSemantic ?? const {});
+    if (questionIdOf(object).isEmpty && _expectedQuestionId.isEmpty) return;
+    unawaited(_loadRelatedAnswers());
+  }
+
+  void _recordAnswerPreload(
+    String message, {
+    AppLogLevel level = AppLogLevel.debug,
+    Map<String, Object?> details = const {},
+  }) {
+    unawaited(
+      AppLogStore.instance.record(
+        category: AppLogCategory.performance,
+        level: level,
+        message: message,
+        details: details,
+      ),
+    );
+  }
+
+  Future<Map<String, dynamic>?> _awaitPrefetchedDetail() async {
+    final request = widget.prefetchedDetail;
+    if (request == null) return null;
+    try {
+      final detail = await request.timeout(const Duration(seconds: 8));
+      if (detail == null) {
+        _recordAnswerPreload(
+          '回答详情预加载无结果，回退正常请求',
+          level: AppLogLevel.warning,
+          details: {'content_id': widget.contentId},
+        );
+      } else {
+        _recordAnswerPreload(
+          '回答详情复用预加载请求',
+          details: {'content_id': widget.contentId},
+        );
+      }
+      return detail;
+    } on Object catch (error, stackTrace) {
+      _recordAnswerPreload(
+        '回答详情预加载等待超时或失败，回退正常请求',
+        level: AppLogLevel.warning,
+        details: {'content_id': widget.contentId},
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '回答详情预加载等待失败',
+          category: AppLogCategory.performance,
+        ),
+      );
+      return null;
+    }
+  }
+
   Future<void> _load({bool forceRefresh = false}) async {
     setState(() {
       _loading = true;
@@ -127,6 +197,23 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           );
         }
       }
+      if (!forceRefresh && !useCachedDocument) {
+        final prefetched = await _awaitPrefetchedDetail();
+        if (!mounted) return;
+        if (prefetched != null) {
+          final normalized = mergeListMetadata(prefetched, _initialSemantic);
+          if (contentIdentityMatches(
+            candidate: normalized,
+            contentType: widget.contentType,
+            contentId: widget.contentId,
+            expectedQuestionId: _expectedQuestionId,
+          )) {
+            networkSucceeded = true;
+            _adopt(normalized, '回答详情预加载');
+            useCachedDocument = true;
+          }
+        }
+      }
       if (!useCachedDocument) {
         final detailQuery = contentDetailRequestParameters(widget.initialValue);
         final response = await widget.api.get(
@@ -139,6 +226,11 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         if (response.isSuccess && response.jsonMap != null) {
           networkSucceeded = true;
           _adopt(response.jsonMap!, '官方 App v2 移动接口');
+          // Do not wait for the detail metadata chain before warming the next
+          // answer. The question feed and the current answer metadata are
+          // independent requests, so starting here removes the most visible
+          // source of a loading ring during vertical continuation.
+          _startRelatedAnswerPreload();
           if (widget.contentType == 'answer') {
             final metadata = await widget.api.get(
               '/v4/answers/${Uri.encodeComponent(widget.contentId)}',
@@ -184,6 +276,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             if (fallback.isSuccess && fallback.jsonMap != null) {
               networkSucceeded = true;
               _adopt(fallback.jsonMap!, '匿名 www API v4 回退');
+              _startRelatedAnswerPreload();
             } else if (_document == null) {
               setState(() => _error = response);
             }
@@ -344,6 +437,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       answerId,
       answer,
     );
+    _recordAnswerPreload('开始预加载下一个回答详情', details: {'content_id': answerId});
     unawaited(() async {
       final detail = await request;
       if (detail == null) {
@@ -361,6 +455,16 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       final merged = mergeListMetadata(detail, current);
       if (_readableLength(merged) <= _readableLength(current)) return;
       setState(() => _relatedAnswers[index] = merged);
+      if (widget.api.session.prefetchImages) {
+        prefetchObjectImages(
+          context,
+          [merged],
+          limit: 4,
+          concurrency: 2,
+          avatarCacheSize: 108,
+          cacheFeedPresentation: true,
+        );
+      }
     }());
   }
 
@@ -374,13 +478,26 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         contentId: answerId,
       );
       if (cached != null && cached.isFresh(DateTime.now())) {
+        _recordAnswerPreload('下一个回答详情命中缓存', details: {'content_id': answerId});
         return cached.document;
       }
+      final stopwatch = Stopwatch()..start();
       final response = await widget.api.get(
         '/answers/v2/${Uri.encodeComponent(answerId)}',
         query: contentDetailRequestParameters(source),
       );
-      if (!response.isSuccess || response.jsonMap == null) return null;
+      if (!response.isSuccess || response.jsonMap == null) {
+        _recordAnswerPreload(
+          '下一个回答详情预加载失败',
+          level: AppLogLevel.warning,
+          details: {
+            'content_id': answerId,
+            'status_code': response.statusCode,
+            'duration_ms': stopwatch.elapsedMilliseconds,
+          },
+        );
+        return null;
+      }
       final normalized = mergeListMetadata(response.jsonMap!, source);
       if (!contentIdentityMatches(
         candidate: normalized,
@@ -388,6 +505,11 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         contentId: answerId,
         expectedQuestionId: questionIdOf(source),
       )) {
+        _recordAnswerPreload(
+          '下一个回答详情预加载身份校验失败',
+          level: AppLogLevel.warning,
+          details: {'content_id': answerId},
+        );
         return null;
       }
       await AnswerDetailCache.instance.write(
@@ -395,8 +517,29 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         contentId: answerId,
         document: normalized,
       );
+      _recordAnswerPreload(
+        '下一个回答详情预加载完成',
+        details: {
+          'content_id': answerId,
+          'duration_ms': stopwatch.elapsedMilliseconds,
+          'readable_length': _readableLength(normalized),
+        },
+      );
       return normalized;
-    } catch (_) {
+    } catch (error, stackTrace) {
+      _recordAnswerPreload(
+        '下一个回答详情预加载异常',
+        level: AppLogLevel.warning,
+        details: {'content_id': answerId},
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '下一个回答详情预加载异常',
+          category: AppLogCategory.performance,
+        ),
+      );
       return null;
     }
   }

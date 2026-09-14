@@ -573,7 +573,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                   const _ActionTile(
                     icon: Icons.info_outline_rounded,
                     title: '关于知阅',
-                    subtitle: '版本 0.3.7',
+                    subtitle: '版本 0.3.8',
                   ),
                 ],
               ),

@@ -297,16 +297,14 @@ class _QrLoginPane extends StatefulWidget {
   });
 
   final ZhihuApiClient api;
-  final VoidCallback onLoginSuccess;
+  final Future<void> Function() onLoginSuccess;
 
   @override
   State<_QrLoginPane> createState() => _QrLoginPaneState();
 }
 
 class _QrLoginPaneState extends State<_QrLoginPane> {
-  static const _channel = MethodChannel(
-    'com.zhiyue.client/qr_code',
-  );
+  static const _channel = MethodChannel('com.zhiyue.client/qr_code');
 
   Timer? _pollTimer;
   Uint8List? _image;
@@ -406,7 +404,7 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
         if (!mounted) return;
         if (result.signedIn) {
           setState(() => _status = '登录成功');
-          widget.onLoginSuccess();
+          await widget.onLoginSuccess();
         } else {
           setState(() => _status = result.message);
         }

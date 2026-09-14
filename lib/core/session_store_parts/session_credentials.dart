@@ -31,6 +31,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     final normalizedMsId = msId.trim();
     final normalizedZse96 = xZse96.trim();
     final normalizedExtraHeaders = extraHeadersJson.trim();
+    final previous = _credentialSnapshot();
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     this.authorization = normalizedAuthorization;
@@ -45,12 +46,12 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     accessTokenExpiry = null;
     accessTokenRefreshAt = null;
     _clearAccountMetadataValues();
-    final snapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    final committed = await _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'import_session',
     );
-    _notifyChanged();
-    await persistence;
+    if (!committed) throw StateError('本地登录数据库不可用，导入会话已回滚');
   }
 
   Future<void> saveMsId(String value) async {
@@ -58,13 +59,16 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     final normalized = value.trim();
     _SessionStoreCore._validateHeaderValue('X-MS-ID', normalized);
     if (normalized == msId) return;
+    final previous = _credentialSnapshot();
+    _credentialRevision += 1;
+    _clearPendingAccountCleanup();
     msId = normalized;
-    final snapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    final committed = await _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'save_ms_id',
     );
-    _notifyChanged();
-    await persistence;
+    if (!committed) throw StateError('本地登录数据库不可用，MS-ID 修改已回滚');
   }
 
   Future<void> saveGuestSession({
@@ -89,6 +93,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     );
     _SessionStoreCore._validateHeaderValue('x-udid', normalizedUdid);
     _SessionStoreCore._validateHeaderValue('Cookie', normalizedCookie);
+    final previous = _credentialSnapshot();
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     authorization = 'Bearer $normalizedAccessToken';
@@ -101,12 +106,13 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     _clearAccountMetadataValues();
     xZse96 = '';
     xZse96Target = '';
-    final snapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    extraHeadersJson = '';
+    final committed = await _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'save_guest_session',
     );
-    _notifyChanged();
-    await persistence;
+    if (!committed) throw StateError('本地登录数据库不可用，访客会话已回滚');
   }
 
   /// Clears only the anonymous API credentials after the server explicitly
@@ -115,6 +121,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
   /// are local UI settings and the installation-scoped MS-ID.
   Future<void> clearGuestSession() async {
     if (sessionKind != 'guest') return;
+    final previous = _credentialSnapshot();
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     authorization = '';
@@ -122,17 +129,18 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     cookie = '';
     xZse96 = '';
     xZse96Target = '';
+    extraHeadersJson = '';
     sessionKind = '';
     refreshToken = '';
     accessTokenExpiry = null;
     accessTokenRefreshAt = null;
     _clearAccountMetadataValues();
-    final snapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    final committed = await _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'clear_guest_session',
     );
-    _notifyChanged();
-    await persistence;
+    if (!committed) throw StateError('本地登录数据库不可用，访客会话清理已回滚');
   }
 
   /// Saves an account response unless another credential mutation superseded
@@ -214,6 +222,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
       'account unlock_ticket',
       normalizedUnlockTicket,
     );
+    final previous = _credentialSnapshot();
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     authorization = 'Bearer $normalizedAccessToken';
@@ -234,13 +243,12 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     accountLockInSeconds = normalizedLockInSeconds;
     xZse96 = '';
     xZse96Target = '';
-    final snapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    extraHeadersJson = '';
+    return _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'save_account_session',
     );
-    _notifyChanged();
-    await persistence;
-    return true;
   }
 
   /// Stores a verified web/QR session without manufacturing a refresh token.
@@ -274,6 +282,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     final normalizedUserId = userId?.trim() ?? '';
     _SessionStoreCore._validateHeaderValue('account uid', normalizedUid);
     _SessionStoreCore._validateHeaderValue('account user_id', normalizedUserId);
+    final previous = _credentialSnapshot();
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     authorization = CloudIdSigner.oauthAuthorization;
@@ -290,13 +299,12 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     accountLockInSeconds = 0;
     xZse96 = '';
     xZse96Target = '';
-    final snapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    extraHeadersJson = '';
+    return _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'save_qr_session',
     );
-    _notifyChanged();
-    await persistence;
-    return true;
   }
 
   Future<bool> requestAccountSessionCleanup(
@@ -394,11 +402,33 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
         ? _storage as CredentialRecoveryStore
         : null;
     if (recovery == null) return false;
-    final values = await recovery.readLatestCredentialSnapshot();
+    Map<String, String>? values;
+    try {
+      values = await recovery.readLatestCredentialSnapshot();
+    } on Object catch (error, stackTrace) {
+      _recordAuthenticationLog(
+        '读取账号恢复副本失败，未修改当前会话',
+        level: AppLogLevel.error,
+        details: {
+          'operation': 'read_recovery_snapshot',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '读取账号恢复副本失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+      return false;
+    }
     final snapshot = values == null
         ? null
-        : _CredentialSnapshot.fromStoredValues(values);
-    if (snapshot == null || !snapshot.isAccountSession) {
+        : SessionCredentialSnapshot.fromStoredValues(values);
+    if (snapshot == null || !snapshot.isRecoverableSession) {
       _recordAuthenticationLog(
         '恢复区没有可用的账号会话',
         level: AppLogLevel.warning,
@@ -406,16 +436,63 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
       );
       return false;
     }
+    final previous = _credentialSnapshot();
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     _applyCredentialSnapshot(snapshot);
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(snapshot),
+    final committed = await _commitCredentialMutation(
+      previous: previous,
+      next: snapshot,
+      operation: 'restore_credential_snapshot',
     );
-    _notifyChanged();
-    await persistence;
-    await recovery.removeLatestCredentialSnapshot();
-    _hasRecoverableAccountSession = await recovery.hasCredentialRecovery();
+    if (!committed) return false;
+    try {
+      await recovery.removeLatestCredentialSnapshot();
+    } on Object catch (error, stackTrace) {
+      // The restored session is already durable. Keep the recovery copy if
+      // deleting it fails so the user can retry instead of losing recovery.
+      _recordAuthenticationLog(
+        '恢复副本删除失败，已保留恢复副本并完成会话恢复',
+        level: AppLogLevel.warning,
+        details: {
+          'operation': 'remove_recovery_snapshot',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '恢复副本删除失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+    }
+    try {
+      _hasRecoverableAccountSession = await recovery.hasCredentialRecovery();
+    } on Object catch (error, stackTrace) {
+      // The active session is already durable. Keep the recovery indicator
+      // visible if the follow-up status read is unavailable.
+      _hasRecoverableAccountSession = true;
+      _recordAuthenticationLog(
+        '恢复成功但无法确认恢复副本状态，保留恢复入口',
+        level: AppLogLevel.warning,
+        details: {
+          'operation': 'check_recovery_snapshot',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '确认恢复副本状态失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+    }
     _recordAuthenticationLog(
       '已从恢复区恢复账号会话',
       details: const {'action': 'restored'},
@@ -424,23 +501,50 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     return true;
   }
 
-  Future<void> permanentlyClearRecoveredAccountSessions() async {
+  Future<bool> permanentlyClearRecoveredAccountSessions() async {
     final recovery = _storage is CredentialRecoveryStore
         ? _storage as CredentialRecoveryStore
         : null;
-    if (recovery == null) return;
-    await recovery.clearCredentialRecovery();
-    _hasRecoverableAccountSession = false;
-    _recordAuthenticationLog(
-      '用户彻底清理恢复区中的账号凭据',
-      details: const {'action': 'permanently_deleted'},
-    );
-    _notifyChanged();
+    if (recovery == null) return false;
+    try {
+      await recovery.clearCredentialRecovery();
+      _hasRecoverableAccountSession = false;
+      _recordAuthenticationLog(
+        '用户彻底清理恢复区中的账号凭据',
+        details: const {'action': 'permanently_deleted'},
+      );
+      _notifyChanged();
+      return true;
+    } on Object catch (error, stackTrace) {
+      _recordAuthenticationLog(
+        '恢复区彻底清理失败，凭据仍保留',
+        level: AppLogLevel.error,
+        details: {
+          'operation': 'clear_recovery_store',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '恢复区彻底清理失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+      return false;
+    }
   }
 
   Future<void> clear() async {
-    await _clearCredentials(reason: 'manual_logout');
+    await clearAndReport();
   }
+
+  Future<bool> clearAndReport() => _clearCredentials(reason: 'manual_logout');
+
+  Future<bool> clearAccountCredentialsAndReport() =>
+      _clearCredentials(reason: 'account_slot_removed');
 
   Future<bool> _clearCredentials({
     required String reason,
@@ -458,7 +562,9 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     // Flutter widget tests intentionally use an in-memory/session adapter and
     // do not have a registered path-provider host. Production mobile/desktop
     // builds always archive into the private recovery table before clearing.
-    if (snapshot.isAccountSession && recovery != null && !zhIsFlutterTest) {
+    if (snapshot.isRecoverableSession &&
+        recovery != null &&
+        (!zhIsFlutterTest || _persistInFlutterTests)) {
       try {
         await recovery.archiveCredentialSnapshot(
           values: snapshot.toStoredValues(),
@@ -483,6 +589,7 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
             expectedCredentialRevision != _credentialRevision)) {
       return false;
     }
+    final previous = snapshot;
     _credentialRevision += 1;
     _clearPendingAccountCleanup();
     _resetValues();
@@ -494,16 +601,14 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
       _notifyChanged();
       return true;
     }
-    final emptySnapshot = _credentialSnapshot();
-    final persistence = _queueCredentialPersistence(
-      () => _persistCredentialSnapshot(emptySnapshot),
-    );
     _recordAuthenticationLog(
       reason == 'manual_logout' ? '用户退出登录' : '账号会话已清理',
       details: {'reason': reason, 'action': 'cleared'},
     );
-    _notifyChanged();
-    await persistence;
-    return true;
+    return _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'clear_credentials',
+    );
   }
 }

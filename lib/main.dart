@@ -39,9 +39,10 @@ Future<void> main() async {
   await session.load();
   final accountSessions = AccountSessionStore.instance;
   await accountSessions.load();
-  if (session.hasAccountSession) {
-    await accountSessions.rememberCurrent(session);
-  }
+  // Reconcile the active slot only after both private stores loaded
+  // successfully. A failed read therefore cannot be mistaken for logout or
+  // overwrite the durable account list.
+  await accountSessions.syncCurrentSession(session);
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     unawaited(
@@ -203,11 +204,13 @@ class _HomeShellState extends State<HomeShell> {
     super.initState();
     _index = startupNavigationIndex(widget.session.startupPage);
     _feedController.addListener(_feedSelectionChanged);
+    widget.session.addListener(_sessionChanged);
   }
 
   @override
   void dispose() {
     _feedController.removeListener(_feedSelectionChanged);
+    widget.session.removeListener(_sessionChanged);
     _feedController.dispose();
     _searchController.dispose();
     _drawerController.dispose();
@@ -216,6 +219,10 @@ class _HomeShellState extends State<HomeShell> {
 
   void _feedSelectionChanged() {
     if (mounted) setState(() {});
+  }
+
+  void _sessionChanged() {
+    unawaited(_accountStore.syncCurrentSession(widget.session));
   }
 
   void _selectNavigation(int value) {
@@ -292,7 +299,23 @@ class _HomeShellState extends State<HomeShell> {
     final account = _accountStore.accounts
         .where((item) => item.id == id)
         .firstOrNull;
-    final switched = await _accountStore.activate(id, widget.session);
+    var switched = false;
+    try {
+      switched = await _accountStore.activate(
+        id,
+        widget.session,
+        verify: account == null ? null : () => _verifyAccount(account),
+      );
+    } on Object catch (error, stackTrace) {
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '侧边栏账号切换失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+    }
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -301,10 +324,30 @@ class _HomeShellState extends State<HomeShell> {
           content: Text(
             switched
                 ? '已切换到 ${account?.displayName ?? '所选账号'}'
-                : '账号会话已过期，请重新登录',
+                : '账号会话验证失败，已恢复之前的登录状态',
           ),
         ),
       );
+  }
+
+  Future<bool> _verifyAccount(StoredAccountSession account) async {
+    final response = await widget.api.get('/people/self');
+    if (!response.isSuccess) return false;
+    if (response.jsonMap == null) return false;
+    final profile = unwrapObject(response.jsonMap!);
+    final profileId = profile['id']?.toString().trim() ?? '';
+    final profileUid = profile['uid']?.toString().trim() ?? '';
+    if (account.accountUid.isNotEmpty &&
+        profileId.isNotEmpty &&
+        account.accountUid != profileId) {
+      return false;
+    }
+    if (account.accountUserId.isNotEmpty &&
+        profileUid.isNotEmpty &&
+        account.accountUserId != profileUid) {
+      return false;
+    }
+    return true;
   }
 
   void _openAccountManager() {

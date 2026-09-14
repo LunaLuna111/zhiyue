@@ -17,13 +17,23 @@ part 'session_store_parts/session_history.dart';
 part 'session_store_parts/session_preferences.dart';
 part 'session_store_parts/session_credentials.dart';
 
+bool _isBearerAuthorization(String value) {
+  final normalized = value.trim();
+  return normalized.length > 7 &&
+      normalized.substring(0, 7).toLowerCase() == 'bearer ' &&
+      normalized.substring(7).trim().isNotEmpty;
+}
+
 abstract class _SessionStoreCore extends ChangeNotifier {
   _SessionStoreCore({
     FlutterSecureStorage? storage,
+    SessionKeyValueStore? keyValueStore,
     required this._persistInFlutterTests,
-  }) : _storage = storage == null
-           ? PrivateAppStorage.instance
-           : FlutterSecureKeyValueStore(storage);
+  }) : _storage =
+           keyValueStore ??
+           (storage == null
+               ? PrivateAppStorage.instance
+               : FlutterSecureKeyValueStore(storage));
 
   static const _authorizationKey = 'zh_authorization';
   static const _udidKey = 'zh_udid';
@@ -41,6 +51,24 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   static const _accountScopeKey = 'zh_account_scope';
   static const _accountUnlockTicketKey = 'zh_account_unlock_ticket';
   static const _accountLockInSecondsKey = 'zh_account_lock_in_seconds';
+  static const List<String> _credentialStorageKeys = [
+    _authorizationKey,
+    _udidKey,
+    _cookieKey,
+    _msIdKey,
+    _zse96Key,
+    _zse96TargetKey,
+    _extraHeadersKey,
+    _sessionKindKey,
+    _refreshTokenKey,
+    _accessTokenExpiryKey,
+    _accessTokenRefreshAtKey,
+    _accountUidKey,
+    _accountUserIdKey,
+    _accountScopeKey,
+    _accountUnlockTicketKey,
+    _accountLockInSecondsKey,
+  ];
   static const _searchHistoryKey = 'zh_search_history';
   static const _maxSearchHistoryItems = 20;
   static const _readingTextSizeKey = 'zh_setting_reading_text_size';
@@ -77,12 +105,17 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   ];
 
   final SessionKeyValueStore _storage;
+  SessionCredentialSnapshot _durableCredentialSnapshot =
+      SessionCredentialSnapshot.empty;
+  bool _hasDurableCredentialSnapshot = false;
   final bool _persistInFlutterTests;
+  bool _credentialStorageLoaded = false;
   final _browsingHistoryChanges = _SessionChangeSignal();
   Future<void> _browsingHistoryWrite = Future<void>.value();
   Future<void> _credentialPersistence = Future<void>.value();
   int _credentialRevision = 0;
   bool _storageUnavailable = false;
+  bool _credentialStorageUnavailable = false;
   zhihu_api.ApiSessionCleanupRequest? _pendingAccountCleanup;
   bool _hasRecoverableAccountSession = false;
   int _lastDismissedCleanupRevision = -1;
@@ -143,10 +176,15 @@ abstract class _SessionStoreCore extends ChangeNotifier {
 
   bool get hasAuthorization => authorization.trim().isNotEmpty;
   bool get hasAccountSession =>
-      (sessionKind == 'account' && hasCompleteMobileContext) ||
+      (sessionKind == 'account' &&
+          hasCompleteMobileContext &&
+          _isBearerAuthorization(authorization)) ||
       (sessionKind == 'qr' && hasCompleteMobileContext && cookieHasQrIdentity);
+  bool get hasStoredCredentialSession =>
+      hasAccountSession ||
+      (sessionKind == 'imported' && hasCompleteMobileContext);
   bool get hasRefreshableAccountSession =>
-      sessionKind == 'account' && hasCompleteMobileContext;
+      hasAccountSession && refreshToken.trim().isNotEmpty;
   bool get isQrSession => sessionKind == 'qr' && cookieHasQrIdentity;
   bool get cookieHasQrIdentity => cookie.split(';').any((part) {
     final separator = part.indexOf('=');
@@ -155,7 +193,9 @@ abstract class _SessionStoreCore extends ChangeNotifier {
         part.substring(separator + 1).trim().isNotEmpty;
   });
   bool get hasGuestSession =>
-      sessionKind == 'guest' && hasCompleteMobileContext;
+      sessionKind == 'guest' &&
+      hasCompleteMobileContext &&
+      _isBearerAuthorization(authorization);
   bool get isAccessTokenExpired =>
       accessTokenExpiry != null && !DateTime.now().isBefore(accessTokenExpiry!);
   bool get shouldRefreshAccountToken =>
@@ -181,6 +221,12 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       xZse96.trim().isNotEmpty && xZse96Target.trim().isNotEmpty;
   bool get supportsPersistentApiSession => !kIsWeb && !zhIsFlutterTest;
 
+  /// True after the private credential database was read or successfully
+  /// written. Callers must not interpret a failed read as an empty logged-out
+  /// session.
+  bool get isCredentialStorageReady =>
+      _credentialStorageLoaded && !_credentialStorageUnavailable;
+
   /// Monotonically identifies the active API credential state.
   ///
   /// A token refresh captures this value before performing network work and
@@ -194,6 +240,134 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       kind != 'imported' && RegExp(r'^[0-9a-f]{32}$').hasMatch(value);
 
   void _notifyChanged() => notifyListeners();
+
+  /// Captures every credential and account metadata field needed to switch or
+  /// roll back an account without borrowing values from the currently active
+  /// account.
+  SessionCredentialSnapshot captureCredentialSnapshot() =>
+      _credentialSnapshot();
+
+  /// Installs a complete credential snapshot. Account switching uses
+  /// [persist] = false while it verifies `/people/self`, so a failed candidate
+  /// never becomes the durable session. Other callers can persist immediately.
+  Future<bool> installCredentialSnapshot(
+    SessionCredentialSnapshot snapshot, {
+    bool persist = true,
+    int? expectedCredentialRevision,
+    bool allowEmpty = false,
+  }) async {
+    if (expectedCredentialRevision != null &&
+        expectedCredentialRevision != _credentialRevision) {
+      return false;
+    }
+    if (!snapshot.isUsable && !(allowEmpty && snapshot.isEmpty)) return false;
+    final previous = _credentialSnapshot();
+    _credentialRevision += 1;
+    _clearPendingAccountCleanup();
+    _applyCredentialSnapshot(snapshot);
+    if (!persist) {
+      _notifyChanged();
+      return true;
+    }
+    return _commitCredentialMutation(
+      previous: previous,
+      next: snapshot,
+      operation: 'install_credential_snapshot',
+    );
+  }
+
+  /// Persists the current in-memory snapshot without changing it. This is
+  /// used after a candidate account passed identity verification.
+  Future<bool> persistCurrentCredentialSnapshot({
+    int? expectedCredentialRevision,
+  }) async {
+    if (expectedCredentialRevision != null &&
+        expectedCredentialRevision != _credentialRevision) {
+      return false;
+    }
+    final snapshot = _credentialSnapshot();
+    try {
+      await _queueCredentialPersistence(
+        () => _persistCredentialSnapshot(snapshot),
+      );
+      _durableCredentialSnapshot = snapshot;
+      _hasDurableCredentialSnapshot = true;
+      _credentialStorageLoaded = true;
+      return true;
+    } on Object catch (error, stackTrace) {
+      _recordAuthenticationLog(
+        '当前会话写入失败，保留旧的持久化凭据',
+        level: AppLogLevel.error,
+        details: {
+          'operation': 'persist_current_credential_snapshot',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained_previous_storage',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '当前会话写入失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> _commitCredentialMutation({
+    required SessionCredentialSnapshot previous,
+    required SessionCredentialSnapshot next,
+    required String operation,
+  }) async {
+    final mutationRevision = _credentialRevision;
+    final persistence = _queueCredentialPersistence(
+      () => _persistCredentialSnapshot(next),
+    );
+    _notifyChanged();
+    try {
+      await persistence;
+      _durableCredentialSnapshot = next;
+      _hasDurableCredentialSnapshot = true;
+      _credentialStorageLoaded = true;
+      return true;
+    } on Object catch (error, stackTrace) {
+      // AtomicSessionKeyValueStore guarantees that the durable bytes are still
+      // the last successful snapshot when the new snapshot fails. If a newer
+      // mutation already claimed the revision, do not let this older failure
+      // clobber the newer in-memory session.
+      final isLatestMutation = _credentialRevision == mutationRevision;
+      if (isLatestMutation) {
+        _applyCredentialSnapshot(
+          _hasDurableCredentialSnapshot ? _durableCredentialSnapshot : previous,
+        );
+        _credentialRevision += 1;
+        _clearPendingAccountCleanup();
+      }
+      _recordAuthenticationLog(
+        isLatestMutation ? '凭据变更写入失败，已回滚到上一个会话' : '旧凭据变更写入失败，保留更新后的会话',
+        level: AppLogLevel.error,
+        details: {
+          'operation': operation,
+          'error_type': error.runtimeType.toString(),
+          'action': isLatestMutation
+              ? 'rolled_back'
+              : 'newer_mutation_retained',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '凭据变更写入失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+      if (isLatestMutation) _notifyChanged();
+      return false;
+    }
+  }
 
   void _clearPendingAccountCleanup() {
     _pendingAccountCleanup = null;
@@ -222,7 +396,11 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       // an empty in-memory session instead of starting a platform-channel
       // Future that can remain pending until a timeout timer fires.
       _storageUnavailable = true;
+      _credentialStorageUnavailable = true;
       _resetValues();
+      _durableCredentialSnapshot = SessionCredentialSnapshot.empty;
+      _hasDurableCredentialSnapshot = true;
+      _credentialStorageLoaded = true;
       notifyListeners();
       return;
     }
@@ -233,6 +411,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     try {
       stored = await _storage.readAll().timeout(const Duration(seconds: 5));
       _storageUnavailable = false;
+      _credentialStorageUnavailable = false;
       if (_storage case final PrivateAppStorage privateStorage
           when privateStorage.consumeMigrationNotice()) {
         _recordAuthenticationLog(
@@ -249,6 +428,8 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       }
     } on Object catch (error) {
       _storageUnavailable = true;
+      _credentialStorageUnavailable = true;
+      _credentialStorageLoaded = false;
       // Never translate a storage read failure into an empty credential set.
       // The in-memory values are left untouched and the private database keeps
       // its original bytes for a later retry/recovery.
@@ -362,6 +543,9 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       read(_authenticationLoggingEnabledKey),
       fallback: true,
     );
+    _durableCredentialSnapshot = _credentialSnapshot();
+    _hasDurableCredentialSnapshot = true;
+    _credentialStorageLoaded = true;
     notifyListeners();
   }
 
@@ -492,7 +676,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     accountLockInSeconds = 0;
   }
 
-  _CredentialSnapshot _credentialSnapshot() => _CredentialSnapshot(
+  SessionCredentialSnapshot _credentialSnapshot() => SessionCredentialSnapshot(
     authorization: authorization,
     udid: udid,
     cookie: cookie,
@@ -511,7 +695,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     accountLockInSeconds: accountLockInSeconds,
   );
 
-  void _applyCredentialSnapshot(_CredentialSnapshot snapshot) {
+  void _applyCredentialSnapshot(SessionCredentialSnapshot snapshot) {
     authorization = snapshot.authorization;
     udid = snapshot.udid;
     cookie = snapshot.cookie;
@@ -530,34 +714,56 @@ abstract class _SessionStoreCore extends ChangeNotifier {
     accountLockInSeconds = snapshot.accountLockInSeconds;
   }
 
-  Future<void> _persistCredentialSnapshot(_CredentialSnapshot snapshot) async {
-    await _writeOrDelete(_authorizationKey, snapshot.authorization);
-    await _writeOrDelete(_udidKey, snapshot.udid);
-    await _writeOrDelete(_cookieKey, snapshot.cookie);
-    await _writeOrDelete(_msIdKey, snapshot.msId);
-    await _writeOrDelete(_zse96Key, snapshot.xZse96);
-    await _writeOrDelete(_zse96TargetKey, snapshot.xZse96Target);
-    await _writeOrDelete(_extraHeadersKey, snapshot.extraHeadersJson);
-    await _writeOrDelete(_sessionKindKey, snapshot.sessionKind);
-    await _writeOrDelete(_refreshTokenKey, snapshot.refreshToken);
-    await _writeOrDelete(
-      _accessTokenExpiryKey,
-      snapshot.accessTokenExpiry?.toIso8601String() ?? '',
-    );
-    await _writeOrDelete(
-      _accessTokenRefreshAtKey,
-      snapshot.accessTokenRefreshAt?.toIso8601String() ?? '',
-    );
-    await _writeOrDelete(_accountUidKey, snapshot.accountUid);
-    await _writeOrDelete(_accountUserIdKey, snapshot.accountUserId);
-    await _writeOrDelete(_accountScopeKey, snapshot.accountScope);
-    await _writeOrDelete(_accountUnlockTicketKey, snapshot.accountUnlockTicket);
-    await _writeOrDelete(
-      _accountLockInSecondsKey,
-      snapshot.accountLockInSeconds > 0
-          ? snapshot.accountLockInSeconds.toString()
-          : '',
-    );
+  Future<void> _persistCredentialSnapshot(
+    SessionCredentialSnapshot snapshot,
+  ) async {
+    if (zhIsFlutterTest && !_persistInFlutterTests) return;
+    final values = snapshot.toStoredValues();
+    try {
+      final atomic = _storage;
+      if (atomic case final AtomicSessionKeyValueStore storage) {
+        await storage.replaceValues(
+          values: values,
+          keysToDelete: _credentialStorageKeys,
+        );
+      } else {
+        // The secure-storage test adapter predates the atomic boundary. Keep
+        // it usable for old tests; all production platforms use the atomic
+        // PrivateAppStorage implementation above. Direct calls here preserve
+        // failure reporting instead of using the best-effort preference path.
+        for (final key in _credentialStorageKeys) {
+          final value = values[key];
+          if (value == null || value.isEmpty) {
+            await _storage.delete(key: key);
+          } else {
+            await _storage.write(key: key, value: value);
+          }
+        }
+      }
+      _storageUnavailable = false;
+      _credentialStorageUnavailable = false;
+    } on Object catch (error, stackTrace) {
+      _storageUnavailable = true;
+      _credentialStorageUnavailable = true;
+      _recordAuthenticationLog(
+        '本地登录数据库原子写入失败，旧凭据仍保留',
+        level: AppLogLevel.error,
+        details: {
+          'operation': 'atomic_credential_snapshot',
+          'error_type': error.runtimeType.toString(),
+          'action': 'retained',
+        },
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '本地登录数据库原子写入失败',
+          category: AppLogCategory.authentication,
+        ),
+      );
+      rethrow;
+    }
   }
 
   Future<void> _queueCredentialPersistence(Future<void> Function() operation) {
@@ -735,6 +941,10 @@ class SessionStore extends _SessionStoreCore
   SessionStore.withFlutterTestPersistence(FlutterSecureStorage storage)
     : super(storage: storage, persistInFlutterTests: true);
 
+  @visibleForTesting
+  SessionStore.withStorage(SessionKeyValueStore storage)
+    : super(keyValueStore: storage, persistInFlutterTests: true);
+
   static const List<HomeFeedChannel> defaultHomeFeedOrder =
       _SessionStoreCore.defaultHomeFeedOrder;
 
@@ -756,8 +966,27 @@ class _SessionChangeSignal extends ChangeNotifier {
   void emit() => notifyListeners();
 }
 
-class _CredentialSnapshot {
-  const _CredentialSnapshot({
+class SessionCredentialSnapshot {
+  static const empty = SessionCredentialSnapshot(
+    authorization: '',
+    udid: '',
+    cookie: '',
+    msId: '',
+    xZse96: '',
+    xZse96Target: '',
+    extraHeadersJson: '',
+    sessionKind: '',
+    refreshToken: '',
+    accessTokenExpiry: null,
+    accessTokenRefreshAt: null,
+    accountUid: '',
+    accountUserId: '',
+    accountScope: '',
+    accountUnlockTicket: '',
+    accountLockInSeconds: 0,
+  );
+
+  const SessionCredentialSnapshot({
     required this.authorization,
     required this.udid,
     required this.cookie,
@@ -793,9 +1022,42 @@ class _CredentialSnapshot {
   final String accountUnlockTicket;
   final int accountLockInSeconds;
 
+  bool get isEmpty =>
+      authorization.isEmpty &&
+      udid.isEmpty &&
+      cookie.isEmpty &&
+      sessionKind.isEmpty &&
+      refreshToken.isEmpty;
+
+  bool get isUsable {
+    if (sessionKind == 'account') {
+      return _isBearerAuthorization(authorization) &&
+          udid.trim().isNotEmpty &&
+          refreshToken.trim().isNotEmpty;
+    }
+    if (sessionKind == 'qr') {
+      return authorization.trim().isNotEmpty &&
+          udid.trim().isNotEmpty &&
+          cookie.split(';').any((part) {
+            final separator = part.indexOf('=');
+            return separator > 0 &&
+                part.substring(0, separator).trim().toLowerCase() == 'z_c0' &&
+                part.substring(separator + 1).trim().isNotEmpty;
+          });
+    }
+    if (sessionKind == 'imported') {
+      return authorization.trim().isNotEmpty && udid.trim().isNotEmpty;
+    }
+    return false;
+  }
+
+  /// True for every locally persisted login context, including manually
+  /// imported contexts which do not participate in token refresh.
+  bool get isRecoverableSession => isUsable;
+
   bool get isAccountSession {
     if (sessionKind == 'account') {
-      return authorization.trim().isNotEmpty &&
+      return _isBearerAuthorization(authorization) &&
           udid.trim().isNotEmpty &&
           refreshToken.trim().isNotEmpty;
     }
@@ -842,8 +1104,10 @@ class _CredentialSnapshot {
           .toString(),
   };
 
-  static _CredentialSnapshot? fromStoredValues(Map<String, String> values) {
-    final snapshot = _CredentialSnapshot(
+  static SessionCredentialSnapshot? fromStoredValues(
+    Map<String, String> values,
+  ) {
+    final snapshot = SessionCredentialSnapshot(
       authorization: values[_SessionStoreCore._authorizationKey] ?? '',
       udid: values[_SessionStoreCore._udidKey] ?? '',
       cookie: values[_SessionStoreCore._cookieKey] ?? '',
@@ -870,6 +1134,6 @@ class _CredentialSnapshot {
           ) ??
           0,
     );
-    return snapshot.isAccountSession ? snapshot : null;
+    return snapshot.isRecoverableSession ? snapshot : null;
   }
 }

@@ -17,7 +17,10 @@ import 'private_key_value_store.dart';
 /// data directory. Windows/Linux use the private-file fallback in this class
 /// because the project's sqflite plugin has no native implementation there.
 class PrivateAppStorage
-    implements SessionKeyValueStore, CredentialRecoveryStore {
+    implements
+        SessionKeyValueStore,
+        AtomicSessionKeyValueStore,
+        CredentialRecoveryStore {
   PrivateAppStorage._();
 
   static final instance = PrivateAppStorage._();
@@ -113,6 +116,44 @@ class PrivateAppStorage
         _fallbackValues.remove(key);
         await _writeFallback();
       }
+    });
+  }
+
+  @override
+  Future<void> replaceValues({
+    required Map<String, String> values,
+    required Iterable<String> keysToDelete,
+  }) {
+    return _enqueueWrite(() async {
+      await _ensureReady();
+      final replacement = Map<String, String>.from(values);
+      final deleteKeys = keysToDelete.toSet();
+      deleteKeys.removeAll(replacement.keys);
+      if (_useSqlite) {
+        await _database!.transaction((transaction) async {
+          for (final key in deleteKeys) {
+            await transaction.delete(
+              'session_values',
+              where: 'key = ?',
+              whereArgs: [key],
+            );
+          }
+          final batch = transaction.batch();
+          for (final entry in replacement.entries) {
+            batch.insert('session_values', {
+              'key': entry.key,
+              'value': entry.value,
+            }, conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+          await batch.commit(noResult: true);
+        });
+        return;
+      }
+      for (final key in deleteKeys) {
+        _fallbackValues.remove(key);
+      }
+      _fallbackValues.addAll(replacement);
+      await _writeFallback();
     });
   }
 

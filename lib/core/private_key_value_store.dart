@@ -11,6 +11,18 @@ abstract interface class SessionKeyValueStore {
   Future<void> delete({required String key});
 }
 
+/// Atomic replacement boundary for a group of session keys.
+///
+/// The production app-private database implements this with one SQLite
+/// transaction (or one temporary-file replacement on desktop fallbacks). Test
+/// adapters may omit this interface and use the legacy key-by-key fallback.
+abstract interface class AtomicSessionKeyValueStore {
+  Future<void> replaceValues({
+    required Map<String, String> values,
+    required Iterable<String> keysToDelete,
+  });
+}
+
 class FlutterSecureKeyValueStore implements SessionKeyValueStore {
   const FlutterSecureKeyValueStore(this.storage);
 

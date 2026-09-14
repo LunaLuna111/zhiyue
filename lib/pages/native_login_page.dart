@@ -179,13 +179,26 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     });
   }
 
-  void _onQrLoginSuccess() {
-    unawaited(AccountSessionStore.instance.rememberCurrent(widget.session));
+  Future<void> _onQrLoginSuccess() async {
+    final saved = await AccountSessionStore.instance.rememberCurrent(
+      widget.session,
+    );
     if (!mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('扫码登录成功')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(saved ? '扫码登录成功' : '扫码登录成功，但账号槽位保存失败，请稍后重试')),
+    );
     if (!widget.embedded) Navigator.of(context).pop(true);
+  }
+
+  Future<bool> _rememberLoggedInSession() async {
+    final saved = await AccountSessionStore.instance.rememberCurrent(
+      widget.session,
+    );
+    if (!mounted) return saved;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(saved ? '登录成功' : '登录成功，但账号槽位保存失败，请稍后重试')),
+    );
+    return saved;
   }
 
   Future<void> _requestDigits() async {
@@ -243,10 +256,8 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       if (!mounted) return;
       _setFeedback(result.message, isError: !result.signedIn);
       if (result.signedIn) {
-        unawaited(AccountSessionStore.instance.rememberCurrent(widget.session));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('登录成功')));
+        await _rememberLoggedInSession();
+        if (!mounted) return;
         if (!widget.embedded) Navigator.of(context).pop(true);
       }
     } catch (_) {
@@ -272,10 +283,8 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
       if (!mounted) return;
       _setFeedback(result.message, isError: !result.signedIn);
       if (result.signedIn) {
-        unawaited(AccountSessionStore.instance.rememberCurrent(widget.session));
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('登录成功')));
+        await _rememberLoggedInSession();
+        if (!mounted) return;
         if (!widget.embedded) Navigator.of(context).pop(true);
       }
     } catch (_) {

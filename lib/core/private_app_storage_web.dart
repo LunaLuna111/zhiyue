@@ -4,7 +4,10 @@ import 'private_key_value_store.dart';
 /// database/file; this keeps the package analyzable for Flutter Web without
 /// attempting to persist credentials in browser storage.
 class PrivateAppStorage
-    implements SessionKeyValueStore, CredentialRecoveryStore {
+    implements
+        SessionKeyValueStore,
+        AtomicSessionKeyValueStore,
+        CredentialRecoveryStore {
   PrivateAppStorage._();
 
   static final instance = PrivateAppStorage._();
@@ -27,6 +30,18 @@ class PrivateAppStorage
   @override
   Future<void> delete({required String key}) async {
     _values.remove(key);
+  }
+
+  @override
+  Future<void> replaceValues({
+    required Map<String, String> values,
+    required Iterable<String> keysToDelete,
+  }) async {
+    final deleteKeys = keysToDelete.toSet()..removeAll(values.keys);
+    for (final key in deleteKeys) {
+      _values.remove(key);
+    }
+    _values.addAll(values);
   }
 
   @override

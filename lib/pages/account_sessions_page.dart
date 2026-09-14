@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/account_session_store.dart';
 import '../core/api_client.dart';
+import '../core/json_tools.dart';
 import '../core/session_store.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
@@ -33,40 +34,31 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
     _store.load();
   }
 
-  String _currentId() {
-    final uid = widget.session.accountUid.trim();
-    if (uid.isNotEmpty) return uid;
-    final userId = widget.session.accountUserId.trim();
-    if (userId.isNotEmpty) return userId;
-    return '';
-  }
-
   Future<void> _saveCurrent() async {
-    if (!widget.session.hasAccountSession) {
+    if (!widget.session.hasStoredCredentialSession) {
       _message('当前没有可保存的登录会话');
       return;
     }
-    await _store.rememberCurrent(widget.session);
-    if (mounted) _message('当前登录会话已保存');
+    final saved = await _store.rememberCurrent(widget.session);
+    if (mounted) {
+      _message(saved ? '当前登录会话已保存' : '账号槽位保存失败，请稍后重试');
+    }
   }
 
   Future<void> _switch(StoredAccountSession account) async {
-    if (_busyId != null || account.id == _currentId()) return;
+    if (_busyId != null || account.id == _store.activeId) return;
     setState(() => _busyId = account.id);
     try {
-      final switched = await _store.activate(account.id, widget.session);
+      final switched = await _store.activate(
+        account.id,
+        widget.session,
+        verify: () => _verifyAccount(account),
+      );
       if (!switched) {
-        _message(account.isExpired ? '该账号 Token 已过期，请重新登录' : '账号会话无效，请重新登录');
+        _message('账号会话验证失败，已恢复之前的登录状态');
         return;
       }
-      // Verify the candidate after activation. A failed identity check is
-      // surfaced without deleting the stored slot, allowing a later retry.
-      final response = await widget.api.get('/people/self');
-      if (!response.isSuccess) {
-        _message('已切换本地会话，但账号验证失败');
-      } else {
-        _message('已切换到 ${account.displayName}');
-      }
+      _message('已切换到 ${account.displayName}');
     } catch (_) {
       _message('账号切换失败，请稍后重试');
     } finally {
@@ -79,7 +71,11 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除账号槽位？'),
-        content: Text('只删除本机保存的 ${account.displayName}，不会退出其他设备。'),
+        content: Text(
+          account.id == _store.activeId
+              ? '只删除本机保存的 ${account.displayName}，当前会话会退出本机并保留可恢复副本，不会退出其他设备。'
+              : '只删除本机保存的 ${account.displayName}，不会退出其他设备。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -93,21 +89,50 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
       ),
     );
     if (confirmed != true) return;
-    await _store.remove(account.id);
-    if (mounted) _message('已删除本机账号槽位');
+    final removed = await _store.remove(account.id, session: widget.session);
+    if (mounted) {
+      _message(removed ? '已删除本机账号槽位' : '账号槽位删除失败，请稍后重试');
+    }
   }
 
   Future<void> _restore() async {
     final restored = await widget.session.restoreLastClearedAccountSession();
+    var saved = false;
     if (restored) {
       // Recreate/update the multi-account slot as well. This keeps recovery
       // useful even if the slot was removed after the active credentials were
       // cleared.
-      await _store.rememberCurrent(widget.session);
+      saved = await _store.rememberCurrent(widget.session);
     }
     if (mounted) {
-      _message(restored ? '已恢复最近一次清理的账号会话' : '没有可恢复的账号会话');
+      _message(
+        !restored
+            ? '没有可恢复的账号会话'
+            : saved
+            ? '已恢复最近一次清理的账号会话'
+            : '会话已恢复，但账号槽位保存失败，请稍后重试',
+      );
     }
+  }
+
+  Future<bool> _verifyAccount(StoredAccountSession account) async {
+    final response = await widget.api.get('/people/self');
+    if (!response.isSuccess) return false;
+    if (response.jsonMap == null) return false;
+    final profile = unwrapObject(response.jsonMap!);
+    final profileId = profile['id']?.toString().trim() ?? '';
+    final profileUid = profile['uid']?.toString().trim() ?? '';
+    if (account.accountUid.isNotEmpty &&
+        profileId.isNotEmpty &&
+        account.accountUid != profileId) {
+      return false;
+    }
+    if (account.accountUserId.isNotEmpty &&
+        profileUid.isNotEmpty &&
+        account.accountUserId != profileUid) {
+      return false;
+    }
+    return true;
   }
 
   Future<void> _permanentlyClearRecovery() async {
@@ -129,8 +154,11 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
       ),
     );
     if (confirmed != true) return;
-    await widget.session.permanentlyClearRecoveredAccountSessions();
-    if (mounted) _message('恢复凭据已彻底删除');
+    final cleared = await widget.session
+        .permanentlyClearRecoveredAccountSessions();
+    if (mounted) {
+      _message(cleared ? '恢复凭据已彻底删除' : '恢复凭据清理失败，请稍后重试');
+    }
   }
 
   void _message(String value) {
@@ -259,7 +287,7 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
                         subtitle: Text(
                           [
                             if (account.isQr) '扫码会话' else '手机号/密码会话',
-                            if (account.id == _currentId()) '当前使用',
+                            if (account.id == _store.activeId) '当前使用',
                             if (account.isExpired && !account.isQr) '已过期',
                           ].join(' · '),
                         ),

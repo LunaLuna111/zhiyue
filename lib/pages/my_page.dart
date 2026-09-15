@@ -3,11 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/api_client.dart';
-import '../core/session_store.dart';
+import '../core/app_version.dart';
 import '../core/content_filter_stats.dart';
 import '../core/recommendation_behavior.dart';
 import '../core/recommendation_engine.dart';
 import '../core/salt_chapter_cache.dart';
+import '../core/session_store.dart';
 import '../core/webdav_sync_service.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
@@ -329,6 +330,50 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     onChanged: session.setRecommendationMode,
                   ),
                   const Divider(),
+                  _ChoiceTile<FeedDensity>(
+                    icon: Icons.view_agenda_outlined,
+                    title: '内容密度',
+                    value: session.feedDensity,
+                    values: const {
+                      FeedDensity.comfortable: '舒适',
+                      FeedDensity.compact: '紧凑',
+                    },
+                    onChanged: session.setFeedDensity,
+                  ),
+                ],
+              ),
+              const SizedBox(height: ZhSpace.sm),
+              _SettingsGroup(
+                children: [
+                  _SwitchTile(
+                    key: const ValueKey('home-reselect-refresh-setting'),
+                    icon: Icons.vertical_align_top_rounded,
+                    title: '重复点击首页时刷新',
+                    subtitle: '再次点击已选中的首页按钮时回到顶部并刷新',
+                    value: session.refreshHomeOnReselect,
+                    onChanged: session.setRefreshHomeOnReselect,
+                  ),
+                  const Divider(),
+                  _SwitchTile(
+                    icon: Icons.image_outlined,
+                    title: '显示推荐图片',
+                    subtitle: '关闭后首页只显示文字、作者和互动信息',
+                    value: session.showFeedImages,
+                    onChanged: session.setShowFeedImages,
+                  ),
+                  const Divider(),
+                  _SwitchTile(
+                    icon: Icons.bar_chart_rounded,
+                    title: '显示互动数据',
+                    subtitle: '显示赞同、收藏、评论和发布日期',
+                    value: session.showFeedMetrics,
+                    onChanged: session.setShowFeedMetrics,
+                  ),
+                ],
+              ),
+              const SizedBox(height: ZhSpace.sm),
+              _SettingsGroup(
+                children: [
                   _ActionTile(
                     key: const ValueKey('recommendation-behavior-setting'),
                     icon: Icons.insights_outlined,
@@ -350,42 +395,6 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         .map((channel) => channel.label)
                         .join(' · '),
                     onTap: _editHomeFeedOrder,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    key: const ValueKey('home-reselect-refresh-setting'),
-                    icon: Icons.vertical_align_top_rounded,
-                    title: '重复点击首页时刷新',
-                    subtitle: '再次点击已选中的首页按钮时回到顶部并刷新',
-                    value: session.refreshHomeOnReselect,
-                    onChanged: session.setRefreshHomeOnReselect,
-                  ),
-                  const Divider(),
-                  _ChoiceTile<FeedDensity>(
-                    icon: Icons.view_agenda_outlined,
-                    title: '内容密度',
-                    value: session.feedDensity,
-                    values: const {
-                      FeedDensity.comfortable: '舒适',
-                      FeedDensity.compact: '紧凑',
-                    },
-                    onChanged: session.setFeedDensity,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.image_outlined,
-                    title: '显示推荐图片',
-                    subtitle: '关闭后首页只显示文字、作者和互动信息',
-                    value: session.showFeedImages,
-                    onChanged: session.setShowFeedImages,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.bar_chart_rounded,
-                    title: '显示互动数据',
-                    subtitle: '显示赞同、收藏、评论和发布日期',
-                    value: session.showFeedMetrics,
-                    onChanged: session.setShowFeedMetrics,
                   ),
                   const Divider(),
                   AnimatedBuilder(
@@ -419,7 +428,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     },
                     onChanged: session.setReadingTextSize,
                   ),
-                  const Divider(),
+                ],
+              ),
+              const SizedBox(height: ZhSpace.sm),
+              _SettingsGroup(
+                children: [
                   _SwitchTile(
                     icon: Icons.accessibility_new_rounded,
                     title: '跟随系统字号',
@@ -450,15 +463,6 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     onChanged: _toggleBrowsingHistory,
                   ),
                   const Divider(),
-                  _ActionTile(
-                    icon: Icons.delete_outline_rounded,
-                    title: '清空浏览记录',
-                    subtitle: session.browsingHistory.isEmpty
-                        ? '目前没有记录'
-                        : '删除 ${session.browsingHistory.length} 条本机记录',
-                    onTap: _clearBrowsingHistory,
-                  ),
-                  const Divider(),
                   _SwitchTile(
                     icon: Icons.photo_library_outlined,
                     title: '预加载列表图片',
@@ -466,7 +470,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     value: session.prefetchImages,
                     onChanged: session.setPrefetchImages,
                   ),
-                  const Divider(),
+                ],
+              ),
+              const SizedBox(height: ZhSpace.sm),
+              _SettingsGroup(
+                children: [
                   _ChoiceTile<ImageCachePreset>(
                     icon: Icons.storage_rounded,
                     title: '图片缓存容量',
@@ -477,6 +485,19 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                       ImageCachePreset.roomy: '充足',
                     },
                     onChanged: session.setImageCachePreset,
+                  ),
+                ],
+              ),
+              const SizedBox(height: ZhSpace.sm),
+              _SettingsGroup(
+                children: [
+                  _ActionTile(
+                    icon: Icons.delete_outline_rounded,
+                    title: '清空浏览记录',
+                    subtitle: session.browsingHistory.isEmpty
+                        ? '目前没有记录'
+                        : '删除 ${session.browsingHistory.length} 条本机记录',
+                    onTap: _clearBrowsingHistory,
                   ),
                   const Divider(),
                   _ActionTile(
@@ -517,7 +538,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     value: session.showSearchHotSearch,
                     onChanged: session.setShowSearchHotSearch,
                   ),
-                  const Divider(),
+                ],
+              ),
+              const SizedBox(height: ZhSpace.sm),
+              _SettingsGroup(
+                children: [
                   _ActionTile(
                     icon: Icons.delete_sweep_outlined,
                     title: '清空搜索记录',
@@ -610,7 +635,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                   const _ActionTile(
                     icon: Icons.info_outline_rounded,
                     title: '关于知阅',
-                    subtitle: '版本 0.3.10',
+                    subtitle: '版本 $zhiyueVersionName',
                   ),
                 ],
               ),

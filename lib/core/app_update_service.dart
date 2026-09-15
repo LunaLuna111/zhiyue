@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import 'app_update_platform.dart'
     if (dart.library.io) 'app_update_platform_io.dart';
+import 'app_version.dart';
 import 'platform_environment.dart'
     if (dart.library.io) 'platform_environment_io.dart';
 
@@ -61,7 +62,7 @@ class AppUpdateRelease {
     final tag = _text(source['tag_name'], 'Release 标签', 80);
     final assets = source['assets'];
     if (assets is! List) throw const AppUpdateException('Release 缺少安装包');
-    final pattern = RegExp(r'^zhiyue-(\d+\.\d+\.\d+)\+(\d+)-arm64\.apk$');
+    final pattern = RegExp(r'^zhiyue-(\d+\.\d+\.\d+)(?:\+(\d+))?-arm64\.apk$');
     final matches = assets
         .whereType<Map>()
         .where(
@@ -77,7 +78,8 @@ class AppUpdateRelease {
     final fileName = _text(asset['name'], '安装包名称', 160);
     final match = pattern.firstMatch(fileName)!;
     final versionName = match.group(1)!;
-    final versionCode = int.tryParse(match.group(2)!) ?? 0;
+    final legacyVersionCode = int.tryParse(match.group(2) ?? '');
+    final versionCode = legacyVersionCode ?? androidVersionCodeFor(versionName);
     if (tag != 'v$versionName' || versionCode < 1) {
       throw const AppUpdateException('Release 标签与安装包版本不一致');
     }
@@ -197,9 +199,7 @@ class AppUpdateService {
        _client = client ?? http.Client(),
        _ownsClient = client == null,
        _channel = channel ?? _defaultChannel;
-  static const _defaultChannel = MethodChannel(
-    'com.zhiyue.client/app_updates',
-  );
+  static const _defaultChannel = MethodChannel('com.zhiyue.client/app_updates');
   final String repository;
   final Uri apiBaseUri;
   final http.Client _client;

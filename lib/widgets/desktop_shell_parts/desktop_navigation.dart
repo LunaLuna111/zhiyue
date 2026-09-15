@@ -242,7 +242,7 @@ class ZhDesktopSidebar extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '知阅 0.3.10',
+                  '知阅 $zhiyueVersionName',
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),

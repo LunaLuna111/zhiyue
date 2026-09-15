@@ -321,7 +321,7 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  Widget _searchHistoryMenu() => PopupMenuButton<String>(
+  Widget _searchHistoryMenu() => ZhPopupMenuButton<String>(
     key: const ValueKey('search-history-more'),
     tooltip: '搜索历史更多操作',
     icon: const Icon(Icons.more_horiz_rounded, size: 21),
@@ -337,8 +337,8 @@ class _SearchPageState extends State<SearchPage>
     },
     itemBuilder: (context) => [
       if (widget.api.session.searchHistory.isNotEmpty)
-        const PopupMenuItem<String>(value: 'clear', child: Text('清空搜索历史')),
-      const PopupMenuItem<String>(value: 'settings', child: Text('前往设置关闭搜索历史')),
+        ZhMenuItem<String>(value: 'clear', label: '清空搜索历史'),
+      ZhMenuItem<String>(value: 'settings', label: '前往设置关闭搜索历史'),
     ],
   );
 

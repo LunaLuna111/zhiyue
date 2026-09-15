@@ -5,6 +5,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../core/app_version.dart';
 import '../core/session_store.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';

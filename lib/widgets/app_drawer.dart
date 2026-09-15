@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/account_session_store.dart';
+import '../core/app_version.dart';
 import '../core/session_store.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
@@ -194,7 +195,7 @@ class ZhAppDrawer extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        '知阅 0.3.10',
+                        '知阅 $zhiyueVersionName',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),

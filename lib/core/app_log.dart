@@ -6,12 +6,13 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sqflite/sqflite.dart';
 
+import 'app_version.dart';
 import 'platform_cache.dart';
 import 'session_store.dart';
 
 const diagnosticLogAppVersion = String.fromEnvironment(
   'ZH_APP_VERSION',
-  defaultValue: '0.3.10+163',
+  defaultValue: zhiyueVersionName,
 );
 
 enum AppLogLevel { debug, info, warning, error }

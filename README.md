@@ -209,12 +209,7 @@ flutter test --no-pub test/app_update_service_test.dart
 ## 构建 Android APK
 
 ```bash
-flutter build apk \
-  --release \
-  --target-platform android-arm64 \
-  --obfuscate \
-  --split-debug-info=build/symbols/arm64-release \
-  --tree-shake-icons
+./scripts/88_build_compact_arm64_apk.sh
 ```
 
 默认产物：
@@ -249,7 +244,9 @@ Release 必须满足以下约定：
 
 ```text
 Release 标签：v<versionName>
-APK 文件名：zhiyue-<versionName>+<versionCode>-arm64.apk
+APK 文件名：zhiyue-<versionName>-arm64.apk
+
+Android 的内部 versionCode 按语义版本计算，不作为公开文件名的一部分。
 ```
 
 下载和安装前会依次检查：

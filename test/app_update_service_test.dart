@@ -39,6 +39,15 @@ void main() {
     expect(release.packageSha256, 'a' * 64);
   });
 
+  test('derives the Android versionCode from a public semantic version', () {
+    final release = AppUpdateRelease.fromGitHub(
+      releaseJson(tag: 'v0.4.0', name: 'zhiyue-0.4.0-arm64.apk'),
+      'LunaLuna111/zhiyue',
+    );
+    expect(release.versionName, '0.4.0');
+    expect(release.versionCode, 4000);
+  });
+
   test('rejects assets outside the configured repository', () {
     final value = releaseJson();
     final asset = (value['assets']! as List).single as Map<String, Object?>;

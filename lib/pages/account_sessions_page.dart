@@ -291,18 +291,15 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
                             if (account.isExpired && !account.isQr) '已过期',
                           ].join(' · '),
                         ),
-                        trailing: PopupMenuButton<String>(
+                        trailing: ZhPopupMenuButton<String>(
                           tooltip: '账号操作',
                           onSelected: (value) {
                             if (value == 'switch') unawaited(_switch(account));
                             if (value == 'remove') unawaited(_remove(account));
                           },
-                          itemBuilder: (_) => const [
-                            PopupMenuItem(
-                              value: 'switch',
-                              child: Text('切换并验证'),
-                            ),
-                            PopupMenuItem(value: 'remove', child: Text('删除槽位')),
+                          itemBuilder: (_) => [
+                            ZhMenuItem(value: 'switch', label: '切换并验证'),
+                            ZhMenuItem(value: 'remove', label: '删除槽位'),
                           ],
                         ),
                       ),

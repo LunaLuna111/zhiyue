@@ -247,17 +247,17 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       children: [
         Text('连接设置', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: ZhSpace.sm),
-        DropdownButtonFormField<WebDavProviderKind>(
+        ZhChoiceField<WebDavProviderKind>(
           key: const ValueKey('webdav-provider'),
-          initialValue: _provider,
-          decoration: const InputDecoration(labelText: '服务类型'),
+          label: '服务类型',
+          value: _provider,
           items: [
             for (final item in WebDavProviderKind.values)
-              DropdownMenuItem(value: item, child: Text(item.label)),
+              ZhChoiceItem(value: item, label: item.label),
           ],
           onChanged: _saving
               ? null
-              : (value) => setState(() => _provider = value ?? _provider),
+              : (value) => setState(() => _provider = value),
         ),
         const SizedBox(height: ZhSpace.sm),
         Text(
@@ -290,17 +290,17 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           ),
         ),
         const SizedBox(height: ZhSpace.sm),
-        DropdownButtonFormField<WebDavAuthMethod>(
+        ZhChoiceField<WebDavAuthMethod>(
           key: const ValueKey('webdav-auth-method'),
-          initialValue: _authMethod,
-          decoration: const InputDecoration(labelText: '认证方式'),
+          label: '认证方式',
+          value: _authMethod,
           items: [
             for (final item in WebDavAuthMethod.values)
-              DropdownMenuItem(value: item, child: Text(item.label)),
+              ZhChoiceItem(value: item, label: item.label),
           ],
           onChanged: _saving
               ? null
-              : (value) => setState(() => _authMethod = value ?? _authMethod),
+              : (value) => setState(() => _authMethod = value),
         ),
         const SizedBox(height: ZhSpace.sm),
         if (_authMethod == WebDavAuthMethod.basic)

@@ -352,34 +352,30 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
           constraints: const BoxConstraints.tightFor(width: 40, height: 40),
           icon: const Icon(Icons.search_rounded, size: 23),
         ),
-        PopupMenuButton<String>(
+        ZhPopupMenuButton<String>(
           key: const Key('question-answer-more-action'),
           tooltip: '更多',
           icon: const Icon(Icons.more_vert_rounded),
           padding: EdgeInsets.zero,
           position: PopupMenuPosition.under,
           offset: const Offset(0, 8),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          constraints: const BoxConstraints(minWidth: 176),
           onSelected: _showQuestionMenu,
           itemBuilder: (context) => [
-            PopupMenuItem(
+            ZhMenuItem(
               value: 'write',
-              child: Text(widget.api.canWrite ? '写回答' : '登录后写回答'),
+              label: widget.api.canWrite ? '写回答' : '登录后写回答',
             ),
-            const PopupMenuItem(value: 'invite', child: Text('邀请回答')),
-            PopupMenuItem(
+            ZhMenuItem(value: 'invite', label: '邀请回答'),
+            ZhMenuItem(
               value: 'follow',
-              child: Text(
-                (_followingQuestionOverride ?? _questionFollowing(question)) ==
-                        true
-                    ? '取消关注问题'
-                    : '关注问题',
-              ),
+              label:
+                  (_followingQuestionOverride ??
+                          _questionFollowing(question)) ==
+                      true
+                  ? '取消关注问题'
+                  : '关注问题',
             ),
-            const PopupMenuItem(value: 'refresh', child: Text('刷新回答')),
+            ZhMenuItem(value: 'refresh', label: '刷新回答'),
           ],
         ),
       ],

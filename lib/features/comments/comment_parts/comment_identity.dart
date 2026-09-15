@@ -245,7 +245,7 @@ class _CompactCommentMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      PopupMenuButton<_CompactCommentMenuAction>(
+      ZhPopupMenuButton<_CompactCommentMenuAction>(
         tooltip: '更多操作',
         padding: EdgeInsets.zero,
         iconSize: 20,
@@ -274,19 +274,10 @@ class _CompactCommentMenu extends StatelessWidget {
         },
         itemBuilder: (context) => [
           if (onReply != null)
-            const PopupMenuItem(
-              value: _CompactCommentMenuAction.reply,
-              child: Text('回复'),
-            ),
+            ZhMenuItem(value: _CompactCommentMenuAction.reply, label: '回复'),
           if (onDelete != null)
-            const PopupMenuItem(
-              value: _CompactCommentMenuAction.delete,
-              child: Text('删除'),
-            ),
-          const PopupMenuItem(
-            value: _CompactCommentMenuAction.report,
-            child: Text('举报'),
-          ),
+            ZhMenuItem(value: _CompactCommentMenuAction.delete, label: '删除'),
+          ZhMenuItem(value: _CompactCommentMenuAction.report, label: '举报'),
         ],
       );
 }

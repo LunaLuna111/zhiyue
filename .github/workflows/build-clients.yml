@@ -33,12 +33,12 @@ jobs:
         working-directory: /tmp/zhiyue
       - run: flutter test --no-pub test/app_update_service_test.dart
         working-directory: /tmp/zhiyue
-      - run: flutter build apk --release --target-platform android-arm64 --obfuscate --split-debug-info=build/private-symbols/android --tree-shake-icons --extra-gen-snapshot-options=--strip
+      - run: ./scripts/88_build_compact_arm64_apk.sh --extra-gen-snapshot-options=--strip
         working-directory: /tmp/zhiyue
       - name: Prepare APK
         run: |
           cd /tmp/zhiyue
-          version=$(sed -n 's/^version: *\([^+]*\)+\([0-9]*\)$/\1+\2/p' pubspec.yaml)
+          version=$(sed -n 's/^version: *\([0-9][^+[:space:]]*\).*$/\1/p' pubspec.yaml)
           test -n "$version"
           if unzip -p build/app/outputs/flutter-apk/app-release.apk | strings | grep -Eai 'cloudflare|workers\.dev|/Users/|/home/runner/|BEGIN [A-Z ]*PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9_]{20,}'; then
             echo "Sensitive build string detected"
@@ -70,7 +70,7 @@ jobs:
       - name: Prepare macOS archive
         run: |
           cd /tmp/zhiyue
-          version=$(sed -n 's/^version: *\([^+]*\)+\([0-9]*\)$/\1+\2/p' pubspec.yaml)
+          version=$(sed -n 's/^version: *\([0-9][^+[:space:]]*\).*$/\1/p' pubspec.yaml)
           test -n "$version"
           app=$(find build/macos/Build/Products/Release -maxdepth 1 -name '*.app' -type d | head -n 1)
           test -n "$app"

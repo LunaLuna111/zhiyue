@@ -220,18 +220,15 @@ class _SearchHotSection extends StatelessWidget {
                     onPressed: loading ? null : onRefresh,
                     icon: const Icon(Icons.refresh_rounded, size: 21),
                   ),
-                  PopupMenuButton<String>(
+                  ZhPopupMenuButton<String>(
                     key: const ValueKey('search-hot-more'),
                     tooltip: '热搜更多操作',
                     icon: const Icon(Icons.more_horiz_rounded, size: 21),
                     onSelected: (value) {
                       if (value == 'settings') onOpenSettings();
                     },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem<String>(
-                        value: 'settings',
-                        child: Text('关闭热搜显示'),
-                      ),
+                    itemBuilder: (context) => [
+                      ZhMenuItem<String>(value: 'settings', label: '关闭热搜显示'),
                     ],
                   ),
                 ],

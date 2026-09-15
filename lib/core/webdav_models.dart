@@ -84,6 +84,9 @@ class WebDavSettings {
         uri.fragment.isNotEmpty) {
       return 'WebDAV 地址不能包含账号、密码、查询参数或片段';
     }
+    if (_hasHeaderControl(username) || _hasHeaderControl(secret)) {
+      return 'WebDAV 凭据不能包含换行或控制字符';
+    }
     final directory = _normalizeDirectory(remoteDirectory);
     if (directory.isEmpty || directory.split('/').any((part) => part == '..')) {
       return '远程目录无效';
@@ -175,6 +178,9 @@ class WebDavSettings {
 
   static String _bounded(String value, int maximum) =>
       value.length <= maximum ? value : value.substring(0, maximum);
+
+  static bool _hasHeaderControl(String value) =>
+      value.codeUnits.any((unit) => unit < 0x20 || unit == 0x7f);
 }
 
 enum WebDavSyncPhase { idle, loading, testing, syncing, success, failure }

@@ -35,6 +35,8 @@ class HttpWebDavTransport implements WebDavTransport {
   HttpWebDavTransport({http.Client? client})
     : _client = client ?? http.Client();
 
+  static const _maxRedirects = 3;
+
   final http.Client _client;
 
   @override
@@ -44,22 +46,54 @@ class HttpWebDavTransport implements WebDavTransport {
     required Map<String, String> headers,
     List<int> body = const [],
   }) async {
-    final request = http.Request(method, uri)
-      ..followRedirects = true
-      ..maxRedirects = 3
-      ..headers.addAll(headers)
-      ..bodyBytes = body;
-    final response = await _client.send(request);
-    final bytes = await response.stream.toBytes();
+    var current = uri;
+    http.StreamedResponse? response;
+    for (var redirect = 0; ; redirect++) {
+      final request = http.Request(method, current)
+        ..followRedirects = false
+        ..maxRedirects = 0
+        ..headers.addAll(headers)
+        ..bodyBytes = body;
+      response = await _client.send(request);
+      final location = response.headers['location']?.trim();
+      if (response.statusCode < 300 ||
+          response.statusCode >= 400 ||
+          location == null ||
+          location.isEmpty) {
+        break;
+      }
+      await response.stream.drain();
+      if (redirect >= _maxRedirects) {
+        throw StateError('WebDAV 重定向次数过多');
+      }
+      final next = current.resolve(location);
+      if (!_isSafeRedirect(current, next)) {
+        throw const FormatException('WebDAV 重定向必须保持 HTTPS 且同源');
+      }
+      current = next;
+    }
+    final finalResponse = response;
+    final bytes = await finalResponse.stream.toBytes();
     return WebDavResponse(
-      statusCode: response.statusCode,
-      headers: response.headers,
+      statusCode: finalResponse.statusCode,
+      headers: finalResponse.headers,
       body: bytes,
     );
   }
 
   @override
   Future<void> close() async => _client.close();
+
+  static bool _isSafeRedirect(Uri from, Uri to) {
+    if (from.scheme.toLowerCase() != 'https' ||
+        to.scheme.toLowerCase() != 'https') {
+      return false;
+    }
+    return from.host.toLowerCase() == to.host.toLowerCase() &&
+        _effectivePort(from) == _effectivePort(to);
+  }
+
+  static int _effectivePort(Uri uri) => uri.hasPort ? uri.port : 443;
 }
 
 class WebDavClient {
@@ -67,6 +101,7 @@ class WebDavClient {
     : _transport = transport ?? HttpWebDavTransport();
 
   static const _maxResponseBytes = 64 * 1024 * 1024;
+  static const _maxAttempts = 3;
 
   final WebDavSettings settings;
   final WebDavTransport _transport;
@@ -172,25 +207,51 @@ class WebDavClient {
       ..._authorizationHeaders(),
       ...headers,
     };
-    try {
-      final response = await _transport
-          .send(method: method, uri: uri, headers: requestHeaders, body: body)
-          .timeout(const Duration(seconds: 30));
-      if (response.body.length > _maxResponseBytes) {
-        throw const FormatException('WebDAV 响应超过 64 MiB 限制');
+    Object? lastError;
+    for (var attempt = 0; attempt < _maxAttempts; attempt++) {
+      try {
+        final response = await _transport
+            .send(method: method, uri: uri, headers: requestHeaders, body: body)
+            .timeout(const Duration(seconds: 30));
+        if (response.body.length > _maxResponseBytes) {
+          throw const FormatException('WebDAV 响应超过 64 MiB 限制');
+        }
+        if (_shouldRetryStatus(response.statusCode) &&
+            attempt + 1 < _maxAttempts) {
+          await Future<void>.delayed(_retryDelay(attempt));
+          continue;
+        }
+        return response;
+      } on WebDavRequestFailure {
+        rethrow;
+      } on FormatException {
+        rethrow;
+      } on StateError {
+        rethrow;
+      } on Object catch (error) {
+        lastError = error;
+        if (attempt + 1 >= _maxAttempts) break;
+        await Future<void>.delayed(_retryDelay(attempt));
       }
-      return response;
-    } on WebDavRequestFailure {
-      rethrow;
-    } on Object catch (error) {
-      throw WebDavRequestFailure(
-        method: method,
-        uri: uri,
-        statusCode: 0,
-        detail: error.runtimeType.toString(),
-      );
     }
+    throw WebDavRequestFailure(
+      method: method,
+      uri: uri,
+      statusCode: 0,
+      detail: lastError?.runtimeType.toString() ?? 'UnknownError',
+    );
   }
+
+  static bool _shouldRetryStatus(int statusCode) =>
+      statusCode == 408 ||
+      statusCode == 425 ||
+      statusCode == 429 ||
+      (statusCode >= 500 && statusCode < 600);
+
+  static Duration _retryDelay(int attempt) => switch (attempt) {
+    0 => const Duration(milliseconds: 250),
+    _ => const Duration(milliseconds: 750),
+  };
 
   Map<String, String> _authorizationHeaders() {
     if (settings.authMethod == WebDavAuthMethod.bearer) {

@@ -71,6 +71,18 @@
 - Markdown、HTML、DOCX 和 PDF 内容导出
 - 图片保存与本地诊断日志导出
 
+### WebDAV 同步
+
+- 支持通用 WebDAV、Google Drive WebDAV 网关和 Microsoft OneDrive WebDAV 兼容入口
+- 同步搜索记录、浏览历史、盐选书架、已下载章节和回答详情缓存
+- 支持账号密码、应用专用密码和 Bearer 访问令牌
+- 支持启动后台同步、手动同步、连接测试和本机配置清除
+- 仅使用 HTTPS，并限制远端路径、响应体和缓存条目大小
+- 登录凭据、Cookie、设备标识和 WebDAV 设置不会写入远端同步文件
+- 恢复的回答缓存可立即显示，手动刷新时仍会重新请求最新内容
+
+Google Drive 需要先配置可访问 Google Drive 的 WebDAV 网关；OneDrive 请使用账号可用的 WebDAV 兼容地址。远端同步内容按 JSON 文件保存，请只连接自己信任的 WebDAV 服务。
+
 ## 技术结构
 
 ```text

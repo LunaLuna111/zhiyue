@@ -129,6 +129,49 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     if (saved && mounted) _showMessage('WebDAV 同步已关闭，凭据仍保留在本机私有数据库');
   }
 
+  Future<void> _clearSettings() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('清除 WebDAV 配置？'),
+        content: const Text('这会删除本机保存的 WebDAV 地址、账号和凭据，不会删除远端同步数据。'),
+        actions: [
+          TextButton(
+            key: const ValueKey('webdav-clear-cancel'),
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('取消'),
+          ),
+          FilledButton(
+            key: const ValueKey('webdav-clear-confirm'),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('清除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _saving = true);
+    try {
+      await service.clearSettings();
+      if (!mounted) return;
+      setState(() {
+        _provider = WebDavProviderKind.generic;
+        _authMethod = WebDavAuthMethod.basic;
+        _enabled = false;
+        _syncOnStartup = false;
+        _endpointController.clear();
+        _directoryController.text = 'zhiyue';
+        _usernameController.clear();
+        _secretController.clear();
+      });
+      _showMessage('本机 WebDAV 配置和凭据已清除');
+    } on Object catch (error) {
+      if (mounted) _showMessage('清除失败：$error');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   void _showMessage(String message) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -352,6 +395,11 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           key: const ValueKey('webdav-disable'),
           onPressed: _saving ? null : _disable,
           child: const Text('关闭同步'),
+        ),
+        TextButton(
+          key: const ValueKey('webdav-clear'),
+          onPressed: _saving ? null : _clearSettings,
+          child: const Text('清除本机配置和凭据'),
         ),
         if (_saving) ...[
           const SizedBox(height: ZhSpace.sm),

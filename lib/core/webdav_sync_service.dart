@@ -204,14 +204,12 @@ class WebDavSyncService extends ChangeNotifier {
       final remote = await _readRemote(client);
       final local = await _exportLocal();
 
-      final mergedSearch = _mergeSearch(
-        local.searchHistory,
-        remote.searchHistory,
-      );
-      final mergedBrowsing = _mergeBrowsing(
-        local.browsingHistory,
-        remote.browsingHistory,
-      );
+      final mergedSearch = session.rememberSearchHistory
+          ? _mergeSearch(local.searchHistory, remote.searchHistory)
+          : remote.searchHistory;
+      final mergedBrowsing = session.rememberBrowsingHistory
+          ? _mergeBrowsing(local.browsingHistory, remote.browsingHistory)
+          : remote.browsingHistory;
       final mergedBookshelf = _mergeBookshelf(
         local.bookshelf,
         remote.bookshelf,
@@ -219,8 +217,12 @@ class WebDavSyncService extends ChangeNotifier {
       final mergedAnswers = _mergeAnswers(local.answers, remote.answers);
       final mergedChapters = _mergeChapters(local.chapters, remote.chapters);
 
-      await session.mergeSearchHistory(remote.searchHistory);
-      await session.mergeBrowsingHistory(remote.browsingHistory);
+      if (session.rememberSearchHistory) {
+        await session.mergeSearchHistory(remote.searchHistory);
+      }
+      if (session.rememberBrowsingHistory) {
+        await session.mergeBrowsingHistory(remote.browsingHistory);
+      }
       await _bookshelf.load();
       await _bookshelf.addAll(mergedBookshelf);
 
@@ -360,8 +362,12 @@ class WebDavSyncService extends ChangeNotifier {
   Future<_LocalSyncSnapshot> _exportLocal() async {
     await _bookshelf.load();
     return _LocalSyncSnapshot(
-      searchHistory: List<String>.from(session.searchHistory),
-      browsingHistory: List<BrowsingHistoryEntry>.from(session.browsingHistory),
+      searchHistory: session.rememberSearchHistory
+          ? List<String>.from(session.searchHistory)
+          : const [],
+      browsingHistory: session.rememberBrowsingHistory
+          ? List<BrowsingHistoryEntry>.from(session.browsingHistory)
+          : const [],
       bookshelf: List<SaltBookshelfEntry>.from(_bookshelf.entries),
       answers: await _answerCache.exportEntries(),
       chapters: await _chapterCache.exportEntries(),
@@ -369,7 +375,13 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<_RemoteSyncSnapshot> _readRemote(WebDavClient client) async {
-    final index = await client.getJson('v1/index.json');
+    Map<String, dynamic>? index;
+    try {
+      index = await client.getJson('v1/index.json');
+    } on FormatException catch (error) {
+      _recordRemoteReadFailure('v1/index.json', error);
+      return const _RemoteSyncSnapshot.empty();
+    }
     if (index == null) return const _RemoteSyncSnapshot.empty();
     final schema = int.tryParse(index['schema_version']?.toString() ?? '');
     if (schema != 1) throw const FormatException('WebDAV 同步版本不兼容');
@@ -388,7 +400,7 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<List<String>> _readStringList(WebDavClient client, String path) async {
-    final source = await client.getJson(path);
+    final source = await _readOptionalJson(client, path);
     final items = source?['items'];
     if (items is! List) return const [];
     return items
@@ -400,7 +412,7 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<List<BrowsingHistoryEntry>> _readBrowsing(WebDavClient client) async {
-    final source = await client.getJson('v1/browsing-history.json');
+    final source = await _readOptionalJson(client, 'v1/browsing-history.json');
     final items = source?['items'];
     if (items is! List) return const [];
     return items
@@ -411,7 +423,7 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<List<SaltBookshelfEntry>> _readBookshelf(WebDavClient client) async {
-    final source = await client.getJson('v1/bookshelf.json');
+    final source = await _readOptionalJson(client, 'v1/bookshelf.json');
     final items = source?['items'];
     if (items is! List) return const [];
     final result = <SaltBookshelfEntry>[];
@@ -463,13 +475,40 @@ class WebDavSyncService extends ChangeNotifier {
         final index = next;
         next += 1;
         if (index >= references.length) return;
-        results[index] = await read(references[index]);
+        try {
+          results[index] = await read(references[index]);
+        } on Object catch (error) {
+          _recordRemoteReadFailure(references[index].path, error);
+        }
       }
     }
 
     final workers = references.length < 3 ? references.length : 3;
     await Future.wait([for (var i = 0; i < workers; i++) worker()]);
     return results.whereType<T>().toList(growable: false);
+  }
+
+  Future<Map<String, dynamic>?> _readOptionalJson(
+    WebDavClient client,
+    String path,
+  ) async {
+    try {
+      return await client.getJson(path);
+    } on Object catch (error) {
+      _recordRemoteReadFailure(path, error);
+      return null;
+    }
+  }
+
+  void _recordRemoteReadFailure(String path, Object error) {
+    unawaited(
+      AppLogStore.instance.record(
+        category: AppLogCategory.app,
+        level: AppLogLevel.warning,
+        message: 'WebDAV 远端可选数据读取失败，已跳过',
+        details: {'path': path, 'error_type': error.runtimeType.toString()},
+      ),
+    );
   }
 
   List<_RemoteReference> _readReferences(Object? raw, {required String kind}) {

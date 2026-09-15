@@ -72,6 +72,7 @@ class SaltChapterCache {
 
   static const _fallbackPrefix = 'zhiyue.salt.chapter.v1.';
   static const _maxCachedChaptersPerBusiness = 800;
+  static const _maxImportedEntryBytes = 8 * 1024 * 1024;
 
   final _platformCache = ZhPlatformCache.instance;
   Database? _database;
@@ -218,6 +219,10 @@ class SaltChapterCache {
         continue;
       }
       try {
+        if (utf8.encode(jsonEncode(entry.toJson())).length >
+            _maxImportedEntryBytes) {
+          continue;
+        }
         await _writeEntry(entry);
         imported += 1;
       } on Object {

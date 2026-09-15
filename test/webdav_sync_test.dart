@@ -28,6 +28,7 @@ void main() {
     );
     expect(base.copyWith(remoteDirectory: '../outside').validate(), isNotNull);
     expect(base.copyWith(username: '').validate(), isNotNull);
+    expect(base.copyWith(secret: 'secret\nvalue').validate(), isNotNull);
   });
 
   test('WebDAV client sends basic auth and preserves endpoint path', () async {
@@ -51,6 +52,32 @@ void main() {
     expect(utf8.decode(request.body), contains('schema_version'));
     await client.close();
   });
+
+  test(
+    'WebDAV client retries transient server failures a bounded number of times',
+    () async {
+      final transport = _MemoryWebDavTransport()..transientPutFailures = 2;
+      const settings = WebDavSettings(
+        enabled: true,
+        provider: WebDavProviderKind.generic,
+        endpoint: 'https://dav.example.test/',
+        remoteDirectory: 'zhiyue',
+        username: 'alice',
+        secret: 'secret',
+        authMethod: WebDavAuthMethod.basic,
+        syncOnStartup: false,
+      );
+      final client = WebDavClient(settings: settings, transport: transport);
+
+      await client.putJson('v1/index.json', {'schema_version': 1});
+
+      expect(
+        transport.requests.where((request) => request.method == 'PUT'),
+        hasLength(3),
+      );
+      await client.close();
+    },
+  );
 
   test('WebDAV sync merges histories and never uploads credentials', () async {
     final transport = _MemoryWebDavTransport();
@@ -151,6 +178,7 @@ class _RecordedRequest {
 class _MemoryWebDavTransport implements WebDavTransport {
   final files = <String, List<int>>{};
   final requests = <_RecordedRequest>[];
+  int transientPutFailures = 0;
 
   @override
   Future<WebDavResponse> send({
@@ -174,6 +202,10 @@ class _MemoryWebDavTransport implements WebDavTransport {
       return const WebDavResponse(statusCode: 207, headers: {}, body: []);
     }
     if (method == 'PUT') {
+      if (transientPutFailures > 0) {
+        transientPutFailures -= 1;
+        return const WebDavResponse(statusCode: 503, headers: {}, body: []);
+      }
       files[uri.path] = List<int>.from(body);
       return const WebDavResponse(statusCode: 201, headers: {}, body: []);
     }

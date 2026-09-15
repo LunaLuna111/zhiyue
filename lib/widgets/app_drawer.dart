@@ -194,7 +194,7 @@ class ZhAppDrawer extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        '知阅 0.3.9',
+                        '知阅 0.3.10',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),

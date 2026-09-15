@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zhiyue_client/core/session_store.dart';
+import 'package:zhiyue_client/ui/components/zh_navigation_components.dart';
 import 'package:zhiyue_client/ui/zh_theme.dart';
 import 'package:zhiyue_client/widgets/app_drawer.dart';
 import 'package:zhiyue_client/widgets/desktop_shell.dart';
@@ -399,7 +400,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('desktop-side-navigation')), findsNothing);
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byType(ZhLiquidGlassBottomNavigation), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('zh-liquid-glass-bottom-navigation')),
+      findsOneWidget,
+    );
     expect(find.text('页面 0'), findsOneWidget);
     expect(
       tester.widget<Scaffold>(find.byKey(scaffoldKey)).resizeToAvoidBottomInset,
@@ -415,7 +420,7 @@ void main() {
       MediaQuery.viewPaddingOf(pageContext).bottom,
     );
 
-    await tester.tap(find.text('搜索').last);
+    await tester.tap(find.bySemanticsLabel('搜索'));
     await tester.pump();
     expect(selected, 1);
   });

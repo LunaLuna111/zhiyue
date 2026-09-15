@@ -268,18 +268,24 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
         // trees on every keyboard animation frame. Input pages and modal
         // composers handle their own keyboard insets instead.
         resizeToAvoidBottomInset: false,
-        body: IndexedStack(index: widget.selectedIndex, children: widget.pages),
-        bottomNavigationBar: DecoratedBox(
-          decoration: const BoxDecoration(
-            border: Border(top: BorderSide(color: ZhPalette.border)),
+        // Keep the page content behind the floating glass platter. A regular
+        // Scaffold reserves the bottom-bar slot, leaving the bar over an
+        // opaque blank strip; the liquid refraction then has no useful
+        // backdrop to sample. GlassScaffold keeps the z-order and edge fade
+        // used by the upstream iOS 26 demo while preserving this Scaffold's
+        // state key for the push drawer.
+        body: GlassScaffold(
+          backgroundColor: ZhPalette.background,
+          edgeFade: true,
+          bottomEdgeFadeExtent: 12,
+          extendBody: true,
+          resizeToAvoidBottomInset: false,
+          body: IndexedStack(
+            index: widget.selectedIndex,
+            children: widget.pages,
           ),
-          child: NavigationBar(
-            height: 62,
-            // Keep the mobile bar icon-only. NavigationDestination retains
-            // the label in semantics and exposes it as a tooltip on long
-            // press, so accessibility text remains available without a
-            // permanent second line below every icon.
-            labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+          bottomBar: ZhLiquidGlassBottomNavigation(
+            key: const ValueKey('zh-liquid-glass-bottom-navigation-host'),
             selectedIndex: widget.selectedIndex,
             onDestinationSelected: widget.onSelectedIndex,
             destinations: widget.destinations,

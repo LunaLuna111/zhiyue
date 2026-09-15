@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import 'core/api_client.dart';
@@ -32,6 +33,7 @@ import 'widgets/desktop_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LiquidGlassWidgets.initialize(enablePerformanceMonitor: false);
   final session = SessionStore();
   // Initialize diagnostics before loading the credential database so a
   // migration/read failure is persisted instead of being recorded only in a
@@ -61,7 +63,12 @@ Future<void> main() async {
     return false;
   };
   final contract = await ApiContract.load();
-  runApp(ZhiyueApp(session: session, contract: contract));
+  runApp(
+    LiquidGlassWidgets.wrap(
+      child: ZhiyueApp(session: session, contract: contract),
+      brightnessResolver: Theme.maybeBrightnessOf,
+    ),
+  );
 }
 
 class ZhiyueApp extends StatefulWidget {

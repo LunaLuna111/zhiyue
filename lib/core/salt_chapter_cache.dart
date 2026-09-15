@@ -27,6 +27,42 @@ class SaltCachedChapter {
 
   SaltTextChapter toTextChapter() =>
       SaltTextChapter.fromXhtml(chapterId: sectionId, xhtml: xhtml);
+
+  Map<String, Object?> toJson() => {
+    'business_id': businessId,
+    'section_id': sectionId,
+    'title': title,
+    'section_index': sectionIndex,
+    'response_json': responseJson,
+    'xhtml': xhtml,
+    'cached_at': cachedAt.toUtc().toIso8601String(),
+  };
+
+  static SaltCachedChapter? fromJson(Object? source) {
+    if (source is! Map) return null;
+    final map = source.map((key, value) => MapEntry(key.toString(), value));
+    final businessId = map['business_id']?.toString().trim() ?? '';
+    final sectionId = map['section_id']?.toString().trim() ?? '';
+    final rawCachedAt = map['cached_at'];
+    final cachedAt = rawCachedAt is num
+        ? DateTime.fromMillisecondsSinceEpoch(rawCachedAt.toInt(), isUtc: true)
+        : DateTime.tryParse(rawCachedAt?.toString() ?? '');
+    if (businessId.isEmpty || sectionId.isEmpty || cachedAt == null) {
+      return null;
+    }
+    final index = map['section_index'];
+    return SaltCachedChapter(
+      businessId: businessId,
+      sectionId: sectionId,
+      title: map['title']?.toString() ?? '',
+      sectionIndex: index is int
+          ? index
+          : int.tryParse(index?.toString() ?? ''),
+      responseJson: map['response_json'],
+      xhtml: map['xhtml']?.toString() ?? '',
+      cachedAt: cachedAt.toLocal(),
+    );
+  }
 }
 
 class SaltChapterCache {
@@ -101,6 +137,54 @@ class SaltChapterCache {
     }
   }
 
+  /// Exports cached chapters, including rows that are no longer in the
+  /// in-memory reader state. Only offline chapter content is included.
+  Future<List<SaltCachedChapter>> exportEntries({String? businessId}) async {
+    final normalizedBusinessId = businessId?.trim();
+    if (_useSqlite) {
+      try {
+        final database = await _open();
+        final rows = await database.query(
+          'salt_chapters',
+          where: normalizedBusinessId == null || normalizedBusinessId.isEmpty
+              ? null
+              : 'business_id = ?',
+          whereArgs:
+              normalizedBusinessId == null || normalizedBusinessId.isEmpty
+              ? null
+              : [normalizedBusinessId],
+          orderBy: 'cached_at DESC',
+          limit: normalizedBusinessId == null || normalizedBusinessId.isEmpty
+              ? null
+              : _maxCachedChaptersPerBusiness,
+        );
+        return rows.map(_fromRow).toList(growable: false);
+      } on Object {
+        _sqliteDisabled = true;
+      }
+    }
+    final keys = await _platformCache.keys();
+    final prefix = normalizedBusinessId == null || normalizedBusinessId.isEmpty
+        ? _fallbackPrefix
+        : _fallbackBusinessPrefix(normalizedBusinessId);
+    final entries = <SaltCachedChapter>[];
+    for (final key in keys.where((item) => item.startsWith(prefix))) {
+      final raw = await _platformCache.read(key);
+      if (raw == null || raw.isEmpty) continue;
+      try {
+        final entry = SaltCachedChapter.fromJson(jsonDecode(raw));
+        if (entry != null) entries.add(entry);
+      } on Object {
+        // Skip one malformed optional offline row.
+      }
+    }
+    entries.sort((left, right) => right.cachedAt.compareTo(left.cachedAt));
+    final maximum = normalizedBusinessId == null || normalizedBusinessId.isEmpty
+        ? 4000
+        : _maxCachedChaptersPerBusiness;
+    return entries.take(maximum).toList(growable: false);
+  }
+
   Future<SaltCachedChapter> write({
     required String businessId,
     required String sectionId,
@@ -110,49 +194,7 @@ class SaltChapterCache {
     required String xhtml,
   }) async {
     final now = DateTime.now().toUtc();
-    if (!_useSqlite) {
-      final cached = SaltCachedChapter(
-        businessId: businessId,
-        sectionId: sectionId,
-        title: title,
-        sectionIndex: sectionIndex,
-        responseJson: responseJson,
-        xhtml: xhtml,
-        cachedAt: now,
-      );
-      await _writeFallback(cached);
-      return cached;
-    }
-    try {
-      final database = await _open();
-      await database.insert('salt_chapters', {
-        'business_id': businessId,
-        'section_id': sectionId,
-        'title': title,
-        'section_index': sectionIndex,
-        'response_json': jsonEncode(responseJson),
-        'xhtml': xhtml,
-        'cached_at': now.millisecondsSinceEpoch,
-      }, conflictAlgorithm: ConflictAlgorithm.replace);
-      // Cleanup is deliberately fire-and-forget.  A chapter read/write must
-      // return as soon as its row is durable; pruning old offline chapters is
-      // maintenance work and must not add latency to opening a chapter.
-      unawaited(_pruneBusiness(database, businessId));
-    } on Object {
-      _sqliteDisabled = true;
-      final cached = SaltCachedChapter(
-        businessId: businessId,
-        sectionId: sectionId,
-        title: title,
-        sectionIndex: sectionIndex,
-        responseJson: responseJson,
-        xhtml: xhtml,
-        cachedAt: now,
-      );
-      await _writeFallback(cached);
-      return cached;
-    }
-    return SaltCachedChapter(
+    final cached = SaltCachedChapter(
       businessId: businessId,
       sectionId: sectionId,
       title: title,
@@ -161,6 +203,54 @@ class SaltChapterCache {
       xhtml: xhtml,
       cachedAt: now,
     );
+    await _writeEntry(cached);
+    return cached;
+  }
+
+  /// Imports chapters from a remote snapshot while preserving their original
+  /// chapter timestamps and ordering metadata.
+  Future<int> importEntries(Iterable<SaltCachedChapter> entries) async {
+    var imported = 0;
+    for (final entry in entries) {
+      if (entry.businessId.trim().isEmpty ||
+          entry.sectionId.trim().isEmpty ||
+          entry.xhtml.isEmpty) {
+        continue;
+      }
+      try {
+        await _writeEntry(entry);
+        imported += 1;
+      } on Object {
+        // One corrupt or unsupported chapter must not block other chapters.
+      }
+    }
+    return imported;
+  }
+
+  Future<void> _writeEntry(SaltCachedChapter cached) async {
+    if (!_useSqlite) {
+      await _writeFallback(cached);
+      return;
+    }
+    try {
+      final database = await _open();
+      await database.insert('salt_chapters', {
+        'business_id': cached.businessId,
+        'section_id': cached.sectionId,
+        'title': cached.title,
+        'section_index': cached.sectionIndex,
+        'response_json': jsonEncode(cached.responseJson),
+        'xhtml': cached.xhtml,
+        'cached_at': cached.cachedAt.toUtc().millisecondsSinceEpoch,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
+      // Cleanup is deliberately fire-and-forget.  A chapter read/write must
+      // return as soon as its row is durable; pruning old offline chapters is
+      // maintenance work and must not add latency to opening a chapter.
+      unawaited(_pruneBusiness(database, cached.businessId));
+    } on Object {
+      _sqliteDisabled = true;
+      await _writeFallback(cached);
+    }
   }
 
   Future<int> clear() async {

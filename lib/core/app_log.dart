@@ -11,7 +11,7 @@ import 'session_store.dart';
 
 const diagnosticLogAppVersion = String.fromEnvironment(
   'ZH_APP_VERSION',
-  defaultValue: '0.3.8+161',
+  defaultValue: '0.3.9+162',
 );
 
 enum AppLogLevel { debug, info, warning, error }

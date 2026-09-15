@@ -10,6 +10,7 @@ import 'core/account_session_store.dart';
 import 'core/app_log.dart';
 import 'core/json_tools.dart';
 import 'core/session_store.dart';
+import 'core/webdav_sync_service.dart';
 import 'pages/account_page.dart';
 import 'pages/account_sessions_page.dart';
 import 'pages/app_update_page.dart';
@@ -176,6 +177,9 @@ class _HomeShellState extends State<HomeShell> {
   final _feedController = HomeFeedController();
   final _searchController = SearchPageController();
   final _accountStore = AccountSessionStore.instance;
+  late final WebDavSyncService _webDav = WebDavSyncService(
+    session: widget.session,
+  );
   late int _index;
   late final List<Widget> _pages = [
     Builder(
@@ -205,6 +209,7 @@ class _HomeShellState extends State<HomeShell> {
     _index = startupNavigationIndex(widget.session.startupPage);
     _feedController.addListener(_feedSelectionChanged);
     widget.session.addListener(_sessionChanged);
+    unawaited(_webDav.syncOnStartup());
   }
 
   @override
@@ -214,6 +219,7 @@ class _HomeShellState extends State<HomeShell> {
     _feedController.dispose();
     _searchController.dispose();
     _drawerController.dispose();
+    _webDav.dispose();
     super.dispose();
   }
 
@@ -285,8 +291,11 @@ class _HomeShellState extends State<HomeShell> {
       _runAfterDrawerClosed(() {
         Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (_) =>
-                AppSettingsPage(session: widget.session, api: widget.api),
+            builder: (_) => AppSettingsPage(
+              session: widget.session,
+              api: widget.api,
+              webDav: _webDav,
+            ),
           ),
         );
       }),

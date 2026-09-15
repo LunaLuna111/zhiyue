@@ -24,6 +24,41 @@ class AnswerDetailCacheEntry {
       now.difference(cachedAt).abs() <= ttl && now.isAfter(cachedAt);
 }
 
+/// Serializable projection used by the optional WebDAV backup. It contains
+/// only a cached public document and its cache key; session credentials and
+/// request headers are never part of an answer cache row.
+class AnswerDetailCacheSnapshot {
+  const AnswerDetailCacheSnapshot({
+    required this.cacheKey,
+    required this.cachedAt,
+    required this.document,
+  });
+
+  final String cacheKey;
+  final DateTime cachedAt;
+  final Map<String, dynamic> document;
+
+  Map<String, Object?> toJson() => {
+    'cache_key': cacheKey,
+    'cached_at': cachedAt.toUtc().toIso8601String(),
+    'document': document,
+  };
+
+  static AnswerDetailCacheSnapshot? fromJson(Object? source) {
+    if (source is! Map) return null;
+    final map = source.map((key, value) => MapEntry(key.toString(), value));
+    final key = map['cache_key']?.toString() ?? '';
+    final cachedAt = DateTime.tryParse(map['cached_at']?.toString() ?? '');
+    final document = map['document'];
+    if (key.isEmpty || cachedAt == null || document is! Map) return null;
+    return AnswerDetailCacheSnapshot(
+      cacheKey: key,
+      cachedAt: cachedAt.toLocal(),
+      document: document.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+}
+
 class AnswerDetailCache {
   AnswerDetailCache._();
 
@@ -149,6 +184,105 @@ class AnswerDetailCache {
     return _remove(key);
   }
 
+  /// Exports the durable answer cache rows for WebDAV synchronization.
+  /// SQLite is queried directly so entries evicted from the in-memory LRU are
+  /// still included.
+  Future<List<AnswerDetailCacheSnapshot>> exportEntries() async {
+    if (_useSqlite) {
+      try {
+        final database = await _openDatabase();
+        final rows = await database.query(
+          'answer_detail_cache',
+          orderBy: 'cached_at DESC',
+          limit: _maxRows,
+        );
+        return rows
+            .map(_snapshotFromRow)
+            .whereType<AnswerDetailCacheSnapshot>()
+            .toList(growable: false);
+      } on Object {
+        _sqliteDisabled = true;
+      }
+    }
+    final snapshots = <AnswerDetailCacheSnapshot>[];
+    final keys = await _cache.keys();
+    for (final key in keys.where((item) => item.startsWith(_prefix))) {
+      final raw = await _cache.read(key);
+      if (raw == null || raw.isEmpty) continue;
+      try {
+        final decoded = jsonDecode(raw);
+        if (decoded is! Map) continue;
+        final cachedAt = DateTime.tryParse(
+          decoded['cached_at']?.toString() ?? '',
+        );
+        final document = decoded['document'];
+        if (cachedAt == null || document is! Map) continue;
+        snapshots.add(
+          AnswerDetailCacheSnapshot(
+            cacheKey: key,
+            cachedAt: cachedAt.toLocal(),
+            document: document.map(
+              (key, value) => MapEntry(key.toString(), value),
+            ),
+          ),
+        );
+      } on Object {
+        // One malformed optional cache row must not prevent other rows from
+        // being synchronized.
+      }
+      if (snapshots.length >= _maxRows) break;
+    }
+    snapshots.sort((left, right) => right.cachedAt.compareTo(left.cachedAt));
+    return snapshots;
+  }
+
+  /// Restores remote rows. By default they are marked stale so the next
+  /// detail load requests current content; WebDAV startup sync can preserve
+  /// the timestamp to reuse a recent cloud cache until the user refreshes.
+  Future<int> importEntries(
+    Iterable<AnswerDetailCacheSnapshot> entries, {
+    bool markStale = true,
+  }) async {
+    var imported = 0;
+    for (final snapshot in entries) {
+      if (!snapshot.cacheKey.startsWith(_prefix) ||
+          snapshot.cacheKey.length > 256 ||
+          snapshot.document.isEmpty) {
+        continue;
+      }
+      final cachedAt = markStale
+          ? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true)
+          : snapshot.cachedAt.toUtc();
+      final entry = AnswerDetailCacheEntry(
+        cachedAt: cachedAt.toLocal(),
+        document: Map<String, dynamic>.from(snapshot.document),
+      );
+      final encoded = jsonEncode({
+        'cached_at': entry.cachedAt.toUtc().toIso8601String(),
+        'document': entry.document,
+      });
+      if (utf8.encode(encoded).length > _maxBytes) continue;
+      _remember(snapshot.cacheKey, entry);
+      try {
+        if (_useSqlite) {
+          await _writeSqlite(snapshot.cacheKey, entry);
+        } else {
+          await _writeFallback(snapshot.cacheKey, entry);
+        }
+        imported += 1;
+      } on Object {
+        _sqliteDisabled = true;
+        try {
+          await _writeFallback(snapshot.cacheKey, entry);
+          imported += 1;
+        } on Object {
+          // The memory layer remains usable for this process.
+        }
+      }
+    }
+    return imported;
+  }
+
   Future<bool> _remove(String key) async {
     var removed = false;
     if (_useSqlite) {
@@ -176,6 +310,17 @@ class AnswerDetailCache {
       'document_json': jsonEncode(entry.document),
     }, conflictAlgorithm: ConflictAlgorithm.replace);
     unawaited(_pruneSqlite(database));
+  }
+
+  Future<void> _writeFallback(String key, AnswerDetailCacheEntry entry) async {
+    final encoded = jsonEncode({
+      'cached_at': entry.cachedAt.toUtc().toIso8601String(),
+      'document': entry.document,
+    });
+    if (utf8.encode(encoded).length > _maxBytes) {
+      throw const FormatException('回答缓存超过大小限制');
+    }
+    await _cache.write(key, encoded);
   }
 
   Future<void> _migrateLegacyEntry(
@@ -222,6 +367,17 @@ class AnswerDetailCache {
     } on Object {
       return null;
     }
+  }
+
+  AnswerDetailCacheSnapshot? _snapshotFromRow(Map<String, Object?> row) {
+    final entry = _entryFromRow(row);
+    final key = row['cache_key']?.toString() ?? '';
+    if (entry == null || key.isEmpty) return null;
+    return AnswerDetailCacheSnapshot(
+      cacheKey: key,
+      cachedAt: entry.cachedAt,
+      document: entry.document,
+    );
   }
 
   Future<Database> _openDatabase() async {

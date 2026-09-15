@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../core/api_client.dart';
@@ -6,6 +8,7 @@ import '../core/content_filter_stats.dart';
 import '../core/recommendation_behavior.dart';
 import '../core/recommendation_engine.dart';
 import '../core/salt_chapter_cache.dart';
+import '../core/webdav_sync_service.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import 'app_update_page.dart';
@@ -13,12 +16,19 @@ import 'account_sessions_page.dart';
 import 'diagnostic_logs_page.dart';
 import 'content_filter_stats_page.dart';
 import 'recommendation_behavior_page.dart';
+import 'webdav_sync_page.dart';
 
 class AppSettingsPage extends StatefulWidget {
-  const AppSettingsPage({super.key, required this.session, this.api});
+  const AppSettingsPage({
+    super.key,
+    required this.session,
+    this.api,
+    this.webDav,
+  });
 
   final SessionStore session;
   final ZhihuApiClient? api;
+  final WebDavSyncService? webDav;
 
   @override
   State<AppSettingsPage> createState() => _AppSettingsPageState();
@@ -26,6 +36,14 @@ class AppSettingsPage extends StatefulWidget {
 
 class _AppSettingsPageState extends State<AppSettingsPage> {
   SessionStore get session => widget.session;
+  late final WebDavSyncService _webDav =
+      widget.webDav ?? WebDavSyncService(session: widget.session);
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_webDav.loadSettings());
+  }
 
   Future<bool> _confirm({
     required String title,
@@ -508,6 +526,25 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         : '删除 ${session.searchHistory.length} 条本机记录',
                     onTap: _clearSearchHistory,
                   ),
+                  const Divider(),
+                  AnimatedBuilder(
+                    animation: _webDav,
+                    builder: (context, _) => _ActionTile(
+                      key: const ValueKey('webdav-sync-setting'),
+                      icon: Icons.cloud_sync_outlined,
+                      title: 'WebDAV 同步',
+                      subtitle: _webDav.settings?.isConfigured == true
+                          ? (_webDav.status.message.isEmpty
+                                ? '已配置 · 搜索、历史、离线小说和回答缓存'
+                                : _webDav.status.message)
+                          : '同步搜索记录、浏览历史、离线小说和回答缓存',
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => WebDavSyncPage(service: _webDav),
+                        ),
+                      ),
+                    ),
+                  ),
                   if (widget.api != null) ...[
                     const Divider(),
                     _ActionTile(
@@ -573,7 +610,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                   const _ActionTile(
                     icon: Icons.info_outline_rounded,
                     title: '关于知阅',
-                    subtitle: '版本 0.3.8',
+                    subtitle: '版本 0.3.9',
                   ),
                 ],
               ),

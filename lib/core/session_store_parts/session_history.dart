@@ -26,6 +26,36 @@ mixin _SessionStoreHistoryMixin on _SessionStoreCore {
     _notifyChanged();
   }
 
+  /// Merges a remote WebDAV snapshot without changing the existing local
+  /// history order. Local entries remain first because they represent the most
+  /// recent activity on this device; remote entries fill the remaining slots.
+  /// Search history is intentionally never sent through the account API.
+  Future<void> mergeSearchHistory(Iterable<String> remoteItems) async {
+    if (!rememberSearchHistory) return;
+    final merged = <String>[];
+    final seen = <String>{};
+    for (final item in [...searchHistory, ...remoteItems]) {
+      final normalized = item.trim();
+      final identity = normalized.toLowerCase();
+      if (normalized.isEmpty ||
+          normalized.length > 512 ||
+          !seen.add(identity)) {
+        continue;
+      }
+      merged.add(normalized);
+      if (merged.length >= _SessionStoreCore._maxSearchHistoryItems) break;
+    }
+    if (listEquals(searchHistory, merged)) return;
+    searchHistory = List<String>.unmodifiable(merged);
+    if (!kIsWeb) {
+      await _safeWrite(
+        key: _SessionStoreCore._searchHistoryKey,
+        value: jsonEncode(searchHistory),
+      );
+    }
+    _notifyChanged();
+  }
+
   Future<void> rememberBrowsing({
     required String type,
     required String id,
@@ -79,5 +109,43 @@ mixin _SessionStoreHistoryMixin on _SessionStoreCore {
     browsingHistory = const [];
     _browsingHistoryChanges.emit();
     await _persistBrowsingHistory();
+  }
+
+  /// Merges browsing records by identity and keeps the newest visit. The
+  /// remote snapshot can therefore be restored on a new device without
+  /// replacing a newer local visit with an older copy.
+  Future<void> mergeBrowsingHistory(
+    Iterable<BrowsingHistoryEntry> remoteItems,
+  ) async {
+    if (!rememberBrowsingHistory) return;
+    final byIdentity = <String, BrowsingHistoryEntry>{
+      for (final item in browsingHistory) item.identity: item,
+    };
+    for (final item in remoteItems) {
+      final current = byIdentity[item.identity];
+      if (current == null || item.visitedAt.isAfter(current.visitedAt)) {
+        byIdentity[item.identity] = item;
+      }
+    }
+    final merged = byIdentity.values.toList()
+      ..sort((left, right) => right.visitedAt.compareTo(left.visitedAt));
+    final bounded = merged.take(80).toList(growable: false);
+    if (_sameBrowsingHistory(browsingHistory, bounded)) return;
+    browsingHistory = List<BrowsingHistoryEntry>.unmodifiable(bounded);
+    _browsingHistoryChanges.emit();
+    await _persistBrowsingHistory();
+  }
+
+  bool _sameBrowsingHistory(
+    List<BrowsingHistoryEntry> left,
+    List<BrowsingHistoryEntry> right,
+  ) {
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      final a = left[index];
+      final b = right[index];
+      if (a.identity != b.identity || a.visitedAt != b.visitedAt) return false;
+    }
+    return true;
   }
 }

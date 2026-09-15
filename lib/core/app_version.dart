@@ -2,11 +2,12 @@
 ///
 /// Android still receives a numeric versionCode at build time because the
 /// package manager requires one. It is derived from the semantic version, not
-/// from a build counter, so the public package name remains `0.4.0`.
+/// from a build counter, so the public package name remains the semantic
+/// version declared below.
 library;
 
-const zhiyueVersionName = '0.4.0';
-const zhiyueAndroidVersionCode = 4000;
+const zhiyueVersionName = '0.4.2';
+const zhiyueAndroidVersionCode = 4002;
 
 int androidVersionCodeFor(String versionName) {
   final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)$').firstMatch(versionName);

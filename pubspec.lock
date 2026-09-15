@@ -943,11 +943,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.2.8"
-      resolved-ref: "593cfcb3094d04529867c535fa06f160649dce79"
+      ref: "v0.2.10"
+      resolved-ref: c5b5b68479d48e67926b146c6d3f463764b7268c
       url: "https://github.com/LunaLuna111/zhihu_api.git"
     source: git
-    version: "0.2.8"
+    version: "0.2.10"
 sdks:
   dart: ">=3.12.2 <4.0.0"
   flutter: ">=3.44.0"

@@ -449,7 +449,9 @@ abstract class _SessionStoreCore extends ChangeNotifier {
 
     authorization = read(_authorizationKey) ?? '';
     udid = read(_udidKey) ?? '';
-    cookie = read(_cookieKey) ?? '';
+    final rawCookie = read(_cookieKey) ?? '';
+    cookie = zhihu_api.ZhihuApiClient.cookieHeaderFromValue(rawCookie);
+    final cookieNeedsMigration = rawCookie.trim() != cookie;
     msId = read(_msIdKey) ?? '';
     xZse96 = read(_zse96Key) ?? '';
     xZse96Target = read(_zse96TargetKey) ?? '';
@@ -543,9 +545,49 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       read(_authenticationLoggingEnabledKey),
       fallback: true,
     );
-    _durableCredentialSnapshot = _credentialSnapshot();
+    final loadedCredentialSnapshot = _credentialSnapshot();
+    _durableCredentialSnapshot = loadedCredentialSnapshot;
     _hasDurableCredentialSnapshot = true;
     _credentialStorageLoaded = true;
+    if (cookieNeedsMigration && cookie.isNotEmpty) {
+      // Older releases stored a bare z_c0 or accidentally nested z_c0 value.
+      // Migrate the complete, normalized header atomically without changing
+      // the active session or asking the user to log in again.
+      try {
+        await _queueCredentialPersistence(
+          () => _persistCredentialSnapshot(loadedCredentialSnapshot),
+        );
+        _durableCredentialSnapshot = loadedCredentialSnapshot;
+        _recordAuthenticationLog(
+          '已规范化旧版移动登录 Cookie 上下文',
+          details: const {
+            'source': 'private_app_database',
+            'action': 'migrated',
+            'credential_values_logged': false,
+          },
+        );
+      } on Object catch (error, stackTrace) {
+        // A migration failure must not look like logout. The in-memory
+        // session remains usable and the next successful write can retry it.
+        _recordAuthenticationLog(
+          '旧版移动登录 Cookie 规范化写入失败，保留当前会话',
+          level: AppLogLevel.warning,
+          details: {
+            'source': 'private_app_database',
+            'action': 'retained',
+            'error_type': error.runtimeType.toString(),
+          },
+        );
+        unawaited(
+          AppLogStore.instance.recordError(
+            error,
+            stackTrace,
+            message: '旧版 Cookie 规范化写入失败',
+            category: AppLogCategory.authentication,
+          ),
+        );
+      }
+    }
     notifyListeners();
   }
 
@@ -934,7 +976,10 @@ class SessionStore extends _SessionStoreCore
         _SessionStoreHistoryMixin,
         _SessionStorePreferencesMixin,
         _SessionStoreCredentialsMixin
-    implements zhihu_api.ApiSession, zhihu_api.ApiSessionCleanupDelegate {
+    implements
+        zhihu_api.ApiSession,
+        zhihu_api.ApiSessionCookieStore,
+        zhihu_api.ApiSessionCleanupDelegate {
   SessionStore({super.storage}) : super(persistInFlutterTests: false);
 
   @visibleForTesting

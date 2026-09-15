@@ -27,7 +27,9 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     }
     final normalizedAuthorization = authorization.trim();
     final normalizedUdid = udid.trim();
-    final normalizedCookie = cookie.trim();
+    final normalizedCookie = zhihu_api.ZhihuApiClient.cookieHeaderFromValue(
+      cookie,
+    );
     final normalizedMsId = msId.trim();
     final normalizedZse96 = xZse96.trim();
     final normalizedExtraHeaders = extraHeadersJson.trim();
@@ -71,6 +73,28 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     if (!committed) throw StateError('本地登录数据库不可用，MS-ID 修改已回滚');
   }
 
+  Future<void> updateCookie(String value) async {
+    if (kIsWeb) return;
+    final incoming = zhihu_api.ZhihuApiClient.cookiePairsOnly(value);
+    if (incoming.isEmpty) return;
+    final normalized = zhihu_api.ZhihuApiClient.mergeCookieHeaders(
+      cookie,
+      incoming,
+    );
+    if (normalized.isEmpty || normalized == cookie) return;
+    final previous = _credentialSnapshot();
+    _credentialRevision += 1;
+    cookie = normalized;
+    final committed = await _commitCredentialMutation(
+      previous: previous,
+      next: _credentialSnapshot(),
+      operation: 'merge_mobile_response_cookie',
+    );
+    if (!committed) {
+      throw StateError('本地登录数据库不可用，Cookie 更新已回滚');
+    }
+  }
+
   Future<void> saveGuestSession({
     required String accessToken,
     required String udid,
@@ -84,9 +108,9 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     if (normalizedAccessToken.isEmpty || normalizedUdid.isEmpty) {
       throw const FormatException('guest access_token 和 udid 不能为空');
     }
-    final normalizedCookie = zCookie.trim().isEmpty
-        ? ''
-        : 'z_c0=${zCookie.trim()}';
+    final normalizedCookie = zhihu_api.ZhihuApiClient.cookieHeaderFromValue(
+      zCookie,
+    );
     _SessionStoreCore._validateHeaderValue(
       'Authorization',
       normalizedAccessToken,
@@ -191,9 +215,9 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     if (lockInSeconds != null && lockInSeconds < 0) {
       throw const FormatException('lock_in 不能为负数');
     }
-    final normalizedCookie = zCookie.trim().isEmpty
-        ? ''
-        : 'z_c0=${zCookie.trim()}';
+    final normalizedCookie = zhihu_api.ZhihuApiClient.cookieHeaderFromValue(
+      zCookie,
+    );
     _SessionStoreCore._validateHeaderValue(
       'access_token',
       normalizedAccessToken,
@@ -263,7 +287,9 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     if (kIsWeb) {
       throw UnsupportedError('桌面浏览器预览不接收或存储 API 会话材料');
     }
-    final normalizedCookie = cookie.trim();
+    final normalizedCookie = zhihu_api.ZhihuApiClient.cookieHeaderFromValue(
+      cookie,
+    );
     final normalizedUdid = udid.trim();
     if (normalizedUdid.isEmpty || normalizedCookie.isEmpty) {
       throw const FormatException('扫码登录 Cookie 和 udid 不能为空');

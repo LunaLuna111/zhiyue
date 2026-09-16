@@ -72,7 +72,7 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage>
     with AutomaticKeepAliveClientMixin {
-  static const _headerHeight = 44.0;
+  static const _headerHeight = ZhLiquidGlassTopNavigation.barHeight;
   late List<HomeFeedChannel> _channels;
   late PageController _pageController;
   late HomeFeedChannel _channel;
@@ -433,15 +433,11 @@ class _FeedPageState extends State<FeedPage>
               top: 0,
               left: 0,
               right: 0,
-              child: Material(
-                color: Colors.white.withValues(alpha: 0.98),
-                child: _FeedChannelBar(
-                  height: _headerHeight,
-                  channels: _channels,
-                  selected: _channel,
-                  onSelected: _selectChannel,
-                  onMenuPressed: widget.onMenuPressed,
-                ),
+              child: ZhLiquidGlassTopNavigation(
+                labels: [for (final channel in _channels) channel.label],
+                selectedIndex: _channels.indexOf(_channel),
+                onTabSelected: (index) => _selectChannel(_channels[index]),
+                onMenuPressed: widget.onMenuPressed,
               ),
             ),
           ],
@@ -545,107 +541,3 @@ List<Map<String, dynamic>> extractHomeFeedRows(
       return true;
     })
     .toList(growable: false);
-
-class _FeedChannelBar extends StatelessWidget {
-  const _FeedChannelBar({
-    required this.height,
-    required this.channels,
-    required this.selected,
-    required this.onSelected,
-    this.onMenuPressed,
-  });
-
-  final double height;
-  final List<HomeFeedChannel> channels;
-  final HomeFeedChannel selected;
-  final ValueChanged<HomeFeedChannel> onSelected;
-  final VoidCallback? onMenuPressed;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    height: height,
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: ZhPalette.border, width: 0.6)),
-    ),
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final desktop = constraints.maxWidth >= ZhViewport.desktop;
-        final tabBar = Row(
-          children: [
-            for (final channel in channels)
-              Expanded(
-                child: Semantics(
-                  selected: selected == channel,
-                  button: true,
-                  child: InkWell(
-                    onTap: () => onSelected(channel),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          channel.label,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                color: selected == channel
-                                    ? ZhPalette.ink
-                                    : ZhPalette.mutedInk,
-                                fontSize: 15,
-                                fontWeight: selected == channel
-                                    ? FontWeight.w800
-                                    : FontWeight.w500,
-                              ),
-                        ),
-                        const SizedBox(height: 5),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          curve: Curves.easeOutCubic,
-                          width: selected == channel ? 22 : 0,
-                          height: 2.5,
-                          decoration: BoxDecoration(
-                            color: ZhPalette.ink,
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-        final boundedTabs = desktop
-            ? Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: tabBar,
-                ),
-              )
-            : tabBar;
-        return Row(
-          children: [
-            if (onMenuPressed != null)
-              SizedBox(
-                width: 48,
-                height: height,
-                child: IconButton(
-                  key: const ValueKey('home-drawer-button'),
-                  tooltip: '打开侧边栏',
-                  onPressed: onMenuPressed,
-                  // Opening the drawer immediately supplies the interaction
-                  // feedback. Avoid starting InkSparkle (and compiling its
-                  // fragment shader on a first tap) alongside the push motion.
-                  style: IconButton.styleFrom(
-                    splashFactory: NoSplash.splashFactory,
-                    overlayColor: Colors.transparent,
-                    enableFeedback: false,
-                  ),
-                  icon: const Icon(Icons.menu_rounded, size: 23),
-                ),
-              ),
-            Expanded(child: boundedTabs),
-          ],
-        );
-      },
-    ),
-  );
-}

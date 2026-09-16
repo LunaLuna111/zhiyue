@@ -191,6 +191,12 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   surfaceTintColor: Colors.transparent,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(30),
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
                   elevation: 0,
                   scrolledUnderElevation: 0,
                   shadowColor: Colors.transparent,
@@ -276,38 +282,40 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
               },
             ),
           ],
-          body: TabBarView(
-            children: [
-              _ProfileOverview(
-                api: widget.api,
-                profile: profile,
-                memberId: memberId,
-              ),
-              _CreationTab(
-                api: widget.api,
-                memberId: memberId,
-                urlToken: urlToken,
-                profile: profile,
-              ),
-              _ProfileFeedTab(
-                key: ValueKey('profile-activities:$memberId'),
-                api: widget.api,
-                loadInitial: () => widget.api.getUri(
-                  widget.api.userActivitiesInitialUri(memberId),
+          body: ZhProfileContentSurface(
+            child: TabBarView(
+              children: [
+                _ProfileOverview(
+                  api: widget.api,
+                  profile: profile,
+                  memberId: memberId,
                 ),
-                emptyMessage: '还没有公开动态',
-                activityMenu: true,
-              ),
-              _ProfileFeedTab(
-                key: ValueKey('profile-voteups:$memberId'),
-                api: widget.api,
-                loadInitial: () => widget.api.getUri(
-                  widget.api.userVoteupsInitialUri(memberId),
+                _CreationTab(
+                  api: widget.api,
+                  memberId: memberId,
+                  urlToken: urlToken,
+                  profile: profile,
                 ),
-                emptyMessage: '还没有公开赞同',
-                activityMenu: true,
-              ),
-            ],
+                _ProfileFeedTab(
+                  key: ValueKey('profile-activities:$memberId'),
+                  api: widget.api,
+                  loadInitial: () => widget.api.getUri(
+                    widget.api.userActivitiesInitialUri(memberId),
+                  ),
+                  emptyMessage: '还没有公开动态',
+                  activityMenu: true,
+                ),
+                _ProfileFeedTab(
+                  key: ValueKey('profile-voteups:$memberId'),
+                  api: widget.api,
+                  loadInitial: () => widget.api.getUri(
+                    widget.api.userVoteupsInitialUri(memberId),
+                  ),
+                  emptyMessage: '还没有公开赞同',
+                  activityMenu: true,
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -1,7 +1,12 @@
 part of '../content_pages.dart';
 
 extension _ContentDetailBody on _ContentDetailPageState {
-  Widget _body({double topInset = 0}) {
+  Widget _body({
+    double topInset = 0,
+    String questionTitle = '',
+    String questionId = '',
+    ContentMetrics questionMetrics = const ContentMetrics(),
+  }) {
     if (_loading && _document == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -53,80 +58,103 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final bodyTitle = objectTitle.isNotEmpty
         ? objectTitle
         : _explicitContentTitle(_initialSemantic);
-    final contentList = ListView(
-      controller: _scrollController,
-      physics: const ClampingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      ),
-      padding: EdgeInsets.fromLTRB(18, 18 + topInset, 18, 18),
-      children: [
-        if (widget.contentType != 'answer' && bodyTitle.isNotEmpty)
-          ContentDetailBodyTitle(title: bodyTitle),
-        if (sourceNeedsWarning)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: const ZhPill(label: '内容可能不完整', compact: true),
-          ),
-        _DetailMetadata(
-          metrics: metrics,
-          relationship: relationship,
-          // The official answer places publication/IP information after the
-          // body. Keep the author metrics here and render the end metadata at
-          // the natural end of the answer below.
-          dateLabel: '',
-          contentLabel: switch (widget.contentType) {
-            'article' => '文章',
-            'pin' => '想法',
-            _ => '回答',
-          },
+    final showQuestionHeader =
+        widget.contentType == 'answer' && questionId.isNotEmpty;
+    final contentChildren = <Widget>[
+      if (widget.contentType != 'answer' && bodyTitle.isNotEmpty)
+        ContentDetailBodyTitle(title: bodyTitle),
+      if (sourceNeedsWarning)
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: const ZhPill(label: '内容可能不完整', compact: true),
         ),
-        if (paidContent)
-          Padding(
-            padding: const EdgeInsets.only(bottom: ZhSpace.md),
-            child: ZhSurface(
-              backgroundColor: ZhPalette.canvas,
-              padding: const EdgeInsets.symmetric(
-                horizontal: ZhSpace.md,
-                vertical: ZhSpace.sm,
-              ),
-              child: Row(
-                children: [
-                  Icon(
+      _DetailMetadata(
+        metrics: metrics,
+        relationship: relationship,
+        // The official answer places publication/IP information after the
+        // body. Keep the author metrics here and render the end metadata at
+        // the natural end of the answer below.
+        dateLabel: '',
+        contentLabel: switch (widget.contentType) {
+          'article' => '文章',
+          'pin' => '想法',
+          _ => '回答',
+        },
+      ),
+      if (paidContent)
+        Padding(
+          padding: const EdgeInsets.only(bottom: ZhSpace.md),
+          child: ZhSurface(
+            backgroundColor: ZhPalette.canvas,
+            padding: const EdgeInsets.symmetric(
+              horizontal: ZhSpace.md,
+              vertical: ZhSpace.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  paidContentUnlocked
+                      ? Icons.lock_open_rounded
+                      : Icons.lock_outline_rounded,
+                  size: 19,
+                  color: ZhPalette.mutedInk,
+                ),
+                const SizedBox(width: ZhSpace.sm),
+                Expanded(
+                  child: Text(
                     paidContentUnlocked
-                        ? Icons.lock_open_rounded
-                        : Icons.lock_outline_rounded,
-                    size: 19,
-                    color: ZhPalette.mutedInk,
+                        ? '盐选会员内容已解锁，以下为当前账号可读的完整正文。'
+                        : '这是盐选会员内容，当前账号返回的正文仍处于未解锁状态。',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: ZhPalette.mutedInk),
                   ),
-                  const SizedBox(width: ZhSpace.sm),
-                  Expanded(
-                    child: Text(
-                      paidContentUnlocked
-                          ? '盐选会员内容已解锁，以下为当前账号可读的完整正文。'
-                          : '这是盐选会员内容，当前账号返回的正文仍处于未解锁状态。',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: ZhPalette.mutedInk,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        if (structuredSegments.isNotEmpty)
-          StructuredAnswerContent(
-            segments: structuredSegments,
-            videos: videos,
-            videoApi: widget.api,
+        ),
+      if (structuredSegments.isNotEmpty)
+        StructuredAnswerContent(
+          segments: structuredSegments,
+          videos: videos,
+          videoApi: widget.api,
+          contentType: widget.contentType,
+          contentId: widget.contentId,
+          onSentenceComments: _openSentenceComments,
+          onCommentSelection: _commentSelectedText,
+          onLink: _openBodyLink,
+        )
+      else if (contentText.isEmpty &&
+          videos.isNotEmpty &&
+          summary.isNotEmpty) ...[
+        _ZhihuSelectableText(
+          summary,
+          style: Theme.of(context).textTheme.bodyLarge,
+          onCommentSelection: _commentSelectedText,
+          selectionContext: ContentSelectionContext(
             contentType: widget.contentType,
             contentId: widget.contentId,
-            onSentenceComments: _openSentenceComments,
-            onCommentSelection: _commentSelectedText,
-            onLink: _openBodyLink,
-          )
-        else if (contentText.isEmpty &&
-            videos.isNotEmpty &&
-            summary.isNotEmpty) ...[
+            source: 'fallback',
+          ),
+        ),
+        const SizedBox(height: ZhSpace.md),
+      ],
+      if (structuredSegments.isEmpty &&
+          !useVipStructuredBody &&
+          (content != null || videos.isNotEmpty))
+        InlineRichContent(
+          html: content ?? '',
+          fallbackImages: images,
+          videos: videos,
+          videoApi: widget.api,
+          contentType: widget.contentType,
+          contentId: widget.contentId,
+          onCommentSelection: _commentSelectedText,
+          onLink: _openBodyLink,
+        )
+      else if (structuredSegments.isEmpty && !useVipStructuredBody) ...[
+        if (summary.isNotEmpty)
           _ZhihuSelectableText(
             summary,
             style: Theme.of(context).textTheme.bodyLarge,
@@ -137,58 +165,65 @@ extension _ContentDetailBody on _ContentDetailPageState {
               source: 'fallback',
             ),
           ),
+        if (images.isNotEmpty) ...[
           const SizedBox(height: ZhSpace.md),
+          _DetailImageWarmup(
+            sources: fallbackImageSources,
+            child: _DetailImageGallery(sources: fallbackImageSources),
+          ),
         ],
-        if (structuredSegments.isEmpty &&
-            !useVipStructuredBody &&
-            (content != null || videos.isNotEmpty))
-          InlineRichContent(
-            html: content ?? '',
-            fallbackImages: images,
-            videos: videos,
-            videoApi: widget.api,
-            contentType: widget.contentType,
-            contentId: widget.contentId,
-            onCommentSelection: _commentSelectedText,
-            onLink: _openBodyLink,
-          )
-        else if (structuredSegments.isEmpty && !useVipStructuredBody) ...[
-          if (summary.isNotEmpty)
-            _ZhihuSelectableText(
-              summary,
-              style: Theme.of(context).textTheme.bodyLarge,
-              onCommentSelection: _commentSelectedText,
-              selectionContext: ContentSelectionContext(
-                contentType: widget.contentType,
-                contentId: widget.contentId,
-                source: 'fallback',
-              ),
-            ),
-          if (images.isNotEmpty) ...[
-            const SizedBox(height: ZhSpace.md),
-            _DetailImageWarmup(
-              sources: fallbackImageSources,
-              child: _DetailImageGallery(sources: fallbackImageSources),
-            ),
-          ],
-        ],
-        if (contentEndLabel.isNotEmpty)
-          _AnswerContentEndInfo(label: contentEndLabel),
-        // The related-answer request is a hidden warm-up. Showing its
-        // progress ring at the end of a short answer makes the already
-        // rendered next-answer detail look like it is still loading. Keep
-        // the body stable while the warm-up runs; failures still expose the
-        // explicit retry action below.
-        if (_relatedError != null && !_relatedLoading)
-          Center(
-            child: TextButton(
-              onPressed: _loadRelatedAnswers,
-              child: const Text('加载其它回答失败，点击重试'),
+      ],
+      if (contentEndLabel.isNotEmpty)
+        _AnswerContentEndInfo(label: contentEndLabel),
+      // The related-answer request is a hidden warm-up. Showing its
+      // progress ring at the end of a short answer makes the already
+      // rendered next-answer detail look like it is still loading. Keep
+      // the body stable while the warm-up runs; failures still expose the
+      // explicit retry action below.
+      if (_relatedError != null && !_relatedLoading)
+        Center(
+          child: TextButton(
+            onPressed: _loadRelatedAnswers,
+            child: const Text('加载其它回答失败，点击重试'),
+          ),
+        ),
+      const SizedBox(height: ZhSpace.sm),
+    ];
+    final scrollView = CustomScrollView(
+      controller: _scrollController,
+      physics: const ClampingScrollPhysics(
+        parent: AlwaysScrollableScrollPhysics(),
+      ),
+      slivers: [
+        if (showQuestionHeader)
+          SliverPersistentHeader(
+            floating: true,
+            delegate: AnswerQuestionFloatingHeaderDelegate(
+              title: questionTitle,
+              questionId: questionId,
+              metrics: questionMetrics,
+              onTap: () => _openQuestionAnswers(questionId, questionTitle),
             ),
           ),
-        const SizedBox(height: ZhSpace.sm),
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(
+            18,
+            showQuestionHeader ? 18 : 18 + topInset,
+            18,
+            18,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(contentChildren),
+          ),
+        ),
       ],
     );
+    final contentList = showQuestionHeader
+        ? Padding(
+            padding: EdgeInsets.only(top: topInset),
+            child: scrollView,
+          )
+        : scrollView;
     return ValueListenableBuilder<double>(
       valueListenable: _answerOverscrollNotifier,
       builder: (context, overscroll, _) {

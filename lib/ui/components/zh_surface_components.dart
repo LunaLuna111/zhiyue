@@ -135,6 +135,38 @@ class ZhPanel extends StatelessWidget {
   }
 }
 
+/// The content sheet that bridges a profile cover and its tab content.
+///
+/// Profile pages use a transparent app bar so the cover can remain visible
+/// behind the toolbar. This surface gives the content viewport a shared top
+/// edge, clipping its children to the rounded transition and keeping the
+/// cover-to-content handoff visually continuous on both profile variants.
+class ZhProfileContentSurface extends StatelessWidget {
+  const ZhProfileContentSurface({
+    super.key,
+    required this.child,
+    this.radius = 30,
+    this.elevation = 2,
+  });
+
+  final Widget child;
+  final double radius;
+  final double elevation;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: ZhPalette.background,
+    surfaceTintColor: Colors.transparent,
+    shadowColor: const Color(0x2A000000),
+    elevation: elevation,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(radius)),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: child,
+  );
+}
+
 /// A shared icon tile used by history rows, empty states and settings cards.
 ///
 /// The tile exposes only visual parameters. Navigation and actions stay on

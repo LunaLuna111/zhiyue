@@ -102,6 +102,12 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   surfaceTintColor: Colors.transparent,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      bottom: Radius.circular(30),
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
                   elevation: 0,
                   scrolledUnderElevation: 0,
                   shadowColor: Colors.transparent,
@@ -178,8 +184,10 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
               },
             ),
           ],
-          body: TabBarView(
-            children: [for (final tab in tabs) _tabBody(profile, tab)],
+          body: ZhProfileContentSurface(
+            child: TabBarView(
+              children: [for (final tab in tabs) _tabBody(profile, tab)],
+            ),
           ),
         ),
       ),

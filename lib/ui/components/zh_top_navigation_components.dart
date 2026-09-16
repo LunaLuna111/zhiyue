@@ -444,15 +444,50 @@ class ZhLiquidGlassAppBar extends StatelessWidget
       Size.fromHeight(toolbarHeight + (bottom?.preferredSize.height ?? 0));
 
   @override
-  Widget build(BuildContext context) => GlassAppBar(
-    title: title,
-    leading: leading,
-    actions: actions,
-    centerTitle: centerTitle,
-    toolbarHeight: toolbarHeight,
-    bottom: bottom,
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-  );
+  Widget build(BuildContext context) {
+    final appBar = GlassAppBar(
+      title: title,
+      leading: leading,
+      actions: actions,
+      centerTitle: centerTitle,
+      toolbarHeight: toolbarHeight,
+      bottom: bottom,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+    );
+    return Stack(
+      fit: StackFit.passthrough,
+      clipBehavior: Clip.none,
+      children: [
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: ProgressiveBlur(
+              // Keep the edge effect light enough that content remains
+              // readable through the header. The strongest frost belongs at
+              // the lower edge where the scroll view meets the bar; the
+              // status-bar side should stay almost clear.
+              maxSigma: 6,
+              direction: ProgressiveBlurDirection.bottomToTop,
+              falloff: 1.8,
+            ),
+          ),
+        ),
+        const Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0x00FFFFFF), Color(0x18F8FBFF)],
+                ),
+              ),
+            ),
+          ),
+        ),
+        appBar,
+      ],
+    );
+  }
 }
 
 /// The floating iOS 26-style channel switcher used by the compact home feed.

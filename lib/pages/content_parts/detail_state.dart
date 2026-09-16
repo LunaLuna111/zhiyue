@@ -742,39 +742,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         ? authorMemberId
         : authorPageId;
     final desktop = MediaQuery.sizeOf(context).width >= ZhViewport.wide;
-    final body = desktop && document != null
-        ? ZhResponsiveTwoPane(
-            primary: _body(),
-            secondary: _DetailDesktopRail(
-              contentType: widget.contentType,
-              metrics: documentMetrics!,
-              relationship: documentRelationship!,
-              dateLabel: contentDateLabel(documentMetrics),
-              onComments: _openComments,
-            ),
-          )
-        : ZhResponsiveFrame(maxWidth: 920, child: _body());
-    final bodyWithAnswerJump =
-        widget.contentType == 'answer' && document != null
-        ? Stack(
-            fit: StackFit.expand,
-            children: [
-              body,
-              Positioned(
-                right: 14,
-                bottom: 104,
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _answerAtBottomNotifier,
-                  builder: (context, atBottom, _) => _AnswerJumpButton(
-                    atBottom: atBottom,
-                    onJumpToTop: _jumpAnswerToTop,
-                    onJumpToBottom: _jumpAnswerToBottom,
-                  ),
-                ),
-              ),
-            ],
-          )
-        : body;
     final PreferredSizeWidget? detailAppBarBottom = showQuestionInAppBar
         ? PreferredSize(
             preferredSize: const Size.fromHeight(80),
@@ -786,13 +753,13 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                   metrics: ContentMetrics.from(semantic),
                   onTap: () => _openQuestionAnswers(questionId, questionTitle),
                 ),
-                const Divider(height: 1, thickness: .7),
               ],
             ),
           )
         : null;
     return Scaffold(
       extendBody: true,
+      extendBodyBehindAppBar: true,
       appBar: ZhLiquidGlassAppBar(
         toolbarHeight: 56,
         leading: ZhLiquidGlassIconButton(
@@ -844,7 +811,50 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         bottom: detailAppBarBottom,
         title: ContentDetailAppBarTitle(title: authorDisplayName),
       ),
-      body: bodyWithAnswerJump,
+      body: Builder(
+        builder: (bodyContext) {
+          // With extendBodyBehindAppBar, Scaffold exposes the app bar's
+          // occupied height as the body's top MediaQuery padding. Put that
+          // inset inside the scrollable content instead of around the whole
+          // body, so later content can continue underneath the translucent
+          // top chrome and be progressively blurred while scrolling.
+          final topInset = MediaQuery.paddingOf(bodyContext).top;
+          final body = desktop && document != null
+              ? ZhResponsiveTwoPane(
+                  primary: _body(topInset: topInset),
+                  secondary: _DetailDesktopRail(
+                    contentType: widget.contentType,
+                    metrics: documentMetrics!,
+                    relationship: documentRelationship!,
+                    dateLabel: contentDateLabel(documentMetrics),
+                    onComments: _openComments,
+                  ),
+                )
+              : ZhResponsiveFrame(
+                  maxWidth: 920,
+                  child: _body(topInset: topInset),
+                );
+          if (widget.contentType != 'answer' || document == null) return body;
+          return Stack(
+            fit: StackFit.expand,
+            children: [
+              body,
+              Positioned(
+                right: 14,
+                bottom: 104,
+                child: ValueListenableBuilder<bool>(
+                  valueListenable: _answerAtBottomNotifier,
+                  builder: (context, atBottom, _) => _AnswerJumpButton(
+                    atBottom: atBottom,
+                    onJumpToTop: _jumpAnswerToTop,
+                    onJumpToBottom: _jumpAnswerToBottom,
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
       bottomNavigationBar: document == null
           ? null
           : DetailEngagementBar(

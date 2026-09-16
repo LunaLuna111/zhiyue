@@ -1,12 +1,13 @@
 part of '../content_pages.dart';
 
 extension _ContentDetailBody on _ContentDetailPageState {
-  Widget _body() {
+  Widget _body({double topInset = 0}) {
     if (_loading && _document == null) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error != null) {
       return ListView(
+        padding: EdgeInsets.only(top: topInset),
         children: [
           SizedBox(
             height: 330,
@@ -57,7 +58,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
       physics: const ClampingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
-      padding: const EdgeInsets.all(18),
+      padding: EdgeInsets.fromLTRB(18, 18 + topInset, 18, 18),
       children: [
         if (widget.contentType != 'answer' && bodyTitle.isNotEmpty)
           ContentDetailBodyTitle(title: bodyTitle),

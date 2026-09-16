@@ -686,13 +686,31 @@ void registerDetailCommentTests() {
     );
     expect(tester.takeException(), isNull);
 
-    final voteX = tester.getCenter(find.bySemanticsLabel('赞同 2926')).dx;
-    final downvoteX = tester.getCenter(find.bySemanticsLabel('反对')).dx;
+    final voteCenter = tester.getCenter(find.bySemanticsLabel('赞同 2926'));
+    final downvoteCenter = tester.getCenter(find.bySemanticsLabel('反对'));
+    final voteX = voteCenter.dx;
+    final downvoteX = downvoteCenter.dx;
     final commentX = tester.getCenter(find.bySemanticsLabel('查看 172 条评论')).dx;
     final favoriteX = tester.getCenter(find.bySemanticsLabel('收藏 844')).dx;
     expect(voteX, lessThan(downvoteX));
     expect(downvoteX, lessThan(commentX));
     expect(commentX, lessThan(favoriteX));
+
+    final heldVote = await tester.startGesture(voteCenter);
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(readOnlyActions, isEmpty);
+    await heldVote.up();
+    await tester.pumpAndSettle();
+    expect(readOnlyActions, ['赞同']);
+
+    readOnlyActions.clear();
+    final cancelledVote = await tester.startGesture(downvoteCenter);
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(readOnlyActions, isEmpty);
+    await cancelledVote.moveTo(Offset(-20, downvoteCenter.dy));
+    await cancelledVote.up();
+    await tester.pumpAndSettle();
+    expect(readOnlyActions, isEmpty);
 
     await tester.tap(find.bySemanticsLabel('赞同 2926'));
     await tester.tap(find.bySemanticsLabel('反对'));

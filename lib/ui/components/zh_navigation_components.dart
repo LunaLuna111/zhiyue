@@ -59,31 +59,38 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
     ];
     final safeIndex = selectedIndex.clamp(0, tabs.length - 1);
 
-    return GlassTabBar.bottom(
-      key: const ValueKey('zh-liquid-glass-bottom-navigation'),
-      tabs: tabs,
-      selectedIndex: safeIndex,
-      onTabSelected: onDestinationSelected,
-      barHeight: _barHeight,
-      verticalPadding: _verticalPadding,
+    return _ZhReleaseActivatedGlassTabBar(
+      tabCount: tabs.length,
       horizontalPadding: 20,
-      spacing: 8,
-      tabPadding: const EdgeInsets.symmetric(horizontal: 4),
-      barBorderRadius: 32,
-      iconLabelSpacing: 4,
-      iconSize: 24,
-      labelFontSize: 11,
-      settings: _barGlassSettings,
-      quality: GlassQuality.premium,
-      backgroundQuality: GlassQuality.premium,
-      // A slightly stronger neutral lens keeps the selected tab legible on
-      // white pages without returning to the opaque black pill.
-      indicatorColor: Color(0x24000000),
-      // Keep the native press scale, but omit the directional flash. On a
-      // white feed the default full interaction glow washes out the lens
-      // exactly while it is moving, making the glass harder to read.
-      interactionBehavior: GlassInteractionBehavior.scaleOnly,
-      pressScale: 1.02,
+      verticalPadding: _verticalPadding,
+      barHeight: _barHeight,
+      onTabSelected: onDestinationSelected,
+      childBuilder: (handleTabSelected) => GlassTabBar.bottom(
+        key: const ValueKey('zh-liquid-glass-bottom-navigation'),
+        tabs: tabs,
+        selectedIndex: safeIndex,
+        onTabSelected: handleTabSelected,
+        barHeight: _barHeight,
+        verticalPadding: _verticalPadding,
+        horizontalPadding: 20,
+        spacing: 8,
+        tabPadding: const EdgeInsets.symmetric(horizontal: 4),
+        barBorderRadius: 32,
+        iconLabelSpacing: 4,
+        iconSize: 24,
+        labelFontSize: 11,
+        settings: _barGlassSettings,
+        quality: GlassQuality.premium,
+        backgroundQuality: GlassQuality.premium,
+        // A slightly stronger neutral lens keeps the selected tab legible on
+        // white pages without returning to the opaque black pill.
+        indicatorColor: Color(0x24000000),
+        // Keep the native press scale, but omit the directional flash. On a
+        // white feed the default full interaction glow washes out the lens
+        // exactly while it is moving, making the glass harder to read.
+        interactionBehavior: GlassInteractionBehavior.scaleOnly,
+        pressScale: 1.02,
+      ),
     );
   }
 }
@@ -103,6 +110,130 @@ class ZhLiquidGlassActionItem {
   final String label;
   final String semanticLabel;
   final VoidCallback? onPressed;
+}
+
+/// Gates a package tab callback until the pointer is released inside the tab
+/// that the package resolved. The upstream bottom bar intentionally selects on
+/// pointer-down for its default native mode; the app's navigation should not
+/// leave a page as soon as a finger merely touches it.
+class _ZhReleaseActivatedGlassTabBar extends StatefulWidget {
+  const _ZhReleaseActivatedGlassTabBar({
+    required this.tabCount,
+    required this.horizontalPadding,
+    required this.verticalPadding,
+    required this.barHeight,
+    required this.onTabSelected,
+    required this.childBuilder,
+  }) : assert(tabCount > 0);
+
+  final int tabCount;
+  final double horizontalPadding;
+  final double verticalPadding;
+  final double barHeight;
+  final ValueChanged<int> onTabSelected;
+  final Widget Function(ValueChanged<int> onTabSelected) childBuilder;
+
+  @override
+  State<_ZhReleaseActivatedGlassTabBar> createState() =>
+      _ZhReleaseActivatedGlassTabBarState();
+}
+
+class _ZhReleaseActivatedGlassTabBarState
+    extends State<_ZhReleaseActivatedGlassTabBar> {
+  int? _pendingIndex;
+  var _pointerActive = false;
+  var _pointerCancelled = false;
+  var _pointerGeneration = 0;
+
+  int? _tabIndexAt(Offset globalPosition) {
+    final renderObject = context.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) return null;
+    final local = renderObject.globalToLocal(globalPosition);
+    final left = widget.horizontalPadding;
+    final right = renderObject.size.width - widget.horizontalPadding;
+    final top = widget.verticalPadding;
+    final bottom = top + widget.barHeight;
+    if (right <= left ||
+        local.dx < left ||
+        local.dx >= right ||
+        local.dy < top ||
+        local.dy >= bottom) {
+      return null;
+    }
+    final fraction = ((local.dx - left) / (right - left)).clamp(0.0, .999999);
+    return (fraction * widget.tabCount).floor();
+  }
+
+  void _onPointerDown(PointerDownEvent event) {
+    _pointerGeneration++;
+    _pointerActive = true;
+    _pointerCancelled = false;
+    _pendingIndex = null;
+  }
+
+  void _onPackageTabSelected(int index) {
+    if (_pointerActive) {
+      if (!_pointerCancelled) _pendingIndex = index;
+      return;
+    }
+    // Keyboard and screen-reader activation has no pointer lifecycle. Keep
+    // those activations immediate and accessible.
+    widget.onTabSelected(index);
+  }
+
+  void _finishPointer(Offset position) {
+    if (!_pointerActive) return;
+    final pending = _pendingIndex;
+    final releaseIndex = _tabIndexAt(position);
+    _pointerActive = false;
+    _pointerCancelled = false;
+    _pendingIndex = null;
+    if (pending != null && releaseIndex == pending) {
+      widget.onTabSelected(pending);
+    }
+  }
+
+  void _schedulePointerFinish(Offset position) {
+    final generation = _pointerGeneration;
+    // The package's raw pointer listener runs before its gesture recognizer.
+    // Defer the gate until the current pointer event has finished dispatching
+    // so drag/tap resolution is captured while [_pointerActive] is still true.
+    Future<void>.microtask(() {
+      if (!mounted ||
+          !_pointerActive ||
+          _pointerCancelled ||
+          generation != _pointerGeneration) {
+        return;
+      }
+      _finishPointer(position);
+    });
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    if (!_pointerActive) return;
+    _pointerCancelled = true;
+    final generation = _pointerGeneration;
+    // Keep the cancelled pointer active for the rest of this dispatch. If the
+    // package resolves a drag during the same event, its callback is discarded
+    // rather than being forwarded as an accidental selection.
+    Future<void>.microtask(() {
+      if (!mounted || !_pointerActive || generation != _pointerGeneration) {
+        return;
+      }
+      _pointerActive = false;
+      _pointerCancelled = false;
+      _pendingIndex = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => Listener(
+    behavior: HitTestBehavior.translucent,
+    onPointerDown: _onPointerDown,
+    onPointerUp: (event) => _schedulePointerFinish(event.position),
+    onPointerCancel: _onPointerCancel,
+    child: widget.childBuilder(_onPackageTabSelected),
+  );
 }
 
 /// A floating, draggable glass action bar for detail pages.
@@ -208,37 +339,44 @@ class _ZhLiquidGlassFloatingActionBarState
           semanticLabel: item.semanticLabel,
         ),
     ];
-    final glassBar = GlassTabBar.bottom(
-      key: const ValueKey('zh-liquid-glass-detail-action-bar'),
-      tabs: tabs,
-      selectedIndex: _selectedIndex,
-      onTabSelected: _select,
-      barHeight: 64,
-      verticalPadding: 12,
+    final glassBar = _ZhReleaseActivatedGlassTabBar(
+      tabCount: tabs.length,
       horizontalPadding: 0,
-      spacing: 4,
-      tabPadding: const EdgeInsets.symmetric(horizontal: 2),
-      iconLabelSpacing: 3,
-      iconSize: 22,
-      labelFontSize: 11,
-      settings: _settings,
-      indicatorSettings: _indicatorSettings,
-      quality: GlassQuality.premium,
-      backgroundQuality: GlassQuality.standard,
-      indicatorColor: const Color(0x2E000000),
-      indicatorPinchStrength: .28,
-      indicatorExpansion: const EdgeInsets.symmetric(
-        horizontal: 9,
-        vertical: 7,
+      verticalPadding: 12,
+      barHeight: 64,
+      onTabSelected: _select,
+      childBuilder: (handleTabSelected) => GlassTabBar.bottom(
+        key: const ValueKey('zh-liquid-glass-detail-action-bar'),
+        tabs: tabs,
+        selectedIndex: _selectedIndex,
+        onTabSelected: handleTabSelected,
+        barHeight: 64,
+        verticalPadding: 12,
+        horizontalPadding: 0,
+        spacing: 4,
+        tabPadding: const EdgeInsets.symmetric(horizontal: 2),
+        iconLabelSpacing: 3,
+        iconSize: 22,
+        labelFontSize: 11,
+        settings: _settings,
+        indicatorSettings: _indicatorSettings,
+        quality: GlassQuality.premium,
+        backgroundQuality: GlassQuality.standard,
+        indicatorColor: const Color(0x2E000000),
+        indicatorPinchStrength: .28,
+        indicatorExpansion: const EdgeInsets.symmetric(
+          horizontal: 9,
+          vertical: 7,
+        ),
+        maskingQuality: MaskingQuality.high,
+        interactionBehavior: GlassInteractionBehavior.scaleOnly,
+        pressScale: 1.02,
+        glowOpacity: 0,
+        glowBlurRadius: 0,
+        glowSpreadRadius: 0,
+        interactionGlowColor: Colors.transparent,
+        interactionGlowRadius: 0,
       ),
-      maskingQuality: MaskingQuality.high,
-      interactionBehavior: GlassInteractionBehavior.scaleOnly,
-      pressScale: 1.02,
-      glowOpacity: 0,
-      glowBlurRadius: 0,
-      glowSpreadRadius: 0,
-      interactionGlowColor: Colors.transparent,
-      interactionGlowRadius: 0,
     );
     final animatedGlassBar = AnimatedBuilder(
       animation: _modeTransitionController,

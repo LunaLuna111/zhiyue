@@ -81,9 +81,15 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   };
 
   bool _hasUsablePreview(Map<String, dynamic> value) {
-    if (widget.contentType != 'answer') return false;
-    return subtitleOf(value).isNotEmpty ||
-        (authorNameOf(value).isNotEmpty && titleOf(value).isNotEmpty);
+    final hasBodyPreview =
+        htmlContent(value)?.trim().isNotEmpty == true ||
+        structuredContentText(value).isNotEmpty ||
+        contentImageUrlsOf(value, limit: 20).isNotEmpty ||
+        contentVideosOf(value).isNotEmpty;
+    if (hasBodyPreview) return true;
+    return widget.contentType == 'answer' &&
+        (subtitleOf(value).isNotEmpty ||
+            (authorNameOf(value).isNotEmpty && titleOf(value).isNotEmpty));
   }
 
   void _startRelatedAnswerPreload() {
@@ -164,18 +170,27 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             contentId: widget.contentId,
           );
           if (mounted && cached != null) {
-            _adopt(
-              cached.document,
-              cached.isFresh(DateTime.now())
-                  ? '本地缓存（30 分钟内）'
-                  : '本地缓存（已过期，正在更新）',
-            );
-            useCachedDocument = cached.isFresh(DateTime.now());
+            final cacheIsFresh = cached.isFresh(DateTime.now());
+            final cacheHasBody = _hasReadableBody(cached.document);
+            if (cacheHasBody) {
+              _adopt(
+                cached.document,
+                cacheIsFresh ? '本地缓存（30 分钟内）' : '本地缓存（已过期，正在更新）',
+              );
+            }
+            // A previous failed/partial response must never become a fresh
+            // blank detail. Keep the list preview visible, then let the
+            // dedicated endpoint repair the cache on the same open.
+            useCachedDocument = cacheIsFresh && cacheHasBody;
             unawaited(
               AppLogStore.instance.record(
                 category: AppLogCategory.performance,
-                level: AppLogLevel.info,
-                message: useCachedDocument ? '回答详情命中缓存' : '回答详情缓存已过期',
+                level: cacheHasBody ? AppLogLevel.info : AppLogLevel.warning,
+                message: !cacheHasBody
+                    ? '回答详情缓存缺少正文，正在重新请求'
+                    : useCachedDocument
+                    ? '回答详情命中缓存'
+                    : '回答详情缓存已过期',
                 details: {
                   'content_type': widget.contentType,
                   'content_id': widget.contentId,
@@ -579,7 +594,35 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     return plainText(html).length +
         structured.length +
         contentVideosOf(value).length +
-        inlineVideoCount;
+        inlineVideoCount +
+        contentImageUrlsOf(value, limit: 20).length * 20;
+  }
+
+  bool _hasReadableBody(Map<String, dynamic> value) {
+    return htmlContent(value)?.trim().isNotEmpty == true ||
+        structuredContentText(value).isNotEmpty ||
+        contentImageUrlsOf(value, limit: 20).isNotEmpty ||
+        contentVideosOf(value).isNotEmpty;
+  }
+
+  String _explicitContentTitle(Map<String, dynamic>? value) {
+    if (value == null) return '';
+    final object = unwrapObject(value);
+    for (final key in const [
+      'title',
+      'name',
+      'excerpt_title',
+      'headline',
+      'display_title',
+    ]) {
+      final raw = object[key];
+      final map = stringMap(raw);
+      final text = plainText(
+        map?['plain_text'] ?? map?['text'] ?? map?['name'] ?? raw,
+      ).trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
   }
 
   void _adopt(Map<String, dynamic> candidate, String source) {
@@ -594,8 +637,18 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     }
     final currentLength = _document == null ? -1 : _readableLength(_document!);
     final candidateLength = _readableLength(normalized);
+    // For articles and pins the dedicated detail endpoint is the authority
+    // for the body. A compact feed card can contain a longer excerpt than a
+    // short post's actual body, so comparing only character counts would keep
+    // the feed projection forever and can hide a valid object/tree response.
+    final preferVerifiedNonAnswerBody =
+        widget.contentType != 'answer' &&
+        source == '官方 App v2 移动接口' &&
+        _hasReadableBody(normalized);
     setState(() {
-      if (_document == null || candidateLength >= currentLength) {
+      if (_document == null ||
+          candidateLength >= currentLength ||
+          preferVerifiedNonAnswerBody) {
         _document = normalized;
         _source = source;
       } else {
@@ -669,17 +722,38 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     );
     final showQuestionInAppBar =
         widget.contentType == 'answer' && questionId.isNotEmpty;
+    final semanticObject = unwrapObject(semantic);
+    final author =
+        stringMap(semanticObject['author']) ?? const <String, dynamic>{};
+    final authorName = authorNameOf(semantic).trim();
+    final authorDisplayName = authorName.isEmpty ? '知乎用户' : authorName;
+    final authorAvatar = authorAvatarOf(semantic);
+    final authorMemberId = personMemberIdOf(author);
+    final authorPageId = [
+      author['url_token'],
+      author['urlToken'],
+      authorMemberId,
+    ].map(plainText).firstWhere((value) => value.isNotEmpty, orElse: () => '');
     final documentMetrics = document == null
         ? null
         : ContentMetrics.from(document);
     final documentRelationship = document == null
         ? null
         : AnswerRelationship.from(document);
-    final contentTitle = titleOf(semantic);
-    final contentAuthor = authorNameOf(semantic);
-    final contentDate = document == null
-        ? ''
-        : contentDateLabel(ContentMetrics.from(document));
+    final authorFollowing =
+        _authorFollowingOverride ??
+        documentRelationship?.isFollowingAuthor == true;
+    final detailObject = document ?? semantic;
+    final authorActionId = authorMemberId.isNotEmpty
+        ? authorMemberId
+        : authorPageId;
+    // The v2 pin response carries the author and structured body but often
+    // omits the compact feed title. Prefer its explicit title when present,
+    // then recover the title from the identity-verified list projection.
+    final semanticTitle = _explicitContentTitle(semantic);
+    final detailTitle = semanticTitle.isNotEmpty
+        ? semanticTitle
+        : _explicitContentTitle(_initialSemantic);
     final desktop = MediaQuery.sizeOf(context).width >= ZhViewport.wide;
     final body = desktop && document != null
         ? ZhResponsiveTwoPane(
@@ -701,7 +775,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
               body,
               Positioned(
                 right: 14,
-                bottom: 14,
+                bottom: 104,
                 child: ValueListenableBuilder<bool>(
                   valueListenable: _answerAtBottomNotifier,
                   builder: (context, atBottom, _) => _AnswerJumpButton(
@@ -714,72 +788,76 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             ],
           )
         : body;
+    final PreferredSizeWidget detailAppBarBottom = showQuestionInAppBar
+        ? PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Column(
+              children: [
+                AnswerDetailAppBarTitle(
+                  title: questionTitle,
+                  questionId: questionId,
+                  metrics: ContentMetrics.from(semantic),
+                  onTap: () => _openQuestionAnswers(questionId, questionTitle),
+                ),
+                const Divider(height: 1, thickness: .7),
+              ],
+            ),
+          )
+        : ContentDetailTitleHeader(
+            title: detailTitle.isNotEmpty ? detailTitle : pageTitle,
+          );
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: showQuestionInAppBar
-            ? 50
-            : contentTitle.isNotEmpty
-            ? 64
-            : null,
-        titleSpacing: showQuestionInAppBar ? 0 : null,
-        actions: showQuestionInAppBar
-            ? [
-                TextButton.icon(
-                  onPressed: () => _openInviteAnswer(questionId),
-                  icon: const Icon(Icons.person_add_alt_1_outlined, size: 18),
-                  label: const Text('邀请回答'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF0F7BFF),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                  ),
+      extendBody: true,
+      appBar: ZhLiquidGlassAppBar(
+        toolbarHeight: 56,
+        leading: ZhLiquidGlassIconButton(
+          key: const ValueKey('content-detail-back'),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            Navigator.of(context).maybePop();
+          },
+          semanticLabel: '返回',
+          size: 46,
+          iconSize: 24,
+        ),
+        actions: [
+          ZhLiquidGlassCapsuleActionGroup(
+            key: const ValueKey('content-detail-actions'),
+            actions: [
+              ZhLiquidGlassCapsuleAction(
+                icon: _AuthorAvatar(
+                  imageUrl: authorAvatar,
+                  fallback: authorDisplayName.characters.first,
+                  size: 22,
                 ),
-                TextButton.icon(
-                  onPressed: () =>
-                      _writeQuestionAnswer(questionId, questionTitle),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('写回答'),
-                  style: TextButton.styleFrom(
-                    foregroundColor: const Color(0xFF0F7BFF),
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                  ),
-                ),
-                IconButton(
-                  tooltip: '搜索',
-                  onPressed: _openSearch,
-                  icon: const Icon(Icons.search_rounded),
-                ),
-              ]
-            : null,
-        bottom: showQuestionInAppBar
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(80),
-                child: Column(
-                  children: [
-                    AnswerDetailAppBarTitle(
-                      title: questionTitle,
-                      questionId: questionId,
-                      metrics: ContentMetrics.from(semantic),
-                      onTap: () =>
-                          _openQuestionAnswers(questionId, questionTitle),
-                    ),
-                    const Divider(height: 1, thickness: .7),
-                  ],
-                ),
-              )
-            : const PreferredSize(
-                preferredSize: Size.fromHeight(1),
-                child: Divider(height: 1, thickness: .7),
+                semanticLabel: '查看$authorDisplayName的个人主页',
+                onPressed: authorPageId.isEmpty
+                    ? null
+                    : () => _openAuthorPage(authorPageId),
               ),
-        title: showQuestionInAppBar
-            ? const SizedBox.shrink()
-            : contentTitle.isNotEmpty
-            ? ContentDetailAppBarTitle(
-                title: contentTitle,
-                contentType: widget.contentType,
-                author: contentAuthor,
-                date: contentDate,
-              )
-            : Text(pageTitle),
+              ZhLiquidGlassCapsuleAction(
+                icon: Icon(
+                  authorFollowing ? Icons.check_rounded : Icons.add_rounded,
+                ),
+                semanticLabel: authorFollowing ? '取消关注作者' : '关注作者',
+                onPressed:
+                    authorActionId.isEmpty ||
+                        documentRelationship?.isAuthor == true ||
+                        _authorFollowBusy
+                    ? null
+                    : () =>
+                          _toggleAuthorFollowing(detailObject, authorActionId),
+              ),
+              ZhLiquidGlassCapsuleAction(
+                icon: const Icon(Icons.more_horiz_rounded),
+                semanticLabel: '更多操作',
+                onPressed: _showDetailActions,
+              ),
+            ],
+          ),
+        ],
+        bottom: detailAppBarBottom,
+        title: ContentDetailAppBarTitle(title: authorDisplayName),
       ),
       body: bodyWithAnswerJump,
       bottomNavigationBar: document == null
@@ -790,7 +868,21 @@ class _ContentDetailPageState extends State<ContentDetailPage>
               busyAction: _busyAction,
               onComments: _openComments,
               onAction: _handleDetailAction,
-              onMore: _showDetailActions,
+              onJumpToTop: _jumpAnswerToTop,
+              onJumpToBottom: _jumpAnswerToBottom,
+              authorName: authorDisplayName,
+              authorAvatar: authorAvatar,
+              authorFollowing: authorFollowing,
+              authorFollowBusy: _authorFollowBusy,
+              onAuthor: authorPageId.isEmpty
+                  ? null
+                  : () => _openAuthorPage(authorPageId),
+              onToggleAuthorFollowing:
+                  authorActionId.isEmpty ||
+                      documentRelationship.isAuthor == true ||
+                      _authorFollowBusy
+                  ? null
+                  : () => _toggleAuthorFollowing(detailObject, authorActionId),
             ),
     );
   }

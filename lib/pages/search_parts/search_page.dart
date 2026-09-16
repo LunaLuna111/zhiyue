@@ -486,15 +486,27 @@ class _SearchPageState extends State<SearchPage>
       // Let the keyboard cover the lower history area instead of repeatedly
       // relaying out the entire search surface during the IME animation.
       resizeToAvoidBottomInset: false,
-      appBar: AppBar(
-        title: const Text('搜索'),
+      appBar: ZhLiquidGlassAppBar(
+        title: const Text(
+          '搜索',
+          style: TextStyle(
+            color: ZhPalette.ink,
+            fontSize: 28,
+            fontWeight: FontWeight.w800,
+            height: 1.1,
+          ),
+        ),
         actions: [
-          IconButton(
-            tooltip: '通过 ID 直接打开',
+          ZhLiquidGlassIconButton(
+            key: const ValueKey('search-tools'),
+            semanticLabel: '通过 ID 直接打开',
             onPressed: _showTools,
             icon: const Icon(Icons.tune_rounded),
+            size: 44,
+            iconSize: 22,
           ),
         ],
+        toolbarHeight: 72,
       ),
       body: ZhResponsiveFrame(
         maxWidth: 1040,

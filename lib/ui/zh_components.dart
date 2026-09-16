@@ -6,6 +6,7 @@
 library;
 
 export 'components/zh_action_components.dart';
+export 'components/zh_control_components.dart';
 export 'components/zh_layout_components.dart';
 export 'components/zh_menu_components.dart';
 export 'components/zh_navigation_components.dart';

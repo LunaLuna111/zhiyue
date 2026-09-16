@@ -20,55 +20,16 @@ class _SearchField extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) =>
-      ValueListenableBuilder<TextEditingValue>(
-        valueListenable: controller,
-        builder: (context, value, _) => Container(
-          height: compact ? 48 : 52,
-          decoration: BoxDecoration(
-            color: ZhPalette.canvas,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: ZhPalette.border),
-          ),
-          child: TextField(
-            key: const ValueKey('search-input'),
-            controller: controller,
-            focusNode: focusNode,
-            autofocus: autofocus,
-            textInputAction: TextInputAction.search,
-            onChanged: onChanged,
-            onSubmitted: onSubmitted,
-            decoration: InputDecoration(
-              hintText: hintText,
-              border: InputBorder.none,
-              prefixIcon: const Icon(Icons.search_rounded, size: 22),
-              suffixIcon: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (value.text.isNotEmpty)
-                    IconButton(
-                      key: const ValueKey('search-clear'),
-                      tooltip: '清除',
-                      onPressed: () {
-                        controller.clear();
-                        onChanged?.call('');
-                        focusNode?.requestFocus();
-                      },
-                      icon: const Icon(Icons.clear_rounded, size: 20),
-                    ),
-                  IconButton(
-                    key: const ValueKey('search-submit'),
-                    tooltip: '搜索',
-                    onPressed: () => onSubmitted(controller.text),
-                    icon: const Icon(Icons.arrow_forward_rounded, size: 21),
-                  ),
-                ],
-              ),
-              contentPadding: EdgeInsets.symmetric(vertical: compact ? 12 : 14),
-            ),
-          ),
-        ),
-      );
+  Widget build(BuildContext context) => ZhLiquidGlassSearchField(
+    key: const ValueKey('search-input'),
+    controller: controller,
+    focusNode: focusNode,
+    hintText: hintText,
+    autofocus: autofocus,
+    compact: compact,
+    onChanged: onChanged,
+    onSubmitted: onSubmitted,
+  );
 }
 
 class _SearchChoice extends StatelessWidget {

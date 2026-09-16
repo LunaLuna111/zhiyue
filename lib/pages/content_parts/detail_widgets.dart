@@ -179,13 +179,20 @@ class _AuthorAvatar extends StatelessWidget {
   }
 }
 
-class DetailEngagementBar extends StatelessWidget {
+class DetailEngagementBar extends StatefulWidget {
   const DetailEngagementBar({
     super.key,
     required this.metrics,
     required this.onComments,
     required this.onAction,
-    required this.onMore,
+    this.onJumpToTop,
+    this.onJumpToBottom,
+    this.authorName = '',
+    this.authorAvatar = '',
+    this.authorFollowing = false,
+    this.authorFollowBusy = false,
+    this.onAuthor,
+    this.onToggleAuthorFollowing,
     this.relationship = const AnswerRelationship(
       voting: '',
       isThanked: null,
@@ -199,146 +206,142 @@ class DetailEngagementBar extends StatelessWidget {
   final ContentMetrics metrics;
   final VoidCallback onComments;
   final ValueChanged<String> onAction;
-  final VoidCallback onMore;
+  final VoidCallback? onJumpToTop;
+  final VoidCallback? onJumpToBottom;
+  final String authorName;
+  final String authorAvatar;
+  final bool authorFollowing;
+  final bool authorFollowBusy;
+  final VoidCallback? onAuthor;
+  final VoidCallback? onToggleAuthorFollowing;
   final AnswerRelationship relationship;
   final String busyAction;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      color: ZhPalette.background,
-      border: Border(top: BorderSide(color: ZhPalette.border)),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 5, 8, 4),
-        child: Row(
-          children: [
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.change_history_outlined,
-                label: metrics.voteupCount == null
-                    ? '赞同'
-                    : compactCount(metrics.voteupCount!),
-                semanticLabel: metrics.voteupCount == null
-                    ? '赞同'
-                    : '赞同 ${compactCount(metrics.voteupCount!)}',
-                selected: relationship.isUpvoted,
-                onTap: busyAction.isEmpty ? () => onAction('赞同') : null,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.change_history_outlined,
-                iconQuarterTurns: 2,
-                label: '反对',
-                semanticLabel: relationship.isDownvoted ? '已反对' : '反对',
-                selected: relationship.isDownvoted,
-                onTap: busyAction.isEmpty ? () => onAction('反对') : null,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: metrics.commentCount == null
-                    ? '评论'
-                    : compactCount(metrics.commentCount!),
-                semanticLabel: metrics.commentCount == null
-                    ? '查看评论'
-                    : '查看 ${compactCount(metrics.commentCount!)} 条评论',
-                onTap: onComments,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.star_border_rounded,
-                label: metrics.favoriteCount == null
-                    ? '收藏'
-                    : compactCount(metrics.favoriteCount!),
-                semanticLabel: metrics.favoriteCount == null
-                    ? '收藏'
-                    : '收藏 ${compactCount(metrics.favoriteCount!)}',
-                selected: relationship.isFavorited == true,
-                onTap: busyAction.isEmpty ? () => onAction('收藏') : null,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.more_horiz_rounded,
-                label: '更多',
-                semanticLabel: '更多操作',
-                onTap: onMore,
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
+  State<DetailEngagementBar> createState() => _DetailEngagementBarState();
 }
 
-class _DetailAction extends StatelessWidget {
-  const _DetailAction({
-    required this.icon,
-    required this.label,
-    required this.semanticLabel,
-    this.onTap,
-    this.iconQuarterTurns = 0,
-    this.selected = false,
-  });
+class _DetailEngagementBarState extends State<DetailEngagementBar> {
+  var _showMoreActions = false;
 
-  final IconData icon;
-  final String label;
-  final String semanticLabel;
-  final VoidCallback? onTap;
-  final int iconQuarterTurns;
-  final bool selected;
+  void _toggleMoreActions() {
+    if (!mounted) return;
+    setState(() => _showMoreActions = !_showMoreActions);
+  }
+
+  List<ZhLiquidGlassActionItem> _engagementItems() => [
+    ZhLiquidGlassActionItem(
+      icon: Icon(
+        Icons.change_history_outlined,
+        color: widget.relationship.isUpvoted
+            ? const Color(0xFF1677FF)
+            : ZhPalette.ink,
+      ),
+      label: widget.metrics.voteupCount == null
+          ? '赞同'
+          : compactCount(widget.metrics.voteupCount!),
+      semanticLabel: widget.metrics.voteupCount == null
+          ? '赞同'
+          : '赞同 ${compactCount(widget.metrics.voteupCount!)}',
+      onPressed: widget.busyAction.isEmpty ? () => widget.onAction('赞同') : null,
+    ),
+    ZhLiquidGlassActionItem(
+      icon: RotatedBox(
+        quarterTurns: 2,
+        child: Icon(
+          Icons.change_history_outlined,
+          color: widget.relationship.isDownvoted
+              ? const Color(0xFF1677FF)
+              : ZhPalette.ink,
+        ),
+      ),
+      label: '反对',
+      semanticLabel: widget.relationship.isDownvoted ? '已反对' : '反对',
+      onPressed: widget.busyAction.isEmpty ? () => widget.onAction('反对') : null,
+    ),
+    ZhLiquidGlassActionItem(
+      icon: const Icon(Icons.chat_bubble_outline_rounded),
+      label: widget.metrics.commentCount == null
+          ? '评论'
+          : compactCount(widget.metrics.commentCount!),
+      semanticLabel: widget.metrics.commentCount == null
+          ? '查看评论'
+          : '查看 ${compactCount(widget.metrics.commentCount!)} 条评论',
+      onPressed: widget.onComments,
+    ),
+    ZhLiquidGlassActionItem(
+      icon: Icon(
+        Icons.star_border_rounded,
+        color: widget.relationship.isFavorited == true
+            ? const Color(0xFF1677FF)
+            : ZhPalette.ink,
+      ),
+      label: widget.metrics.favoriteCount == null
+          ? '收藏'
+          : compactCount(widget.metrics.favoriteCount!),
+      semanticLabel: widget.metrics.favoriteCount == null
+          ? '收藏'
+          : '收藏 ${compactCount(widget.metrics.favoriteCount!)}',
+      onPressed: widget.busyAction.isEmpty ? () => widget.onAction('收藏') : null,
+    ),
+  ];
+
+  List<ZhLiquidGlassActionItem> _moreItems() {
+    final displayName = widget.authorName.trim().isEmpty
+        ? '知乎用户'
+        : widget.authorName.trim();
+    final fallback = displayName.characters.first;
+    return [
+      ZhLiquidGlassActionItem(
+        icon: _AuthorAvatar(
+          imageUrl: widget.authorAvatar,
+          fallback: fallback,
+          size: 22,
+        ),
+        label: '作者',
+        semanticLabel: '查看$displayName的个人主页',
+        onPressed: widget.onAuthor,
+      ),
+      ZhLiquidGlassActionItem(
+        icon: Icon(
+          widget.authorFollowing ? Icons.check_rounded : Icons.add_rounded,
+        ),
+        label: widget.authorFollowing ? '已关注' : '关注',
+        semanticLabel: widget.authorFollowing ? '取消关注作者' : '关注作者',
+        onPressed: widget.authorFollowBusy
+            ? null
+            : widget.onToggleAuthorFollowing,
+      ),
+      ZhLiquidGlassActionItem(
+        icon: const Icon(Icons.vertical_align_top_rounded),
+        label: '顶部',
+        semanticLabel: '回到帖子顶部',
+        onPressed: widget.onJumpToTop,
+      ),
+      ZhLiquidGlassActionItem(
+        icon: const Icon(Icons.vertical_align_bottom_rounded),
+        label: '底部',
+        semanticLabel: '跳到帖子底部',
+        onPressed: widget.onJumpToBottom,
+      ),
+    ];
+  }
 
   @override
-  Widget build(BuildContext context) {
-    final content = SizedBox(
-      width: double.infinity,
-      height: 46,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          RotatedBox(
-            quarterTurns: iconQuarterTurns,
-            child: Icon(
-              icon,
-              size: 21,
-              color: selected ? const Color(0xFF1677FF) : ZhPalette.ink,
-            ),
-          ),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.fade,
-            softWrap: false,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: selected ? const Color(0xFF1677FF) : ZhPalette.mutedInk,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-              fontSize: 11,
-              letterSpacing: 0,
-            ),
-          ),
-        ],
+  Widget build(BuildContext context) => ZhLiquidGlassFloatingActionBar(
+    key: widget.key,
+    items: _showMoreActions ? _moreItems() : _engagementItems(),
+    trailing: ZhLiquidGlassIconButton(
+      key: const ValueKey('content-detail-more-toggle'),
+      icon: Icon(
+        _showMoreActions ? Icons.close_rounded : Icons.more_vert_rounded,
       ),
-    );
-    return Semantics(
-      button: onTap != null,
-      label: semanticLabel,
-      excludeSemantics: true,
-      child: onTap == null
-          ? content
-          : InkWell(
-              borderRadius: BorderRadius.circular(ZhRadius.input),
-              onTap: onTap,
-              child: content,
-            ),
-    );
-  }
+      onPressed: _toggleMoreActions,
+      semanticLabel: _showMoreActions ? '收起更多功能' : '更多功能',
+      size: 64,
+      iconSize: 26,
+    ),
+  );
 }
 
 String _mutationError(ApiResponse response) {

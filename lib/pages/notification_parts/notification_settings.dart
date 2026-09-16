@@ -131,17 +131,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         }
         final key = keys[index - 1];
         final setting = _stringMap(settings[key]);
-        return SwitchListTile(
+        return ZhLiquidGlassSwitchTile(
           key: ValueKey('notification-setting-$key'),
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-          title: Text(_labels[key] ?? key.replaceAll('_', ' ')),
+          title: _labels[key] ?? key.replaceAll('_', ' '),
           subtitle: plainText(setting['scope']).isEmpty
               ? null
-              : Text(
-                  plainText(setting['scope']) == 'all'
-                      ? '全部'
-                      : plainText(setting['scope']),
-                ),
+              : plainText(setting['scope']) == 'all'
+              ? '全部'
+              : plainText(setting['scope']),
           value: setting['switch'] == true,
           onChanged: _saving ? null : (value) => _toggle(key, value),
         );

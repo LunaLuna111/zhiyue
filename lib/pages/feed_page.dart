@@ -72,7 +72,6 @@ class FeedPage extends StatefulWidget {
 
 class _FeedPageState extends State<FeedPage>
     with AutomaticKeepAliveClientMixin {
-  static const _headerHeight = ZhLiquidGlassTopNavigation.barHeight;
   late List<HomeFeedChannel> _channels;
   late PageController _pageController;
   late HomeFeedChannel _channel;
@@ -247,7 +246,7 @@ class _FeedPageState extends State<FeedPage>
     // The people rail and its filter chips own horizontal drags. Keeping the
     // tab pager out of this band prevents a sideways swipe on the rail from
     // switching the whole home section (or starting a drawer-edge gesture).
-    final top = _headerHeight;
+    final top = MediaQuery.viewPaddingOf(context).top;
     final bottom = top + 122 + 68;
     return y >= top && y <= bottom;
   }
@@ -305,6 +304,10 @@ class _FeedPageState extends State<FeedPage>
 
   Widget _pageAt(int index) {
     final channel = _channels[index];
+    // The glass header floats over the feed. Reserve only the system status
+    // inset so the first item starts below the status bar and remains visible
+    // behind the top controls instead of leaving a reserved white band.
+    final contentTopInset = MediaQuery.viewPaddingOf(context).top;
     final refreshSignal = _refreshSignals[channel]!;
     final requestScopeEpoch = _requestScopeEpoch;
     bool isRequestScopeCurrent() =>
@@ -317,7 +320,7 @@ class _FeedPageState extends State<FeedPage>
         child: SaltStoryHome(
           key: const ValueKey('home-story-feed'),
           api: widget.api,
-          topInset: _headerHeight + 2,
+          topInset: contentTopInset,
           initialResponse: _preloadPool.warm(channel),
           isRequestScopeCurrent: isRequestScopeCurrent,
           refreshSignal: refreshSignal,
@@ -337,7 +340,7 @@ class _FeedPageState extends State<FeedPage>
         initialResponse: _preloadPool.warm(channel),
         isRequestScopeCurrent: isRequestScopeCurrent,
         refreshSignal: refreshSignal,
-        topInset: _headerHeight + 2,
+        topInset: contentTopInset,
         compact: widget.api.session.feedDensity == FeedDensity.compact,
         showImages: widget.api.session.showFeedImages,
         showMetrics: widget.api.session.showFeedMetrics,
@@ -404,44 +407,44 @@ class _FeedPageState extends State<FeedPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Stack(
-          children: [
-            LayoutBuilder(
-              builder: (context, constraints) => GestureDetector(
-                key: const ValueKey('home-feed-middle-swipe'),
-                behavior: HitTestBehavior.translucent,
-                onHorizontalDragStart: (details) =>
-                    _channelDragStart(details, constraints.maxWidth),
-                onHorizontalDragUpdate: _channelDragUpdate,
-                onHorizontalDragEnd: _channelDragEnd,
-                onHorizontalDragCancel: _channelDragCancel,
-                child: PageView.builder(
-                  key: ValueKey(
-                    'home-feed-${_channels.map((item) => item.name).join('-')}',
-                  ),
-                  controller: _pageController,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _channels.length,
-                  onPageChanged: _pageChanged,
-                  itemBuilder: (_, index) => _pageAt(index),
+      // The iOS-style top chrome owns the status-bar inset and floats over
+      // the feed. Removing only the layout padding lets the first card/image
+      // continue underneath the glass instead of leaving a blank white strip.
+      body: Stack(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) => GestureDetector(
+              key: const ValueKey('home-feed-middle-swipe'),
+              behavior: HitTestBehavior.translucent,
+              onHorizontalDragStart: (details) =>
+                  _channelDragStart(details, constraints.maxWidth),
+              onHorizontalDragUpdate: _channelDragUpdate,
+              onHorizontalDragEnd: _channelDragEnd,
+              onHorizontalDragCancel: _channelDragCancel,
+              child: PageView.builder(
+                key: ValueKey(
+                  'home-feed-${_channels.map((item) => item.name).join('-')}',
                 ),
+                controller: _pageController,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _channels.length,
+                onPageChanged: _pageChanged,
+                itemBuilder: (_, index) => _pageAt(index),
               ),
             ),
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: ZhLiquidGlassTopNavigation(
-                labels: [for (final channel in _channels) channel.label],
-                selectedIndex: _channels.indexOf(_channel),
-                onTabSelected: (index) => _selectChannel(_channels[index]),
-                onMenuPressed: widget.onMenuPressed,
-              ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ZhLiquidGlassTopNavigation(
+              labels: [for (final channel in _channels) channel.label],
+              selectedIndex: _channels.indexOf(_channel),
+              onTabSelected: (index) => _selectChannel(_channels[index]),
+              onMenuPressed: widget.onMenuPressed,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

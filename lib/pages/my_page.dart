@@ -291,7 +291,20 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: ZhLiquidGlassAppBar(
+        toolbarHeight: 72,
+        leading: ZhLiquidGlassIconButton(
+          key: const ValueKey('settings-back'),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () {
+            Navigator.of(context).maybePop();
+          },
+          semanticLabel: '返回',
+          size: 46,
+          iconSize: 24,
+        ),
+        title: const Text('设置'),
+      ),
       body: ZhPageWidth(
         maxWidth: 680,
         child: AnimatedBuilder(
@@ -736,7 +749,11 @@ class _SwitchTile extends StatelessWidget {
       leading: _SettingIcon(icon: icon),
       title: Text(title),
       subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
-      trailing: Switch.adaptive(value: value, onChanged: onChanged),
+      trailing: ZhLiquidGlassSwitch(
+        value: value,
+        onChanged: onChanged,
+        semanticLabel: title,
+      ),
       onTap: () => onChanged(!value),
     ),
   );
@@ -762,33 +779,17 @@ class _ChoiceTile<T> extends StatelessWidget {
     builder: (context, constraints) {
       final textScale = MediaQuery.textScalerOf(context).scale(1);
       final stacked = constraints.maxWidth < 340 || textScale > 1.2;
-      final choices = Container(
+      final entries = values.entries.toList(growable: false);
+      final selectedIndex = entries.indexWhere((entry) => entry.key == value);
+      final choices = SizedBox(
         key: ValueKey('settings-choice-$title'),
-        width: stacked ? double.infinity : null,
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: ZhPalette.canvas,
-          borderRadius: BorderRadius.circular(ZhRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: stacked ? MainAxisSize.max : MainAxisSize.min,
-          children: [
-            for (final entry in values.entries)
-              if (stacked)
-                Expanded(
-                  child: _ChoiceButton(
-                    label: entry.value,
-                    selected: entry.key == value,
-                    onTap: () => onChanged(entry.key),
-                  ),
-                )
-              else
-                _ChoiceButton(
-                  label: entry.value,
-                  selected: entry.key == value,
-                  onTap: () => onChanged(entry.key),
-                ),
-          ],
+        width: stacked ? double.infinity : entries.length * 80.0,
+        child: ZhLiquidGlassSegmentedTabs(
+          labels: [for (final entry in entries) entry.value],
+          selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+          onSelected: (index) => onChanged(entries[index].key),
+          semanticPrefix: '$title：',
+          height: 44,
         ),
       );
       final heading = Row(
@@ -816,49 +817,6 @@ class _ChoiceTile<T> extends StatelessWidget {
               ),
       );
     },
-  );
-}
-
-class _ChoiceButton extends StatelessWidget {
-  const _ChoiceButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    selected: selected,
-    label: label,
-    excludeSemantics: true,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(ZhRadius.pill),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        alignment: Alignment.center,
-        constraints: const BoxConstraints(minHeight: 36),
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        decoration: BoxDecoration(
-          color: selected ? ZhPalette.ink : Colors.transparent,
-          borderRadius: BorderRadius.circular(ZhRadius.pill),
-        ),
-        child: Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-            color: selected ? ZhPalette.background : ZhPalette.mutedInk,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    ),
   );
 }
 

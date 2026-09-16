@@ -641,7 +641,8 @@ void registerDetailCommentTests() {
   ) async {
     final readOnlyActions = <String>[];
     var commentsOpened = false;
-    var moreOpened = false;
+    var jumpedToTop = false;
+    var jumpedToBottom = false;
     await tester.pumpWidget(
       _testApp(
         Scaffold(
@@ -660,7 +661,8 @@ void registerDetailCommentTests() {
             ),
             onComments: () => commentsOpened = true,
             onAction: readOnlyActions.add,
-            onMore: () => moreOpened = true,
+            onJumpToTop: () => jumpedToTop = true,
+            onJumpToBottom: () => jumpedToBottom = true,
           ),
         ),
       ),
@@ -668,12 +670,14 @@ void registerDetailCommentTests() {
 
     expect(find.text('+关注'), findsNothing);
     expect(find.byType(CircleAvatar), findsNothing);
-    expect(find.text('2926'), findsOneWidget);
-    expect(find.text('反对'), findsOneWidget);
-    expect(find.text('844'), findsOneWidget);
-    expect(find.text('172'), findsOneWidget);
-    expect(find.text('更多'), findsOneWidget);
-    expect(find.byIcon(Icons.change_history_outlined), findsNWidgets(2));
+    expect(find.bySemanticsLabel('更多功能'), findsOneWidget);
+    // The package renders the selected lens as a second paint layer. Assert
+    // the stable semantic actions instead of counting duplicated visual text.
+    expect(find.bySemanticsLabel('赞同 2926'), findsOneWidget);
+    expect(find.bySemanticsLabel('反对'), findsOneWidget);
+    expect(find.bySemanticsLabel('收藏 844'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看 172 条评论'), findsOneWidget);
+    expect(find.byIcon(Icons.change_history_outlined), findsAtLeastNWidgets(2));
     expect(
       tester
           .widgetList<RotatedBox>(find.byType(RotatedBox))
@@ -686,27 +690,40 @@ void registerDetailCommentTests() {
     final downvoteX = tester.getCenter(find.bySemanticsLabel('反对')).dx;
     final commentX = tester.getCenter(find.bySemanticsLabel('查看 172 条评论')).dx;
     final favoriteX = tester.getCenter(find.bySemanticsLabel('收藏 844')).dx;
-    final moreX = tester.getCenter(find.bySemanticsLabel('更多操作')).dx;
     expect(voteX, lessThan(downvoteX));
     expect(downvoteX, lessThan(commentX));
     expect(commentX, lessThan(favoriteX));
-    expect(favoriteX, lessThan(moreX));
 
     await tester.tap(find.bySemanticsLabel('赞同 2926'));
     await tester.tap(find.bySemanticsLabel('反对'));
     await tester.tap(find.bySemanticsLabel('查看 172 条评论'));
     await tester.tap(find.bySemanticsLabel('收藏 844'));
-    await tester.tap(find.bySemanticsLabel('更多操作'));
 
     expect(readOnlyActions, ['赞同', '反对', '收藏']);
     expect(commentsOpened, isTrue);
-    expect(moreOpened, isTrue);
     expect(
       tester
           .widgetList<Icon>(find.byType(Icon))
           .where((icon) => icon.color == const Color(0xFF1677FF)),
-      hasLength(2),
+      hasLength(greaterThanOrEqualTo(2)),
     );
+
+    await tester.tap(find.bySemanticsLabel('更多功能'));
+    await tester.pump();
+    expect(find.bySemanticsLabel('收起更多功能'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看知乎用户的个人主页'), findsOneWidget);
+    expect(find.bySemanticsLabel('关注作者'), findsOneWidget);
+    expect(find.bySemanticsLabel('回到帖子顶部'), findsOneWidget);
+    expect(find.bySemanticsLabel('跳到帖子底部'), findsOneWidget);
+
+    await tester.tap(find.bySemanticsLabel('回到帖子顶部'));
+    await tester.tap(find.bySemanticsLabel('跳到帖子底部'));
+    expect(jumpedToTop, isTrue);
+    expect(jumpedToBottom, isTrue);
+    await tester.tap(find.bySemanticsLabel('收起更多功能'));
+    await tester.pump();
+    expect(find.bySemanticsLabel('更多功能'), findsOneWidget);
+    expect(find.bySemanticsLabel('赞同 2926'), findsOneWidget);
   });
 
   testWidgets('answer author follow control writes and updates in place', (
@@ -759,31 +776,18 @@ void registerDetailCommentTests() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('+ 关注'), findsOneWidget);
-    expect(find.textContaining('10 位关注者'), findsOneWidget);
-    final summaryFinder = find.byKey(const ValueKey('detail-author-summary'));
-    final followFinder = find.byKey(const ValueKey('answer-author-follow'));
-    final summary = tester.widget<Text>(summaryFinder);
-    final initialSummaryRect = tester.getRect(summaryFinder);
-    final initialSummarySize = tester.getSize(summaryFinder);
-    final initialFollowRect = tester.getRect(followFinder);
-    expect(summary.maxLines, 2);
-    expect(summary.overflow, TextOverflow.ellipsis);
-    expect(
-      initialSummaryRect.top,
-      greaterThanOrEqualTo(initialFollowRect.bottom),
-    );
-    expect(initialSummaryRect.right, greaterThan(initialFollowRect.right));
+    expect(find.text('可关注作者'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看可关注作者的个人主页'), findsOneWidget);
+    final followFinder = find.bySemanticsLabel('关注作者');
+    expect(followFinder, findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.tap(followFinder);
     await tester.pumpAndSettle();
 
     expect(transport.calls.last.method, 'POST');
     expect(transport.calls.last.uri.path, '/people/author-token/followers');
-    expect(find.text('已关注'), findsOneWidget);
-    expect(find.textContaining('11 位关注者'), findsOneWidget);
-    expect(tester.getSize(summaryFinder), initialSummarySize);
-    expect(tester.getSize(followFinder), initialFollowRect.size);
+    expect(find.bySemanticsLabel('取消关注作者'), findsOneWidget);
+    expect(find.bySemanticsLabel('关注作者'), findsNothing);
     expect(find.byType(UserProfileDetailPage), findsNothing);
   });
 
@@ -1019,6 +1023,121 @@ void registerDetailCommentTests() {
     await tester.pump();
     expect(find.text('false:10'), findsOneWidget);
     expect(transport.calls.last.method, 'DELETE');
+  });
+
+  testWidgets('pin detail keeps object content and renders its document body', (
+    tester,
+  ) async {
+    const pin = <String, dynamic>{
+      'type': 'pin',
+      'id': '33',
+      'title': '想法标题',
+      'author': {'name': '想法作者', 'url_token': 'pin-author'},
+      'content': {
+        'blocks': [
+          {
+            'type': 'paragraph',
+            'children': [
+              {'text': '想法正文第一段'},
+            ],
+          },
+          {
+            'type': 'image',
+            'image': {'url': 'https://example.com/pin-image.jpg'},
+          },
+          {
+            'type': 'paragraph',
+            'children': [
+              {'text': '想法正文第二段'},
+            ],
+          },
+        ],
+      },
+      'voteup_count': 5,
+      'favlists_count': 2,
+      'comment_count': 1,
+    };
+    final transport = _RecordingTransport()
+      ..responses.add(_response('/pins/v2/33', json: pin));
+    final api = ZhihuApiClient(SessionStore(), transport: transport);
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(
+        ContentDetailPage(
+          api: api,
+          contentType: 'pin',
+          contentId: '33',
+          initialValue: pin,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('想法标题'), findsOneWidget);
+    expect(find.bySemanticsLabel('查看想法作者的个人主页'), findsOneWidget);
+    expect(find.textContaining('想法正文第一段'), findsOneWidget);
+    expect(find.textContaining('想法正文第二段'), findsOneWidget);
+    expect(find.byKey(const Key('detail-author-card')), findsNothing);
+    expect(transport.calls.single.uri.path, '/pins/v2/33');
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('pin detail recovers the feed title for structured v2 content', (
+    tester,
+  ) async {
+    const preview = <String, dynamic>{
+      'type': 'pin',
+      'id': '34',
+      'title': '来自列表的想法标题',
+      'excerpt': '列表摘要可能比正文更长，但不应阻止详情正文替换它。',
+      'author': {'name': '结构化作者', 'url_token': 'structured-author'},
+    };
+    const detail = <String, dynamic>{
+      'type': 'pin',
+      'id': '34',
+      'author': {'name': '结构化作者', 'url_token': 'structured-author'},
+      'structured_content': {
+        'paging': {},
+        'segments': [
+          {
+            'id': '1',
+            'type': 'paragraph',
+            'paragraph': {
+              'marks': [],
+              'max_collapse_row': 0,
+              'text': '来自 v2 的想法正文',
+            },
+          },
+        ],
+      },
+      'voteup_count': 3,
+      'favlists_count': 1,
+      'comment_count': 0,
+    };
+    final transport = _RecordingTransport()
+      ..responses.add(_response('/pins/v2/34', json: detail));
+    final api = ZhihuApiClient(SessionStore(), transport: transport);
+    addTearDown(api.close);
+
+    await tester.pumpWidget(
+      _testApp(
+        ContentDetailPage(
+          api: api,
+          contentType: 'pin',
+          contentId: '34',
+          initialValue: preview,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('结构化作者'), findsWidgets);
+    expect(find.text('来自列表的想法标题'), findsOneWidget);
+    expect(find.textContaining('来自 v2 的想法正文'), findsOneWidget);
+    expect(find.byKey(const Key('detail-author-card')), findsNothing);
+    expect(transport.calls.single.uri.path, '/pins/v2/34');
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('unknown object fallback is semantic and never raw JSON', (

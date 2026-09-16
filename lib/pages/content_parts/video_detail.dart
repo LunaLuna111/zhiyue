@@ -392,60 +392,48 @@ class _ZVideoEngagementBar extends StatelessWidget {
   final ValueChanged<String> onUnavailable;
 
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
-      color: ZhPalette.background,
-      border: Border(top: BorderSide(color: ZhPalette.border)),
-    ),
-    child: SafeArea(
-      top: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-        child: Row(
-          children: [
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.thumb_up_alt_outlined,
-                label: metrics.voteupCount == null
-                    ? '赞同'
-                    : compactCount(metrics.voteupCount!),
-                semanticLabel: '赞同视频',
-                selected: relationship.isUpvoted,
-                onTap: () => onUnavailable('赞同'),
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.chat_bubble_outline_rounded,
-                label: metrics.commentCount == null
-                    ? '评论'
-                    : compactCount(metrics.commentCount!),
-                semanticLabel: '查看视频评论',
-                onTap: onComments,
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.star_border_rounded,
-                label: metrics.favoriteCount == null
-                    ? '收藏'
-                    : compactCount(metrics.favoriteCount!),
-                semanticLabel: '收藏视频',
-                selected: relationship.isFavorited == true,
-                onTap: () => onUnavailable('收藏'),
-              ),
-            ),
-            Expanded(
-              child: _DetailAction(
-                icon: Icons.ios_share_rounded,
-                label: '分享',
-                semanticLabel: '分享视频',
-                onTap: () => onUnavailable('分享'),
-              ),
-            ),
-          ],
+  Widget build(BuildContext context) => ZhLiquidGlassFloatingActionBar(
+    items: [
+      ZhLiquidGlassActionItem(
+        icon: Icon(
+          Icons.thumb_up_alt_outlined,
+          color: relationship.isUpvoted
+              ? const Color(0xFF1677FF)
+              : ZhPalette.ink,
         ),
+        label: metrics.voteupCount == null
+            ? '赞同'
+            : compactCount(metrics.voteupCount!),
+        semanticLabel: '赞同视频',
+        onPressed: () => onUnavailable('赞同'),
       ),
-    ),
+      ZhLiquidGlassActionItem(
+        icon: const Icon(Icons.chat_bubble_outline_rounded),
+        label: metrics.commentCount == null
+            ? '评论'
+            : compactCount(metrics.commentCount!),
+        semanticLabel: '查看视频评论',
+        onPressed: onComments,
+      ),
+      ZhLiquidGlassActionItem(
+        icon: Icon(
+          Icons.star_border_rounded,
+          color: relationship.isFavorited == true
+              ? const Color(0xFF1677FF)
+              : ZhPalette.ink,
+        ),
+        label: metrics.favoriteCount == null
+            ? '收藏'
+            : compactCount(metrics.favoriteCount!),
+        semanticLabel: '收藏视频',
+        onPressed: () => onUnavailable('收藏'),
+      ),
+      ZhLiquidGlassActionItem(
+        icon: const Icon(Icons.ios_share_rounded),
+        label: '分享',
+        semanticLabel: '分享视频',
+        onPressed: () => onUnavailable('分享'),
+      ),
+    ],
   );
 }

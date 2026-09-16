@@ -324,21 +324,19 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           ),
         ),
         const SizedBox(height: ZhSpace.sm),
-        SwitchListTile.adaptive(
+        ZhLiquidGlassSwitchTile(
           key: const ValueKey('webdav-enabled'),
-          contentPadding: EdgeInsets.zero,
-          title: const Text('启用 WebDAV 同步'),
-          subtitle: const Text('关闭后不会执行网络同步，已保存的本机配置不会删除'),
+          title: '启用 WebDAV 同步',
+          subtitle: '关闭后不会执行网络同步，已保存的本机配置不会删除',
           value: _enabled,
           onChanged: _saving
               ? null
               : (value) => setState(() => _enabled = value),
         ),
-        SwitchListTile.adaptive(
+        ZhLiquidGlassSwitchTile(
           key: const ValueKey('webdav-sync-on-startup'),
-          contentPadding: EdgeInsets.zero,
-          title: const Text('启动后自动同步'),
-          subtitle: const Text('后台执行，不阻塞首页首帧；失败后可手动重试'),
+          title: '启动后自动同步',
+          subtitle: '后台执行，不阻塞首页首帧；失败后可手动重试',
           value: _syncOnStartup,
           onChanged: _saving
               ? null

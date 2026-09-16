@@ -87,3 +87,151 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
     );
   }
 }
+
+/// A detail-page action item rendered by the package-owned liquid indicator.
+class ZhLiquidGlassActionItem {
+  const ZhLiquidGlassActionItem({
+    required this.icon,
+    required this.label,
+    required this.semanticLabel,
+    this.activeIcon,
+    this.onPressed,
+  });
+
+  final Widget icon;
+  final Widget? activeIcon;
+  final String label;
+  final String semanticLabel;
+  final VoidCallback? onPressed;
+}
+
+/// A floating, draggable glass action bar for detail pages.
+///
+/// [GlassTabBar.bottom] supplies the un-clipped spring indicator and the
+/// package-owned tap/drag interaction while the caller retains independent
+/// callbacks for each action.
+class ZhLiquidGlassFloatingActionBar extends StatefulWidget {
+  const ZhLiquidGlassFloatingActionBar({
+    super.key,
+    required this.items,
+    this.initialIndex = 0,
+    this.trailing,
+  }) : assert(items.length > 0);
+
+  final List<ZhLiquidGlassActionItem> items;
+  final int initialIndex;
+  final Widget? trailing;
+
+  @override
+  State<ZhLiquidGlassFloatingActionBar> createState() =>
+      _ZhLiquidGlassFloatingActionBarState();
+}
+
+class _ZhLiquidGlassFloatingActionBarState
+    extends State<ZhLiquidGlassFloatingActionBar> {
+  static const LiquidGlassSettings _settings = LiquidGlassSettings(
+    thickness: 34,
+    blur: 3,
+    chromaticAberration: .3,
+    lightIntensity: .65,
+    refractiveIndex: 1.59,
+    saturation: .86,
+    ambientStrength: .92,
+    glassColor: Color(0x5CFFFFFF),
+  );
+
+  static const LiquidGlassSettings _indicatorSettings = LiquidGlassSettings(
+    thickness: 38,
+    blur: 2,
+    chromaticAberration: .28,
+    lightIntensity: .82,
+    refractiveIndex: 1.5,
+    saturation: 1,
+    ambientStrength: .95,
+    glassColor: Color(0x66FFFFFF),
+  );
+
+  late int _selectedIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIndex = _safeIndex(widget.initialIndex, widget.items.length);
+  }
+
+  @override
+  void didUpdateWidget(covariant ZhLiquidGlassFloatingActionBar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.items.length != widget.items.length) {
+      _selectedIndex = _safeIndex(_selectedIndex, widget.items.length);
+    }
+  }
+
+  int _safeIndex(int index, int length) => index.clamp(0, length - 1).toInt();
+
+  void _select(int index) {
+    if (!mounted) return;
+    setState(() => _selectedIndex = index);
+    widget.items[index].onPressed?.call();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final tabs = [
+      for (final item in widget.items)
+        GlassTab(
+          icon: item.icon,
+          activeIcon: item.activeIcon ?? item.icon,
+          label: item.label,
+          semanticLabel: item.semanticLabel,
+        ),
+    ];
+    final glassBar = GlassTabBar.bottom(
+      key: const ValueKey('zh-liquid-glass-detail-action-bar'),
+      tabs: tabs,
+      selectedIndex: _selectedIndex,
+      onTabSelected: _select,
+      barHeight: 64,
+      verticalPadding: 12,
+      horizontalPadding: 0,
+      spacing: 4,
+      tabPadding: const EdgeInsets.symmetric(horizontal: 2),
+      iconLabelSpacing: 3,
+      iconSize: 22,
+      labelFontSize: 11,
+      settings: _settings,
+      indicatorSettings: _indicatorSettings,
+      quality: GlassQuality.premium,
+      backgroundQuality: GlassQuality.standard,
+      indicatorColor: const Color(0x2E000000),
+      indicatorPinchStrength: .28,
+      indicatorExpansion: const EdgeInsets.symmetric(
+        horizontal: 9,
+        vertical: 7,
+      ),
+      maskingQuality: MaskingQuality.high,
+      interactionBehavior: GlassInteractionBehavior.scaleOnly,
+      pressScale: 1.02,
+      glowOpacity: 0,
+      glowBlurRadius: 0,
+      glowSpreadRadius: 0,
+      interactionGlowColor: Colors.transparent,
+      interactionGlowRadius: 0,
+    );
+    if (widget.trailing == null) return glassBar;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        height: 88,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: glassBar),
+            const SizedBox(width: 8),
+            widget.trailing!,
+          ],
+        ),
+      ),
+    );
+  }
+}

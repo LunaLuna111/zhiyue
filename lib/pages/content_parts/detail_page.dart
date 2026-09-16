@@ -102,56 +102,63 @@ class AnswerDetailAppBarTitle extends StatelessWidget {
 }
 
 class ContentDetailAppBarTitle extends StatelessWidget {
-  const ContentDetailAppBarTitle({
-    super.key,
-    required this.title,
-    required this.contentType,
-    this.author,
-    this.date,
-  });
+  const ContentDetailAppBarTitle({super.key, required this.title});
 
   final String title;
-  final String contentType;
-  final String? author;
-  final String? date;
 
   @override
   Widget build(BuildContext context) {
-    final metadata = [
-      if (author case final value? when value.isNotEmpty) value,
-      if (date case final value? when value.isNotEmpty) value,
-    ].join(' · ');
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
+      child: Text(
+        title,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          fontSize: 19,
+          height: 1.2,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+/// The title row shown below the compact author toolbar for articles and pins.
+/// Keeping it in the app bar's bottom slot makes answer/article/pin details
+/// share the same iOS 26 chrome while leaving the title readable at full width.
+class ContentDetailTitleHeader extends StatelessWidget
+    implements PreferredSizeWidget {
+  const ContentDetailTitleHeader({super.key, required this.title});
+
+  final String title;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(80);
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(18, 6, 18, 9),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
             title,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: 17,
-              height: 1.2,
+              fontSize: 19,
+              height: 1.25,
               fontWeight: FontWeight.w800,
             ),
           ),
-          if (metadata.isNotEmpty)
-            Text(
-              metadata,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: ZhPalette.subtleInk,
-                fontSize: 12,
-                height: 1.2,
-              ),
-            ),
-        ],
+        ),
       ),
-    );
-  }
+      const Divider(height: 1, thickness: .7),
+    ],
+  );
 }
 
 class _QuestionInvitePage extends StatelessWidget {
@@ -449,6 +456,8 @@ class _QuestionInviteeRowState extends State<_QuestionInviteeRow> {
 }
 
 enum _DetailMoreAction {
+  invite,
+  write,
   refresh,
   readAloud,
   exportTxt,

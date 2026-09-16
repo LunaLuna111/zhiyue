@@ -218,32 +218,47 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
               maxWidth: 1200,
               desktopGutter: 24,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(6, 8, 12, 5),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
                 child: Row(
                   children: [
-                    IconButton(
-                      tooltip: '返回',
+                    ZhLiquidGlassIconButton(
+                      key: const ValueKey('search-results-back'),
+                      semanticLabel: '返回',
                       onPressed: Navigator.of(context).pop,
                       icon: const Icon(Icons.arrow_back_rounded),
+                      size: 44,
+                      iconSize: 22,
                     ),
-                    Expanded(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          _SearchField(
-                            controller: _query,
-                            focusNode: _queryFocus,
-                            hintText: '搜索知乎内容',
-                            compact: true,
-                            onChanged: _onQueryChanged,
-                            onSubmitted: _submit,
-                          ),
-                          _SearchSuggestionPanel(
-                            controller: _suggestions,
-                            onSelected: _submit,
-                          ),
-                        ],
+                    const Spacer(),
+                    if (_index == 0)
+                      _SearchFilterToggle(
+                        active: _showFilters || _selectedFilters.isNotEmpty,
+                        selectedCount: _selectedFilters.length,
+                        onTap: _toggleFilters,
                       ),
+                  ],
+                ),
+              ),
+            ),
+            ZhResponsiveFrame(
+              maxWidth: 1200,
+              desktopGutter: 24,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _SearchField(
+                      controller: _query,
+                      focusNode: _queryFocus,
+                      hintText: '搜索知乎内容',
+                      compact: true,
+                      onChanged: _onQueryChanged,
+                      onSubmitted: _submit,
+                    ),
+                    _SearchSuggestionPanel(
+                      controller: _suggestions,
+                      onSelected: _submit,
                     ),
                   ],
                 ),
@@ -252,75 +267,28 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             ZhResponsiveFrame(
               maxWidth: 1200,
               desktopGutter: 24,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: SizedBox(
-                      height: 45,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.only(left: 10),
-                        itemCount: officialSearchTabs.length,
-                        itemBuilder: (context, index) {
-                          final tab = officialSearchTabs[index];
-                          final selected = index == _index;
-                          return Semantics(
-                            button: true,
-                            selected: selected,
-                            label: '搜索范围 ${tab.label}',
-                            child: InkWell(
-                              key: ValueKey('search-tab:${tab.type}'),
-                              onTap: () => _switchToTab(index),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      tab.label,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleSmall
-                                          ?.copyWith(
-                                            color: selected
-                                                ? ZhPalette.ink
-                                                : ZhPalette.mutedInk,
-                                            fontWeight: selected
-                                                ? FontWeight.w700
-                                                : FontWeight.w500,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    AnimatedContainer(
-                                      duration: const Duration(
-                                        milliseconds: 160,
-                                      ),
-                                      width: selected ? 20 : 0,
-                                      height: 3,
-                                      decoration: BoxDecoration(
-                                        color: ZhPalette.ink,
-                                        borderRadius: BorderRadius.circular(99),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SizedBox(
+                        height: 48,
+                        child: ZhLiquidGlassSegmentedTabs(
+                          key: const ValueKey('search-scope-glass-tabs'),
+                          labels: [
+                            for (final tab in officialSearchTabs) tab.label,
+                          ],
+                          selectedIndex: _index,
+                          semanticPrefix: '搜索范围 ',
+                          scrollable: true,
+                          onSelected: _switchToTab,
+                          height: 46,
+                        ),
                       ),
                     ),
-                  ),
-                  if (_index == 0)
-                    _SearchFilterToggle(
-                      active: _showFilters || _selectedFilters.isNotEmpty,
-                      selectedCount: _selectedFilters.length,
-                      onTap: _toggleFilters,
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
             AnimatedSize(
@@ -389,56 +357,52 @@ class _SearchFilterToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = selectedCount == 0 ? '筛选' : '筛选 $selectedCount';
     final semanticLabel = selectedCount == 0 ? '筛选' : '筛选，已选择 $selectedCount 项';
     return Semantics(
       button: true,
       toggled: active,
       label: semanticLabel,
-      child: SizedBox(
-        width: selectedCount == 0 ? 82 : 96,
-        height: 45,
-        child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: ZhPalette.background,
-            border: Border(
-              left: BorderSide(color: ZhPalette.border, width: .7),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          ZhLiquidGlassIconButton(
+            key: const ValueKey('search-filter-toggle'),
+            semanticLabel: semanticLabel,
+            onPressed: onTap,
+            icon: Icon(
+              active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
+              size: 22,
+              color: active ? const Color(0xFF1769E0) : ZhPalette.ink,
             ),
+            size: 44,
+            iconSize: 22,
           ),
-          child: Material(
-            color: Colors.transparent,
-            child: InkWell(
-              key: const ValueKey('search-filter-toggle'),
-              onTap: onTap,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        active
-                            ? Icons.filter_alt_rounded
-                            : Icons.filter_alt_outlined,
-                        size: 19,
-                        color: ZhPalette.ink,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        label,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          color: ZhPalette.ink,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+          if (selectedCount > 0)
+            Positioned(
+              top: -3,
+              right: -3,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1769E0),
+                    shape: BoxShape.circle,
                   ),
-                  const SizedBox(height: 7),
-                ],
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: Text(
+                      '$selectedCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-          ),
-        ),
+        ],
       ),
     );
   }

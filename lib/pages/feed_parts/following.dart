@@ -330,51 +330,23 @@ class _FollowingFilterBar extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onSelected;
   @override
-  Widget build(BuildContext context) => Container(
-    height: 68,
-    decoration: const BoxDecoration(
-      border: Border(bottom: BorderSide(color: ZhPalette.border, width: .6)),
-    ),
-    padding: const EdgeInsets.fromLTRB(18, 12, 12, 10),
-    child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      physics: const BouncingScrollPhysics(),
-      itemCount: filters.length,
-      separatorBuilder: (_, _) => const SizedBox(width: 12),
-      itemBuilder: (context, index) {
-        final filter = filters[index];
-        final isSelected = filter == selected;
-        return Semantics(
-          selected: isSelected,
-          button: true,
-          label: '关注页$filter',
-          child: InkWell(
-            borderRadius: BorderRadius.circular(22),
-            onTap: () => onSelected(filter),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 160),
-              curve: Curves.easeOutCubic,
-              padding: const EdgeInsets.symmetric(horizontal: 19),
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? const Color(0xFFF1F2F4)
-                    : const Color(0xFFF7F8F9),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Text(
-                filter,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isSelected ? ZhPalette.ink : ZhPalette.mutedInk,
-                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    ),
-  );
+  Widget build(BuildContext context) {
+    final selectedIndex = filters.indexOf(selected);
+    return SizedBox(
+      height: 68,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(18, 11, 18, 11),
+        child: ZhLiquidGlassSegmentedTabs(
+          key: const ValueKey('following-filter-glass-tabs'),
+          labels: filters,
+          selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+          semanticPrefix: '关注页',
+          onSelected: (index) => onSelected(filters[index]),
+          height: 46,
+        ),
+      ),
+    );
+  }
 }
 
 class _FollowingPersonFallback extends StatelessWidget {

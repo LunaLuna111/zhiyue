@@ -1,6 +1,16 @@
 part of '../content_pages.dart';
 
 extension _ContentDetailActions on _ContentDetailPageState {
+  void _openAuthorPage(String authorId) {
+    final id = authorId.trim();
+    if (id.isEmpty) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => UserProfileDetailPage(api: widget.api, memberId: id),
+      ),
+    );
+  }
+
   void _openQuestionAnswers(String questionId, String questionTitle) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -238,6 +248,12 @@ extension _ContentDetailActions on _ContentDetailPageState {
   }
 
   Future<void> _showDetailActions() async {
+    final object = _document ?? _initialSemantic ?? const <String, dynamic>{};
+    final question = _contentMap(unwrapObject(object)['question']);
+    final questionId = questionIdOf(object).isNotEmpty
+        ? questionIdOf(object)
+        : _expectedQuestionId;
+    final questionTitle = plainText(question?['title'] ?? question?['name']);
     final action = await showModalBottomSheet<_DetailMoreAction>(
       context: context,
       useRootNavigator: true,
@@ -261,6 +277,22 @@ extension _ContentDetailActions on _ContentDetailPageState {
                     style: Theme.of(sheetContext).textTheme.titleLarge,
                   ),
                 ),
+                if (widget.contentType == 'answer' &&
+                    questionId.isNotEmpty) ...[
+                  ListTile(
+                    leading: const Icon(Icons.person_add_alt_1_outlined),
+                    title: const Text('邀请回答'),
+                    onTap: () => Navigator.of(
+                      sheetContext,
+                    ).pop(_DetailMoreAction.invite),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.edit_outlined),
+                    title: const Text('写回答'),
+                    onTap: () =>
+                        Navigator.of(sheetContext).pop(_DetailMoreAction.write),
+                  ),
+                ],
                 ListTile(
                   leading: const Icon(Icons.refresh_rounded),
                   title: const Text('刷新回答'),
@@ -341,6 +373,12 @@ extension _ContentDetailActions on _ContentDetailPageState {
     );
     if (!mounted || action == null) return;
     switch (action) {
+      case _DetailMoreAction.invite:
+        _openInviteAnswer(questionId);
+        break;
+      case _DetailMoreAction.write:
+        await _writeQuestionAnswer(questionId, questionTitle);
+        break;
       case _DetailMoreAction.refresh:
         await _load(forceRefresh: true);
         break;
@@ -596,14 +634,6 @@ extension _ContentDetailActions on _ContentDetailPageState {
       MaterialPageRoute(
         builder: (_) =>
             _QuestionInvitePage(api: widget.api, questionId: questionId),
-      ),
-    );
-  }
-
-  void _openSearch() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
       ),
     );
   }

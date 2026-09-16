@@ -113,33 +113,29 @@ class _DiagnosticLogsPageState extends State<DiagnosticLogsPage> {
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   const Divider(height: 24),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('启用本地日志'),
-                    subtitle: const Text('开启后保留最近 600 条诊断记录'),
+                  ZhLiquidGlassSwitchTile(
+                    title: '启用本地日志',
+                    subtitle: '开启后保留最近 600 条诊断记录',
                     value: session.appLoggingEnabled,
                     onChanged: session.setAppLoggingEnabled,
                   ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('认证状态日志'),
-                    subtitle: const Text('记录登录失效、恢复、保留和清理决定，默认开启'),
+                  ZhLiquidGlassSwitchTile(
+                    title: '认证状态日志',
+                    subtitle: '记录登录失效、恢复、保留和清理决定，默认开启',
                     value: session.authenticationLoggingEnabled,
                     onChanged: session.setAuthenticationLoggingEnabled,
                   ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('网络请求日志'),
-                    subtitle: const Text('记录接口路径、HTTP 状态、业务码和耗时'),
+                  ZhLiquidGlassSwitchTile(
+                    title: '网络请求日志',
+                    subtitle: '记录接口路径、HTTP 状态、业务码和耗时',
                     value: session.networkLoggingEnabled,
                     onChanged: session.appLoggingEnabled
                         ? session.setNetworkLoggingEnabled
                         : null,
                   ),
-                  SwitchListTile.adaptive(
-                    contentPadding: EdgeInsets.zero,
-                    title: const Text('性能日志'),
-                    subtitle: const Text('记录接口耗时，帮助定位掉帧和慢请求'),
+                  ZhLiquidGlassSwitchTile(
+                    title: '性能日志',
+                    subtitle: '记录接口耗时，帮助定位掉帧和慢请求',
                     value: session.performanceLoggingEnabled,
                     onChanged: session.appLoggingEnabled
                         ? session.setPerformanceLoggingEnabled

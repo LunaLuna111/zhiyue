@@ -689,25 +689,26 @@ class _SaltPageState extends State<SaltPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: ReaderShelfTabBar(
-          tabs: _readerShelfTabs,
-          activeIndex: _shelfTabIndex,
-          onChanged: _selectShelfTab,
+      appBar: ZhLiquidGlassAppBar(
+        title: ZhLiquidGlassSegmentedTabs(
+          key: const ValueKey('reader-shelf-glass-tabs'),
+          labels: [for (final tab in _readerShelfTabs) tab.label],
+          selectedIndex: _shelfTabIndex,
+          semanticPrefix: '书架',
+          scrollable: true,
+          onSelected: _selectShelfTab,
+          height: 48,
         ),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 10),
-            child: IconButton(
-              tooltip: '分类',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints.tightFor(width: 42, height: 42),
-              icon: const Icon(Icons.menu_book_outlined, size: 23),
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => SaltStoryCategoryPage(api: widget.api),
-                ),
+          ZhLiquidGlassIconButton(
+            key: const ValueKey('reader-shelf-category'),
+            icon: const Icon(Icons.menu_book_outlined),
+            semanticLabel: '分类',
+            size: 44,
+            iconSize: 23,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SaltStoryCategoryPage(api: widget.api),
               ),
             ),
           ),

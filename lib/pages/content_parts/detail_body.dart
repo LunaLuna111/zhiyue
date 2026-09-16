@@ -48,6 +48,10 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final contentEndLabel = contentEndInfoLabel(object, fallback: dateLabel);
     final sourceNeedsWarning =
         _source.isNotEmpty && (truncated || listCompletenessUnknown);
+    final objectTitle = _explicitContentTitle(object);
+    final bodyTitle = objectTitle.isNotEmpty
+        ? objectTitle
+        : _explicitContentTitle(_initialSemantic);
     final contentList = ListView(
       controller: _scrollController,
       physics: const ClampingScrollPhysics(
@@ -55,6 +59,8 @@ extension _ContentDetailBody on _ContentDetailPageState {
       ),
       padding: const EdgeInsets.all(18),
       children: [
+        if (widget.contentType != 'answer' && bodyTitle.isNotEmpty)
+          ContentDetailBodyTitle(title: bodyTitle),
         if (sourceNeedsWarning)
           Padding(
             padding: const EdgeInsets.only(bottom: 10),

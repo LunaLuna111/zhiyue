@@ -331,6 +331,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
   Widget build(BuildContext context) => ZhLiquidGlassFloatingActionBar(
     key: widget.key,
     items: _showMoreActions ? _moreItems() : _engagementItems(),
+    transitionKey: _showMoreActions ? 'more' : 'engagement',
     trailing: ZhLiquidGlassIconButton(
       key: const ValueKey('content-detail-more-toggle'),
       icon: Icon(

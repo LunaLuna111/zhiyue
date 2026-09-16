@@ -124,40 +124,30 @@ class ContentDetailAppBarTitle extends StatelessWidget {
   }
 }
 
-/// The title row shown below the compact author toolbar for articles and pins.
-/// Keeping it in the app bar's bottom slot makes answer/article/pin details
-/// share the same iOS 26 chrome while leaving the title readable at full width.
-class ContentDetailTitleHeader extends StatelessWidget
-    implements PreferredSizeWidget {
-  const ContentDetailTitleHeader({super.key, required this.title});
+/// The title of an article or idea rendered as the first item in the body.
+///
+/// It deliberately lives inside the detail scroll view instead of the app
+/// bar's bottom slot. That keeps the top chrome limited to the action row and
+/// lets the title scroll away together with the article content.
+class ContentDetailBodyTitle extends StatelessWidget {
+  const ContentDetailBodyTitle({super.key, required this.title});
 
   final String title;
 
   @override
-  Size get preferredSize => const Size.fromHeight(80);
-
-  @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(18, 6, 18, 9),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontSize: 19,
-              height: 1.25,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
+  Widget build(BuildContext context) => Padding(
+    key: const ValueKey('content-detail-body-title'),
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Text(
+      title,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        fontSize: 21,
+        height: 1.25,
+        fontWeight: FontWeight.w800,
       ),
-      const Divider(height: 1, thickness: .7),
-    ],
+    ),
   );
 }
 

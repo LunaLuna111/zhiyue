@@ -702,12 +702,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
 
   @override
   Widget build(BuildContext context) {
-    final pageTitle = switch (widget.contentType) {
-      'answer' => '回答详情',
-      'article' => '文章详情',
-      'pin' => '想法详情',
-      _ => '内容详情',
-    };
     final document = _document;
     final semantic = document ?? _initialSemantic ?? const <String, dynamic>{};
     final question = semantic['question'];
@@ -747,13 +741,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     final authorActionId = authorMemberId.isNotEmpty
         ? authorMemberId
         : authorPageId;
-    // The v2 pin response carries the author and structured body but often
-    // omits the compact feed title. Prefer its explicit title when present,
-    // then recover the title from the identity-verified list projection.
-    final semanticTitle = _explicitContentTitle(semantic);
-    final detailTitle = semanticTitle.isNotEmpty
-        ? semanticTitle
-        : _explicitContentTitle(_initialSemantic);
     final desktop = MediaQuery.sizeOf(context).width >= ZhViewport.wide;
     final body = desktop && document != null
         ? ZhResponsiveTwoPane(
@@ -788,7 +775,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             ],
           )
         : body;
-    final PreferredSizeWidget detailAppBarBottom = showQuestionInAppBar
+    final PreferredSizeWidget? detailAppBarBottom = showQuestionInAppBar
         ? PreferredSize(
             preferredSize: const Size.fromHeight(80),
             child: Column(
@@ -803,9 +790,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
               ],
             ),
           )
-        : ContentDetailTitleHeader(
-            title: detailTitle.isNotEmpty ? detailTitle : pageTitle,
-          );
+        : null;
     return Scaffold(
       extendBody: true,
       appBar: ZhLiquidGlassAppBar(

@@ -116,11 +116,17 @@ class ZhLiquidGlassFloatingActionBar extends StatefulWidget {
     required this.items,
     this.initialIndex = 0,
     this.trailing,
+    this.transitionKey = 'default',
   }) : assert(items.length > 0);
 
   final List<ZhLiquidGlassActionItem> items;
   final int initialIndex;
   final Widget? trailing;
+
+  /// Changes when the bar switches between distinct action sets. The key
+  /// lets the wrapper animate the whole glass surface while the package keeps
+  /// ownership of the indicator's spring interaction inside each surface.
+  final String transitionKey;
 
   @override
   State<ZhLiquidGlassFloatingActionBar> createState() =>
@@ -128,7 +134,8 @@ class ZhLiquidGlassFloatingActionBar extends StatefulWidget {
 }
 
 class _ZhLiquidGlassFloatingActionBarState
-    extends State<ZhLiquidGlassFloatingActionBar> {
+    extends State<ZhLiquidGlassFloatingActionBar>
+    with SingleTickerProviderStateMixin {
   static const LiquidGlassSettings _settings = LiquidGlassSettings(
     thickness: 34,
     blur: 3,
@@ -151,11 +158,17 @@ class _ZhLiquidGlassFloatingActionBarState
     glassColor: Color(0x66FFFFFF),
   );
 
+  late final AnimationController _modeTransitionController;
   late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
+    _modeTransitionController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 360),
+      value: 1,
+    );
     _selectedIndex = _safeIndex(widget.initialIndex, widget.items.length);
   }
 
@@ -165,6 +178,15 @@ class _ZhLiquidGlassFloatingActionBarState
     if (oldWidget.items.length != widget.items.length) {
       _selectedIndex = _safeIndex(_selectedIndex, widget.items.length);
     }
+    if (oldWidget.transitionKey != widget.transitionKey) {
+      _modeTransitionController.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _modeTransitionController.dispose();
+    super.dispose();
   }
 
   int _safeIndex(int index, int length) => index.clamp(0, length - 1).toInt();
@@ -218,15 +240,39 @@ class _ZhLiquidGlassFloatingActionBarState
       interactionGlowColor: Colors.transparent,
       interactionGlowRadius: 0,
     );
-    if (widget.trailing == null) return glassBar;
+    final animatedGlassBar = AnimatedBuilder(
+      animation: _modeTransitionController,
+      child: glassBar,
+      builder: (context, child) {
+        final progress = Curves.easeOutCubic.transform(
+          _modeTransitionController.value,
+        );
+        return Opacity(
+          opacity: .84 + (.16 * progress),
+          child: Transform.scale(
+            scale: .96 + (.04 * progress),
+            alignment: Alignment.center,
+            child: child,
+          ),
+        );
+      },
+    );
+    if (widget.trailing == null) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: animatedGlassBar,
+      );
+    }
+    // Keep the mode toggle outside the animated subtree so its semantic
+    // label and hit target change immediately while the glass tabs crossfade.
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: SizedBox(
         height: 88,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(child: glassBar),
+            Expanded(child: animatedGlassBar),
             const SizedBox(width: 8),
             widget.trailing!,
           ],

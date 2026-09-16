@@ -99,9 +99,29 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                 return SliverAppBar(
                   pinned: true,
                   expandedHeight: 368 + accessibilityExtra,
-                  backgroundColor: const Color(0xFF326A66),
+                  backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   surfaceTintColor: Colors.transparent,
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  shadowColor: Colors.transparent,
+                  leading: Center(
+                    child: SizedBox.square(
+                      dimension: 48,
+                      child: ZhLiquidGlassIconButton(
+                        key: const ValueKey('user-profile-back'),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: ZhPalette.ink,
+                        ),
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        semanticLabel: '返回',
+                        size: 48,
+                        iconSize: 23,
+                      ),
+                    ),
+                  ),
+                  leadingWidth: 64,
                   bottom: PreferredSize(
                     preferredSize: const Size.fromHeight(
                       _UserProfileTabsSurface.height,
@@ -111,20 +131,33 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                   title: AnimatedOpacity(
                     opacity: constraints.scrollOffset >= 218 ? 1 : 0,
                     duration: const Duration(milliseconds: 160),
-                    child: Text(name),
+                    child: Text(
+                      name,
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                   actions: [
-                    if (!isSelf)
-                      IconButton(
-                        key: const ValueKey('user-profile-content-search'),
-                        tooltip: '搜索 TA 的内容',
-                        onPressed: () => _openProfileContentSearch(profile),
-                        icon: const Icon(Icons.search_rounded),
-                      ),
-                    IconButton(
-                      tooltip: '复制主页链接',
-                      onPressed: () => _copyProfileLink(profile),
-                      icon: const Icon(Icons.share_outlined),
+                    ZhLiquidGlassCapsuleActionGroup(
+                      key: const ValueKey('user-profile-actions'),
+                      actions: [
+                        if (!isSelf)
+                          ZhLiquidGlassCapsuleAction(
+                            icon: const Icon(
+                              Icons.search_rounded,
+                              color: ZhPalette.ink,
+                            ),
+                            semanticLabel: '搜索 TA 的内容',
+                            onPressed: () => _openProfileContentSearch(profile),
+                          ),
+                        ZhLiquidGlassCapsuleAction(
+                          icon: const Icon(
+                            Icons.share_outlined,
+                            color: ZhPalette.ink,
+                          ),
+                          semanticLabel: '复制主页链接',
+                          onPressed: () => _copyProfileLink(profile),
+                        ),
+                      ],
                     ),
                     const SizedBox(width: 6),
                   ],

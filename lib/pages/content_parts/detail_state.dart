@@ -7,7 +7,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       <String, Future<Map<String, dynamic>?>>{};
   final _scrollController = ScrollController();
   final _answerOverscrollNotifier = ValueNotifier<double>(0);
-  final _answerAtBottomNotifier = ValueNotifier<bool>(false);
   late final AnimationController _answerOverscrollResetAnimation;
   final _relatedAnswers = <Map<String, dynamic>>[];
   Map<String, dynamic>? _document;
@@ -66,7 +65,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   void dispose() {
     _answerOverscrollResetAnimation.dispose();
     _answerOverscrollNotifier.dispose();
-    _answerAtBottomNotifier.dispose();
     _scrollController
       ..removeListener(_maybeLoadRelatedAnswers)
       ..dispose();
@@ -336,7 +334,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   }
 
   void _maybeLoadRelatedAnswers() {
-    _updateAnswerJumpPosition();
     if (!mounted || widget.contentType != 'answer' || _relatedLoading) return;
     if (!_relatedStarted && _document == null) return;
     // The first page is prefetched when the answer route opens. Only later
@@ -738,6 +735,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         _authorFollowingOverride ??
         documentRelationship?.isFollowingAuthor == true;
     final detailObject = document ?? semantic;
+    final answerToolbar = widget.contentType == 'answer';
     final authorActionId = authorMemberId.isNotEmpty
         ? authorMemberId
         : authorPageId;
@@ -775,37 +773,61 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         actions: [
           ZhLiquidGlassCapsuleActionGroup(
             key: const ValueKey('content-detail-actions'),
-            actions: [
-              ZhLiquidGlassCapsuleAction(
-                icon: _AuthorAvatar(
-                  imageUrl: authorAvatar,
-                  fallback: authorDisplayName.characters.first,
-                  size: 22,
-                ),
-                semanticLabel: '查看$authorDisplayName的个人主页',
-                onPressed: authorPageId.isEmpty
-                    ? null
-                    : () => _openAuthorPage(authorPageId),
-              ),
-              ZhLiquidGlassCapsuleAction(
-                icon: Icon(
-                  authorFollowing ? Icons.check_rounded : Icons.add_rounded,
-                ),
-                semanticLabel: authorFollowing ? '取消关注作者' : '关注作者',
-                onPressed:
-                    authorActionId.isEmpty ||
-                        documentRelationship?.isAuthor == true ||
-                        _authorFollowBusy
-                    ? null
-                    : () =>
-                          _toggleAuthorFollowing(detailObject, authorActionId),
-              ),
-              ZhLiquidGlassCapsuleAction(
-                icon: const Icon(Icons.more_horiz_rounded),
-                semanticLabel: '更多操作',
-                onPressed: _showDetailActions,
-              ),
-            ],
+            actions: answerToolbar
+                ? [
+                    ZhLiquidGlassCapsuleAction(
+                      icon: const Icon(Icons.person_add_alt_1_rounded),
+                      semanticLabel: '邀请回答',
+                      onPressed: questionId.isEmpty
+                          ? null
+                          : () => _openInviteAnswer(questionId),
+                    ),
+                    ZhLiquidGlassCapsuleAction(
+                      icon: const Icon(Icons.copy_rounded),
+                      semanticLabel: '复制回答内容',
+                      onPressed: () => unawaited(_copyCurrentText()),
+                    ),
+                    ZhLiquidGlassCapsuleAction(
+                      icon: const Icon(Icons.more_horiz_rounded),
+                      semanticLabel: '更多操作',
+                      onPressed: _showDetailActions,
+                    ),
+                  ]
+                : [
+                    ZhLiquidGlassCapsuleAction(
+                      icon: _AuthorAvatar(
+                        imageUrl: authorAvatar,
+                        fallback: authorDisplayName.characters.first,
+                        size: 22,
+                      ),
+                      semanticLabel: '查看$authorDisplayName的个人主页',
+                      onPressed: authorPageId.isEmpty
+                          ? null
+                          : () => _openAuthorPage(authorPageId),
+                    ),
+                    ZhLiquidGlassCapsuleAction(
+                      icon: Icon(
+                        authorFollowing
+                            ? Icons.check_rounded
+                            : Icons.add_rounded,
+                      ),
+                      semanticLabel: authorFollowing ? '取消关注作者' : '关注作者',
+                      onPressed:
+                          authorActionId.isEmpty ||
+                              documentRelationship?.isAuthor == true ||
+                              _authorFollowBusy
+                          ? null
+                          : () => _toggleAuthorFollowing(
+                              detailObject,
+                              authorActionId,
+                            ),
+                    ),
+                    ZhLiquidGlassCapsuleAction(
+                      icon: const Icon(Icons.more_horiz_rounded),
+                      semanticLabel: '更多操作',
+                      onPressed: _showDetailActions,
+                    ),
+                  ],
           ),
         ],
         bottom: detailAppBarBottom,
@@ -834,25 +856,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                   maxWidth: 920,
                   child: _body(topInset: topInset),
                 );
-          if (widget.contentType != 'answer' || document == null) return body;
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              body,
-              Positioned(
-                right: 14,
-                bottom: 104,
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _answerAtBottomNotifier,
-                  builder: (context, atBottom, _) => _AnswerJumpButton(
-                    atBottom: atBottom,
-                    onJumpToTop: _jumpAnswerToTop,
-                    onJumpToBottom: _jumpAnswerToBottom,
-                  ),
-                ),
-              ),
-            ],
-          );
+          return body;
         },
       ),
       bottomNavigationBar: document == null

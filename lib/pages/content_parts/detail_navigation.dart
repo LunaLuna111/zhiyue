@@ -1,16 +1,6 @@
 part of '../content_pages.dart';
 
 extension _ContentDetailNavigation on _ContentDetailPageState {
-  void _updateAnswerJumpPosition() {
-    if (!_scrollController.hasClients) return;
-    final position = _scrollController.position;
-    final atBottom =
-        position.maxScrollExtent <= 1 || position.extentAfter <= 24;
-    if (_answerAtBottomNotifier.value != atBottom) {
-      _answerAtBottomNotifier.value = atBottom;
-    }
-  }
-
   void _jumpAnswerToBottom() {
     if (!_scrollController.hasClients) return;
     unawaited(_animateAnswerJump(_scrollController.position.maxScrollExtent));
@@ -34,7 +24,6 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
       // The route can be disposed while the animated jump is in flight.
     } finally {
       _answerJumpInProgress = false;
-      if (mounted) _updateAnswerJumpPosition();
     }
   }
 

@@ -280,13 +280,6 @@ extension _ContentDetailActions on _ContentDetailPageState {
                 if (widget.contentType == 'answer' &&
                     questionId.isNotEmpty) ...[
                   ListTile(
-                    leading: const Icon(Icons.person_add_alt_1_outlined),
-                    title: const Text('邀请回答'),
-                    onTap: () => Navigator.of(
-                      sheetContext,
-                    ).pop(_DetailMoreAction.invite),
-                  ),
-                  ListTile(
                     leading: const Icon(Icons.edit_outlined),
                     title: const Text('写回答'),
                     onTap: () =>
@@ -352,12 +345,13 @@ extension _ContentDetailActions on _ContentDetailPageState {
                       },
                     ),
                   ),
-                ListTile(
-                  leading: const Icon(Icons.copy_all_outlined),
-                  title: const Text('复制全文'),
-                  onTap: () =>
-                      Navigator.of(sheetContext).pop(_DetailMoreAction.copy),
-                ),
+                if (widget.contentType != 'answer')
+                  ListTile(
+                    leading: const Icon(Icons.copy_all_outlined),
+                    title: const Text('复制全文'),
+                    onTap: () =>
+                        Navigator.of(sheetContext).pop(_DetailMoreAction.copy),
+                  ),
                 ListTile(
                   leading: const Icon(Icons.delete_sweep_outlined),
                   title: const Text('清除本条缓存'),
@@ -373,9 +367,6 @@ extension _ContentDetailActions on _ContentDetailPageState {
     );
     if (!mounted || action == null) return;
     switch (action) {
-      case _DetailMoreAction.invite:
-        _openInviteAnswer(questionId);
-        break;
       case _DetailMoreAction.write:
         await _writeQuestionAnswer(questionId, questionTitle);
         break;

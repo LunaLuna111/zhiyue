@@ -23,23 +23,28 @@ class _UserProfileTabSpec {
 class _UserProfileTabsSurface extends StatelessWidget {
   const _UserProfileTabsSurface(this.tabs);
   final List<_UserProfileTabSpec> tabs;
-  static const height = 52.0;
+  static const height = 64.0;
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: height,
-    child: DecoratedBox(
-      key: const ValueKey('user-profile-tabs-surface'),
-      decoration: const BoxDecoration(
-        color: ZhPalette.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  Widget build(BuildContext context) {
+    final controller = DefaultTabController.of(context);
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => SizedBox(
+        key: const ValueKey('user-profile-tabs-surface'),
+        height: height,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+          child: ZhLiquidGlassSegmentedTabs(
+            labels: [for (final tab in tabs) tab.label],
+            selectedIndex: controller.index,
+            onSelected: (index) => controller.animateTo(index),
+            scrollable: tabs.length > 4,
+            height: 48,
+          ),
+        ),
       ),
-      child: TabBar(
-        isScrollable: tabs.length > 4,
-        dividerColor: Colors.transparent,
-        tabs: [for (final tab in tabs) Tab(text: tab.label)],
-      ),
-    ),
-  );
+    );
+  }
 }
 
 class _RemoteUserProfileTab extends StatefulWidget {

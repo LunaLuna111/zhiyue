@@ -744,7 +744,7 @@ void registerDetailCommentTests() {
     expect(find.bySemanticsLabel('赞同 2926'), findsOneWidget);
   });
 
-  testWidgets('answer author follow control writes and updates in place', (
+  testWidgets('answer top actions move invite and copy out of the more sheet', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(360, 800));
@@ -795,10 +795,27 @@ void registerDetailCommentTests() {
     await tester.pumpAndSettle();
 
     expect(find.text('可关注作者'), findsOneWidget);
-    expect(find.bySemanticsLabel('查看可关注作者的个人主页'), findsOneWidget);
-    final followFinder = find.bySemanticsLabel('关注作者');
-    expect(followFinder, findsOneWidget);
+    expect(find.bySemanticsLabel('邀请回答'), findsOneWidget);
+    expect(find.bySemanticsLabel('复制回答内容'), findsOneWidget);
+    expect(find.byIcon(Icons.person_add_alt_1_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.copy_rounded), findsOneWidget);
+    expect(find.byKey(const ValueKey('answer-jump-button')), findsNothing);
+    expect(find.bySemanticsLabel('查看可关注作者的个人主页'), findsNothing);
     expect(tester.takeException(), isNull);
+
+    await tester.tap(find.bySemanticsLabel('更多操作'));
+    await tester.pumpAndSettle();
+    expect(find.text('邀请回答'), findsNothing);
+    expect(find.text('复制全文'), findsNothing);
+    expect(find.text('写回答'), findsOneWidget);
+    await tester.tapAt(const Offset(8, 8));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('更多功能'));
+    await tester.pump();
+    final followFinder = find.bySemanticsLabel('关注作者');
+    expect(find.bySemanticsLabel('查看可关注作者的个人主页'), findsOneWidget);
+    expect(followFinder, findsOneWidget);
     await tester.tap(followFinder);
     await tester.pumpAndSettle();
 

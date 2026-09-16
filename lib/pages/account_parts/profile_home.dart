@@ -188,45 +188,71 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                 return SliverAppBar(
                   pinned: true,
                   expandedHeight: 338 + accessibilityExtra,
-                  backgroundColor: const Color(0xFF326A66),
+                  backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   surfaceTintColor: Colors.transparent,
-                  bottom: const PreferredSize(
-                    preferredSize: Size.fromHeight(_ProfileTabsSurface.height),
-                    child: _ProfileTabsSurface(),
+                  elevation: 0,
+                  scrolledUnderElevation: 0,
+                  shadowColor: Colors.transparent,
+                  leadingWidth: 64,
+                  bottom: PreferredSize(
+                    preferredSize: const Size.fromHeight(
+                      _ProfileTabsSurface.height,
+                    ),
+                    child: const _ProfileTabsSurface(),
                   ),
                   title: AnimatedOpacity(
                     opacity: constraints.scrollOffset >= 190 ? 1 : 0,
                     duration: const Duration(milliseconds: 160),
-                    child: Text(name),
+                    child: Text(
+                      name,
+                      style: const TextStyle(color: Colors.white),
+                    ),
                   ),
                   leading: widget.onMenuPressed == null
                       ? null
-                      : IconButton(
-                          tooltip: '打开侧边栏',
-                          onPressed: widget.onMenuPressed,
-                          style: IconButton.styleFrom(
-                            splashFactory: NoSplash.splashFactory,
-                            overlayColor: Colors.transparent,
-                            enableFeedback: false,
+                      : Center(
+                          child: SizedBox.square(
+                            dimension: 48,
+                            child: ZhLiquidGlassIconButton(
+                              key: const ValueKey('account-profile-menu'),
+                              semanticLabel: '打开侧边栏',
+                              onPressed: widget.onMenuPressed,
+                              icon: const Icon(
+                                Icons.menu_rounded,
+                                color: ZhPalette.ink,
+                              ),
+                              size: 48,
+                              iconSize: 23,
+                            ),
                           ),
-                          icon: const Icon(Icons.menu_rounded),
                         ),
                   actions: [
-                    IconButton(
-                      tooltip: '查找用户',
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => UserPage(api: widget.api),
+                    ZhLiquidGlassCapsuleActionGroup(
+                      key: const ValueKey('account-profile-actions'),
+                      actions: [
+                        ZhLiquidGlassCapsuleAction(
+                          icon: const Icon(
+                            Icons.search_rounded,
+                            color: ZhPalette.ink,
+                          ),
+                          semanticLabel: '查找用户',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => UserPage(api: widget.api),
+                            ),
+                          ),
                         ),
-                      ),
-                      icon: const Icon(Icons.search_rounded),
-                    ),
-                    IconButton(
-                      tooltip: '复制主页链接',
-                      onPressed: () =>
-                          _copyProfileLink(context, profile, memberId),
-                      icon: const Icon(Icons.share_outlined),
+                        ZhLiquidGlassCapsuleAction(
+                          icon: const Icon(
+                            Icons.share_outlined,
+                            color: ZhPalette.ink,
+                          ),
+                          semanticLabel: '复制主页链接',
+                          onPressed: () =>
+                              _copyProfileLink(context, profile, memberId),
+                        ),
+                      ],
                     ),
                     const SizedBox(width: 6),
                   ],
@@ -292,26 +318,26 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
 class _ProfileTabsSurface extends StatelessWidget {
   const _ProfileTabsSurface();
 
-  static const height = 52.0;
+  static const height = 64.0;
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
-    height: height,
-    child: DecoratedBox(
-      key: ValueKey('profile-tabs-surface'),
-      decoration: BoxDecoration(
-        color: ZhPalette.background,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+  Widget build(BuildContext context) {
+    final controller = DefaultTabController.of(context);
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) => SizedBox(
+        key: const ValueKey('profile-tabs-surface'),
+        height: height,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+          child: ZhLiquidGlassSegmentedTabs(
+            labels: const ['灵感', '创作', '动态', '赞同'],
+            selectedIndex: controller.index,
+            onSelected: (index) => controller.animateTo(index),
+            height: 48,
+          ),
+        ),
       ),
-      child: TabBar(
-        dividerColor: Colors.transparent,
-        tabs: [
-          Tab(text: '灵感'),
-          Tab(text: '创作'),
-          Tab(text: '动态'),
-          Tab(text: '赞同'),
-        ],
-      ),
-    ),
-  );
+    );
+  }
 }

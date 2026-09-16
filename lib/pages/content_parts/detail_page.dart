@@ -446,7 +446,6 @@ class _QuestionInviteeRowState extends State<_QuestionInviteeRow> {
 }
 
 enum _DetailMoreAction {
-  invite,
   write,
   refresh,
   readAloud,

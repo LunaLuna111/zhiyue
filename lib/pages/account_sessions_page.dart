@@ -170,7 +170,7 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: ZhTopBar(
       title: const Text('账号与多端登录'),
       actions: [
         IconButton(

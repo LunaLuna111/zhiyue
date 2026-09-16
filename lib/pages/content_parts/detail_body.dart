@@ -1,12 +1,7 @@
 part of '../content_pages.dart';
 
 extension _ContentDetailBody on _ContentDetailPageState {
-  Widget _body({
-    double topInset = 0,
-    String questionTitle = '',
-    String questionId = '',
-    ContentMetrics questionMetrics = const ContentMetrics(),
-  }) {
+  Widget _body({double topInset = 0}) {
     if (_loading && _document == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -58,8 +53,6 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final bodyTitle = objectTitle.isNotEmpty
         ? objectTitle
         : _explicitContentTitle(_initialSemantic);
-    final showQuestionHeader =
-        widget.contentType == 'answer' && questionId.isNotEmpty;
     final contentChildren = <Widget>[
       if (widget.contentType != 'answer' && bodyTitle.isNotEmpty)
         ContentDetailBodyTitle(title: bodyTitle),
@@ -189,41 +182,14 @@ extension _ContentDetailBody on _ContentDetailPageState {
         ),
       const SizedBox(height: ZhSpace.sm),
     ];
-    final scrollView = CustomScrollView(
+    final contentList = ListView(
       controller: _scrollController,
       physics: const ClampingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
-      slivers: [
-        if (showQuestionHeader)
-          SliverPersistentHeader(
-            floating: true,
-            delegate: AnswerQuestionFloatingHeaderDelegate(
-              title: questionTitle,
-              questionId: questionId,
-              metrics: questionMetrics,
-              onTap: () => _openQuestionAnswers(questionId, questionTitle),
-            ),
-          ),
-        SliverPadding(
-          padding: EdgeInsets.fromLTRB(
-            18,
-            showQuestionHeader ? 18 : 18 + topInset,
-            18,
-            18,
-          ),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(contentChildren),
-          ),
-        ),
-      ],
+      padding: EdgeInsets.fromLTRB(18, 18 + topInset, 18, 18),
+      children: contentChildren,
     );
-    final contentList = showQuestionHeader
-        ? Padding(
-            padding: EdgeInsets.only(top: topInset),
-            child: scrollView,
-          )
-        : scrollView;
     return ValueListenableBuilder<double>(
       valueListenable: _answerOverscrollNotifier,
       builder: (context, overscroll, _) {

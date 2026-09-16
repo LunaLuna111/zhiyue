@@ -141,17 +141,14 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
     }
     if (profile == null) {
       return Scaffold(
-        appBar: AppBar(
+        appBar: ZhTopBar(
           leading: widget.onMenuPressed == null
               ? null
-              : IconButton(
-                  tooltip: '打开侧边栏',
+              : ZhLiquidGlassIconButton(
+                  size: 46,
+                  iconSize: 24,
+                  semanticLabel: '打开侧边栏',
                   onPressed: widget.onMenuPressed,
-                  style: IconButton.styleFrom(
-                    splashFactory: NoSplash.splashFactory,
-                    overlayColor: Colors.transparent,
-                    enableFeedback: false,
-                  ),
                   icon: const Icon(Icons.menu_rounded),
                 ),
           title: const Text('我的主页'),
@@ -191,12 +188,6 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   surfaceTintColor: Colors.transparent,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(30),
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
                   elevation: 0,
                   scrolledUnderElevation: 0,
                   shadowColor: Colors.transparent,

@@ -320,7 +320,10 @@ class _FeedPageState extends State<FeedPage>
         child: SaltStoryHome(
           key: const ValueKey('home-story-feed'),
           api: widget.api,
-          topInset: contentTopInset,
+          // The story feed is covered by the floating channel chrome. Reserve
+          // its full height so billboard headings and first cards begin below
+          // the tabs instead of sliding underneath them.
+          topInset: contentTopInset + ZhLiquidGlassTopNavigation.barHeight,
           initialResponse: _preloadPool.warm(channel),
           isRequestScopeCurrent: isRequestScopeCurrent,
           refreshSignal: refreshSignal,

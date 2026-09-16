@@ -148,7 +148,7 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
       );
     }
     return Scaffold(
-      appBar: AppBar(
+      appBar: ZhTopBar(
         title: Text(readerTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(

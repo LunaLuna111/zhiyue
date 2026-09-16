@@ -143,7 +143,7 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
     final release = check?.release;
     final progress = _total <= 0 ? 0.0 : (_received / _total).clamp(0.0, 1.0);
     return Scaffold(
-      appBar: AppBar(title: const Text('软件更新')),
+      appBar: ZhTopBar(title: const Text('软件更新')),
       body: ZhPageWidth(
         maxWidth: 680,
         child: ListView(

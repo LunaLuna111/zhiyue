@@ -123,7 +123,7 @@ class _SessionPageState extends State<SessionPage> {
   Widget build(BuildContext context) {
     final supportsApiSession = widget.session.supportsPersistentApiSession;
     return Scaffold(
-      appBar: AppBar(title: const Text('账号')),
+      appBar: ZhTopBar(title: const Text('账号')),
       body: ZhPageWidth(
         child: ListView(
           padding: const EdgeInsets.all(ZhSpace.md),

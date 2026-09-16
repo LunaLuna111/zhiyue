@@ -322,22 +322,19 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     return Scaffold(
       key: widget.embedded ? const ValueKey('embedded-native-login') : null,
       appBar: widget.embedded
-          ? AppBar(
+          ? ZhTopBar(
               leading: widget.onMenuPressed == null
                   ? null
-                  : IconButton(
-                      tooltip: '打开侧边栏',
+                  : ZhLiquidGlassIconButton(
+                      size: 46,
+                      iconSize: 24,
+                      semanticLabel: '打开侧边栏',
                       onPressed: widget.onMenuPressed,
-                      style: IconButton.styleFrom(
-                        splashFactory: NoSplash.splashFactory,
-                        overlayColor: Colors.transparent,
-                        enableFeedback: false,
-                      ),
                       icon: const Icon(Icons.menu_rounded),
                     ),
               title: const Text('登录'),
             )
-          : AppBar(toolbarHeight: 46),
+          : const ZhTopBar(toolbarHeight: 46, automaticallyImplyLeading: false),
       body: SafeArea(
         top: false,
         child: ZhPageWidth(

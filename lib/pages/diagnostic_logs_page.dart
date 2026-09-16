@@ -66,7 +66,7 @@ class _DiagnosticLogsPageState extends State<DiagnosticLogsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: ZhTopBar(
       title: const Text('诊断日志'),
       actions: [
         IconButton(

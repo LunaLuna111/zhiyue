@@ -452,7 +452,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
   Widget build(BuildContext context) {
     if (!_supportsEmbeddedWebView) {
       return Scaffold(
-        appBar: AppBar(title: Text(widget.title)),
+        appBar: ZhTopBar(title: Text(widget.title)),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 560),
@@ -492,10 +492,12 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
         if (!didPop && _canGoBack) controller.goBack();
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
+        appBar: ZhTopBar(
+          leading: ZhLiquidGlassIconButton(
+            size: 46,
+            iconSize: 24,
+            semanticLabel: '返回',
             onPressed: _handleBack,
-            tooltip: '返回',
             icon: const Icon(Icons.arrow_back_rounded),
           ),
           title: Text(
@@ -504,9 +506,11 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
             overflow: TextOverflow.ellipsis,
           ),
           actions: [
-            IconButton(
+            ZhLiquidGlassIconButton(
+              size: 44,
+              iconSize: 22,
+              semanticLabel: '刷新',
               onPressed: _preparing ? null : _prepareCookiesAndLoad,
-              tooltip: '刷新',
               icon: const Icon(Icons.refresh_rounded),
             ),
           ],
@@ -693,7 +697,7 @@ class _HtmlReaderPageState extends State<HtmlReaderPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: ZhTopBar(title: Text(widget.title)),
       body: !_supportsEmbeddedWebView
           ? SingleChildScrollView(
               padding: const EdgeInsets.all(24),

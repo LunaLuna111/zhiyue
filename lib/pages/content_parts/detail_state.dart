@@ -711,6 +711,8 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     final questionTitle = plainText(
       questionMap['title'] ?? questionMap['name'],
     );
+    final showQuestionInAppBar =
+        widget.contentType == 'answer' && questionId.isNotEmpty;
     final semanticObject = unwrapObject(semantic);
     final author =
         stringMap(semanticObject['author']) ?? const <String, dynamic>{};
@@ -738,10 +740,25 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         ? authorMemberId
         : authorPageId;
     final desktop = MediaQuery.sizeOf(context).width >= ZhViewport.wide;
+    final PreferredSizeWidget? detailAppBarBottom = showQuestionInAppBar
+        ? PreferredSize(
+            preferredSize: const Size.fromHeight(80),
+            child: Column(
+              children: [
+                AnswerDetailAppBarTitle(
+                  title: questionTitle,
+                  questionId: questionId,
+                  metrics: ContentMetrics.from(semantic),
+                  onTap: () => _openQuestionAnswers(questionId, questionTitle),
+                ),
+              ],
+            ),
+          )
+        : null;
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
-      appBar: ZhLiquidGlassAppBar(
+      appBar: ZhTopBar(
         toolbarHeight: 56,
         leading: ZhLiquidGlassIconButton(
           key: const ValueKey('content-detail-back'),
@@ -813,6 +830,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                   ],
           ),
         ],
+        bottom: detailAppBarBottom,
         title: ContentDetailAppBarTitle(title: authorDisplayName),
       ),
       body: Builder(
@@ -825,12 +843,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           final topInset = MediaQuery.paddingOf(bodyContext).top;
           final body = desktop && document != null
               ? ZhResponsiveTwoPane(
-                  primary: _body(
-                    topInset: topInset,
-                    questionTitle: questionTitle,
-                    questionId: questionId,
-                    questionMetrics: ContentMetrics.from(semantic),
-                  ),
+                  primary: _body(topInset: topInset),
                   secondary: _DetailDesktopRail(
                     contentType: widget.contentType,
                     metrics: documentMetrics!,
@@ -841,12 +854,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                 )
               : ZhResponsiveFrame(
                   maxWidth: 920,
-                  child: _body(
-                    topInset: topInset,
-                    questionTitle: questionTitle,
-                    questionId: questionId,
-                    questionMetrics: ContentMetrics.from(semantic),
-                  ),
+                  child: _body(topInset: topInset),
                 );
           return body;
         },

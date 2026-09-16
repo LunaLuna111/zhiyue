@@ -318,8 +318,7 @@ class _ProfileContentSearchPageState extends State<_ProfileContentSearchPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     resizeToAvoidBottomInset: false,
-    appBar: AppBar(
-      titleSpacing: 0,
+    appBar: ZhTopBar(
       title: Container(
         height: 42,
         margin: const EdgeInsets.only(right: 12),
@@ -451,7 +450,7 @@ class _ResolvedUserListPageState extends State<ResolvedUserListPage> {
     }
     final state = _state;
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      appBar: ZhTopBar(title: Text(widget.title)),
       body: ZhResponsiveFrame(
         maxWidth: 1040,
         desktopGutter: 24,
@@ -622,8 +621,8 @@ class _UserPageState extends State<UserPage> {
     ];
     return Scaffold(
       appBar: widget.initialMemberId.isEmpty
-          ? AppBar(title: const Text('用户'))
-          : AppBar(title: const Text('用户资料')),
+          ? ZhTopBar(title: const Text('用户'))
+          : ZhTopBar(title: const Text('用户资料')),
       body: ZhResponsiveFrame(
         maxWidth: 1040,
         desktopGutter: 24,

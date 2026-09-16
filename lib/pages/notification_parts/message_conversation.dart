@@ -163,8 +163,7 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      titleSpacing: 4,
+    appBar: ZhTopBar(
       title: Row(
         children: [
           _NotificationAvatar(url: widget.avatarUrl, size: 36),

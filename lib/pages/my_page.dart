@@ -290,8 +290,10 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final topInset = ZhTopBar.bodyTopInset(context, toolbarHeight: 72);
     return Scaffold(
-      appBar: ZhLiquidGlassAppBar(
+      extendBodyBehindAppBar: true,
+      appBar: ZhTopBar(
         toolbarHeight: 72,
         leading: ZhLiquidGlassIconButton(
           key: const ValueKey('settings-back'),
@@ -310,9 +312,9 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
         child: AnimatedBuilder(
           animation: session,
           builder: (context, _) => ListView(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               ZhSpace.md,
-              ZhSpace.xs,
+              topInset + ZhSpace.xs,
               ZhSpace.md,
               ZhSpace.xl,
             ),

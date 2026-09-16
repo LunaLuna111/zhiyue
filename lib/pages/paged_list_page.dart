@@ -199,7 +199,7 @@ class _PagedListPageState extends State<PagedListPage> {
       // whole bottom area an opaque sheet. The question-answer actions use
       // this path and paint their own capsule/shadow.
       extendBody: widget.bottomNavigationBar != null,
-      appBar: AppBar(
+      appBar: ZhTopBar(
         title: widget.titleWidget ?? Text(widget.title),
         centerTitle: widget.centerTitle,
         toolbarHeight: widget.toolbarHeight,

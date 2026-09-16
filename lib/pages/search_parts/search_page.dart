@@ -475,6 +475,7 @@ class _SearchPageState extends State<SearchPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final topInset = ZhTopBar.bodyTopInset(context, toolbarHeight: 72);
     final queryEmpty = _query.text.trim().isEmpty;
     final historyVisible =
         queryEmpty && widget.api.session.rememberSearchHistory;
@@ -486,7 +487,8 @@ class _SearchPageState extends State<SearchPage>
       // Let the keyboard cover the lower history area instead of repeatedly
       // relaying out the entire search surface during the IME animation.
       resizeToAvoidBottomInset: false,
-      appBar: ZhLiquidGlassAppBar(
+      extendBodyBehindAppBar: true,
+      appBar: ZhTopBar(
         title: const Text(
           '搜索',
           style: TextStyle(
@@ -514,9 +516,9 @@ class _SearchPageState extends State<SearchPage>
         child: AnimatedBuilder(
           animation: widget.api.session,
           builder: (context, _) => ListView(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               ZhSpace.md,
-              ZhSpace.xs,
+              topInset + ZhSpace.xs,
               ZhSpace.md,
               112,
             ),

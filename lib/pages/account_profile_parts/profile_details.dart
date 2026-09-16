@@ -143,10 +143,12 @@ class AccountProfileDetailsPage extends StatelessWidget {
     );
     return Scaffold(
       backgroundColor: ZhPalette.canvas,
-      appBar: AppBar(
+      appBar: ZhTopBar(
         title: const Text('个人资料'),
-        leading: IconButton(
-          tooltip: '关闭',
+        leading: ZhLiquidGlassIconButton(
+          size: 46,
+          iconSize: 24,
+          semanticLabel: '关闭',
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close_rounded),
         ),

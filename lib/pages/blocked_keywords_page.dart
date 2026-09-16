@@ -140,7 +140,7 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('屏蔽关键词')),
+    appBar: ZhTopBar(title: const Text('屏蔽关键词')),
     body: SafeArea(child: _body()),
   );
 

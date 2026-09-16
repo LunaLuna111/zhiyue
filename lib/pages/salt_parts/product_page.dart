@@ -586,47 +586,56 @@ class _SaltProductPageState extends State<SaltProductPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
-      automaticallyImplyLeading: false,
-      toolbarHeight: 56,
-      leadingWidth: 56,
-      leading: IconButton(
-        onPressed: () => Navigator.of(context).maybePop(),
-        tooltip: '返回',
-        icon: const Icon(Icons.arrow_back_rounded),
-      ),
-      titleSpacing: 0,
-      title: Text(_displayTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-      actions: [
-        SizedBox(
-          width: 56,
-          child: IconButton(
-            onPressed: _showMoreMenu,
-            tooltip: '更多',
-            padding: EdgeInsets.zero,
-            icon: const Icon(Icons.more_vert_rounded),
-          ),
+  Widget build(BuildContext context) {
+    final topInset = ZhTopBar.bodyTopInset(context, toolbarHeight: 72);
+    return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: ZhTopBar(
+        toolbarHeight: 72,
+        leading: ZhLiquidGlassIconButton(
+          key: const ValueKey('salt-product-back'),
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.of(context).maybePop(),
+          semanticLabel: '返回',
+          size: 48,
+          iconSize: 24,
         ),
-      ],
-    ),
-    body: ZhResponsiveFrame(
-      maxWidth: 1120,
-      desktopGutter: 24,
-      child: RefreshIndicator(
-        onRefresh: () => _loadCatalog(forceRefresh: true),
-        child: _catalogBody(),
+        title: Text(
+          _displayTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          ZhLiquidGlassIconButton(
+            key: const ValueKey('salt-product-more'),
+            onPressed: _showMoreMenu,
+            semanticLabel: '更多',
+            icon: const Icon(Icons.more_vert_rounded),
+            size: 48,
+            iconSize: 24,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-    ),
-  );
+      body: ZhResponsiveFrame(
+        maxWidth: 1120,
+        desktopGutter: 24,
+        child: RefreshIndicator(
+          onRefresh: () => _loadCatalog(forceRefresh: true),
+          child: _catalogBody(topInset: topInset),
+        ),
+      ),
+    );
+  }
 
-  Widget _catalogBody() {
+  Widget _catalogBody({double topInset = 0}) {
     final catalog = _catalog;
     final fallbackHeader = _saltProductHeader(context, <String, dynamic>{
       'parent': _fallbackParent,
     });
     if (catalog == null && _catalogLoading) {
       return ListView(
+        padding: EdgeInsets.only(top: topInset),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           ...?fallbackHeader == null ? null : <Widget>[fallbackHeader],
@@ -639,6 +648,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
     }
     if (catalog == null && _catalogError != null) {
       return ListView(
+        padding: EdgeInsets.only(top: topInset),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           ...?fallbackHeader == null ? null : <Widget>[fallbackHeader],
@@ -677,6 +687,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
         ? null
         : _saltProductHeader(context, _effectiveRoot(catalog.root));
     return ListView.builder(
+      padding: EdgeInsets.only(top: topInset),
       physics: const AlwaysScrollableScrollPhysics(),
       itemCount: rows.length + (header == null ? 0 : 1) + 2,
       itemBuilder: (context, index) {

@@ -349,9 +349,11 @@ class _AccountProfileEditPageState extends State<AccountProfileEditPage> {
     );
     final cover = plainText(widget.profile['cover_url']);
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: '关闭',
+      appBar: ZhTopBar(
+        leading: ZhLiquidGlassIconButton(
+          size: 46,
+          iconSize: 24,
+          semanticLabel: '关闭',
           onPressed: _saving || _uploadingImage != null
               ? null
               : () => Navigator.of(context).pop(false),
@@ -359,11 +361,11 @@ class _AccountProfileEditPageState extends State<AccountProfileEditPage> {
         ),
         title: const Text('编辑个人资料'),
         actions: [
-          TextButton(
+          ZhLiquidGlassLabelButton(
             onPressed: _saving || _uploadingImage != null ? null : _save,
-            child: Text(_saving ? '保存中' : '保存'),
+            label: _saving ? '保存中' : '保存',
+            prominent: true,
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: ListView(

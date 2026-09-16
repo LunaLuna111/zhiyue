@@ -182,7 +182,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('WebDAV 同步')),
+      appBar: ZhTopBar(title: const Text('WebDAV 同步')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ZhPageWidth(

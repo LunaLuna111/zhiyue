@@ -41,7 +41,7 @@ class ObjectInspectorPage extends StatelessWidget {
       if (date.isNotEmpty) (Icons.schedule_rounded, date),
     ];
     return Scaffold(
-      appBar: AppBar(title: Text(title.isEmpty ? '内容详情' : title)),
+      appBar: ZhTopBar(title: Text(title.isEmpty ? '内容详情' : title)),
       body: ZhResponsiveFrame(
         maxWidth: 1120,
         desktopGutter: 24,

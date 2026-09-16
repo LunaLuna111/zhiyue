@@ -29,32 +29,33 @@ class _SaltProductCatalogControls extends StatelessWidget {
           children: [
             Expanded(
               flex: 6,
-              child: ZhPrimaryButton(
+              child: ZhLiquidGlassLabelButton(
                 expand: true,
                 onPressed: canRead ? onRead : null,
                 icon: continueReading
                     ? Icons.menu_book_rounded
                     : Icons.play_arrow_rounded,
                 label: continueReading ? '继续阅读' : '开始阅读',
+                prominent: true,
               ),
             ),
             const SizedBox(width: 10),
             Expanded(
               flex: 4,
-              child: ZhOutlineButton(
+              child: ZhLiquidGlassLabelButton(
                 expand: true,
                 onPressed: onAddToBookshelf,
+                icon: bookshelfSaving
+                    ? null
+                    : addedToBookshelf
+                    ? Icons.bookmark_added_rounded
+                    : Icons.bookmark_add_outlined,
                 leading: bookshelfSaving
                     ? const SizedBox.square(
                         dimension: 17,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : Icon(
-                        addedToBookshelf
-                            ? Icons.bookmark_added_rounded
-                            : Icons.bookmark_add_outlined,
-                        size: 18,
-                      ),
+                    : null,
                 label: addedToBookshelf ? '已加入' : '加入书架',
               ),
             ),
@@ -71,23 +72,13 @@ class _SaltProductCatalogControls extends StatelessWidget {
             ),
             const Spacer(),
             SizedBox(
-              height: 38,
-              child: SegmentedButton<bool>(
-                segments: const [
-                  ButtonSegment(value: false, label: Text('正序')),
-                  ButtonSegment(value: true, label: Text('倒序')),
-                ],
-                selected: {descending},
-                showSelectedIcon: false,
-                style: const ButtonStyle(
-                  visualDensity: VisualDensity.compact,
-                  padding: WidgetStatePropertyAll(
-                    EdgeInsets.symmetric(horizontal: 13),
-                  ),
-                ),
-                onSelectionChanged: (selection) {
-                  onOrderChanged(selection.first);
-                },
+              width: 148,
+              child: ZhLiquidGlassSegmentedTabs(
+                labels: const ['正序', '倒序'],
+                selectedIndex: descending ? 1 : 0,
+                onSelected: (index) => onOrderChanged(index == 1),
+                height: 40,
+                scrollable: true,
               ),
             ),
           ],

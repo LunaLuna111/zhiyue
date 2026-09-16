@@ -689,7 +689,7 @@ class _SaltPageState extends State<SaltPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: ZhLiquidGlassAppBar(
+      appBar: ZhTopBar(
         title: ZhLiquidGlassSegmentedTabs(
           key: const ValueKey('reader-shelf-glass-tabs'),
           labels: [for (final tab in _readerShelfTabs) tab.label],

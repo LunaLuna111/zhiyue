@@ -140,7 +140,7 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
     return Scaffold(
       key: const Key('external-link-safety-page'),
       backgroundColor: ZhPalette.canvas,
-      appBar: AppBar(title: const Text('安全提示'), centerTitle: true),
+      appBar: ZhTopBar(title: const Text('安全提示'), centerTitle: true),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),

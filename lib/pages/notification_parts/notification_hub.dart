@@ -132,7 +132,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: ZhTopBar(
         centerTitle: true,
         title: const Text('消息'),
         actions: [

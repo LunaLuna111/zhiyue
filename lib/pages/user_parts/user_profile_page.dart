@@ -72,7 +72,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
     }
     if (state is! ApiResponse || !state.isSuccess || state.jsonMap == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('用户主页')),
+        appBar: ZhTopBar(title: const Text('用户主页')),
         body: ApiErrorView(error: state, onRetry: _load),
       );
     }
@@ -102,12 +102,6 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                   backgroundColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   surfaceTintColor: Colors.transparent,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.vertical(
-                      bottom: Radius.circular(30),
-                    ),
-                  ),
-                  clipBehavior: Clip.antiAlias,
                   elevation: 0,
                   scrolledUnderElevation: 0,
                   shadowColor: Colors.transparent,

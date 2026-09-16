@@ -133,7 +133,7 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: ZhTopBar(
       title: const Text('分类'),
       actions: [
         IconButton(

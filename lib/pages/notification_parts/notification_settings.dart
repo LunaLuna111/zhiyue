@@ -92,7 +92,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('通知设置')),
+    appBar: ZhTopBar(title: const Text('通知设置')),
     body: ZhResponsiveFrame(
       maxWidth: 760,
       desktopGutter: 24,

@@ -95,7 +95,7 @@ class _DiscoverPageState extends State<DiscoverPage>
   Widget build(BuildContext context) {
     super.build(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('发现')),
+      appBar: ZhTopBar(title: const Text('发现')),
       body: ZhResponsiveFrame(
         maxWidth: 1040,
         desktopGutter: 24,

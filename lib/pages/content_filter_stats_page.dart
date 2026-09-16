@@ -46,7 +46,7 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: ZhTopBar(
         title: const Text('内容过滤统计'),
         actions: [
           IconButton(

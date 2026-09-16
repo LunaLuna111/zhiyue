@@ -44,7 +44,7 @@ class BrowsingHistoryPage extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: session.browsingHistoryChanges,
     builder: (context, _) => Scaffold(
-      appBar: AppBar(
+      appBar: ZhTopBar(
         title: const Text('历史记录'),
         actions: [
           IconButton(

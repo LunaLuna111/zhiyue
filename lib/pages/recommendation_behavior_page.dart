@@ -52,7 +52,7 @@ class _RecommendationBehaviorPageState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(
+    appBar: ZhTopBar(
       title: const Text('本地推荐行为'),
       actions: [
         IconButton(

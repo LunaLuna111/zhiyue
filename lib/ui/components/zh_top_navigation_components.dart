@@ -55,6 +55,97 @@ class ZhLiquidGlassIconButton extends StatelessWidget {
   );
 }
 
+/// A text-and-icon action that uses the package's native iOS 26 glass button.
+///
+/// The wrapper keeps CTA sizing and semantic labels consistent across pages;
+/// the glass surface, press animation and disabled treatment remain owned by
+/// [GlassButton].
+class ZhLiquidGlassLabelButton extends StatelessWidget {
+  const ZhLiquidGlassLabelButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.icon,
+    this.leading,
+    this.expand = false,
+    this.prominent = false,
+    this.semanticLabel,
+  });
+
+  static const LiquidGlassSettings _settings = LiquidGlassSettings(
+    thickness: 28,
+    blur: 8,
+    chromaticAberration: .2,
+    lightIntensity: .7,
+    refractiveIndex: 1.52,
+    saturation: .94,
+    ambientStrength: .85,
+    glassColor: Color(0xB8F8F8FA),
+  );
+
+  static const LiquidGlassSettings _prominentSettings = LiquidGlassSettings(
+    thickness: 34,
+    blur: 7,
+    chromaticAberration: .16,
+    lightIntensity: .72,
+    refractiveIndex: 1.5,
+    saturation: .9,
+    ambientStrength: .88,
+    glassColor: Color(0xE3141414),
+  );
+
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+  final Widget? leading;
+  final bool expand;
+  final bool prominent;
+  final String? semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = prominent ? ZhPalette.background : ZhPalette.ink;
+    return GlassButton.custom(
+      key: key,
+      onTap: onPressed ?? _disabledAction,
+      enabled: onPressed != null,
+      label: semanticLabel ?? label,
+      width: expand ? double.infinity : null,
+      height: 50,
+      shape: const LiquidRoundedRectangle(borderRadius: 18),
+      settings: prominent ? _prominentSettings : _settings,
+      useOwnLayer: true,
+      quality: GlassQuality.premium,
+      style: prominent ? GlassButtonStyle.prominent : GlassButtonStyle.filled,
+      stretch: .12,
+      interactionScale: .985,
+      glowColor: Colors.transparent,
+      glowRadius: 0,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ?leading,
+          if (leading != null && (icon != null || label.isNotEmpty))
+            const SizedBox(width: 8),
+          if (icon != null) Icon(icon, size: 18, color: foreground),
+          if (icon != null && label.isNotEmpty) const SizedBox(width: 8),
+          if (label.isNotEmpty)
+            Text(
+              label,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: foreground,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  static void _disabledAction() {}
+}
+
 /// A single connected iOS 26 capsule for compact toolbar actions.
 class ZhLiquidGlassCapsuleAction {
   const ZhLiquidGlassCapsuleAction({
@@ -450,6 +541,7 @@ class ZhLiquidGlassAppBar extends StatelessWidget
       leading: leading,
       actions: actions,
       centerTitle: centerTitle,
+      backgroundColor: Colors.transparent,
       toolbarHeight: toolbarHeight,
       bottom: bottom,
       padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -458,34 +550,109 @@ class ZhLiquidGlassAppBar extends StatelessWidget
       fit: StackFit.passthrough,
       clipBehavior: Clip.none,
       children: [
-        const Positioned.fill(
-          child: IgnorePointer(
-            child: ProgressiveBlur(
-              // Keep the edge effect light enough that content remains
-              // readable through the header. The strongest frost belongs at
-              // the lower edge where the scroll view meets the bar; the
-              // status-bar side should stay almost clear.
-              maxSigma: 6,
-              direction: ProgressiveBlurDirection.bottomToTop,
-              falloff: 1.8,
-            ),
-          ),
-        ),
-        const Positioned.fill(
-          child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Color(0x00FFFFFF), Color(0x18F8FBFF)],
-                ),
-              ),
-            ),
-          ),
-        ),
+        const Positioned.fill(child: _ZhProgressiveGlassBackdrop()),
         appBar,
       ],
+    );
+  }
+}
+
+/// Shared translucent chrome for app bars that float above scrolling content.
+///
+/// The lower edge remains nearly clear while the upper edge gains a gentle
+/// progressive blur. This lets the scrolling content dissolve naturally into
+/// the toolbar without creating a hard divider or hiding the text below it.
+class _ZhProgressiveGlassBackdrop extends StatelessWidget {
+  const _ZhProgressiveGlassBackdrop();
+
+  @override
+  Widget build(BuildContext context) => const IgnorePointer(
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        ProgressiveBlur(
+          maxSigma: 6,
+          direction: ProgressiveBlurDirection.topToBottom,
+          falloff: 1.8,
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0x18F8FBFF), Color(0x00FFFFFF)],
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// The shared top-level navigation surface used by ordinary pages.
+///
+/// Detail pages can still provide their own title/action widgets, while every
+/// regular page gets the same transparent progressive backdrop, toolbar
+/// height, back-button geometry and route-aware back behaviour. Keeping this
+/// policy here prevents each page from growing a slightly different AppBar.
+class ZhTopBar extends StatelessWidget implements PreferredSizeWidget {
+  const ZhTopBar({
+    super.key,
+    this.title,
+    this.leading,
+    this.actions,
+    this.bottom,
+    this.centerTitle,
+    this.toolbarHeight,
+    this.automaticallyImplyLeading = true,
+  });
+
+  final Widget? title;
+  final Widget? leading;
+  final List<Widget>? actions;
+  final PreferredSizeWidget? bottom;
+  final bool? centerTitle;
+  final double? toolbarHeight;
+  final bool automaticallyImplyLeading;
+
+  /// The scrollable body's starting inset when this bar overlays it.
+  ///
+  /// [Scaffold.extendBodyBehindAppBar] keeps the body under the transparent
+  /// chrome. The outer [MediaQuery] still exposes the system status-bar inset,
+  /// so ordinary pages can reserve the public bar height in one place instead
+  /// of duplicating platform-safe-area arithmetic.
+  static double bodyTopInset(
+    BuildContext context, {
+    double toolbarHeight = 56,
+  }) => MediaQuery.paddingOf(context).top + toolbarHeight;
+
+  @override
+  Size get preferredSize => Size.fromHeight(
+    (toolbarHeight ?? 56) + (bottom?.preferredSize.height ?? 0),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final routeCanPop = ModalRoute.of(context)?.canPop ?? false;
+    final effectiveLeading =
+        leading ??
+        (automaticallyImplyLeading && routeCanPop
+            ? ZhLiquidGlassIconButton(
+                key: const ValueKey('zh-top-bar-back'),
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () => Navigator.of(context).maybePop(),
+                semanticLabel: '返回',
+                size: 46,
+                iconSize: 24,
+              )
+            : null);
+    return ZhLiquidGlassAppBar(
+      title: title,
+      leading: effectiveLeading,
+      actions: actions ?? const <Widget>[],
+      bottom: bottom,
+      centerTitle: centerTitle ?? false,
+      toolbarHeight: toolbarHeight ?? 56,
     );
   }
 }
@@ -537,33 +704,40 @@ class ZhLiquidGlassTopNavigation extends StatelessWidget
         final topInset = MediaQuery.viewPaddingOf(context).top;
         return SizedBox(
           height: topInset + barHeight,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(8, topInset + 8, 12, 8),
-            child: Row(
-              children: [
-                if (onMenuPressed != null) ...[
-                  Semantics(
-                    button: true,
-                    label: '打开侧边栏',
-                    child: ZhLiquidGlassIconButton(
-                      key: const ValueKey('home-drawer-button'),
-                      icon: const Icon(Icons.menu_rounded),
-                      onPressed: onMenuPressed,
-                      semanticLabel: '打开侧边栏',
-                      size: 48,
-                      iconSize: 23,
+          child: Stack(
+            fit: StackFit.passthrough,
+            clipBehavior: Clip.none,
+            children: [
+              const Positioned.fill(child: _ZhProgressiveGlassBackdrop()),
+              Padding(
+                padding: EdgeInsets.fromLTRB(8, topInset + 8, 12, 8),
+                child: Row(
+                  children: [
+                    if (onMenuPressed != null) ...[
+                      Semantics(
+                        button: true,
+                        label: '打开侧边栏',
+                        child: ZhLiquidGlassIconButton(
+                          key: const ValueKey('home-drawer-button'),
+                          icon: const Icon(Icons.menu_rounded),
+                          onPressed: onMenuPressed,
+                          semanticLabel: '打开侧边栏',
+                          size: 48,
+                          iconSize: 23,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.center,
+                        child: constrainedTabs,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-                Expanded(
-                  child: Align(
-                    alignment: Alignment.center,
-                    child: constrainedTabs,
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },

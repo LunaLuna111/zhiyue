@@ -491,37 +491,15 @@ class _SaltBillboardModuleState extends State<_SaltBillboardModule> {
             ),
           ),
           const SizedBox(height: 14),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (var index = 0; index < groups.length; index++) ...[
-                  ChoiceChip(
-                    selected: selected == index,
-                    showCheckmark: false,
-                    selectedColor: ZhPalette.ink,
-                    backgroundColor: ZhPalette.canvas,
-                    side: BorderSide(
-                      color: selected == index
-                          ? ZhPalette.ink
-                          : ZhPalette.border,
-                    ),
-                    onSelected: (_) => setState(() => _selected = index),
-                    label: Text(
-                      _groupLabel(groups[index], index),
-                      style: TextStyle(
-                        color: selected == index
-                            ? ZhPalette.background
-                            : ZhPalette.ink,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0,
-                      ),
-                    ),
-                  ),
-                  if (index != groups.length - 1) const SizedBox(width: 7),
-                ],
-              ],
-            ),
+          ZhLiquidGlassSegmentedTabs(
+            labels: [
+              for (var index = 0; index < groups.length; index++)
+                _groupLabel(groups[index], index),
+            ],
+            selectedIndex: selected,
+            onSelected: (index) => setState(() => _selected = index),
+            height: 48,
+            scrollable: true,
           ),
           const SizedBox(height: 12),
           GridView.builder(

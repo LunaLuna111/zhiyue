@@ -167,8 +167,8 @@ class NotificationTimelinePage extends StatelessWidget {
     rowsExtractor: notificationRows,
     emptyMessage: '暂时没有这类通知',
     actions: [
-      IconButton(
-        tooltip: '全部已读',
+      ZhLiquidGlassIconButton(
+        semanticLabel: '全部已读',
         onPressed: () async {
           try {
             final response = await api.markNotificationEntryRead(entryName);
@@ -186,6 +186,8 @@ class NotificationTimelinePage extends StatelessWidget {
           }
         },
         icon: const Icon(Icons.mark_email_read_outlined),
+        size: 44,
+        iconSize: 22,
       ),
     ],
     rowBuilder: (context, value, onTap) =>

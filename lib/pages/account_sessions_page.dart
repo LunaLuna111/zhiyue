@@ -173,11 +173,13 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
     appBar: ZhTopBar(
       title: const Text('账号与多端登录'),
       actions: [
-        IconButton(
+        ZhLiquidGlassIconButton(
           key: const ValueKey('account-session-save-current'),
-          tooltip: '保存当前会话',
+          semanticLabel: '保存当前会话',
           onPressed: _saveCurrent,
           icon: const Icon(Icons.save_outlined),
+          size: 44,
+          iconSize: 22,
         ),
       ],
     ),

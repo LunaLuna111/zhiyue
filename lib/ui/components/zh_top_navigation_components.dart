@@ -5,6 +5,17 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../zh_theme.dart';
 
+const _zhToolbarGlassSettings = LiquidGlassSettings(
+  thickness: 30,
+  blur: 10,
+  chromaticAberration: .18,
+  lightIntensity: .65,
+  refractiveIndex: 1.52,
+  saturation: .9,
+  ambientStrength: .8,
+  glassColor: Color(0xA6F8F8FA),
+);
+
 /// A circular iOS 26-style glass control for navigation and toolbar actions.
 class ZhLiquidGlassIconButton extends StatelessWidget {
   const ZhLiquidGlassIconButton({
@@ -18,17 +29,6 @@ class ZhLiquidGlassIconButton extends StatelessWidget {
     this.borderRadius = 16,
   });
 
-  static const LiquidGlassSettings _settings = LiquidGlassSettings(
-    thickness: 30,
-    blur: 10,
-    chromaticAberration: .18,
-    lightIntensity: .65,
-    refractiveIndex: 1.52,
-    saturation: .9,
-    ambientStrength: .8,
-    glassColor: Color(0xA6F8F8FA),
-  );
-
   final Widget icon;
   final VoidCallback? onPressed;
   final String? semanticLabel;
@@ -38,20 +38,110 @@ class ZhLiquidGlassIconButton extends StatelessWidget {
   final double borderRadius;
 
   @override
-  Widget build(BuildContext context) => GlassIconButton(
-    icon: icon,
-    onPressed: onPressed,
-    semanticLabel: semanticLabel,
-    size: size,
-    iconSize: iconSize,
-    shape: shape,
-    borderRadius: borderRadius,
-    useOwnLayer: true,
-    settings: _settings,
+  Widget build(BuildContext context) {
+    final glassShape = shape == GlassIconButtonShape.circle
+        ? const LiquidOval()
+        : LiquidRoundedRectangle(borderRadius: borderRadius);
+    return GlassButton.custom(
+      key: key,
+      onTap: onPressed ?? _disabledAction,
+      enabled: onPressed != null,
+      label: semanticLabel ?? '',
+      width: size,
+      height: size,
+      shape: glassShape,
+      useOwnLayer: true,
+      settings: _zhToolbarGlassSettings,
+      quality: GlassQuality.premium,
+      // Leave the interaction values at the package defaults. They provide
+      // the native press inflation, spring return and touch-following glass
+      // that a toolbar control is expected to have.
+      child: IconTheme(
+        data: IconThemeData(
+          color: onPressed == null ? ZhPalette.subtleInk : ZhPalette.ink,
+          size: iconSize ?? size * .5,
+        ),
+        child: icon,
+      ),
+    );
+  }
+
+  static void _disabledAction() {}
+}
+
+/// A pull-down menu whose trigger and morphing menu share the same glass
+/// language as the rest of the toolbar.
+class ZhLiquidGlassMenuItem<T> {
+  const ZhLiquidGlassMenuItem({
+    required this.value,
+    required this.label,
+    this.icon,
+    this.enabled = true,
+    this.destructive = false,
+  });
+
+  final T value;
+  final String label;
+  final Widget? icon;
+  final bool enabled;
+  final bool destructive;
+}
+
+class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
+  const ZhLiquidGlassMenuButton({
+    super.key,
+    required this.items,
+    required this.onSelected,
+    required this.icon,
+    required this.semanticLabel,
+    this.size = 44,
+    this.iconSize,
+    this.menuWidth = 240,
+    this.menuAlignment,
+    this.shape = GlassIconButtonShape.circle,
+    this.borderRadius = 16,
+  });
+
+  final List<ZhLiquidGlassMenuItem<T>> items;
+  final ValueChanged<T> onSelected;
+  final Widget icon;
+  final String semanticLabel;
+  final double size;
+  final double? iconSize;
+  final double menuWidth;
+  final GlassMenuAlignment? menuAlignment;
+  final GlassIconButtonShape shape;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) => GlassMenu(
+    key: key,
+    menuWidth: menuWidth,
+    menuAlignment: menuAlignment,
+    menuBorderRadius: 28,
+    itemBorderRadius: 20,
+    menuPadding: const EdgeInsets.symmetric(vertical: 8),
+    settings: _zhToolbarGlassSettings,
     quality: GlassQuality.premium,
-    glowColor: Colors.transparent,
-    glowRadius: 0,
-    interactionScale: .98,
+    triggerBuilder: (context, toggleMenu) => ZhLiquidGlassIconButton(
+      icon: icon,
+      onPressed: toggleMenu,
+      semanticLabel: semanticLabel,
+      size: size,
+      iconSize: iconSize,
+      shape: shape,
+      borderRadius: borderRadius,
+    ),
+    items: [
+      for (final item in items)
+        GlassMenuItem(
+          title: item.label,
+          icon: item.icon,
+          enabled: item.enabled,
+          isDestructive: item.destructive,
+          onTap: item.enabled ? () => onSelected(item.value) : () {},
+        ),
+    ],
   );
 }
 
@@ -117,10 +207,6 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
       useOwnLayer: true,
       quality: GlassQuality.premium,
       style: prominent ? GlassButtonStyle.prominent : GlassButtonStyle.filled,
-      stretch: .12,
-      interactionScale: .985,
-      glowColor: Colors.transparent,
-      glowRadius: 0,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -403,7 +489,10 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
           backgroundColor: Colors.transparent,
           indicatorColor: const Color(0x42FFFFFF),
           indicatorSettings: _scrollableIndicatorSettings,
-          indicatorBorderRadius: height / 2,
+          // The indicator blooms beyond the resting track while it is being
+          // dragged. A finite capsule sentinel keeps its corners circular at
+          // both sizes instead of turning into a rounded rectangle.
+          indicatorBorderRadius: GlassDefaults.capsuleRadius,
           indicatorPinchStrength: .18,
           settings: _scrollableSettings,
           useOwnLayer: true,
@@ -437,13 +526,8 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
       settings: _settings,
       quality: GlassQuality.premium,
       backgroundQuality: GlassQuality.premium,
-      interactionBehavior: GlassInteractionBehavior.scaleOnly,
-      pressScale: 1.01,
-      glowOpacity: 0,
-      glowBlurRadius: 0,
-      glowSpreadRadius: 0,
-      interactionGlowColor: Colors.transparent,
-      interactionGlowRadius: 0,
+      interactionBehavior: GlassInteractionBehavior.full,
+      pressScale: 1.02,
     );
   }
 }
@@ -494,13 +578,6 @@ class _ZhLiquidGlassScrollableSurface extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: radius,
                 border: Border.all(color: const Color(0xB8FFFFFF)),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Color(0x16000000),
-                    blurRadius: 14,
-                    offset: Offset(0, 4),
-                  ),
-                ],
               ),
             ),
           ),
@@ -572,6 +649,8 @@ class _ZhProgressiveGlassBackdrop extends StatelessWidget {
       children: [
         ProgressiveBlur(
           maxSigma: 6,
+          // The lower edge should dissolve into the page while the upper edge
+          // carries the strongest blur, matching the iOS 26 toolbar gradient.
           direction: ProgressiveBlurDirection.topToBottom,
           falloff: 1.8,
         ),

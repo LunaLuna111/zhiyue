@@ -343,30 +343,28 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
       title: '全部回答',
       api: widget.api,
       actions: [
-        IconButton(
+        ZhLiquidGlassIconButton(
           key: const Key('question-answer-search-action'),
-          tooltip: '搜索回答',
           onPressed: _openQuestionSearch,
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints.tightFor(width: 40, height: 40),
-          icon: const Icon(Icons.search_rounded, size: 23),
+          semanticLabel: '搜索回答',
+          size: 44,
+          iconSize: 23,
+          icon: const Icon(Icons.search_rounded),
         ),
-        ZhPopupMenuButton<String>(
+        ZhLiquidGlassMenuButton<String>(
           key: const Key('question-answer-more-action'),
-          tooltip: '更多',
           icon: const Icon(Icons.more_vert_rounded),
-          padding: EdgeInsets.zero,
-          position: PopupMenuPosition.under,
-          offset: const Offset(0, 8),
+          semanticLabel: '更多',
+          size: 44,
+          iconSize: 22,
           onSelected: _showQuestionMenu,
-          itemBuilder: (context) => [
-            ZhMenuItem(
+          items: [
+            ZhLiquidGlassMenuItem(
               value: 'write',
               label: widget.api.canWrite ? '写回答' : '登录后写回答',
             ),
-            ZhMenuItem(value: 'invite', label: '邀请回答'),
-            ZhMenuItem(
+            ZhLiquidGlassMenuItem(value: 'invite', label: '邀请回答'),
+            ZhLiquidGlassMenuItem(
               value: 'follow',
               label:
                   (_followingQuestionOverride ??
@@ -375,7 +373,7 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
                   ? '取消关注问题'
                   : '关注问题',
             ),
-            ZhMenuItem(value: 'refresh', label: '刷新回答'),
+            ZhLiquidGlassMenuItem(value: 'refresh', label: '刷新回答'),
           ],
         ),
       ],

@@ -136,14 +136,16 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
     appBar: ZhTopBar(
       title: const Text('分类'),
       actions: [
-        IconButton(
-          tooltip: '搜索故事',
+        ZhLiquidGlassIconButton(
+          semanticLabel: '搜索故事',
           icon: const Icon(Icons.search_rounded),
           onPressed: () => Navigator.of(context).push(
             MaterialPageRoute(
               builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
             ),
           ),
+          size: 44,
+          iconSize: 22,
         ),
       ],
     ),

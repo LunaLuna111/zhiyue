@@ -7,6 +7,13 @@ class SearchTabSpec {
   final String label;
 }
 
+enum _SearchMenuAction {
+  clearHistory,
+  toggleHotSearch,
+  refreshHotSearch,
+  toggleSearchHistory,
+}
+
 /// Search scope labels and their corresponding request `t` values.
 const officialSearchTabs = <SearchTabSpec>[
   SearchTabSpec('general', '综合'),
@@ -217,11 +224,13 @@ class SearchPage extends StatefulWidget {
     required this.api,
     this.focusOnOpen = false,
     this.controller,
+    this.onBack,
   });
 
   final ZhihuApiClient api;
   final bool focusOnOpen;
   final SearchPageController? controller;
+  final VoidCallback? onBack;
 
   @override
   State<SearchPage> createState() => _SearchPageState();
@@ -234,15 +243,11 @@ class _SearchPageState extends State<SearchPage>
 
   final _query = TextEditingController();
   final _queryFocus = FocusNode();
-  final _question = TextEditingController();
-  final _content = TextEditingController();
-  final _column = TextEditingController();
   late final _SearchSuggestionController _suggestions;
   final _hotSearchItems = <SearchHotItem>[];
   bool _hotSearchLoading = true;
   int _hotSearchGeneration = 0;
   String _type = 'general';
-  String _contentType = 'answer';
 
   @override
   bool get wantKeepAlive => true;
@@ -269,9 +274,6 @@ class _SearchPageState extends State<SearchPage>
     _suggestions.dispose();
     _query.dispose();
     _queryFocus.dispose();
-    _question.dispose();
-    _content.dispose();
-    _column.dispose();
     super.dispose();
   }
 
@@ -300,7 +302,13 @@ class _SearchPageState extends State<SearchPage>
 
   void _onSessionChanged() {
     if (!mounted) return;
-    if (widget.api.session.showSearchHotSearch &&
+    if (!widget.api.session.showSearchHotSearch) {
+      // A request may still be in flight after the user hides hot search.
+      // Advance the generation so its response cannot repopulate a hidden
+      // section or turn the loading indicator back on.
+      _hotSearchGeneration++;
+      _hotSearchLoading = false;
+    } else if (widget.api.session.showSearchHotSearch &&
         !_hotSearchLoading &&
         _hotSearchItems.isEmpty) {
       unawaited(_loadHotSearch());
@@ -308,39 +316,72 @@ class _SearchPageState extends State<SearchPage>
     setState(() {});
   }
 
-  Future<void> _clearSearchHistoryFromMenu() async {
-    await widget.api.session.clearSearchHistory();
+  void _handleBack() {
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.maybePop();
+      return;
+    }
+    widget.onBack?.call();
   }
 
-  void _openSearchSettings() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) =>
-            AppSettingsPage(session: widget.api.session, api: widget.api),
-      ),
+  Future<void> _handleSearchMenuAction(_SearchMenuAction action) async {
+    final session = widget.api.session;
+    switch (action) {
+      case _SearchMenuAction.clearHistory:
+        await session.clearSearchHistory();
+      case _SearchMenuAction.toggleHotSearch:
+        await session.setShowSearchHotSearch(!session.showSearchHotSearch);
+      case _SearchMenuAction.refreshHotSearch:
+        if (session.showSearchHotSearch) _refreshHotSearch();
+      case _SearchMenuAction.toggleSearchHistory:
+        await session.setRememberSearchHistory(!session.rememberSearchHistory);
+    }
+  }
+
+  Widget _searchMenu() {
+    final session = widget.api.session;
+    return ZhLiquidGlassMenuButton<_SearchMenuAction>(
+      key: const ValueKey('search-menu'),
+      icon: const Icon(Icons.more_vert_rounded),
+      semanticLabel: '搜索选项',
+      size: 44,
+      iconSize: 22,
+      onSelected: (action) => unawaited(_handleSearchMenuAction(action)),
+      items: [
+        ZhLiquidGlassMenuItem<_SearchMenuAction>(
+          value: _SearchMenuAction.clearHistory,
+          label: '清空历史记录',
+          icon: const Icon(Icons.delete_sweep_outlined),
+          enabled: session.searchHistory.isNotEmpty,
+        ),
+        ZhLiquidGlassMenuItem<_SearchMenuAction>(
+          value: _SearchMenuAction.toggleHotSearch,
+          label: session.showSearchHotSearch ? '关闭热搜显示' : '开启热搜显示',
+          icon: Icon(
+            session.showSearchHotSearch
+                ? Icons.visibility_off_outlined
+                : Icons.visibility_outlined,
+          ),
+        ),
+        ZhLiquidGlassMenuItem<_SearchMenuAction>(
+          value: _SearchMenuAction.refreshHotSearch,
+          label: '刷新热搜',
+          icon: const Icon(Icons.refresh_rounded),
+          enabled: session.showSearchHotSearch,
+        ),
+        ZhLiquidGlassMenuItem<_SearchMenuAction>(
+          value: _SearchMenuAction.toggleSearchHistory,
+          label: session.rememberSearchHistory ? '关闭历史搜索记录' : '开启历史搜索记录',
+          icon: Icon(
+            session.rememberSearchHistory
+                ? Icons.history_toggle_off_rounded
+                : Icons.history_rounded,
+          ),
+        ),
+      ],
     );
   }
-
-  Widget _searchHistoryMenu() => ZhPopupMenuButton<String>(
-    key: const ValueKey('search-history-more'),
-    tooltip: '搜索历史更多操作',
-    icon: const Icon(Icons.more_horiz_rounded, size: 21),
-    onSelected: (value) {
-      switch (value) {
-        case 'clear':
-          unawaited(_clearSearchHistoryFromMenu());
-          return;
-        case 'settings':
-          _openSearchSettings();
-          return;
-      }
-    },
-    itemBuilder: (context) => [
-      if (widget.api.session.searchHistory.isNotEmpty)
-        ZhMenuItem<String>(value: 'clear', label: '清空搜索历史'),
-      ZhMenuItem<String>(value: 'settings', label: '前往设置关闭搜索历史'),
-    ],
-  );
 
   Future<List<SearchHotItem>> _requestHotSearch() async {
     final response = await widget.api.publicWebGet('/api/v4/search/hot_search');
@@ -435,43 +476,6 @@ class _SearchPageState extends State<SearchPage>
     );
   }
 
-  Future<void> _showTools() => showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    constraints: const BoxConstraints(maxWidth: 640),
-    backgroundColor: ZhPalette.background,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setModalState) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            ZhSpace.md,
-            0,
-            ZhSpace.md,
-            MediaQuery.viewInsetsOf(context).bottom + ZhSpace.md,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('直接打开', style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 4),
-                Text(
-                  '通过 ID 或专栏 token 定位内容',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
-                ),
-                const SizedBox(height: ZhSpace.lg),
-                _toolPanel(setModalState),
-              ],
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
@@ -489,6 +493,14 @@ class _SearchPageState extends State<SearchPage>
       resizeToAvoidBottomInset: false,
       extendBodyBehindAppBar: true,
       appBar: ZhTopBar(
+        leading: ZhLiquidGlassIconButton(
+          key: const ValueKey('search-back'),
+          semanticLabel: '返回',
+          onPressed: _handleBack,
+          icon: const Icon(Icons.arrow_back_rounded),
+          size: 46,
+          iconSize: 24,
+        ),
         title: const Text(
           '搜索',
           style: TextStyle(
@@ -498,16 +510,7 @@ class _SearchPageState extends State<SearchPage>
             height: 1.1,
           ),
         ),
-        actions: [
-          ZhLiquidGlassIconButton(
-            key: const ValueKey('search-tools'),
-            semanticLabel: '通过 ID 直接打开',
-            onPressed: _showTools,
-            icon: const Icon(Icons.tune_rounded),
-            size: 44,
-            iconSize: 22,
-          ),
-        ],
+        actions: [_searchMenu()],
         toolbarHeight: 72,
       ),
       body: ZhResponsiveFrame(
@@ -560,7 +563,7 @@ class _SearchPageState extends State<SearchPage>
               ],
               if (historyVisible) ...[
                 const SizedBox(height: 26),
-                _SectionHeading(title: '历史搜索', action: _searchHistoryMenu()),
+                const _SectionHeading(title: '历史搜索'),
                 const SizedBox(height: ZhSpace.sm),
                 if (widget.api.session.searchHistory.isEmpty)
                   const _EmptyHistory()
@@ -588,9 +591,7 @@ class _SearchPageState extends State<SearchPage>
                 _SearchHotSection(
                   items: _hotSearchItems,
                   loading: _hotSearchLoading,
-                  onRefresh: _refreshHotSearch,
                   onSelected: _submit,
-                  onOpenSettings: _openSearchSettings,
                 ),
               ],
               if (queryEmpty && !historyVisible && !hotVisible) ...[
@@ -603,122 +604,4 @@ class _SearchPageState extends State<SearchPage>
       ),
     );
   }
-
-  Widget _toolPanel(StateSetter setModalState) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const _ToolTitle(
-        icon: Icons.description_outlined,
-        title: '内容详情',
-        description: '回答、文章、想法或视频',
-      ),
-      const SizedBox(height: ZhSpace.sm),
-      Wrap(
-        spacing: 8,
-        children:
-            const {'answer': '回答', 'article': '文章', 'pin': '想法', 'zvideo': '视频'}
-                .entries
-                .map(
-                  (entry) => _SearchChoice(
-                    label: entry.value,
-                    selected: _contentType == entry.key,
-                    onTap: () {
-                      setState(() => _contentType = entry.key);
-                      setModalState(() {});
-                    },
-                  ),
-                )
-                .toList(),
-      ),
-      const SizedBox(height: ZhSpace.sm),
-      ShadInput(
-        controller: _content,
-        placeholder: const Text('输入内容 ID'),
-        keyboardType: TextInputType.number,
-        textInputAction: TextInputAction.go,
-        onSubmitted: (_) => _openContent(),
-        trailing: _InputAction(onPressed: _openContent),
-      ),
-      const Padding(
-        padding: EdgeInsets.symmetric(vertical: ZhSpace.md),
-        child: Divider(height: 1),
-      ),
-      const _ToolTitle(
-        icon: Icons.question_answer_outlined,
-        title: '问题回答',
-        description: '打开问题的回答列表',
-      ),
-      const SizedBox(height: ZhSpace.sm),
-      ShadInput(
-        controller: _question,
-        placeholder: const Text('输入问题 ID'),
-        keyboardType: TextInputType.number,
-        textInputAction: TextInputAction.go,
-        onSubmitted: (_) => _openQuestion(),
-        trailing: _InputAction(onPressed: _openQuestion),
-      ),
-      const Padding(
-        padding: EdgeInsets.symmetric(vertical: ZhSpace.md),
-        child: Divider(height: 1),
-      ),
-      const _ToolTitle(
-        icon: Icons.view_column_outlined,
-        title: '专栏文章',
-        description: '通过专栏 token 打开文章列表',
-      ),
-      const SizedBox(height: ZhSpace.sm),
-      ShadInput(
-        controller: _column,
-        placeholder: const Text('输入专栏 token'),
-        textInputAction: TextInputAction.go,
-        onSubmitted: (_) => _openColumn(),
-        trailing: _InputAction(onPressed: _openColumn),
-      ),
-    ],
-  );
-
-  void _openQuestion() {
-    final id = _question.text.trim();
-    if (!isDecimalContentId(id)) return _invalid('问题 ID 必须是 1–32 位数字');
-    Navigator.pop(context);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => QuestionAnswersPage(api: widget.api, questionId: id),
-      ),
-    );
-  }
-
-  void _openColumn() {
-    final token = _column.text.trim();
-    if (!isColumnToken(token)) {
-      return _invalid('专栏 token 只允许字母、数字、下划线和连字符');
-    }
-    Navigator.pop(context);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ColumnArticlesPage(api: widget.api, columnToken: token),
-      ),
-    );
-  }
-
-  void _openContent() {
-    final id = _content.text.trim();
-    if (!isDecimalContentId(id)) return _invalid('内容 ID 必须是 1–32 位数字');
-    Navigator.pop(context);
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => _contentType == 'zvideo'
-            ? ZVideoDetailPage(api: widget.api, videoId: id)
-            : ContentDetailPage(
-                api: widget.api,
-                contentType: _contentType,
-                contentId: id,
-              ),
-      ),
-    );
-  }
-
-  void _invalid(String message) => ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-  );
 }

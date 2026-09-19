@@ -47,13 +47,15 @@ class BrowsingHistoryPage extends StatelessWidget {
       appBar: ZhTopBar(
         title: const Text('历史记录'),
         actions: [
-          IconButton(
+          ZhLiquidGlassIconButton(
             key: const ValueKey('clear-browsing-history'),
-            tooltip: '清空历史记录',
+            semanticLabel: '清空历史记录',
             onPressed: session.browsingHistory.isEmpty
                 ? null
                 : () => _clear(context),
             icon: const Icon(Icons.delete_outline_rounded),
+            size: 44,
+            iconSize: 22,
           ),
         ],
       ),

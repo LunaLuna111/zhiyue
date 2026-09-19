@@ -201,7 +201,11 @@ class _HomeShellState extends State<HomeShell> {
             : _drawerController.open,
       ),
     ),
-    SearchPage(api: widget.api, controller: _searchController),
+    SearchPage(
+      api: widget.api,
+      controller: _searchController,
+      onBack: () => _selectNavigation(0),
+    ),
     SaltPage(api: widget.api),
     MyPage(
       api: widget.api,

@@ -55,11 +55,13 @@ class _RecommendationBehaviorPageState
     appBar: ZhTopBar(
       title: const Text('本地推荐行为'),
       actions: [
-        IconButton(
+        ZhLiquidGlassIconButton(
           key: const ValueKey('recommendation-behavior-clear'),
-          tooltip: '清空本地画像',
+          semanticLabel: '清空本地画像',
           onPressed: _clear,
           icon: const Icon(Icons.delete_outline_rounded),
+          size: 44,
+          iconSize: 22,
         ),
       ],
     ),

@@ -91,10 +91,12 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
           : widget.title,
       api: widget.api,
       actions: [
-        IconButton(
-          tooltip: '刷新话题资料',
+        ZhLiquidGlassIconButton(
+          semanticLabel: '刷新话题资料',
           onPressed: _loadBasic,
           icon: const Icon(Icons.refresh_rounded),
+          size: 44,
+          iconSize: 22,
         ),
       ],
       header: TopicHeaderCard(

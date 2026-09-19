@@ -49,11 +49,13 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
       appBar: ZhTopBar(
         title: const Text('内容过滤统计'),
         actions: [
-          IconButton(
+          ZhLiquidGlassIconButton(
             key: const ValueKey('content-filter-stats-clear'),
-            tooltip: '清空统计',
+            semanticLabel: '清空统计',
             onPressed: _clear,
             icon: const Icon(Icons.delete_outline_rounded),
+            size: 44,
+            iconSize: 22,
           ),
         ],
       ),

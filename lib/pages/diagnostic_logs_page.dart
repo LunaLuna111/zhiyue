@@ -69,15 +69,19 @@ class _DiagnosticLogsPageState extends State<DiagnosticLogsPage> {
     appBar: ZhTopBar(
       title: const Text('诊断日志'),
       actions: [
-        IconButton(
-          tooltip: '导出日志',
+        ZhLiquidGlassIconButton(
+          semanticLabel: '导出日志',
           onPressed: _copyExport,
           icon: const Icon(Icons.ios_share_outlined),
+          size: 44,
+          iconSize: 22,
         ),
-        IconButton(
-          tooltip: '清理日志',
+        ZhLiquidGlassIconButton(
+          semanticLabel: '清理日志',
           onPressed: _clear,
           icon: const Icon(Icons.delete_sweep_outlined),
+          size: 44,
+          iconSize: 22,
         ),
       ],
     ),

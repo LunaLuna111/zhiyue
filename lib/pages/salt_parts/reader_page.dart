@@ -151,10 +151,12 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
       appBar: ZhTopBar(
         title: Text(readerTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
-          IconButton(
+          ZhLiquidGlassIconButton(
             onPressed: () => _showReaderMoreMenu(manuscript, textChapter),
-            tooltip: '更多',
+            semanticLabel: '更多',
             icon: const Icon(Icons.more_vert_rounded),
+            size: 44,
+            iconSize: 22,
           ),
         ],
       ),

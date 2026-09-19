@@ -79,11 +79,10 @@ class _SearchChoice extends StatelessWidget {
 }
 
 class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({required this.title, this.trailing, this.action});
+  const _SectionHeading({required this.title, this.trailing});
 
   final String title;
   final String? trailing;
-  final Widget? action;
 
   @override
   Widget build(BuildContext context) => Row(
@@ -105,7 +104,6 @@ class _SectionHeading extends StatelessWidget {
             fontSize: 12,
           ),
         ),
-      ?action,
     ],
   );
 }
@@ -141,16 +139,12 @@ class _SearchHotSection extends StatelessWidget {
   const _SearchHotSection({
     required this.items,
     required this.loading,
-    required this.onRefresh,
     required this.onSelected,
-    required this.onOpenSettings,
   });
 
   final List<SearchHotItem> items;
   final bool loading;
-  final VoidCallback onRefresh;
   final ValueChanged<String> onSelected;
-  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -161,40 +155,12 @@ class _SearchHotSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  '热搜',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    key: const ValueKey('search-hot-refresh'),
-                    tooltip: '刷新热搜',
-                    onPressed: loading ? null : onRefresh,
-                    icon: const Icon(Icons.refresh_rounded, size: 21),
-                  ),
-                  ZhPopupMenuButton<String>(
-                    key: const ValueKey('search-hot-more'),
-                    tooltip: '热搜更多操作',
-                    icon: const Icon(Icons.more_horiz_rounded, size: 21),
-                    onSelected: (value) {
-                      if (value == 'settings') onOpenSettings();
-                    },
-                    itemBuilder: (context) => [
-                      ZhMenuItem<String>(value: 'settings', label: '关闭热搜显示'),
-                    ],
-                  ),
-                ],
-              ),
-            ],
+          Text(
+            '热搜',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           if (loading)
             const LinearProgressIndicator(
@@ -274,47 +240,5 @@ class _EmptySearchPrompt extends StatelessWidget {
         context,
       ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
     ),
-  );
-}
-
-class _InputAction extends StatelessWidget {
-  const _InputAction({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => IconButton(
-    tooltip: '打开',
-    onPressed: onPressed,
-    icon: const Icon(Icons.arrow_forward_rounded),
-  );
-}
-
-class _ToolTitle extends StatelessWidget {
-  const _ToolTitle({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      Icon(icon, size: 22),
-      const SizedBox(width: ZhSpace.sm),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            Text(description, style: Theme.of(context).textTheme.bodySmall),
-          ],
-        ),
-      ),
-    ],
   );
 }

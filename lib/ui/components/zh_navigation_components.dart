@@ -85,10 +85,10 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
         // A slightly stronger neutral lens keeps the selected tab legible on
         // white pages without returning to the opaque black pill.
         indicatorColor: Color(0x24000000),
-        // Keep the native press scale, but omit the directional flash. On a
-        // white feed the default full interaction glow washes out the lens
-        // exactly while it is moving, making the glass harder to read.
-        interactionBehavior: GlassInteractionBehavior.scaleOnly,
+        // Keep the package's complete press treatment so each destination
+        // gets the same spring, stretch and touch-reactive glass as toolbar
+        // buttons.
+        interactionBehavior: GlassInteractionBehavior.full,
         pressScale: 1.02,
       ),
     );
@@ -369,13 +369,8 @@ class _ZhLiquidGlassFloatingActionBarState
           vertical: 7,
         ),
         maskingQuality: MaskingQuality.high,
-        interactionBehavior: GlassInteractionBehavior.scaleOnly,
+        interactionBehavior: GlassInteractionBehavior.full,
         pressScale: 1.02,
-        glowOpacity: 0,
-        glowBlurRadius: 0,
-        glowSpreadRadius: 0,
-        interactionGlowColor: Colors.transparent,
-        interactionGlowRadius: 0,
       ),
     );
     final animatedGlassBar = AnimatedBuilder(

@@ -136,9 +136,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         centerTitle: true,
         title: const Text('消息'),
         actions: [
-          IconButton(
+          ZhLiquidGlassIconButton(
             key: const ValueKey('notification-settings'),
-            tooltip: '通知设置',
+            semanticLabel: '通知设置',
             onPressed: _hasAccountContext(widget.api)
                 ? () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -147,10 +147,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
                   )
                 : null,
             icon: const Icon(Icons.notifications_active_outlined),
+            size: 44,
+            iconSize: 22,
           ),
-          IconButton(
+          ZhLiquidGlassIconButton(
             key: const ValueKey('notification-read-all'),
-            tooltip: '全部已读',
+            semanticLabel: '全部已读',
             onPressed: _markingRead || !_hasAccountContext(widget.api)
                 ? null
                 : _markAllRead,
@@ -160,6 +162,8 @@ class _NotificationsPageState extends State<NotificationsPage> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.mark_email_read_outlined),
+            size: 44,
+            iconSize: 22,
           ),
         ],
       ),

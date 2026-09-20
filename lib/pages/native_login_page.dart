@@ -1,8 +1,10 @@
+import 'dart:ui' as ui;
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 import '../core/api_client.dart';
 import '../core/api_response.dart';
@@ -320,6 +322,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF7F9FC),
       key: widget.embedded ? const ValueKey('embedded-native-login') : null,
       appBar: widget.embedded
           ? ZhTopBar(
@@ -335,116 +338,118 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
               title: const Text('登录'),
             )
           : const ZhTopBar(toolbarHeight: 46, automaticallyImplyLeading: false),
-      body: SafeArea(
-        top: false,
-        child: ZhPageWidth(
-          maxWidth: 600,
-          child: ListView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.fromLTRB(
-              ZhSpace.lg,
-              ZhSpace.xs,
-              ZhSpace.lg,
-              ZhSpace.xl,
-            ),
-            children: [
-              _LoginHeader(
-                passwordMode: _mode == _LoginMode.password,
-                qrMode: _mode == _LoginMode.qr,
-              ),
-              const SizedBox(height: 30),
-              if (_mode != _LoginMode.qr) ...[
-                _LoginProgress(
-                  codeSent: _codeSent,
-                  passwordMode: _mode == _LoginMode.password,
-                ),
-                const SizedBox(height: 30),
-              ],
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 280),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0.045, 0),
-                      end: Offset.zero,
-                    ).animate(animation),
-                    child: child,
+      body: Stack(
+        children: [
+          const Positioned.fill(child: _LoginBackdrop()),
+          SafeArea(
+            top: false,
+            child: ZhPageWidth(
+              maxWidth: 600,
+              child: ListView(
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
+                children: [
+                  _LoginHeader(
+                    passwordMode: _mode == _LoginMode.password,
+                    qrMode: _mode == _LoginMode.qr,
                   ),
-                ),
-                child: _mode == _LoginMode.qr
-                    ? _QrLoginPane(
-                        key: const ValueKey('qr-login-pane'),
-                        api: _api,
-                        onLoginSuccess: _onQrLoginSuccess,
-                      )
-                    : _mode == _LoginMode.password
-                    ? _buildPasswordStep()
-                    : _codeSent
-                    ? _buildCodeStep()
-                    : _buildPhoneStep(),
-              ),
-              AnimatedSize(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOutCubic,
-                child: _feedback == null
-                    ? const SizedBox.shrink()
-                    : Padding(
-                        padding: const EdgeInsets.only(top: ZhSpace.sm),
-                        child: _FeedbackMessage(
-                          message: _feedback!,
-                          isError: _feedbackIsError,
-                        ),
+                  const SizedBox(height: 30),
+                  if (_mode != _LoginMode.qr) ...[
+                    _LoginProgress(
+                      codeSent: _codeSent,
+                      passwordMode: _mode == _LoginMode.password,
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0.045, 0),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
                       ),
-              ),
-              if (_mode != _LoginMode.qr) ...[
-                const SizedBox(height: ZhSpace.lg),
-                _LoginPrimaryButton(
-                  busy: _busy,
-                  label: _mode == _LoginMode.password
-                      ? '登录'
-                      : (_codeSent ? '继续登录' : '获取验证码'),
-                  onPressed: _busy
-                      ? null
-                      : _mode == _LoginMode.password
-                      ? _signInWithPassword
-                      : (_codeSent ? _signIn : _requestDigits),
-                ),
-                const SizedBox(height: ZhSpace.sm),
-                if (!_codeSent || _mode == _LoginMode.password)
-                  _buildAgreement(),
-                if (_codeSent && _mode == _LoginMode.sms) _buildCodeActions(),
-                const SizedBox(height: 4),
-                _LoginTextButton(
-                  key: const ValueKey('login-mode-toggle'),
-                  onPressed: _busy ? null : _switchLoginMode,
-                  label: _mode == _LoginMode.password ? '验证码登录' : '账号密码登录',
-                ),
-              ],
-              const SizedBox(height: 4),
-              _LoginTextButton(
-                key: const ValueKey('qr-login-mode-toggle'),
-                onPressed: _busy ? null : _switchQrMode,
-                label: _mode == _LoginMode.qr ? '手机号登录' : '扫码登录',
-              ),
-              const SizedBox(height: 28),
-              const Divider(),
-              const SizedBox(height: ZhSpace.sm),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: _LoginTextButton(
-                  onPressed: () => _openOfficialHelp(
-                    '账号申诉',
-                    'https://www.zhihu.com/account/appeal?utm_source=android',
+                    ),
+                    child: _mode == _LoginMode.qr
+                        ? _QrLoginPane(
+                            key: const ValueKey('qr-login-pane'),
+                            api: _api,
+                            onLoginSuccess: _onQrLoginSuccess,
+                          )
+                        : _mode == _LoginMode.password
+                        ? _buildPasswordStep()
+                        : _codeSent
+                        ? _buildCodeStep()
+                        : _buildPhoneStep(),
                   ),
-                  label: '遇到问题？账号申诉',
-                ),
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 200),
+                    curve: Curves.easeOutCubic,
+                    child: _feedback == null
+                        ? const SizedBox.shrink()
+                        : Padding(
+                            padding: const EdgeInsets.only(top: ZhSpace.sm),
+                            child: _FeedbackMessage(
+                              message: _feedback!,
+                              isError: _feedbackIsError,
+                            ),
+                          ),
+                  ),
+                  if (_mode != _LoginMode.qr) ...[
+                    const SizedBox(height: ZhSpace.lg),
+                    _LoginPrimaryButton(
+                      busy: _busy,
+                      label: _mode == _LoginMode.password
+                          ? '登录'
+                          : (_codeSent ? '继续登录' : '获取验证码'),
+                      onPressed: _busy
+                          ? null
+                          : _mode == _LoginMode.password
+                          ? _signInWithPassword
+                          : (_codeSent ? _signIn : _requestDigits),
+                    ),
+                    const SizedBox(height: ZhSpace.sm),
+                    if (!_codeSent || _mode == _LoginMode.password)
+                      _buildAgreement(),
+                    if (_codeSent && _mode == _LoginMode.sms)
+                      _buildCodeActions(),
+                    const SizedBox(height: 4),
+                    _LoginTextButton(
+                      key: const ValueKey('login-mode-toggle'),
+                      onPressed: _busy ? null : _switchLoginMode,
+                      label: _mode == _LoginMode.password ? '验证码登录' : '账号密码登录',
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  _LoginTextButton(
+                    key: const ValueKey('qr-login-mode-toggle'),
+                    onPressed: _busy ? null : _switchQrMode,
+                    label: _mode == _LoginMode.qr ? '手机号登录' : '扫码登录',
+                  ),
+                  const SizedBox(height: 28),
+                  const Divider(),
+                  const SizedBox(height: ZhSpace.sm),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _LoginTextButton(
+                      onPressed: () => _openOfficialHelp(
+                        '账号申诉',
+                        'https://www.zhihu.com/account/appeal?utm_source=android',
+                      ),
+                      label: '遇到问题？账号申诉',
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -453,41 +458,18 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     key: const ValueKey('login-phone-step'),
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      SizedBox(
-        height: 68,
-        child: TextField(
-          key: const ValueKey('login-phone-input'),
-          controller: _phone,
-          focusNode: _phoneFocus,
-          keyboardType: TextInputType.phone,
-          textInputAction: TextInputAction.done,
-          textAlignVertical: TextAlignVertical.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.2),
-          autocorrect: false,
-          enableSuggestions: false,
-          autofillHints: const [AutofillHints.telephoneNumber],
-          inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'[0-9+()\s-]')),
-          ],
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: ZhPalette.background,
-            hintText: '国家/地区代码 + 手机号',
-            hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: ZhPalette.subtleInk,
-              height: 1.2,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 20,
-            ),
-            border: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            enabledBorder: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            focusedBorder: _phoneInputBorder(ZhPalette.ink, 1.5),
-          ),
-          onSubmitted: (_) => _requestDigits(),
-        ),
+      _LoginGlassTextField(
+        key: const ValueKey('login-phone-input'),
+        controller: _phone,
+        focusNode: _phoneFocus,
+        placeholder: '国家/地区代码 + 手机号',
+        prefixIcon: Icons.phone_iphone_rounded,
+        keyboardType: TextInputType.phone,
+        textInputAction: TextInputAction.done,
+        inputFormatters: [
+          FilteringTextInputFormatter.allow(RegExp(r'[0-9+()\s-]')),
+        ],
+        onSubmitted: (_) => _requestDigits(),
       ),
     ],
   );
@@ -496,83 +478,36 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     key: const ValueKey('login-password-step'),
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      SizedBox(
-        height: 68,
-        child: TextField(
-          key: const ValueKey('login-username-input'),
-          controller: _phone,
-          focusNode: _phoneFocus,
-          keyboardType: TextInputType.emailAddress,
-          textInputAction: TextInputAction.next,
-          textAlignVertical: TextAlignVertical.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.2),
-          autocorrect: false,
-          enableSuggestions: false,
-          autofillHints: const [AutofillHints.username, AutofillHints.email],
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: ZhPalette.background,
-            hintText: '手机号 / 邮箱',
-            hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: ZhPalette.subtleInk,
-              height: 1.2,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 20,
-            ),
-            border: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            enabledBorder: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            focusedBorder: _phoneInputBorder(ZhPalette.ink, 1.5),
-          ),
-          onSubmitted: (_) => _passwordFocus.requestFocus(),
-        ),
+      _LoginGlassTextField(
+        key: const ValueKey('login-username-input'),
+        controller: _phone,
+        focusNode: _phoneFocus,
+        placeholder: '手机号 / 邮箱',
+        prefixIcon: Icons.person_outline_rounded,
+        keyboardType: TextInputType.emailAddress,
+        textInputAction: TextInputAction.next,
+        onSubmitted: (_) => _passwordFocus.requestFocus(),
       ),
       const SizedBox(height: 12),
-      SizedBox(
-        height: 68,
-        child: TextField(
-          key: const ValueKey('login-password-input'),
-          controller: _passwordController,
-          focusNode: _passwordFocus,
-          enabled: !_busy,
-          obscureText: _obscurePassword,
-          textInputAction: TextInputAction.done,
-          textAlignVertical: TextAlignVertical.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.2),
-          autocorrect: false,
-          enableSuggestions: false,
-          autofillHints: const [AutofillHints.password],
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: ZhPalette.background,
-            hintText: '密码',
-            hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: ZhPalette.subtleInk,
-              height: 1.2,
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 20,
-            ),
-            border: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            enabledBorder: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            focusedBorder: _phoneInputBorder(ZhPalette.ink, 1.5),
-            suffixIcon: IconButton(
-              tooltip: _obscurePassword ? '显示密码' : '隐藏密码',
-              onPressed: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-              ),
-            ),
-          ),
-          onSubmitted: (_) => _signInWithPassword(),
+      _LoginGlassTextField(
+        key: const ValueKey('login-password-input'),
+        controller: _passwordController,
+        focusNode: _passwordFocus,
+        enabled: !_busy,
+        obscureText: _obscurePassword,
+        placeholder: '密码',
+        prefixIcon: Icons.lock_outline_rounded,
+        suffixIcon: Icon(
+          _obscurePassword
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
+          color: ZhPalette.mutedInk,
+          size: 21,
         ),
+        onSuffixTap: () => setState(() => _obscurePassword = !_obscurePassword),
+        keyboardType: TextInputType.visiblePassword,
+        textInputAction: TextInputAction.done,
+        onSubmitted: (_) => _signInWithPassword(),
       ),
     ],
   );
@@ -598,56 +533,28 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         ],
       ),
       const SizedBox(height: ZhSpace.md),
-      SizedBox(
-        height: 68,
-        child: TextField(
-          key: ValueKey('login-otp-$_otpRevision'),
-          controller: _digitsController,
-          focusNode: _firstOtpFocus,
-          enabled: !_busy,
-          keyboardType: TextInputType.number,
-          textInputAction: TextInputAction.done,
-          textAlignVertical: TextAlignVertical.center,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(height: 1.2),
-          autocorrect: false,
-          enableSuggestions: false,
-          autofillHints: const [AutofillHints.oneTimeCode],
-          maxLength: 6,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: InputDecoration(
-            isDense: true,
-            filled: true,
-            fillColor: ZhPalette.background,
-            hintText: '输入 6 位验证码',
-            hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: ZhPalette.subtleInk,
-              height: 1.2,
-            ),
-            counterText: '',
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 20,
-            ),
-            border: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            enabledBorder: _phoneInputBorder(const Color(0xFFD8D8D8), 1),
-            focusedBorder: _phoneInputBorder(ZhPalette.ink, 1.5),
-          ),
-          onChanged: (value) {
-            if (value == _digits) return;
-            setState(() => _digits = value);
-            if (value.length == 6) _signIn();
-          },
-          onSubmitted: (_) => _signIn(),
-        ),
+      _LoginGlassTextField(
+        key: ValueKey('login-otp-$_otpRevision'),
+        controller: _digitsController,
+        focusNode: _firstOtpFocus,
+        enabled: !_busy,
+        placeholder: '输入 6 位验证码',
+        prefixIcon: Icons.password_rounded,
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.done,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(6),
+        ],
+        onChanged: (value) {
+          if (value == _digits) return;
+          setState(() => _digits = value);
+          if (value.length == 6) _signIn();
+        },
+        onSubmitted: (_) => _signIn(),
       ),
     ],
   );
-
-  OutlineInputBorder _phoneInputBorder(Color color, double width) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(34),
-        borderSide: BorderSide(color: color, width: width),
-      );
 
   Widget _buildAgreement() => Row(
     crossAxisAlignment: CrossAxisAlignment.center,

@@ -15,11 +15,39 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
     if (!_scrollController.hasClients || _answerJumpInProgress) return;
     _answerJumpInProgress = true;
     try {
-      await _scrollController.animateTo(
-        target,
-        duration: const Duration(milliseconds: 360),
-        curve: Curves.easeOutCubic,
-      );
+      // SliverMultiBoxAdaptor estimates the extent of not-yet-built children.
+      // A long answer can therefore report a temporary maxScrollExtent that
+      // is much larger than the settled value. Re-resolve the edge after the
+      // first animation and clamp once more so the jump cannot land in the
+      // blank space beyond the last rendered paragraph.
+      final toBottom = target >= _scrollController.position.maxScrollExtent - 1;
+      for (var attempt = 0; attempt < 4; attempt++) {
+        if (!_scrollController.hasClients) return;
+        final position = _scrollController.position;
+        final destination = toBottom
+            ? position.maxScrollExtent
+            : position.minScrollExtent;
+        if ((position.pixels - destination).abs() > .5) {
+          await _scrollController.animateTo(
+            destination,
+            duration: Duration(milliseconds: attempt == 0 ? 360 : 180),
+            curve: Curves.easeOutCubic,
+          );
+        }
+        await WidgetsBinding.instance.endOfFrame;
+        if (!_scrollController.hasClients) return;
+        final settled = _scrollController.position;
+        final edge = toBottom
+            ? settled.maxScrollExtent
+            : settled.minScrollExtent;
+        final boundedPixels = settled.pixels
+            .clamp(settled.minScrollExtent, settled.maxScrollExtent)
+            .toDouble();
+        if ((settled.pixels - boundedPixels).abs() > .5) {
+          settled.jumpTo(boundedPixels);
+        }
+        if ((settled.pixels - edge).abs() <= .5) break;
+      }
     } catch (_) {
       // The route can be disposed while the animated jump is in flight.
     } finally {

@@ -339,6 +339,8 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
       children: [
         RefreshIndicator(
           key: _refreshIndicatorKey,
+          edgeOffset: widget.topInset,
+          displacement: 24,
           onRefresh: () => _load(reset: true, refreshing: true),
           child: _buildList(),
         ),

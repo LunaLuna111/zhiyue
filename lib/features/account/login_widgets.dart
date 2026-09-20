@@ -1,5 +1,140 @@
 part of '../../pages/native_login_page.dart';
 
+const _loginGlassSettings = LiquidGlassSettings(
+  thickness: 26,
+  blur: 12,
+  chromaticAberration: .14,
+  lightIntensity: .62,
+  refractiveIndex: 1.51,
+  saturation: .92,
+  ambientStrength: .78,
+  glassColor: Color(0xC9FFFFFF),
+);
+
+class _LoginBackdrop extends StatelessWidget {
+  const _LoginBackdrop();
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Stack(
+      fit: StackFit.expand,
+      children: [
+        const DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFF4F8FF), Color(0xFFFBFBFD), Color(0xFFF4F5F8)],
+              stops: [0, .52, 1],
+            ),
+          ),
+        ),
+        Positioned(
+          top: -86,
+          right: -54,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 34, sigmaY: 34),
+            child: const _LoginGlow(size: 230, color: Color(0x2D9AC8FF)),
+          ),
+        ),
+        Positioned(
+          left: -112,
+          bottom: 80,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 46, sigmaY: 46),
+            child: const _LoginGlow(size: 260, color: Color(0x1ECCD8FF)),
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _LoginGlow extends StatelessWidget {
+  const _LoginGlow({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+    child: SizedBox.square(dimension: size),
+  );
+}
+
+class _LoginGlassTextField extends StatelessWidget {
+  const _LoginGlassTextField({
+    super.key,
+    required this.controller,
+    required this.focusNode,
+    required this.placeholder,
+    required this.prefixIcon,
+    required this.keyboardType,
+    required this.textInputAction,
+    required this.onSubmitted,
+    this.enabled = true,
+    this.obscureText = false,
+    this.suffixIcon,
+    this.onSuffixTap,
+    this.inputFormatters,
+    this.onChanged,
+  });
+
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final String placeholder;
+  final IconData prefixIcon;
+  final TextInputType keyboardType;
+  final TextInputAction textInputAction;
+  final ValueChanged<String> onSubmitted;
+  final bool enabled;
+  final bool obscureText;
+  final Widget? suffixIcon;
+  final VoidCallback? onSuffixTap;
+  final List<TextInputFormatter>? inputFormatters;
+  final ValueChanged<String>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => GlassTextField(
+    key: key,
+    controller: controller,
+    focusNode: focusNode,
+    enabled: enabled,
+    obscureText: obscureText,
+    placeholder: placeholder,
+    keyboardType: keyboardType,
+    textInputAction: textInputAction,
+    inputFormatters: inputFormatters,
+    onChanged: onChanged,
+    onSubmitted: onSubmitted,
+    prefixIcon: Icon(
+      prefixIcon,
+      size: 21,
+      color: enabled ? ZhPalette.mutedInk : ZhPalette.subtleInk,
+    ),
+    suffixIcon: suffixIcon,
+    onSuffixTap: onSuffixTap,
+    height: 64,
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+    iconSpacing: 12,
+    shape: const LiquidRoundedRectangle(borderRadius: 32),
+    settings: _loginGlassSettings,
+    useOwnLayer: true,
+    quality: GlassQuality.premium,
+    interactionBehavior: GlassInteractionBehavior.full,
+    pressScale: 1.015,
+    textStyle: Theme.of(
+      context,
+    ).textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.2),
+    placeholderStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+      color: ZhPalette.subtleInk,
+      fontSize: 17,
+      height: 1.2,
+    ),
+  );
+}
+
 class _LoginHeader extends StatelessWidget {
   const _LoginHeader({this.passwordMode = false, this.qrMode = false});
 
@@ -8,24 +143,37 @@ class _LoginHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      const ZhBrandMark(size: 58),
-      const SizedBox(width: ZhSpace.md),
+      DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(23),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x18000000),
+              blurRadius: 22,
+              offset: Offset(0, 10),
+            ),
+          ],
+        ),
+        child: const ZhBrandMark(size: 66),
+      ),
+      const SizedBox(width: 18),
       Expanded(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('登录知乎', style: Theme.of(context).textTheme.headlineLarge),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Text(
               qrMode
                   ? '知乎 App 扫码登录'
                   : passwordMode
-                  ? '账号密码登录'
+                  ? '使用账号密码安全登录'
                   : '手机号快捷登录',
               style: Theme.of(
                 context,
-              ).textTheme.bodySmall?.copyWith(color: ZhPalette.mutedInk),
+              ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
             ),
           ],
         ),
@@ -47,24 +195,39 @@ class _LoginProgress extends StatelessWidget {
         : codeSent
         ? '登录进度：验证码'
         : '登录进度：手机号',
-    child: Row(
-      children: [
-        Expanded(
-          child: _LoginStepLabel(
-            label: passwordMode ? '账号' : '手机号',
-            selected: passwordMode || !codeSent,
-            completed: !passwordMode && codeSent,
+    child: Container(
+      height: 58,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0x62FFFFFF),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: const Color(0xB8FFFFFF)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x120A2850),
+            blurRadius: 18,
+            offset: Offset(0, 7),
           ),
-        ),
-        const SizedBox(width: ZhSpace.md),
-        Expanded(
-          child: _LoginStepLabel(
-            label: passwordMode ? '密码' : '验证码',
-            selected: !passwordMode && codeSent,
-            completed: false,
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: _LoginStepLabel(
+              label: passwordMode ? '账号' : '手机号',
+              selected: passwordMode || !codeSent,
+              completed: !passwordMode && codeSent,
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: _LoginStepLabel(
+              label: passwordMode ? '密码' : '验证码',
+              selected: !passwordMode && codeSent,
+              completed: false,
+            ),
+          ),
+        ],
+      ),
     ),
   );
 }
@@ -81,35 +244,40 @@ class _LoginStepLabel extends StatelessWidget {
   final bool completed;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          if (completed) ...[
-            const Icon(Icons.check_rounded, size: 16, color: ZhPalette.ink),
-            const SizedBox(width: 4),
-          ],
-          Text(
-            label,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              color: selected ? ZhPalette.ink : ZhPalette.subtleInk,
-              fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
-            ),
-          ),
+  Widget build(BuildContext context) => AnimatedContainer(
+    duration: const Duration(milliseconds: 240),
+    curve: Curves.easeOutCubic,
+    margin: const EdgeInsets.symmetric(horizontal: 2),
+    padding: const EdgeInsets.symmetric(horizontal: 12),
+    decoration: BoxDecoration(
+      color: selected ? const Color(0xF7FFFFFF) : Colors.transparent,
+      borderRadius: BorderRadius.circular(25),
+      boxShadow: selected
+          ? const [
+              BoxShadow(
+                color: Color(0x15000000),
+                blurRadius: 10,
+                offset: Offset(0, 3),
+              ),
+            ]
+          : const [],
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (completed) ...[
+          const Icon(Icons.check_rounded, size: 16, color: ZhPalette.ink),
+          const SizedBox(width: 4),
         ],
-      ),
-      const SizedBox(height: 10),
-      AnimatedContainer(
-        duration: const Duration(milliseconds: 240),
-        curve: Curves.easeOutCubic,
-        height: 3,
-        decoration: BoxDecoration(
-          color: selected ? ZhPalette.ink : ZhPalette.border,
-          borderRadius: BorderRadius.circular(3),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: selected ? ZhPalette.ink : ZhPalette.subtleInk,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -150,29 +318,21 @@ class _LoginPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => ShadButton(
-    width: double.infinity,
-    height: 56,
-    enabled: onPressed != null,
+  Widget build(BuildContext context) => ZhLiquidGlassLabelButton(
+    label: busy ? '' : label,
+    semanticLabel: label,
+    prominent: true,
+    expand: true,
     onPressed: onPressed,
-    pressedBackgroundColor: const Color(0xFF2A2A2A),
-    decoration: ShadDecoration(
-      border: ShadBorder.all(width: 0, radius: BorderRadius.circular(28)),
-    ),
-    child: AnimatedSwitcher(
-      duration: const Duration(milliseconds: 180),
-      child: busy
-          ? const SizedBox(
-              key: ValueKey('login-busy'),
-              width: 18,
-              height: 18,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: ZhPalette.background,
-              ),
-            )
-          : Text(label, key: ValueKey(label)),
-    ),
+    leading: busy
+        ? const SizedBox.square(
+            dimension: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: ZhPalette.background,
+            ),
+          )
+        : null,
   );
 }
 

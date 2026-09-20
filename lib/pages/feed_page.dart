@@ -304,10 +304,12 @@ class _FeedPageState extends State<FeedPage>
 
   Widget _pageAt(int index) {
     final channel = _channels[index];
-    // The glass header floats over the feed. Reserve only the system status
-    // inset so the first item starts below the status bar and remains visible
-    // behind the top controls instead of leaving a reserved white band.
-    final contentTopInset = MediaQuery.viewPaddingOf(context).top;
+    // Keep the first row and pull-to-refresh track below the floating channel
+    // chrome. Reserving only the status inset makes the refresh indicator
+    // appear underneath the glass tabs on every home channel.
+    final contentTopInset =
+        MediaQuery.viewPaddingOf(context).top +
+        ZhLiquidGlassTopNavigation.barHeight;
     final refreshSignal = _refreshSignals[channel]!;
     final requestScopeEpoch = _requestScopeEpoch;
     bool isRequestScopeCurrent() =>

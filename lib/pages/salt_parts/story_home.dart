@@ -187,6 +187,8 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
     if (_error != null && _modules.isEmpty) {
       return RefreshIndicator(
         key: _refreshIndicatorKey,
+        edgeOffset: widget.topInset,
+        displacement: 24,
         onRefresh: () => _load(reset: true, refreshing: true),
         child: ListView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -208,6 +210,8 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
     final blocks = _saltStoryBlocks(_modules);
     return RefreshIndicator(
       key: _refreshIndicatorKey,
+      edgeOffset: widget.topInset,
+      displacement: 24,
       onRefresh: () => _load(reset: true, refreshing: true),
       child: ListView.builder(
         controller: _scrollController,

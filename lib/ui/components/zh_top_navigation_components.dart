@@ -627,7 +627,7 @@ class ZhLiquidGlassAppBar extends StatelessWidget
       fit: StackFit.passthrough,
       clipBehavior: Clip.none,
       children: [
-        const Positioned.fill(child: _ZhProgressiveGlassBackdrop()),
+        const Positioned.fill(child: ZhProgressiveGlassBackdrop()),
         appBar,
       ],
     );
@@ -639,8 +639,8 @@ class ZhLiquidGlassAppBar extends StatelessWidget
 /// The lower edge remains nearly clear while the upper edge gains a gentle
 /// progressive blur. This lets the scrolling content dissolve naturally into
 /// the toolbar without creating a hard divider or hiding the text below it.
-class _ZhProgressiveGlassBackdrop extends StatelessWidget {
-  const _ZhProgressiveGlassBackdrop();
+class ZhProgressiveGlassBackdrop extends StatelessWidget {
+  const ZhProgressiveGlassBackdrop({super.key});
 
   @override
   Widget build(BuildContext context) => const IgnorePointer(
@@ -787,7 +787,7 @@ class ZhLiquidGlassTopNavigation extends StatelessWidget
             fit: StackFit.passthrough,
             clipBehavior: Clip.none,
             children: [
-              const Positioned.fill(child: _ZhProgressiveGlassBackdrop()),
+              const Positioned.fill(child: ZhProgressiveGlassBackdrop()),
               Padding(
                 padding: EdgeInsets.fromLTRB(8, topInset + 8, 12, 8),
                 child: Row(

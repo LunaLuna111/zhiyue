@@ -332,17 +332,20 @@ class _FollowingFilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = filters.indexOf(selected);
-    return SizedBox(
-      height: 68,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(18, 11, 18, 11),
-        child: ZhLiquidGlassSegmentedTabs(
-          key: const ValueKey('following-filter-glass-tabs'),
-          labels: filters,
-          selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-          semanticPrefix: '关注页',
-          onSelected: (index) => onSelected(filters[index]),
-          height: 46,
+    return ColoredBox(
+      color: const Color(0xFFF8FAFD),
+      child: SizedBox(
+        height: 68,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(18, 11, 18, 11),
+          child: ZhLiquidGlassSegmentedTabs(
+            key: const ValueKey('following-filter-glass-tabs'),
+            labels: filters,
+            selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
+            semanticPrefix: '关注页',
+            onSelected: (index) => onSelected(filters[index]),
+            height: 46,
+          ),
         ),
       ),
     );

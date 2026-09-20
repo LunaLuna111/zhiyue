@@ -1,7 +1,9 @@
 part of '../content_pages.dart';
 
+const _detailBottomOverlayInset = 104.0;
+
 extension _ContentDetailBody on _ContentDetailPageState {
-  Widget _body({double topInset = 0}) {
+  Widget _body({double topInset = 0, Widget? answerQuestionHeader}) {
     if (_loading && _document == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -182,13 +184,34 @@ extension _ContentDetailBody on _ContentDetailPageState {
         ),
       const SizedBox(height: ZhSpace.sm),
     ];
-    final contentList = ListView(
+    final contentList = CustomScrollView(
       controller: _scrollController,
       physics: const ClampingScrollPhysics(
         parent: AlwaysScrollableScrollPhysics(),
       ),
-      padding: EdgeInsets.fromLTRB(18, 18 + topInset, 18, 18),
-      children: contentChildren,
+      slivers: [
+        if (answerQuestionHeader != null)
+          SliverPersistentHeader(
+            floating: true,
+            delegate: _CollapsibleAnswerQuestionHeaderDelegate(
+              child: answerQuestionHeader,
+              topInset: topInset,
+            ),
+          )
+        else
+          SliverToBoxAdapter(child: SizedBox(height: topInset)),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(
+            18,
+            18,
+            18,
+            _detailBottomOverlayInset,
+          ),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate(contentChildren),
+          ),
+        ),
+      ],
     );
     return ValueListenableBuilder<double>(
       valueListenable: _answerOverscrollNotifier,
@@ -247,6 +270,10 @@ extension _ContentDetailBody on _ContentDetailPageState {
                 ),
               Transform.translate(
                 offset: Offset(0, overscroll),
+                // Keep the scroll viewport behind the translucent top bar.
+                // The collapsible header reserves the initial safe area
+                // itself, so later answer text can scroll under the bar and
+                // be softened by its progressive glass backdrop.
                 child: contentList,
               ),
             ],
@@ -265,4 +292,66 @@ extension _ContentDetailBody on _ContentDetailPageState {
       expand: true,
     ),
   );
+}
+
+class _CollapsibleAnswerQuestionHeaderDelegate
+    extends SliverPersistentHeaderDelegate {
+  const _CollapsibleAnswerQuestionHeaderDelegate({
+    required this.child,
+    required this.topInset,
+  });
+
+  static const double _height = 80;
+
+  final Widget child;
+  final double topInset;
+
+  @override
+  double get minExtent => topInset;
+
+  @override
+  double get maxExtent => topInset + _height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final visibleHeight = (maxExtent - shrinkOffset - topInset).clamp(
+      0.0,
+      _height,
+    );
+    final reveal = visibleHeight / _height;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Positioned(
+          left: 0,
+          right: 0,
+          top: topInset,
+          bottom: 0,
+          child: ClipRect(
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ZhProgressiveGlassBackdrop(),
+                Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Opacity(
+                    opacity: (reveal * 1.15).clamp(0.0, 1.0),
+                    child: SizedBox(height: _height, child: child),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _CollapsibleAnswerQuestionHeaderDelegate old) =>
+      old.child != child;
 }

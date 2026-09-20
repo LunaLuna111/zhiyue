@@ -748,6 +748,130 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             onTap: () => _openQuestionAnswers(questionId, questionTitle),
           )
         : null;
+    final contentLabel = answerToolbar ? '回答' : '内容';
+    final detailMenuItems = <ZhLiquidGlassMenuItem<_DetailMoreAction>>[
+      if (answerToolbar && questionId.isNotEmpty)
+        const ZhLiquidGlassMenuItem(
+          value: _DetailMoreAction.write,
+          label: '写回答',
+          icon: Icon(Icons.edit_outlined),
+          subtitle: '创建对这个问题的新回答',
+        ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.refresh,
+        label: '刷新$contentLabel',
+        icon: const Icon(Icons.refresh_rounded),
+        subtitle: '忽略缓存并重新获取最新内容',
+      ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.search,
+        label: '搜索正文',
+        icon: const Icon(Icons.search_rounded),
+        subtitle: '输入关键词快速定位到正文内容',
+      ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.readAloud,
+        label: TtsService.instance.isPlaying ? '停止朗读' : '朗读正文',
+        icon: Icon(
+          TtsService.instance.isPlaying
+              ? Icons.stop_circle_outlined
+              : Icons.volume_up_outlined,
+        ),
+        subtitle: '使用系统中文语音朗读当前$contentLabel',
+      ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.exportTxt,
+        label: '导出为 TXT',
+        icon: const Icon(Icons.text_snippet_outlined),
+        subtitle: '保存当前标题、作者和正文',
+      ),
+      for (final format in ContentExportFormat.values)
+        ZhLiquidGlassMenuItem(
+          value: switch (format) {
+            ContentExportFormat.markdown => _DetailMoreAction.exportMarkdown,
+            ContentExportFormat.html => _DetailMoreAction.exportHtml,
+            ContentExportFormat.pdf => _DetailMoreAction.exportPdf,
+          },
+          label: '导出为 ${format.label}',
+          icon: Icon(switch (format) {
+            ContentExportFormat.markdown => Icons.code_rounded,
+            ContentExportFormat.html => Icons.language_rounded,
+            ContentExportFormat.pdf => Icons.picture_as_pdf_outlined,
+          }),
+          subtitle: format == ContentExportFormat.pdf
+              ? '生成适合分享和打印的文档'
+              : '保留标题、作者、段落和正文图片链接',
+        ),
+      if (!answerToolbar)
+        const ZhLiquidGlassMenuItem(
+          value: _DetailMoreAction.copy,
+          label: '复制全文',
+          icon: Icon(Icons.copy_all_outlined),
+          subtitle: '复制当前标题、作者和正文',
+        ),
+      const ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.clearCache,
+        label: '清除本条缓存',
+        icon: Icon(Icons.delete_sweep_outlined),
+      ),
+    ];
+    final detailActionGroup =
+        ZhLiquidGlassCapsuleMenuActionGroup<_DetailMoreAction>(
+          key: const ValueKey('content-detail-actions'),
+          primaryAction: answerToolbar
+              ? ZhLiquidGlassCapsuleAction(
+                  icon: const Icon(Icons.person_add_alt_1_rounded),
+                  semanticLabel: '邀请回答',
+                  onPressed: questionId.isEmpty
+                      ? null
+                      : () => _openInviteAnswer(questionId),
+                )
+              : ZhLiquidGlassCapsuleAction(
+                  icon: _AuthorAvatar(
+                    imageUrl: authorAvatar,
+                    fallback: authorDisplayName.characters.first,
+                    size: 22,
+                  ),
+                  semanticLabel: '查看$authorDisplayName的个人主页',
+                  onPressed: authorPageId.isEmpty
+                      ? null
+                      : () => _openAuthorPage(authorPageId),
+                ),
+          additionalActions: [
+            answerToolbar
+                ? ZhLiquidGlassCapsuleAction(
+                    icon: const Icon(Icons.copy_rounded),
+                    semanticLabel: '复制回答内容',
+                    onPressed: () => unawaited(_copyCurrentText()),
+                  )
+                : ZhLiquidGlassCapsuleAction(
+                    icon: Icon(
+                      authorFollowing ? Icons.check_rounded : Icons.add_rounded,
+                    ),
+                    semanticLabel: authorFollowing ? '取消关注作者' : '关注作者',
+                    onPressed:
+                        authorActionId.isEmpty ||
+                            documentRelationship?.isAuthor == true ||
+                            _authorFollowBusy
+                        ? null
+                        : () => _toggleAuthorFollowing(
+                            detailObject,
+                            authorActionId,
+                          ),
+                  ),
+          ],
+          menuIcon: const Icon(Icons.more_horiz_rounded),
+          menuSemanticLabel: '更多操作',
+          menuWidth: 280,
+          onSelected: (action) => unawaited(
+            _handleDetailMoreAction(
+              action,
+              questionId: questionId,
+              questionTitle: questionTitle,
+            ),
+          ),
+          menuItems: detailMenuItems,
+        );
     return Scaffold(
       extendBody: true,
       extendBodyBehindAppBar: true,
@@ -763,66 +887,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           size: 46,
           iconSize: 24,
         ),
-        actions: [
-          ZhLiquidGlassCapsuleActionGroup(
-            key: const ValueKey('content-detail-actions'),
-            actions: answerToolbar
-                ? [
-                    ZhLiquidGlassCapsuleAction(
-                      icon: const Icon(Icons.person_add_alt_1_rounded),
-                      semanticLabel: '邀请回答',
-                      onPressed: questionId.isEmpty
-                          ? null
-                          : () => _openInviteAnswer(questionId),
-                    ),
-                    ZhLiquidGlassCapsuleAction(
-                      icon: const Icon(Icons.copy_rounded),
-                      semanticLabel: '复制回答内容',
-                      onPressed: () => unawaited(_copyCurrentText()),
-                    ),
-                    ZhLiquidGlassCapsuleAction(
-                      icon: const Icon(Icons.more_horiz_rounded),
-                      semanticLabel: '更多操作',
-                      onPressed: _showDetailActions,
-                    ),
-                  ]
-                : [
-                    ZhLiquidGlassCapsuleAction(
-                      icon: _AuthorAvatar(
-                        imageUrl: authorAvatar,
-                        fallback: authorDisplayName.characters.first,
-                        size: 22,
-                      ),
-                      semanticLabel: '查看$authorDisplayName的个人主页',
-                      onPressed: authorPageId.isEmpty
-                          ? null
-                          : () => _openAuthorPage(authorPageId),
-                    ),
-                    ZhLiquidGlassCapsuleAction(
-                      icon: Icon(
-                        authorFollowing
-                            ? Icons.check_rounded
-                            : Icons.add_rounded,
-                      ),
-                      semanticLabel: authorFollowing ? '取消关注作者' : '关注作者',
-                      onPressed:
-                          authorActionId.isEmpty ||
-                              documentRelationship?.isAuthor == true ||
-                              _authorFollowBusy
-                          ? null
-                          : () => _toggleAuthorFollowing(
-                              detailObject,
-                              authorActionId,
-                            ),
-                    ),
-                    ZhLiquidGlassCapsuleAction(
-                      icon: const Icon(Icons.more_horiz_rounded),
-                      semanticLabel: '更多操作',
-                      onPressed: _showDetailActions,
-                    ),
-                  ],
-          ),
-        ],
+        actions: [detailActionGroup],
         title: ContentDetailAppBarTitle(title: authorDisplayName),
       ),
       body: Builder(

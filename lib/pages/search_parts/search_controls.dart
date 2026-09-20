@@ -9,6 +9,7 @@ class _SearchField extends StatelessWidget {
     this.onChanged,
     this.autofocus = false,
     this.compact = false,
+    this.inlineActions = true,
   });
 
   final TextEditingController controller;
@@ -18,6 +19,7 @@ class _SearchField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final bool autofocus;
   final bool compact;
+  final bool inlineActions;
 
   @override
   Widget build(BuildContext context) => ZhLiquidGlassSearchField(
@@ -27,6 +29,7 @@ class _SearchField extends StatelessWidget {
     hintText: hintText,
     autofocus: autofocus,
     compact: compact,
+    inlineActions: inlineActions,
     onChanged: onChanged,
     onSubmitted: onSubmitted,
   );

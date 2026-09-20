@@ -339,16 +339,44 @@ class _SearchPageState extends State<SearchPage>
     }
   }
 
-  Widget _searchMenu() {
+  void _clearQuery() {
+    if (_query.text.isEmpty) return;
+    _query.clear();
+    _onQueryChanged('');
+    _queryFocus.requestFocus();
+  }
+
+  Widget _searchActions() {
     final session = widget.api.session;
-    return ZhLiquidGlassMenuButton<_SearchMenuAction>(
+    return ZhLiquidGlassCapsuleMenuActionGroup<_SearchMenuAction>(
       key: const ValueKey('search-menu'),
-      icon: const Icon(Icons.more_vert_rounded),
-      semanticLabel: '搜索选项',
-      size: 44,
-      iconSize: 22,
+      primaryAction: ZhLiquidGlassCapsuleAction(
+        icon: const Tooltip(
+          message: '搜索',
+          child: Icon(
+            Icons.arrow_forward_rounded,
+            key: ValueKey('search-submit'),
+          ),
+        ),
+        semanticLabel: '搜索',
+        onPressed: () => _submit(),
+      ),
+      additionalActions: _query.text.trim().isEmpty
+          ? const <ZhLiquidGlassCapsuleAction>[]
+          : [
+              ZhLiquidGlassCapsuleAction(
+                icon: const Icon(
+                  Icons.clear_rounded,
+                  key: ValueKey('search-clear'),
+                ),
+                semanticLabel: '清除搜索内容',
+                onPressed: _clearQuery,
+              ),
+            ],
+      menuIcon: const Icon(Icons.more_vert_rounded),
+      menuSemanticLabel: '搜索选项',
       onSelected: (action) => unawaited(_handleSearchMenuAction(action)),
-      items: [
+      menuItems: [
         ZhLiquidGlassMenuItem<_SearchMenuAction>(
           value: _SearchMenuAction.clearHistory,
           label: '清空历史记录',
@@ -510,7 +538,7 @@ class _SearchPageState extends State<SearchPage>
             height: 1.1,
           ),
         ),
-        actions: [_searchMenu()],
+        actions: [_searchActions()],
         toolbarHeight: 72,
       ),
       body: ZhResponsiveFrame(
@@ -531,6 +559,7 @@ class _SearchPageState extends State<SearchPage>
                 focusNode: _queryFocus,
                 autofocus: widget.focusOnOpen,
                 hintText: '搜索知乎内容',
+                inlineActions: false,
                 onChanged: _onQueryChanged,
                 onSubmitted: _submit,
               ),

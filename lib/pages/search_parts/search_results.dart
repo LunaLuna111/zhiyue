@@ -63,7 +63,10 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     super.dispose();
   }
 
-  void _onQueryChanged(String value) => _suggestions.onQueryChanged(value);
+  void _onQueryChanged(String value) {
+    _suggestions.onQueryChanged(value);
+    if (mounted) setState(() {});
+  }
 
   void _onQueryFocusChanged() {
     if (!_queryFocus.hasFocus) _suggestions.dismiss();
@@ -91,6 +94,42 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     // filters and a tab-specific result stream from the previous query cannot
     // leak into the newly submitted completion.
     if (_pages.hasClients) _pages.jumpToPage(0);
+  }
+
+  void _clearQuery() {
+    if (_query.text.isEmpty) return;
+    _query.clear();
+    _onQueryChanged('');
+    _queryFocus.requestFocus();
+  }
+
+  Widget _searchActions() {
+    final actions = <ZhLiquidGlassCapsuleAction>[
+      ZhLiquidGlassCapsuleAction(
+        icon: const Tooltip(
+          message: '搜索',
+          child: Icon(
+            Icons.arrow_forward_rounded,
+            key: ValueKey('search-submit'),
+          ),
+        ),
+        semanticLabel: '搜索',
+        onPressed: () => _submit(_query.text),
+      ),
+    ];
+    if (_query.text.trim().isNotEmpty) {
+      actions.add(
+        ZhLiquidGlassCapsuleAction(
+          icon: const Icon(Icons.clear_rounded, key: ValueKey('search-clear')),
+          semanticLabel: '清除搜索内容',
+          onPressed: _clearQuery,
+        ),
+      );
+    }
+    return ZhLiquidGlassCapsuleActionGroup(
+      key: const ValueKey('search-results-actions'),
+      actions: actions,
+    );
   }
 
   Future<List<List<SearchFilterOption>>> _requestFilterCatalog() async {
@@ -230,12 +269,15 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       iconSize: 22,
                     ),
                     const Spacer(),
-                    if (_index == 0)
+                    _searchActions(),
+                    if (_index == 0) ...[
+                      const SizedBox(width: 8),
                       _SearchFilterToggle(
                         active: _showFilters || _selectedFilters.isNotEmpty,
                         selectedCount: _selectedFilters.length,
                         onTap: _toggleFilters,
                       ),
+                    ],
                   ],
                 ),
               ),
@@ -253,6 +295,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                       focusNode: _queryFocus,
                       hintText: '搜索知乎内容',
                       compact: true,
+                      inlineActions: false,
                       onChanged: _onQueryChanged,
                       onSubmitted: _submit,
                     ),

@@ -218,55 +218,6 @@ class _QuestionTopicChip extends StatelessWidget {
   }
 }
 
-class _QuestionHeaderMetric extends StatelessWidget {
-  const _QuestionHeaderMetric({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: 14),
-    child: Text(
-      label,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-        color: ZhPalette.mutedInk,
-        fontWeight: FontWeight.w500,
-      ),
-    ),
-  );
-}
-
-class _QuestionFollowButton extends StatelessWidget {
-  const _QuestionFollowButton({
-    required this.following,
-    required this.busy,
-    required this.onPressed,
-  });
-
-  final bool following;
-  final bool busy;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 38,
-    child: FilledButton.icon(
-      onPressed: busy ? null : onPressed,
-      icon: Icon(following ? Icons.check_rounded : Icons.add_rounded, size: 18),
-      label: Text(following ? '已关注问题' : '关注问题'),
-      style: FilledButton.styleFrom(
-        elevation: 0,
-        backgroundColor: const Color(0xFFEAF3FF),
-        foregroundColor: const Color(0xFF1677FF),
-        disabledBackgroundColor: const Color(0xFFEAF3FF),
-        disabledForegroundColor: const Color(0xFF7AAEF4),
-        padding: const EdgeInsets.symmetric(horizontal: 13),
-        shape: const StadiumBorder(),
-      ),
-    ),
-  );
-}
-
 class _QuestionAnswerSortBar extends StatelessWidget {
   const _QuestionAnswerSortBar({
     required this.sort,
@@ -279,70 +230,53 @@ class _QuestionAnswerSortBar extends StatelessWidget {
   final int? answerCount;
 
   @override
-  Widget build(BuildContext context) => Container(
-    height: 50,
-    decoration: const BoxDecoration(
-      border: Border(
-        top: BorderSide(color: ZhPalette.border, width: .7),
-        bottom: BorderSide(color: ZhPalette.border, width: .7),
+  Widget build(BuildContext context) {
+    final answerLabel = answerCount == null
+        ? '全部回答'
+        : '全部内容 ${compactCount(answerCount!)}';
+    return Container(
+      key: const ValueKey('question-answer-sort-bar'),
+      height: 50,
+      decoration: const BoxDecoration(
+        border: Border(
+          top: BorderSide(color: ZhPalette.border, width: .7),
+          bottom: BorderSide(color: ZhPalette.border, width: .7),
+        ),
       ),
-    ),
-    child: Row(
-      children: [
-        _SortChoice(
-          label: '默认',
-          selected: sort == _QuestionAnswerSort.defaultOrder,
-          onTap: () => onChanged(_QuestionAnswerSort.defaultOrder),
-        ),
-        const SizedBox(width: 10),
-        _SortChoice(
-          label: '最新',
-          selected: sort == _QuestionAnswerSort.latest,
-          onTap: () => onChanged(_QuestionAnswerSort.latest),
-        ),
-        const Spacer(),
-        Text(
-          answerCount == null ? '全部回答' : '全部内容 ${compactCount(answerCount!)}',
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: ZhPalette.subtleInk),
-        ),
-      ],
-    ),
-  );
-}
-
-class _SortChoice extends StatelessWidget {
-  const _SortChoice({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => Semantics(
-    button: true,
-    selected: selected,
-    label: label,
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 6),
-        child: Text(
-          label,
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: selected ? ZhPalette.ink : ZhPalette.mutedInk,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+      child: Row(
+        children: [
+          SizedBox(
+            width: 116,
+            height: 42,
+            child: ZhLiquidGlassSegmentedTabs(
+              key: const ValueKey('question-answer-sort-control'),
+              labels: const ['默认', '最新'],
+              selectedIndex: sort == _QuestionAnswerSort.latest ? 1 : 0,
+              onSelected: (index) => onChanged(
+                index == 1
+                    ? _QuestionAnswerSort.latest
+                    : _QuestionAnswerSort.defaultOrder,
+              ),
+              semanticPrefix: '回答排序：',
+              height: 40,
+              labelFontSize: 14,
+              plainSelection: true,
+              shadowElevation: 0,
+            ),
           ),
-        ),
+          const Spacer(),
+          Text(
+            answerLabel,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: ZhPalette.subtleInk,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _QuestionHeaderAuthor extends StatelessWidget {

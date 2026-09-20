@@ -339,26 +339,29 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   Widget build(BuildContext context) {
     final question = _resolvedQuestion;
     return PagedListPage(
-      key: ValueKey('question-answers-${widget.questionId}-$_revision'),
+      key: ValueKey('question-answers-${widget.questionId}'),
       title: '全部回答',
       api: widget.api,
+      extendBodyBehindAppBar: true,
+      reloadToken: _revision,
       actions: [
-        ZhLiquidGlassIconButton(
-          key: const Key('question-answer-search-action'),
-          onPressed: _openQuestionSearch,
-          semanticLabel: '搜索回答',
-          size: 44,
-          iconSize: 23,
-          icon: const Icon(Icons.search_rounded),
-        ),
-        ZhLiquidGlassMenuButton<String>(
-          key: const Key('question-answer-more-action'),
-          icon: const Icon(Icons.more_vert_rounded),
-          semanticLabel: '更多',
-          size: 44,
-          iconSize: 22,
+        ZhLiquidGlassCapsuleMenuActionGroup<String>(
+          key: const Key('question-answer-actions'),
+          primaryAction: ZhLiquidGlassCapsuleAction(
+            icon: const KeyedSubtree(
+              key: Key('question-answer-search-action'),
+              child: Icon(Icons.search_rounded),
+            ),
+            semanticLabel: '搜索回答',
+            onPressed: _openQuestionSearch,
+          ),
+          menuIcon: const KeyedSubtree(
+            key: Key('question-answer-more-action'),
+            child: Icon(Icons.more_vert_rounded),
+          ),
+          menuSemanticLabel: '更多',
           onSelected: _showQuestionMenu,
-          items: [
+          menuItems: [
             ZhLiquidGlassMenuItem(
               value: 'write',
               label: widget.api.canWrite ? '写回答' : '登录后写回答',
@@ -385,10 +388,6 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
         widget.api,
         sort: _sort,
         onSortChanged: _setSort,
-        following:
-            _followingQuestionOverride ?? _questionFollowing(question) ?? false,
-        followBusy: _followBusy,
-        onFollow: _toggleQuestionFollowing,
       ),
       answerListMode: true,
       rowBuilder: (context, value, onTap) => _QuestionAnswerRow(
@@ -424,9 +423,6 @@ Widget? _questionAnswersHeader(
   ZhihuApiClient api, {
   required _QuestionAnswerSort sort,
   required ValueChanged<_QuestionAnswerSort> onSortChanged,
-  required bool following,
-  required bool followBusy,
-  required VoidCallback onFollow,
 }) {
   final title = question == null ? '' : titleOf(question);
   final metrics = question == null
@@ -443,9 +439,6 @@ Widget? _questionAnswersHeader(
   }
   if (metrics.commentCount case final count?) {
     metricLabels.add('${compactCount(count)} 评论');
-  }
-  if (metrics.viewCount case final count?) {
-    metricLabels.add('${compactCount(count)} 浏览');
   }
   if (resolvedTitle.isEmpty &&
       !metrics.hasObjectSummary &&
@@ -512,42 +505,17 @@ Widget? _questionAnswersHeader(
               const SizedBox(height: 9),
           ],
         ],
-        if (metricLabels.isNotEmpty || question != null) ...[
-          const SizedBox(height: 14),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  child: Row(
-                    children: [
-                      for (var index = 0; index < metricLabels.length; index++)
-                        _QuestionHeaderMetric(
-                          label:
-                              '${index == 0 ? '' : '· '}${metricLabels[index]}',
-                        ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              _QuestionFollowButton(
-                following: following,
-                busy: followBusy,
-                onPressed: onFollow,
-              ),
-            ],
+        if (metricLabels.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Text(
+            metricLabels.join(' · '),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: ZhPalette.subtleInk,
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ],
-        const SizedBox(height: 14),
-        const SizedBox(
-          height: 8,
-          width: double.infinity,
-          child: ColoredBox(color: Color(0xFFF6F7F8)),
-        ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 12),
         _QuestionAnswerSortBar(
           sort: sort,
           answerCount: metrics.answerCount,

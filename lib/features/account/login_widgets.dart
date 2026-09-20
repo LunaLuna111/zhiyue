@@ -11,6 +11,28 @@ const _loginGlassSettings = LiquidGlassSettings(
   glassColor: Color(0xC9FFFFFF),
 );
 
+const _loginProgressGlassSettings = LiquidGlassSettings(
+  thickness: 34,
+  blur: 5,
+  chromaticAberration: .35,
+  lightIntensity: .7,
+  refractiveIndex: 1.59,
+  saturation: .85,
+  ambientStrength: .85,
+  glassColor: Color(0x55FFFFFF),
+);
+
+const _loginProgressIndicatorSettings = LiquidGlassSettings(
+  thickness: 38,
+  blur: 2,
+  chromaticAberration: .28,
+  lightIntensity: .82,
+  refractiveIndex: 1.5,
+  saturation: 1,
+  ambientStrength: .95,
+  glassColor: Color(0x66FFFFFF),
+);
+
 class _LoginBackdrop extends StatelessWidget {
   const _LoginBackdrop();
 
@@ -24,7 +46,7 @@ class _LoginBackdrop extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFFF4F8FF), Color(0xFFFBFBFD), Color(0xFFF4F5F8)],
+              colors: [Color(0xFFF1F6FF), Color(0xFFF9FBFF), Color(0xFFF4F6FA)],
               stops: [0, .52, 1],
             ),
           ),
@@ -183,10 +205,15 @@ class _LoginHeader extends StatelessWidget {
 }
 
 class _LoginProgress extends StatelessWidget {
-  const _LoginProgress({required this.codeSent, this.passwordMode = false});
+  const _LoginProgress({
+    required this.codeSent,
+    this.passwordMode = false,
+    this.onStepSelected,
+  });
 
   final bool codeSent;
   final bool passwordMode;
+  final ValueChanged<int>? onStepSelected;
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -195,88 +222,50 @@ class _LoginProgress extends StatelessWidget {
         : codeSent
         ? '登录进度：验证码'
         : '登录进度：手机号',
-    child: Container(
-      height: 58,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: const Color(0x62FFFFFF),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xB8FFFFFF)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x120A2850),
-            blurRadius: 18,
-            offset: Offset(0, 7),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _LoginStepLabel(
-              label: passwordMode ? '账号' : '手机号',
-              selected: passwordMode || !codeSent,
-              completed: !passwordMode && codeSent,
-            ),
-          ),
-          Expanded(
-            child: _LoginStepLabel(
-              label: passwordMode ? '密码' : '验证码',
-              selected: !passwordMode && codeSent,
-              completed: false,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-class _LoginStepLabel extends StatelessWidget {
-  const _LoginStepLabel({
-    required this.label,
-    required this.selected,
-    required this.completed,
-  });
-
-  final String label;
-  final bool selected;
-  final bool completed;
-
-  @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 240),
-    curve: Curves.easeOutCubic,
-    margin: const EdgeInsets.symmetric(horizontal: 2),
-    padding: const EdgeInsets.symmetric(horizontal: 12),
-    decoration: BoxDecoration(
-      color: selected ? const Color(0xF7FFFFFF) : Colors.transparent,
-      borderRadius: BorderRadius.circular(25),
-      boxShadow: selected
-          ? const [
-              BoxShadow(
-                color: Color(0x15000000),
-                blurRadius: 10,
-                offset: Offset(0, 3),
-              ),
-            ]
-          : const [],
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        if (completed) ...[
-          const Icon(Icons.check_rounded, size: 16, color: ZhPalette.ink),
-          const SizedBox(width: 4),
-        ],
-        Text(
-          label,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: selected ? ZhPalette.ink : ZhPalette.subtleInk,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
-          ),
+    child: GlassTabBar.inline(
+      key: const ValueKey('login-progress-tabs'),
+      tabs: [
+        GlassTab(
+          label: passwordMode ? '账号' : '手机号',
+          semanticLabel: passwordMode ? '账号' : '手机号',
+        ),
+        GlassTab(
+          label: passwordMode ? '密码' : '验证码',
+          semanticLabel: passwordMode ? '密码' : '验证码',
         ),
       ],
+      selectedIndex: passwordMode ? 0 : (codeSent ? 1 : 0),
+      onTabSelected: onStepSelected ?? (_) {},
+      horizontalPadding: 0,
+      verticalPadding: 0,
+      barHeight: 58,
+      barBorderRadius: 29,
+      spacing: 0,
+      tabPadding: const EdgeInsets.symmetric(horizontal: 4),
+      indicatorExpansion: const EdgeInsets.symmetric(
+        horizontal: 4,
+        vertical: 5,
+      ),
+      indicatorColor: const Color(0x24000000),
+      indicatorSettings: _loginProgressIndicatorSettings,
+      indicatorPinchStrength: .28,
+      selectedLabelStyle: const TextStyle(
+        color: ZhPalette.ink,
+        fontSize: 17,
+        fontWeight: FontWeight.w800,
+        height: 1.2,
+      ),
+      unselectedLabelStyle: const TextStyle(
+        color: ZhPalette.mutedInk,
+        fontSize: 17,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+      ),
+      settings: _loginProgressGlassSettings,
+      quality: GlassQuality.premium,
+      backgroundQuality: GlassQuality.standard,
+      interactionBehavior: GlassInteractionBehavior.full,
+      pressScale: 1.02,
     ),
   );
 }
@@ -318,22 +307,71 @@ class _LoginPrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
 
   @override
-  Widget build(BuildContext context) => ZhLiquidGlassLabelButton(
-    label: busy ? '' : label,
-    semanticLabel: label,
-    prominent: true,
-    expand: true,
-    onPressed: onPressed,
-    leading: busy
-        ? const SizedBox.square(
-            dimension: 18,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              color: ZhPalette.background,
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final radius = BorderRadius.circular(18);
+    final topColor = enabled
+        ? const Color(0xFF2B2B2B)
+        : const Color(0xFF555555);
+    final bottomColor = enabled
+        ? const Color(0xFF151515)
+        : const Color(0xFF3E3E3E);
+
+    // Keep the primary CTA on a regular composited surface. The prominent
+    // liquid-glass shader is intentionally unsuitable here: when a scrolling
+    // viewport invalidates its backdrop, the shader can brighten both the
+    // dark surface and its white label until the button looks disabled.
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      child: Material(
+        color: Colors.transparent,
+        child: Ink(
+          width: double.infinity,
+          height: 50,
+          decoration: BoxDecoration(
+            borderRadius: radius,
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [topColor, bottomColor],
             ),
-          )
-        : null,
-  );
+            border: Border.all(color: const Color(0x28FFFFFF)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x26000000),
+                blurRadius: 16,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: radius,
+            child: Center(
+              child: busy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: ZhPalette.background,
+                      ),
+                    )
+                  : Text(
+                      label,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: ZhPalette.background,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0,
+                      ),
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _AgreementConsentDialog extends StatelessWidget {

@@ -30,6 +30,8 @@ class PagedListPage extends StatefulWidget {
     this.titleWidget,
     this.centerTitle,
     this.toolbarHeight,
+    this.extendBodyBehindAppBar = false,
+    this.reloadToken = 0,
     this.onObjectTap,
     this.onObjectLongPress,
     this.actions,
@@ -51,6 +53,8 @@ class PagedListPage extends StatefulWidget {
   final Widget? titleWidget;
   final bool? centerTitle;
   final double? toolbarHeight;
+  final bool extendBodyBehindAppBar;
+  final int reloadToken;
   final ZhihuApiClient api;
   final InitialLoader loadInitial;
   final ObjectTap? onObjectTap;
@@ -97,6 +101,17 @@ class _PagedListPageState extends State<PagedListPage> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant PagedListPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.reloadToken != oldWidget.reloadToken) {
+      // Keep the existing rows on screen while the new sort/filter request is
+      // in flight. Replacing the page key here would discard the scroll view,
+      // header and rows and briefly expose a blank loading surface.
+      _load(reset: true);
+    }
+  }
+
   void _maybeLoadMore() {
     if (_loading ||
         _error != null ||
@@ -124,10 +139,10 @@ class _PagedListPageState extends State<PagedListPage> {
 
   Future<void> _load({required bool reset}) async {
     if (_loading) return;
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
+    final showInitialLoading = _rows.isEmpty;
+    _loading = true;
+    _error = null;
+    if (showInitialLoading && mounted) setState(() {});
     try {
       final response = reset
           ? await widget.loadInitial()
@@ -199,6 +214,7 @@ class _PagedListPageState extends State<PagedListPage> {
       // whole bottom area an opaque sheet. The question-answer actions use
       // this path and paint their own capsule/shadow.
       extendBody: widget.bottomNavigationBar != null,
+      extendBodyBehindAppBar: widget.extendBodyBehindAppBar,
       appBar: ZhTopBar(
         title: widget.titleWidget ?? Text(widget.title),
         centerTitle: widget.centerTitle,
@@ -229,11 +245,18 @@ class _PagedListPageState extends State<PagedListPage> {
   }
 
   Widget _body() {
+    final topInset = widget.extendBodyBehindAppBar
+        ? ZhTopBar.bodyTopInset(
+            context,
+            toolbarHeight: widget.toolbarHeight ?? 56,
+          )
+        : 0.0;
     if (_loading && _rows.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
     if (_error != null && _rows.isEmpty) {
       return ListView(
+        padding: EdgeInsets.only(top: topInset),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           SizedBox(
@@ -257,6 +280,8 @@ class _PagedListPageState extends State<PagedListPage> {
         controller: widget.embedded ? null : _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
+          if (topInset > 0)
+            SliverToBoxAdapter(child: SizedBox(height: topInset)),
           if (widget.header != null) SliverToBoxAdapter(child: widget.header!),
           SliverPersistentHeader(
             pinned: true,
@@ -274,6 +299,7 @@ class _PagedListPageState extends State<PagedListPage> {
     return ListView.builder(
       controller: widget.embedded ? null : _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.only(top: topInset),
       itemCount:
           _rows.length +
           2 +

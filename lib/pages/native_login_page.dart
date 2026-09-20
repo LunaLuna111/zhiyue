@@ -311,6 +311,15 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     });
   }
 
+  void _selectLoginStep(int index) {
+    if (_busy) return;
+    if (_mode == _LoginMode.password) {
+      (index == 0 ? _phoneFocus : _passwordFocus).requestFocus();
+      return;
+    }
+    if (index == 0 && _codeSent) _editPhone();
+  }
+
   void _openOfficialHelp(String title, String url) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -321,135 +330,155 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F9FC),
-      key: widget.embedded ? const ValueKey('embedded-native-login') : null,
-      appBar: widget.embedded
-          ? ZhTopBar(
-              leading: widget.onMenuPressed == null
-                  ? null
-                  : ZhLiquidGlassIconButton(
-                      size: 46,
-                      iconSize: 24,
-                      semanticLabel: '打开侧边栏',
-                      onPressed: widget.onMenuPressed,
-                      icon: const Icon(Icons.menu_rounded),
-                    ),
-              title: const Text('登录'),
-            )
-          : const ZhTopBar(toolbarHeight: 46, automaticallyImplyLeading: false),
-      body: Stack(
-        children: [
-          const Positioned.fill(child: _LoginBackdrop()),
-          SafeArea(
-            top: false,
-            child: ZhPageWidth(
-              maxWidth: 600,
-              child: ListView(
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 36),
-                children: [
-                  _LoginHeader(
-                    passwordMode: _mode == _LoginMode.password,
-                    qrMode: _mode == _LoginMode.qr,
-                  ),
-                  const SizedBox(height: 30),
-                  if (_mode != _LoginMode.qr) ...[
-                    _LoginProgress(
-                      codeSent: _codeSent,
+    final toolbarHeight = widget.embedded ? 56.0 : 46.0;
+    final contentTopPadding =
+        ZhTopBar.bodyTopInset(context, toolbarHeight: toolbarHeight) + 18;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Color(0xFFF4F6FA),
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        backgroundColor: const Color(0xFFF1F6FF),
+        key: widget.embedded ? const ValueKey('embedded-native-login') : null,
+        appBar: widget.embedded
+            ? ZhTopBar(
+                leading: widget.onMenuPressed == null
+                    ? null
+                    : ZhLiquidGlassIconButton(
+                        size: 46,
+                        iconSize: 24,
+                        semanticLabel: '打开侧边栏',
+                        onPressed: widget.onMenuPressed,
+                        icon: const Icon(Icons.menu_rounded),
+                      ),
+                title: const Text('登录'),
+              )
+            : ZhTopBar(
+                toolbarHeight: toolbarHeight,
+                automaticallyImplyLeading: false,
+              ),
+        body: Stack(
+          children: [
+            const Positioned.fill(child: _LoginBackdrop()),
+            SafeArea(
+              top: false,
+              child: ZhPageWidth(
+                maxWidth: 600,
+                child: ListView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(20, contentTopPadding, 20, 36),
+                  children: [
+                    _LoginHeader(
                       passwordMode: _mode == _LoginMode.password,
+                      qrMode: _mode == _LoginMode.qr,
                     ),
                     const SizedBox(height: 30),
-                  ],
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    switchInCurve: Curves.easeOutCubic,
-                    switchOutCurve: Curves.easeInCubic,
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0.045, 0),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
+                    if (_mode != _LoginMode.qr) ...[
+                      _LoginProgress(
+                        codeSent: _codeSent,
+                        passwordMode: _mode == _LoginMode.password,
+                        onStepSelected: _selectLoginStep,
                       ),
-                    ),
-                    child: _mode == _LoginMode.qr
-                        ? _QrLoginPane(
-                            key: const ValueKey('qr-login-pane'),
-                            api: _api,
-                            onLoginSuccess: _onQrLoginSuccess,
-                          )
-                        : _mode == _LoginMode.password
-                        ? _buildPasswordStep()
-                        : _codeSent
-                        ? _buildCodeStep()
-                        : _buildPhoneStep(),
-                  ),
-                  AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
-                    child: _feedback == null
-                        ? const SizedBox.shrink()
-                        : Padding(
-                            padding: const EdgeInsets.only(top: ZhSpace.sm),
-                            child: _FeedbackMessage(
-                              message: _feedback!,
-                              isError: _feedbackIsError,
-                            ),
-                          ),
-                  ),
-                  if (_mode != _LoginMode.qr) ...[
-                    const SizedBox(height: ZhSpace.lg),
-                    _LoginPrimaryButton(
-                      busy: _busy,
-                      label: _mode == _LoginMode.password
-                          ? '登录'
-                          : (_codeSent ? '继续登录' : '获取验证码'),
-                      onPressed: _busy
-                          ? null
+                      const SizedBox(height: 30),
+                    ],
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 280),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.045, 0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: _mode == _LoginMode.qr
+                          ? _QrLoginPane(
+                              key: const ValueKey('qr-login-pane'),
+                              api: _api,
+                              onLoginSuccess: _onQrLoginSuccess,
+                            )
                           : _mode == _LoginMode.password
-                          ? _signInWithPassword
-                          : (_codeSent ? _signIn : _requestDigits),
+                          ? _buildPasswordStep()
+                          : _codeSent
+                          ? _buildCodeStep()
+                          : _buildPhoneStep(),
                     ),
-                    const SizedBox(height: ZhSpace.sm),
-                    if (!_codeSent || _mode == _LoginMode.password)
-                      _buildAgreement(),
-                    if (_codeSent && _mode == _LoginMode.sms)
-                      _buildCodeActions(),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 200),
+                      curve: Curves.easeOutCubic,
+                      child: _feedback == null
+                          ? const SizedBox.shrink()
+                          : Padding(
+                              padding: const EdgeInsets.only(top: ZhSpace.sm),
+                              child: _FeedbackMessage(
+                                message: _feedback!,
+                                isError: _feedbackIsError,
+                              ),
+                            ),
+                    ),
+                    if (_mode != _LoginMode.qr) ...[
+                      const SizedBox(height: ZhSpace.lg),
+                      _LoginPrimaryButton(
+                        busy: _busy,
+                        label: _mode == _LoginMode.password
+                            ? '登录'
+                            : (_codeSent ? '继续登录' : '获取验证码'),
+                        onPressed: _busy
+                            ? null
+                            : _mode == _LoginMode.password
+                            ? _signInWithPassword
+                            : (_codeSent ? _signIn : _requestDigits),
+                      ),
+                      const SizedBox(height: ZhSpace.sm),
+                      if (!_codeSent || _mode == _LoginMode.password)
+                        _buildAgreement(),
+                      if (_codeSent && _mode == _LoginMode.sms)
+                        _buildCodeActions(),
+                      const SizedBox(height: 4),
+                      _LoginTextButton(
+                        key: const ValueKey('login-mode-toggle'),
+                        onPressed: _busy ? null : _switchLoginMode,
+                        label: _mode == _LoginMode.password
+                            ? '验证码登录'
+                            : '账号密码登录',
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     _LoginTextButton(
-                      key: const ValueKey('login-mode-toggle'),
-                      onPressed: _busy ? null : _switchLoginMode,
-                      label: _mode == _LoginMode.password ? '验证码登录' : '账号密码登录',
+                      key: const ValueKey('qr-login-mode-toggle'),
+                      onPressed: _busy ? null : _switchQrMode,
+                      label: _mode == _LoginMode.qr ? '手机号登录' : '扫码登录',
+                    ),
+                    const SizedBox(height: 28),
+                    const Divider(),
+                    const SizedBox(height: ZhSpace.sm),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _LoginTextButton(
+                        onPressed: () => _openOfficialHelp(
+                          '账号申诉',
+                          'https://www.zhihu.com/account/appeal?utm_source=android',
+                        ),
+                        label: '遇到问题？账号申诉',
+                      ),
                     ),
                   ],
-                  const SizedBox(height: 4),
-                  _LoginTextButton(
-                    key: const ValueKey('qr-login-mode-toggle'),
-                    onPressed: _busy ? null : _switchQrMode,
-                    label: _mode == _LoginMode.qr ? '手机号登录' : '扫码登录',
-                  ),
-                  const SizedBox(height: 28),
-                  const Divider(),
-                  const SizedBox(height: ZhSpace.sm),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: _LoginTextButton(
-                      onPressed: () => _openOfficialHelp(
-                        '账号申诉',
-                        'https://www.zhihu.com/account/appeal?utm_source=android',
-                      ),
-                      label: '遇到问题？账号申诉',
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

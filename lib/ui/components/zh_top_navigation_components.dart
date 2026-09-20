@@ -76,6 +76,7 @@ class ZhLiquidGlassMenuItem<T> {
     required this.value,
     required this.label,
     this.icon,
+    this.subtitle,
     this.enabled = true,
     this.destructive = false,
   });
@@ -83,6 +84,7 @@ class ZhLiquidGlassMenuItem<T> {
   final T value;
   final String label;
   final Widget? icon;
+  final String? subtitle;
   final bool enabled;
   final bool destructive;
 }
@@ -291,6 +293,75 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
   static void _disabledAction() {}
 }
 
+/// A connected capsule with one direct action and one pull-down menu action.
+///
+/// The menu item stays inside the same [GlassButtonGroup] as the direct
+/// action, so compact page toolbars keep one continuous glass surface.
+class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
+  const ZhLiquidGlassCapsuleMenuActionGroup({
+    super.key,
+    required this.primaryAction,
+    this.additionalActions = const <ZhLiquidGlassCapsuleAction>[],
+    required this.menuIcon,
+    required this.menuSemanticLabel,
+    required this.menuItems,
+    required this.onSelected,
+    this.menuWidth = 240,
+    this.menuAlignment,
+  });
+
+  final ZhLiquidGlassCapsuleAction primaryAction;
+  final List<ZhLiquidGlassCapsuleAction> additionalActions;
+  final Widget menuIcon;
+  final String menuSemanticLabel;
+  final List<ZhLiquidGlassMenuItem<T>> menuItems;
+  final ValueChanged<T> onSelected;
+  final double menuWidth;
+  final GlassMenuAlignment? menuAlignment;
+
+  @override
+  Widget build(BuildContext context) => GlassButtonGroup.icons(
+    key: key,
+    items: [
+      for (final action in [primaryAction, ...additionalActions])
+        GlassButtonGroupItem(
+          icon: action.icon,
+          label: action.semanticLabel,
+          enabled: action.onPressed != null,
+          onTap: action.onPressed ?? _disabledAction,
+        ),
+      GlassButtonGroupItem.menu(
+        icon: menuIcon,
+        label: menuSemanticLabel,
+        menuWidth: menuWidth,
+        menuAlignment: menuAlignment,
+        menuItems: [
+          for (final item in menuItems)
+            GlassMenuItem(
+              title: item.label,
+              icon: item.icon,
+              subtitle: item.subtitle,
+              enabled: item.enabled,
+              isDestructive: item.destructive,
+              onTap: item.enabled
+                  ? () => onSelected(item.value)
+                  : _disabledAction,
+            ),
+        ],
+      ),
+    ],
+    borderRadius: 28,
+    itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
+    iconSize: 22,
+    settings: ZhLiquidGlassCapsuleActionGroup._settings,
+    quality: GlassQuality.premium,
+    useOwnLayer: true,
+    showDividers: false,
+  );
+
+  static void _disabledAction() {}
+}
+
 /// A shared rounded search field used by the search landing and result pages.
 ///
 /// Keeping the controller callbacks here prevents the two search surfaces from
@@ -305,6 +376,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
     this.onChanged,
     this.autofocus = false,
     this.compact = false,
+    this.inlineActions = true,
   });
 
   static const LiquidGlassSettings _settings = LiquidGlassSettings(
@@ -325,6 +397,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final bool autofocus;
   final bool compact;
+  final bool inlineActions;
 
   @override
   Widget build(BuildContext context) =>
@@ -341,28 +414,30 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
           shape: LiquidRoundedRectangle(borderRadius: compact ? 24 : 28),
           prefixIcon: const Icon(Icons.search_rounded, size: 22),
-          suffixIcon: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (value.text.isNotEmpty)
-                IconButton(
-                  key: const ValueKey('search-clear'),
-                  tooltip: '清除',
-                  onPressed: () {
-                    controller.clear();
-                    onChanged?.call('');
-                    focusNode?.requestFocus();
-                  },
-                  icon: const Icon(Icons.clear_rounded, size: 20),
-                ),
-              IconButton(
-                key: const ValueKey('search-submit'),
-                tooltip: '搜索',
-                onPressed: () => onSubmitted(controller.text),
-                icon: const Icon(Icons.arrow_forward_rounded, size: 21),
-              ),
-            ],
-          ),
+          suffixIcon: inlineActions
+              ? Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (value.text.isNotEmpty)
+                      IconButton(
+                        key: const ValueKey('search-clear'),
+                        tooltip: '清除',
+                        onPressed: () {
+                          controller.clear();
+                          onChanged?.call('');
+                          focusNode?.requestFocus();
+                        },
+                        icon: const Icon(Icons.clear_rounded, size: 20),
+                      ),
+                    IconButton(
+                      key: const ValueKey('search-submit'),
+                      tooltip: '搜索',
+                      onPressed: () => onSubmitted(controller.text),
+                      icon: const Icon(Icons.arrow_forward_rounded, size: 21),
+                    ),
+                  ],
+                )
+              : null,
           onChanged: onChanged,
           onSubmitted: onSubmitted,
           textStyle: const TextStyle(
@@ -400,6 +475,16 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
     this.semanticPrefix = '',
     this.scrollable = false,
     this.height = 46,
+    this.interactionBehavior = GlassInteractionBehavior.full,
+    this.pressScale = 1.02,
+    this.indicatorExpansion = const EdgeInsets.symmetric(
+      horizontal: 5,
+      vertical: 5,
+    ),
+    this.indicatorPinchStrength = .18,
+    this.shadowElevation = 1,
+    this.labelFontSize = 15,
+    this.plainSelection = false,
   }) : assert(labels.length > 0);
 
   static const LiquidGlassSettings _settings = LiquidGlassSettings(
@@ -447,25 +532,44 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
   final String semanticPrefix;
   final bool scrollable;
   final double height;
+  final GlassInteractionBehavior interactionBehavior;
+  final double pressScale;
+  final EdgeInsetsGeometry indicatorExpansion;
+  final double indicatorPinchStrength;
+  final double shadowElevation;
+  final double labelFontSize;
+  final bool plainSelection;
 
   int get _safeIndex => selectedIndex.clamp(0, labels.length - 1).toInt();
 
-  TextStyle get _selectedStyle => const TextStyle(
+  TextStyle get _selectedStyle => TextStyle(
     color: ZhPalette.ink,
-    fontSize: 15,
+    fontSize: labelFontSize,
     fontWeight: FontWeight.w800,
     height: 1.2,
   );
 
-  TextStyle get _unselectedStyle => const TextStyle(
+  TextStyle get _unselectedStyle => TextStyle(
     color: ZhPalette.mutedInk,
-    fontSize: 15,
+    fontSize: labelFontSize,
     fontWeight: FontWeight.w600,
     height: 1.2,
   );
 
   @override
   Widget build(BuildContext context) {
+    if (plainSelection) {
+      return _ZhLiquidGlassStaticSegmentedTabs(
+        key: key,
+        labels: labels,
+        selectedIndex: _safeIndex,
+        onSelected: onSelected,
+        semanticPrefix: semanticPrefix,
+        height: height,
+        labelFontSize: labelFontSize,
+        shadowElevation: shadowElevation,
+      );
+    }
     if (scrollable) {
       return _ZhLiquidGlassScrollableSurface(
         height: height,
@@ -514,22 +618,135 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
       verticalPadding: 0,
       spacing: 2,
       tabPadding: const EdgeInsets.symmetric(horizontal: 8),
-      indicatorExpansion: const EdgeInsets.symmetric(
-        horizontal: 5,
-        vertical: 5,
-      ),
       indicatorBorderRadius: height / 2,
       indicatorColor: const Color(0x1C000000),
-      indicatorPinchStrength: .18,
+      indicatorPinchStrength: indicatorPinchStrength,
+      indicatorExpansion: indicatorExpansion,
       selectedLabelStyle: _selectedStyle,
       unselectedLabelStyle: _unselectedStyle,
-      settings: _settings,
+      settings: _settings.copyWith(shadowElevation: shadowElevation),
       quality: GlassQuality.premium,
       backgroundQuality: GlassQuality.premium,
-      interactionBehavior: GlassInteractionBehavior.full,
-      pressScale: 1.02,
+      pressScale: pressScale,
+      // Inline sort controls should not flash a full-surface directional glow
+      // when their parent list starts a new request. The selected lens still
+      // animates, while the track keeps a stable tone during loading.
+      interactionBehavior: interactionBehavior,
     );
   }
+}
+
+/// A deliberately simple segmented capsule for compact sort controls.
+///
+/// The package tab bar uses a refractive indicator that is ideal for large
+/// navigation surfaces but can briefly darken its inner ring when a parent
+/// list is rebuilt. Sort controls do not need that shader path: they keep the
+/// shared glass group and animate only a light selection pill.
+class _ZhLiquidGlassStaticSegmentedTabs extends StatelessWidget {
+  const _ZhLiquidGlassStaticSegmentedTabs({
+    super.key,
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.semanticPrefix,
+    required this.height,
+    required this.labelFontSize,
+    required this.shadowElevation,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final String semanticPrefix;
+  final double height;
+  final double labelFontSize;
+  final double shadowElevation;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) {
+      final width = constraints.maxWidth;
+      if (!width.isFinite || width <= 0) return const SizedBox.shrink();
+      final segmentWidth = width / labels.length;
+      final selected = selectedIndex.clamp(0, labels.length - 1).toInt();
+      return GlassButtonGroup(
+        key: key,
+        borderRadius: height / 2,
+        borderColor: Colors.transparent,
+        settings: ZhLiquidGlassSegmentedTabs._settings.copyWith(
+          shadowElevation: shadowElevation,
+        ),
+        quality: GlassQuality.premium,
+        useOwnLayer: true,
+        showDividers: false,
+        itemPadding: EdgeInsets.zero,
+        children: [
+          SizedBox(
+            width: width,
+            height: height,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AnimatedPositioned(
+                  left: segmentWidth * selected,
+                  top: 0,
+                  width: segmentWidth,
+                  height: height,
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: Padding(
+                    padding: const EdgeInsets.all(3),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: const Color(0x24000000),
+                        borderRadius: BorderRadius.circular(height / 2),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: [
+                    for (var index = 0; index < labels.length; index++)
+                      SizedBox(
+                        width: segmentWidth,
+                        height: height,
+                        child: Semantics(
+                          button: true,
+                          selected: index == selected,
+                          label: '$semanticPrefix${labels[index]}',
+                          onTap: () => onSelected(index),
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => onSelected(index),
+                            child: Center(
+                              child: Text(
+                                labels[index],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: index == selected
+                                      ? ZhPalette.ink
+                                      : ZhPalette.mutedInk,
+                                  fontSize: labelFontSize,
+                                  fontWeight: index == selected
+                                      ? FontWeight.w800
+                                      : FontWeight.w600,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 /// A frosted glass track for long tab collections.

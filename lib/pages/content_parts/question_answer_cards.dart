@@ -324,108 +324,37 @@ class _QuestionAnswersBottomActions extends StatelessWidget {
   final VoidCallback onFollow;
 
   @override
-  Widget build(BuildContext context) => Container(
-    // The native client keeps this action bar above the navigation gesture
-    // area, with a visible gutter on every side rather than a full-width
-    // bottom sheet.
-    margin: const EdgeInsets.fromLTRB(16, 8, 16, 10),
-    padding: const EdgeInsets.all(5),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(34),
-      boxShadow: const [
-        BoxShadow(
-          color: Color(0x26000000),
-          blurRadius: 20,
-          spreadRadius: 1,
-          offset: Offset(0, 5),
+  Widget build(BuildContext context) => ZhLiquidGlassFloatingActionBar(
+    key: const ValueKey('question-answers-bottom-actions'),
+    items: [
+      ZhLiquidGlassActionItem(
+        icon: const KeyedSubtree(
+          key: Key('question-answer-compose-action'),
+          child: Icon(Icons.edit_outlined),
         ),
-      ],
-      border: Border.all(color: const Color(0xFFE5E7EB)),
-    ),
-    child: Row(
-      children: [
-        Expanded(
-          child: _BottomActionButton(
-            key: const Key('question-answer-compose-action'),
-            label: canWrite ? '写回答' : '登录后写回答',
-            icon: Icons.edit_outlined,
-            primary: true,
-            onPressed: onWrite,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(
-          child: _BottomActionButton(
-            label: '邀请回答',
-            icon: Icons.person_add_alt_1_outlined,
-            onPressed: onInvite,
-          ),
-        ),
-        const SizedBox(width: 5),
-        Expanded(
-          child: _BottomActionButton(
-            label: following ? '已关注' : '关注问题',
-            icon: following ? Icons.check_rounded : Icons.add_rounded,
-            busy: followBusy,
-            onPressed: onFollow,
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _BottomActionButton extends StatelessWidget {
-  const _BottomActionButton({
-    super.key,
-    required this.label,
-    required this.icon,
-    required this.onPressed,
-    this.primary = false,
-    this.busy = false,
-  });
-
-  final String label;
-  final IconData icon;
-  final VoidCallback onPressed;
-  final bool primary;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 44,
-    child: FilledButton.icon(
-      onPressed: busy ? null : onPressed,
-      icon: busy
-          ? const SizedBox.square(
-              dimension: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(icon, size: 17),
-      label: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+        activeIcon: const Icon(Icons.edit_outlined),
+        label: canWrite ? '写回答' : '登录后写回答',
+        semanticLabel: canWrite ? '写回答' : '登录后写回答',
+        onPressed: onWrite,
       ),
-      style: FilledButton.styleFrom(
-        elevation: 0,
-        backgroundColor: primary
-            ? const Color(0xFF1677FF)
-            : const Color(0xFFEAF3FF),
-        foregroundColor: primary
-            ? ZhPalette.background
-            : const Color(0xFF1677FF),
-        disabledBackgroundColor: primary
-            ? const Color(0xFF8CB8F5)
-            : const Color(0xFFEAF3FF),
-        disabledForegroundColor: primary
-            ? ZhPalette.background
-            : const Color(0xFF7AAEF4),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        shape: const StadiumBorder(),
+      ZhLiquidGlassActionItem(
+        icon: const Icon(Icons.person_add_alt_1_outlined),
+        label: '邀请回答',
+        semanticLabel: '邀请回答',
+        onPressed: onInvite,
       ),
-    ),
+      ZhLiquidGlassActionItem(
+        icon: followBusy
+            ? const SizedBox.square(
+                dimension: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Icon(following ? Icons.check_rounded : Icons.add_rounded),
+        label: following ? '已关注' : '关注问题',
+        semanticLabel: following ? '取消关注问题' : '关注问题',
+        onPressed: followBusy ? null : onFollow,
+      ),
+    ],
+    transitionKey: following ? 'following' : 'not-following',
   );
 }

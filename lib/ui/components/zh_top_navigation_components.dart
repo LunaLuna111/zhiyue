@@ -876,8 +876,8 @@ class ZhProgressiveGlassBackdrop extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              stops: [0, .52, 1],
-              colors: [Color(0x4DE7F0FF), Color(0x1CF0F7FF), Color(0x00FFFFFF)],
+              stops: [0, .42, 1],
+              colors: [Color(0x78DDEBFF), Color(0x2AEFF7FF), Color(0x00FFFFFF)],
             ),
           ),
         ),

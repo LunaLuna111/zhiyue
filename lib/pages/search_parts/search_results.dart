@@ -329,17 +329,17 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             top: 0,
             left: 0,
             right: 0,
-            height: topInset + 104,
+            height: topInset + 132,
             child: const IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: [0, .52, 1],
+                    stops: [0, .42, 1],
                     colors: [
-                      Color(0x30DDEEFF),
-                      Color(0x16EEF7FF),
+                      Color(0x58DDEBFF),
+                      Color(0x20EEF7FF),
                       Color(0x00FFFFFF),
                     ],
                   ),

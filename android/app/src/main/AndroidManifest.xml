@@ -26,6 +26,11 @@
         android:allowBackup="false"
         android:fullBackupContent="false"
         android:usesCleartextTraffic="false">
+        <!-- Liquid glass widgets use the Impeller shader pipeline on Android;
+             keep the release renderer consistent with debug builds. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="true" />
         <activity
             android:name=".MainActivity"
             android:exported="true"

@@ -126,6 +126,56 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         ),
       );
     }
+    if (_index == 0) {
+      final selectedCount = _selectedFilters.length;
+      final active = _showFilters || selectedCount > 0;
+      final semanticLabel = selectedCount == 0
+          ? '筛选'
+          : '筛选，已选择 $selectedCount 项';
+      actions.add(
+        ZhLiquidGlassCapsuleAction(
+          icon: KeyedSubtree(
+            key: const ValueKey('search-filter-toggle'),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Icon(
+                  active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
+                  color: active ? const Color(0xFF1769E0) : ZhPalette.ink,
+                ),
+                if (selectedCount > 0)
+                  Positioned(
+                    top: -4,
+                    right: -5,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF1769E0),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(3),
+                          child: Text(
+                            '$selectedCount',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              height: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          semanticLabel: semanticLabel,
+          onPressed: _toggleFilters,
+        ),
+      );
+    }
     return ZhLiquidGlassCapsuleActionGroup(
       key: const ValueKey('search-results-actions'),
       actions: actions,
@@ -246,124 +296,142 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   @override
   Widget build(BuildContext context) {
     final desktop = MediaQuery.sizeOf(context).width >= ZhViewport.wide;
+    const toolbarHeight = 64.0;
+    final topInset = ZhTopBar.bodyTopInset(
+      context,
+      toolbarHeight: toolbarHeight,
+    );
     return Scaffold(
       // The query field stays visible at the top. Avoid shrinking and laying
       // out a potentially image-heavy result list on every keyboard frame.
       resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        child: Column(
-          children: [
-            ZhResponsiveFrame(
-              maxWidth: 1200,
-              desktopGutter: 24,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-                child: Row(
-                  children: [
-                    ZhLiquidGlassIconButton(
-                      key: const ValueKey('search-results-back'),
-                      semanticLabel: '返回',
-                      onPressed: Navigator.of(context).pop,
-                      icon: const Icon(Icons.arrow_back_rounded),
-                      size: 44,
-                      iconSize: 22,
-                    ),
-                    const Spacer(),
-                    _searchActions(),
-                    if (_index == 0) ...[
-                      const SizedBox(width: 8),
-                      _SearchFilterToggle(
-                        active: _showFilters || _selectedFilters.isNotEmpty,
-                        selectedCount: _selectedFilters.length,
-                        onTap: _toggleFilters,
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            ZhResponsiveFrame(
-              maxWidth: 1200,
-              desktopGutter: 24,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _SearchField(
-                      controller: _query,
-                      focusNode: _queryFocus,
-                      hintText: '搜索知乎内容',
-                      compact: true,
-                      inlineActions: false,
-                      onChanged: _onQueryChanged,
-                      onSubmitted: _submit,
-                    ),
-                    _SearchSuggestionPanel(
-                      controller: _suggestions,
-                      onSelected: _submit,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            ZhResponsiveFrame(
-              maxWidth: 1200,
-              desktopGutter: 24,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 48,
-                        child: ZhLiquidGlassSegmentedTabs(
-                          key: const ValueKey('search-scope-glass-tabs'),
-                          labels: [
-                            for (final tab in officialSearchTabs) tab.label,
-                          ],
-                          selectedIndex: _index,
-                          semanticPrefix: '搜索范围 ',
-                          scrollable: true,
-                          onSelected: _switchToTab,
-                          height: 46,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOutCubic,
-              child: _showFilters
-                  ? ZhResponsiveFrame(
-                      maxWidth: 1200,
-                      desktopGutter: 24,
-                      child: _SearchFilterPanel(
-                        groups: _filterGroups,
-                        selected: _selectedFilters,
-                        onSelected: _selectFilter,
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: desktop
-                  ? ZhResponsiveTwoPane(
-                      primary: _buildPageView(),
-                      secondary: _SearchDesktopRail(
-                        query: _submittedQuery,
-                        tab: officialSearchTabs[_index],
-                        selectedFilters: _selectedFilters,
-                      ),
-                    )
-                  : _buildPageView(),
-            ),
-          ],
+      extendBodyBehindAppBar: true,
+      backgroundColor: ZhPalette.background,
+      appBar: ZhTopBar(
+        toolbarHeight: toolbarHeight,
+        automaticallyImplyLeading: false,
+        leading: ZhLiquidGlassIconButton(
+          key: const ValueKey('search-results-back'),
+          semanticLabel: '返回',
+          onPressed: Navigator.of(context).pop,
+          icon: const Icon(Icons.arrow_back_rounded),
+          size: 44,
+          iconSize: 22,
         ),
+        actions: [_searchActions()],
+      ),
+      body: Stack(
+        children: [
+          // The fixed search header leaves no scrolling content beneath the
+          // transparent app bar on the first frame. Keep the same subtle
+          // blue-to-clear transition visible without tinting the result list.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: topInset + 104,
+            child: const IgnorePointer(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    stops: [0, .52, 1],
+                    colors: [
+                      Color(0x30DDEEFF),
+                      Color(0x16EEF7FF),
+                      Color(0x00FFFFFF),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                SizedBox(height: topInset),
+                ZhResponsiveFrame(
+                  maxWidth: 1200,
+                  desktopGutter: 24,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _SearchField(
+                          controller: _query,
+                          focusNode: _queryFocus,
+                          hintText: '搜索知乎内容',
+                          compact: true,
+                          inlineActions: false,
+                          onChanged: _onQueryChanged,
+                          onSubmitted: _submit,
+                        ),
+                        _SearchSuggestionPanel(
+                          controller: _suggestions,
+                          onSelected: _submit,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                ZhResponsiveFrame(
+                  maxWidth: 1200,
+                  desktopGutter: 24,
+                  child: Padding(
+                    // Keep the scope switcher as its own floating glass surface.
+                    // It must not inherit a solid toolbar/background container.
+                    padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+                    child: SizedBox(
+                      height: 46,
+                      child: ZhLiquidGlassSegmentedTabs(
+                        key: const ValueKey('search-scope-glass-tabs'),
+                        labels: [
+                          for (final tab in officialSearchTabs) tab.label,
+                        ],
+                        selectedIndex: _index,
+                        semanticPrefix: '搜索范围 ',
+                        scrollable: true,
+                        onSelected: _switchToTab,
+                        height: 46,
+                      ),
+                    ),
+                  ),
+                ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 180),
+                  curve: Curves.easeOutCubic,
+                  child: _showFilters
+                      ? ZhResponsiveFrame(
+                          maxWidth: 1200,
+                          desktopGutter: 24,
+                          child: _SearchFilterPanel(
+                            groups: _filterGroups,
+                            selected: _selectedFilters,
+                            onSelected: _selectFilter,
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  child: desktop
+                      ? ZhResponsiveTwoPane(
+                          primary: _buildPageView(),
+                          secondary: _SearchDesktopRail(
+                            query: _submittedQuery,
+                            tab: officialSearchTabs[_index],
+                            selectedFilters: _selectedFilters,
+                          ),
+                        )
+                      : _buildPageView(),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -385,70 +453,6 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       onOpenType: _openResultType,
     ),
   );
-}
-
-class _SearchFilterToggle extends StatelessWidget {
-  const _SearchFilterToggle({
-    required this.active,
-    required this.selectedCount,
-    required this.onTap,
-  });
-
-  final bool active;
-  final int selectedCount;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final semanticLabel = selectedCount == 0 ? '筛选' : '筛选，已选择 $selectedCount 项';
-    return Semantics(
-      button: true,
-      toggled: active,
-      label: semanticLabel,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          ZhLiquidGlassIconButton(
-            key: const ValueKey('search-filter-toggle'),
-            semanticLabel: semanticLabel,
-            onPressed: onTap,
-            icon: Icon(
-              active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
-              size: 22,
-              color: active ? const Color(0xFF1769E0) : ZhPalette.ink,
-            ),
-            size: 44,
-            iconSize: 22,
-          ),
-          if (selectedCount > 0)
-            Positioned(
-              top: -3,
-              right: -3,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF1769E0),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(3),
-                    child: Text(
-                      '$selectedCount',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        height: 1,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
 }
 
 class _SearchFilterPanel extends StatelessWidget {

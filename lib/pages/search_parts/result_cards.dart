@@ -63,6 +63,7 @@ class _SearchResultTab extends StatefulWidget {
     required this.api,
     required this.query,
     required this.type,
+    required this.contentTopPadding,
     required this.onOpenRecent,
     required this.onOpenType,
     this.filters = const {},
@@ -71,6 +72,7 @@ class _SearchResultTab extends StatefulWidget {
   final ZhihuApiClient api;
   final String query;
   final String type;
+  final double contentTopPadding;
   final VoidCallback onOpenRecent;
   final ValueChanged<String> onOpenType;
   final Map<String, String> filters;
@@ -353,7 +355,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       return RefreshIndicator(
         onRefresh: () => _load(reset: true),
         child: ListView(
-          padding: EdgeInsets.zero,
+          padding: EdgeInsets.only(top: widget.contentTopPadding),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             SizedBox(
@@ -371,7 +373,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       onRefresh: () => _load(reset: true),
       child: ListView.builder(
         controller: _scroll,
-        padding: EdgeInsets.zero,
+        padding: EdgeInsets.only(top: widget.contentTopPadding),
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _rows.length + 1,
         itemBuilder: (context, index) {

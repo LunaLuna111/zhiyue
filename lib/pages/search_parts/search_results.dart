@@ -32,11 +32,13 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   late final PageController _pages;
   late final _SearchSuggestionController _suggestions;
   final _selectedFilters = <String, String>{};
+  final _headerKey = GlobalKey();
   List<List<SearchFilterOption>> _filterGroups = officialSearchFilterGroups;
   late int _index;
   late String _submittedQuery;
   bool _showFilters = false;
   int _filterCatalogGeneration = 0;
+  double _resultHeaderHeight = 0;
 
   @override
   void initState() {
@@ -293,6 +295,15 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     });
   }
 
+  void _syncResultHeaderHeight() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final measured = _headerKey.currentContext?.size?.height;
+      if (!mounted || measured == null) return;
+      if ((measured - _resultHeaderHeight).abs() < .5) return;
+      setState(() => _resultHeaderHeight = measured);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final desktop = MediaQuery.sizeOf(context).width >= ZhViewport.wide;
@@ -301,45 +312,51 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       context,
       toolbarHeight: toolbarHeight,
     );
+    _syncResultHeaderHeight();
+    final resultHeaderHeight = _resultHeaderHeight > 0
+        ? _resultHeaderHeight
+        : topInset + 114;
     return Scaffold(
       // The query field stays visible at the top. Avoid shrinking and laying
       // out a potentially image-heavy result list on every keyboard frame.
       resizeToAvoidBottomInset: false,
-      extendBodyBehindAppBar: true,
       backgroundColor: ZhPalette.background,
-      appBar: ZhTopBar(
-        toolbarHeight: toolbarHeight,
-        automaticallyImplyLeading: false,
-        leading: ZhLiquidGlassIconButton(
-          key: const ValueKey('search-results-back'),
-          semanticLabel: '返回',
-          onPressed: Navigator.of(context).pop,
-          icon: const Icon(Icons.arrow_back_rounded),
-          size: 44,
-          iconSize: 22,
-        ),
-        actions: [_searchActions()],
-      ),
       body: Stack(
         children: [
-          // The fixed search header leaves no scrolling content beneath the
-          // transparent app bar on the first frame. Keep the same subtle
-          // blue-to-clear transition visible without tinting the result list.
+          Positioned.fill(
+            child: desktop
+                ? ZhResponsiveTwoPane(
+                    primary: _buildPageView(
+                      contentTopPadding: resultHeaderHeight,
+                    ),
+                    secondary: _SearchDesktopRail(
+                      query: _submittedQuery,
+                      tab: officialSearchTabs[_index],
+                      selectedFilters: _selectedFilters,
+                    ),
+                  )
+                : _buildPageView(contentTopPadding: resultHeaderHeight),
+          ),
+          // Keep the page-level fade above the fixed search header. The
+          // toolbar itself is transparent, so this layer is the visible
+          // blue-to-clear transition instead of a white rectangle painted by
+          // the route background.
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            height: topInset + 132,
+            height: topInset,
             child: const IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    stops: [0, .42, 1],
+                    stops: [0, .28, .68, 1],
                     colors: [
-                      Color(0x58DDEBFF),
-                      Color(0x20EEF7FF),
+                      Color(0xD8D7E8FF),
+                      Color(0x70EAF6FF),
+                      Color(0x20F7FCFF),
                       Color(0x00FFFFFF),
                     ],
                   ),
@@ -347,88 +364,107 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
               ),
             ),
           ),
-          SafeArea(
-            top: false,
-            child: Column(
-              children: [
-                SizedBox(height: topInset),
-                ZhResponsiveFrame(
-                  maxWidth: 1200,
-                  desktopGutter: 24,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _SearchField(
-                          controller: _query,
-                          focusNode: _queryFocus,
-                          hintText: '搜索知乎内容',
-                          compact: true,
-                          inlineActions: false,
-                          onChanged: _onQueryChanged,
-                          onSubmitted: _submit,
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              top: false,
+              child: KeyedSubtree(
+                key: _headerKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(height: topInset),
+                    ZhResponsiveFrame(
+                      maxWidth: 1200,
+                      desktopGutter: 24,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(12, 0, 12, 6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _SearchField(
+                              controller: _query,
+                              focusNode: _queryFocus,
+                              hintText: '搜索知乎内容',
+                              compact: true,
+                              inlineActions: false,
+                              onChanged: _onQueryChanged,
+                              onSubmitted: _submit,
+                            ),
+                            _SearchSuggestionPanel(
+                              controller: _suggestions,
+                              onSelected: _submit,
+                            ),
+                          ],
                         ),
-                        _SearchSuggestionPanel(
-                          controller: _suggestions,
-                          onSelected: _submit,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                ZhResponsiveFrame(
-                  maxWidth: 1200,
-                  desktopGutter: 24,
-                  child: Padding(
-                    // Keep the scope switcher as its own floating glass surface.
-                    // It must not inherit a solid toolbar/background container.
-                    padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
-                    child: SizedBox(
-                      height: 46,
-                      child: ZhLiquidGlassSegmentedTabs(
-                        key: const ValueKey('search-scope-glass-tabs'),
-                        labels: [
-                          for (final tab in officialSearchTabs) tab.label,
-                        ],
-                        selectedIndex: _index,
-                        semanticPrefix: '搜索范围 ',
-                        scrollable: true,
-                        onSelected: _switchToTab,
-                        height: 46,
                       ),
                     ),
-                  ),
-                ),
-                AnimatedSize(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOutCubic,
-                  child: _showFilters
-                      ? ZhResponsiveFrame(
-                          maxWidth: 1200,
-                          desktopGutter: 24,
-                          child: _SearchFilterPanel(
-                            groups: _filterGroups,
-                            selected: _selectedFilters,
-                            onSelected: _selectFilter,
+                    ZhResponsiveFrame(
+                      maxWidth: 1200,
+                      desktopGutter: 24,
+                      child: Padding(
+                        // Keep the scope switcher as its own floating glass surface.
+                        // It must not inherit a solid toolbar/background container.
+                        padding: const EdgeInsets.fromLTRB(12, 2, 12, 8),
+                        child: SizedBox(
+                          height: 46,
+                          child: ZhLiquidGlassSegmentedTabs(
+                            key: const ValueKey('search-scope-glass-tabs'),
+                            labels: [
+                              for (final tab in officialSearchTabs) tab.label,
+                            ],
+                            selectedIndex: _index,
+                            semanticPrefix: '搜索范围 ',
+                            scrollable: true,
+                            onSelected: _switchToTab,
+                            height: 46,
                           ),
-                        )
-                      : const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      child: _showFilters
+                          ? ZhResponsiveFrame(
+                              maxWidth: 1200,
+                              desktopGutter: 24,
+                              child: _SearchFilterPanel(
+                                groups: _filterGroups,
+                                selected: _selectedFilters,
+                                onSelected: _selectFilter,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
+                    ),
+                    const SizedBox(height: 4),
+                  ],
                 ),
-                const SizedBox(height: 4),
-                Expanded(
-                  child: desktop
-                      ? ZhResponsiveTwoPane(
-                          primary: _buildPageView(),
-                          secondary: _SearchDesktopRail(
-                            query: _submittedQuery,
-                            tab: officialSearchTabs[_index],
-                            selectedFilters: _selectedFilters,
-                          ),
-                        )
-                      : _buildPageView(),
-                ),
-              ],
+              ),
+            ),
+          ),
+          // Keep the transparent navigation chrome in the same compositing
+          // scene as the page. A Scaffold appBar is painted in a separate
+          // slot, which prevents its backdrop from sampling this page's
+          // scrolling surface on Android.
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: ZhTopBar(
+              toolbarHeight: toolbarHeight,
+              automaticallyImplyLeading: false,
+              leading: ZhLiquidGlassIconButton(
+                key: const ValueKey('search-results-back'),
+                semanticLabel: '返回',
+                onPressed: Navigator.of(context).pop,
+                icon: const Icon(Icons.arrow_back_rounded),
+                size: 44,
+                iconSize: 22,
+              ),
+              actions: [_searchActions()],
             ),
           ),
         ],
@@ -436,7 +472,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
     );
   }
 
-  Widget _buildPageView() => PageView.builder(
+  Widget _buildPageView({double contentTopPadding = 0}) => PageView.builder(
     controller: _pages,
     itemCount: officialSearchTabs.length,
     onPageChanged: _pageChanged,
@@ -448,6 +484,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       api: widget.api,
       query: _submittedQuery,
       type: officialSearchTabs[index].type,
+      contentTopPadding: contentTopPadding,
       filters: index == 0 ? Map.unmodifiable(_selectedFilters) : const {},
       onOpenRecent: _openRecentResults,
       onOpenType: _openResultType,

@@ -857,14 +857,28 @@ class ZhLiquidGlassAppBar extends StatelessWidget
 /// progressive blur. This lets the scrolling content dissolve naturally into
 /// the toolbar without creating a hard divider or hiding the text below it.
 class ZhProgressiveGlassBackdrop extends StatelessWidget {
-  const ZhProgressiveGlassBackdrop({super.key});
+  const ZhProgressiveGlassBackdrop({super.key, this.gradient});
+
+  static const _defaultGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    stops: [0, .28, .68, 1],
+    colors: [
+      Color(0xD8D7E8FF),
+      Color(0x70EAF6FF),
+      Color(0x20F7FCFF),
+      Color(0x00FFFFFF),
+    ],
+  );
+
+  final Gradient? gradient;
 
   @override
-  Widget build(BuildContext context) => const IgnorePointer(
+  Widget build(BuildContext context) => IgnorePointer(
     child: Stack(
       fit: StackFit.expand,
       children: [
-        ProgressiveBlur(
+        const ProgressiveBlur(
           maxSigma: 6,
           // The lower edge should dissolve into the page while the upper edge
           // carries the strongest blur, matching the iOS 26 toolbar gradient.
@@ -872,19 +886,7 @@ class ZhProgressiveGlassBackdrop extends StatelessWidget {
           falloff: 1.8,
         ),
         DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              stops: [0, .28, .68, 1],
-              colors: [
-                Color(0xD8D7E8FF),
-                Color(0x70EAF6FF),
-                Color(0x20F7FCFF),
-                Color(0x00FFFFFF),
-              ],
-            ),
-          ),
+          decoration: BoxDecoration(gradient: gradient ?? _defaultGradient),
         ),
       ],
     ),

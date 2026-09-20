@@ -304,12 +304,12 @@ class _FeedPageState extends State<FeedPage>
 
   Widget _pageAt(int index) {
     final channel = _channels[index];
-    // Keep the first row and pull-to-refresh track below the floating channel
-    // chrome. Reserving only the status inset makes the refresh indicator
-    // appear underneath the glass tabs on every home channel.
-    final contentTopInset =
-        MediaQuery.viewPaddingOf(context).top +
-        ZhLiquidGlassTopNavigation.barHeight;
+    // The home body is already hosted by the shell's edge-to-edge glass
+    // scaffold. Its scroll views contribute the system safe-area padding;
+    // reserving it a second time here creates the blank band seen below the
+    // channel tabs. Keep only the floating tab track's height in the page
+    // contract so every channel starts at the same visual edge.
+    final contentTopInset = ZhLiquidGlassTopNavigation.barHeight * .75;
     final refreshSignal = _refreshSignals[channel]!;
     final requestScopeEpoch = _requestScopeEpoch;
     bool isRequestScopeCurrent() =>
@@ -322,10 +322,9 @@ class _FeedPageState extends State<FeedPage>
         child: SaltStoryHome(
           key: const ValueKey('home-story-feed'),
           api: widget.api,
-          // The story feed is covered by the floating channel chrome. Reserve
-          // its full height so billboard headings and first cards begin below
-          // the tabs instead of sliding underneath them.
-          topInset: contentTopInset + ZhLiquidGlassTopNavigation.barHeight,
+          // The story feed shares the same floating channel chrome as the
+          // ordinary feeds. Do not reserve the track twice.
+          topInset: contentTopInset + 48,
           initialResponse: _preloadPool.warm(channel),
           isRequestScopeCurrent: isRequestScopeCurrent,
           refreshSignal: refreshSignal,

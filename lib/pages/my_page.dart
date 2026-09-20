@@ -465,6 +465,21 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                   ),
                 ],
               ),
+              const _SectionLabel('个性化功能'),
+              _SettingsGroup(
+                children: [
+                  _SwitchTile(
+                    key: const ValueKey('focus-search-on-open-setting'),
+                    icon: Icons.keyboard_alt_outlined,
+                    title: '进入搜索页时自动打开输入法',
+                    subtitle: session.focusSearchOnOpen
+                        ? '进入搜索页后自动聚焦搜索框'
+                        : '进入搜索页后手动点击搜索框',
+                    value: session.focusSearchOnOpen,
+                    onChanged: session.setFocusSearchOnOpen,
+                  ),
+                ],
+              ),
               const _SectionLabel('图片与存储'),
               _SettingsGroup(
                 children: [

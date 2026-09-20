@@ -278,12 +278,20 @@ class _SearchPageState extends State<SearchPage>
   }
 
   void _onControllerActivated() {
-    if (!mounted || _query.text.trim().isNotEmpty) return;
+    if (!mounted ||
+        !widget.api.session.focusSearchOnOpen ||
+        _query.text.trim().isNotEmpty) {
+      return;
+    }
     // The search page is kept alive inside the home IndexedStack. Wait for
     // the navigation selection to settle before requesting focus so the IME
     // does not animate while the old page is still being hit-tested.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _query.text.trim().isNotEmpty) return;
+      if (!mounted ||
+          !widget.api.session.focusSearchOnOpen ||
+          _query.text.trim().isNotEmpty) {
+        return;
+      }
       _queryFocus.requestFocus();
     });
   }
@@ -557,7 +565,8 @@ class _SearchPageState extends State<SearchPage>
               _SearchField(
                 controller: _query,
                 focusNode: _queryFocus,
-                autofocus: widget.focusOnOpen,
+                autofocus:
+                    widget.focusOnOpen && widget.api.session.focusSearchOnOpen,
                 hintText: '搜索知乎内容',
                 inlineActions: false,
                 onChanged: _onQueryChanged,

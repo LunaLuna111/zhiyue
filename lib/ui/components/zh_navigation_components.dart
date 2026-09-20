@@ -1,6 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
+/// Shared visual tokens for every action/navigation tab bar in the client.
+///
+/// Pages provide only their tab data and callbacks. The selected foreground,
+/// neutral moving lens, capsule geometry and interaction glow stay here so a
+/// press has the same feedback on the home bar and on detail-page actions.
+abstract final class ZhLiquidGlassNavigationStyle {
+  static const selectedColor = Color(0xFF1677FF);
+  static const unselectedColor = Color(0xCC202733);
+  static const indicatorColor = Color(0x42000000);
+  static const interactionGlowColor = Color(0x260A6FFF);
+  static const capsuleRadius = GlassDefaults.capsuleRadius;
+
+  static const barSettings = LiquidGlassSettings(
+    thickness: 30,
+    blur: 4,
+    chromaticAberration: .42,
+    lightIntensity: .5,
+    refractiveIndex: 1.59,
+    saturation: .8,
+    ambientStrength: .72,
+    glassColor: Color(0x4AFFFFFF),
+    specularSharpness: GlassSpecularSharpness.soft,
+  );
+
+  static const indicatorSettings = LiquidGlassSettings(
+    thickness: 42,
+    blur: 4,
+    chromaticAberration: .52,
+    lightIntensity: .24,
+    refractiveIndex: 1.59,
+    saturation: .95,
+    ambientStrength: .35,
+    ambientRim: .12,
+    fresnelStrength: 1.05,
+    edgeAbsorption: .25,
+    bodyMode: GlassBodyMode.clear,
+    glassColor: Color(0x702F343D),
+    specularSharpness: GlassSpecularSharpness.soft,
+  );
+}
+
 /// The iOS 26-style floating navigation used on phones and narrow windows.
 ///
 /// [GlassTabBar.bottom] owns the complete visual treatment: the floating glass
@@ -21,22 +62,6 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
   // rendered glass bar when the app is built inside a Scaffold.
   static const double _barHeight = 64;
   static const double _verticalPadding = 20;
-
-  // The upstream bar preset is intentionally subtle.  The client uses a
-  // white content surface, so its default 24% white tint can disappear into
-  // the page unless the backdrop has strong contrast.  Keep the same
-  // polycarbonate refraction profile while giving the chrome a slightly
-  // denser frost and a visible specular edge.
-  static const LiquidGlassSettings _barGlassSettings = LiquidGlassSettings(
-    thickness: 34,
-    blur: 5,
-    chromaticAberration: .35,
-    lightIntensity: .7,
-    refractiveIndex: 1.59,
-    saturation: .85,
-    ambientStrength: .85,
-    glassColor: Color(0x55FFFFFF),
-  );
 
   final List<NavigationDestination> destinations;
   final int selectedIndex;
@@ -75,16 +100,29 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
         horizontalPadding: 20,
         spacing: 8,
         tabPadding: const EdgeInsets.symmetric(horizontal: 4),
-        barBorderRadius: 32,
+        barBorderRadius: ZhLiquidGlassNavigationStyle.capsuleRadius,
         iconLabelSpacing: 4,
         iconSize: 24,
         labelFontSize: 11,
-        settings: _barGlassSettings,
+        settings: ZhLiquidGlassNavigationStyle.barSettings,
+        indicatorSettings: ZhLiquidGlassNavigationStyle.indicatorSettings,
         quality: GlassQuality.premium,
         backgroundQuality: GlassQuality.premium,
-        // A slightly stronger neutral lens keeps the selected tab legible on
-        // white pages without returning to the opaque black pill.
-        indicatorColor: Color(0x24000000),
+        // The package's selected layer follows the animated lens while it
+        // moves, so the active icon and label become blue before the spring
+        // settles instead of waiting for a separate page repaint.
+        selectedIconColor: ZhLiquidGlassNavigationStyle.selectedColor,
+        unselectedIconColor: ZhLiquidGlassNavigationStyle.unselectedColor,
+        selectedLabelColor: ZhLiquidGlassNavigationStyle.selectedColor,
+        unselectedLabelColor: ZhLiquidGlassNavigationStyle.unselectedColor,
+        indicatorColor: ZhLiquidGlassNavigationStyle.indicatorColor,
+        indicatorBorderRadius: ZhLiquidGlassNavigationStyle.capsuleRadius,
+        indicatorPinchStrength: .46,
+        indicatorExpansion: const EdgeInsets.symmetric(
+          horizontal: 10,
+          vertical: 7,
+        ),
+        interactionGlowColor: ZhLiquidGlassNavigationStyle.interactionGlowColor,
         // Keep the package's complete press treatment so each destination
         // gets the same spring, stretch and touch-reactive glass as toolbar
         // buttons.
@@ -267,28 +305,6 @@ class ZhLiquidGlassFloatingActionBar extends StatefulWidget {
 class _ZhLiquidGlassFloatingActionBarState
     extends State<ZhLiquidGlassFloatingActionBar>
     with SingleTickerProviderStateMixin {
-  static const LiquidGlassSettings _settings = LiquidGlassSettings(
-    thickness: 34,
-    blur: 3,
-    chromaticAberration: .3,
-    lightIntensity: .65,
-    refractiveIndex: 1.59,
-    saturation: .86,
-    ambientStrength: .92,
-    glassColor: Color(0x5CFFFFFF),
-  );
-
-  static const LiquidGlassSettings _indicatorSettings = LiquidGlassSettings(
-    thickness: 38,
-    blur: 2,
-    chromaticAberration: .28,
-    lightIntensity: .82,
-    refractiveIndex: 1.5,
-    saturation: 1,
-    ambientStrength: .95,
-    glassColor: Color(0x66FFFFFF),
-  );
-
   late final AnimationController _modeTransitionController;
   late int _selectedIndex;
 
@@ -358,17 +374,23 @@ class _ZhLiquidGlassFloatingActionBarState
         iconLabelSpacing: 3,
         iconSize: 22,
         labelFontSize: 11,
-        settings: _settings,
-        indicatorSettings: _indicatorSettings,
+        settings: ZhLiquidGlassNavigationStyle.barSettings,
+        indicatorSettings: ZhLiquidGlassNavigationStyle.indicatorSettings,
         quality: GlassQuality.premium,
         backgroundQuality: GlassQuality.standard,
-        indicatorColor: const Color(0x2E000000),
+        selectedIconColor: ZhLiquidGlassNavigationStyle.selectedColor,
+        unselectedIconColor: ZhLiquidGlassNavigationStyle.unselectedColor,
+        selectedLabelColor: ZhLiquidGlassNavigationStyle.selectedColor,
+        unselectedLabelColor: ZhLiquidGlassNavigationStyle.unselectedColor,
+        indicatorColor: ZhLiquidGlassNavigationStyle.indicatorColor,
+        indicatorBorderRadius: ZhLiquidGlassNavigationStyle.capsuleRadius,
         indicatorPinchStrength: .28,
         indicatorExpansion: const EdgeInsets.symmetric(
           horizontal: 9,
           vertical: 7,
         ),
         maskingQuality: MaskingQuality.high,
+        interactionGlowColor: ZhLiquidGlassNavigationStyle.interactionGlowColor,
         interactionBehavior: GlassInteractionBehavior.full,
         pressScale: 1.02,
       ),

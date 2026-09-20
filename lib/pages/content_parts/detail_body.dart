@@ -2,6 +2,16 @@ part of '../content_pages.dart';
 
 const _detailBottomOverlayInset = 104.0;
 
+// The question entry sits directly below the transparent detail toolbar. It
+// needs blur for the collapsing transition, but the app-bar's blue tint here
+// creates a hard coloured seam against the answer body.
+const _answerQuestionHeaderGradient = LinearGradient(
+  begin: Alignment.topCenter,
+  end: Alignment.bottomCenter,
+  colors: [Color(0x24FFFFFF), Color(0x0CFFFFFF), Color(0x00FFFFFF)],
+  stops: [0, .38, 1],
+);
+
 extension _ContentDetailBody on _ContentDetailPageState {
   Widget _body({double topInset = 0, Widget? answerQuestionHeader}) {
     if (_loading && _document == null) {
@@ -335,7 +345,9 @@ class _CollapsibleAnswerQuestionHeaderDelegate
             child: Stack(
               fit: StackFit.expand,
               children: [
-                const ZhProgressiveGlassBackdrop(),
+                const ZhProgressiveGlassBackdrop(
+                  gradient: _answerQuestionHeaderGradient,
+                ),
                 Align(
                   alignment: Alignment.bottomCenter,
                   child: Opacity(

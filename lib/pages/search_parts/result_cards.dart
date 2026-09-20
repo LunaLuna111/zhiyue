@@ -353,6 +353,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       return RefreshIndicator(
         onRefresh: () => _load(reset: true),
         child: ListView(
+          padding: EdgeInsets.zero,
           physics: const AlwaysScrollableScrollPhysics(),
           children: [
             SizedBox(
@@ -370,6 +371,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       onRefresh: () => _load(reset: true),
       child: ListView.builder(
         controller: _scroll,
+        padding: EdgeInsets.zero,
         physics: const AlwaysScrollableScrollPhysics(),
         itemCount: _rows.length + 1,
         itemBuilder: (context, index) {

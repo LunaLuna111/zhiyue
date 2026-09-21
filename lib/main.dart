@@ -169,6 +169,16 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
     return LiquidGlassWidgets.wrap(
       child: scopedApp,
       brightnessResolver: Theme.maybeBrightnessOf,
+      // Keep the normal glass language, but let the library fall back to its
+      // lightweight glass tier when measured raster frames exceed budget.
+      // Premium is intentionally not part of the client performance target.
+      adaptiveQuality: true,
+      adaptiveConfig: const GlassAdaptiveScopeConfig(
+        minQuality: GlassQuality.minimal,
+        maxQuality: GlassQuality.standard,
+        initialQuality: GlassQuality.standard,
+        allowStepUp: false,
+      ),
     );
   }
 }

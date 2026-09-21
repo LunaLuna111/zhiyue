@@ -299,7 +299,11 @@ class _DetailImageWarmup extends StatefulWidget {
 }
 
 class _DetailImageWarmupState extends State<_DetailImageWarmup> {
+  static const _warmupImageLimit = 4;
+  static const _warmupDelay = Duration(milliseconds: 550);
+
   final _scheduled = <String>{};
+  Timer? _warmupTimer;
 
   @override
   void initState() {
@@ -314,20 +318,28 @@ class _DetailImageWarmupState extends State<_DetailImageWarmup> {
   }
 
   void _schedulePending() {
+    _warmupTimer?.cancel();
     final pending = <_DetailImageSource>[];
     for (final source in widget.sources) {
-      if (source.url.isEmpty || !_scheduled.add(source.identity)) continue;
+      if (source.url.isEmpty || _scheduled.contains(source.identity)) continue;
       pending.add(source);
+      if (pending.length == _warmupImageLimit) break;
     }
     if (pending.isEmpty) return;
+    for (final source in pending) {
+      _scheduled.add(source.identity);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) unawaited(_precacheConcurrently(pending));
+      if (!mounted) return;
+      _warmupTimer = Timer(_warmupDelay, () {
+        if (mounted) unawaited(_precacheConcurrently(pending));
+      });
     });
   }
 
   Future<void> _precacheConcurrently(List<_DetailImageSource> sources) async {
     var cursor = 0;
-    final workerCount = math.min(3, sources.length);
+    final workerCount = math.min(1, sources.length);
     Future<void> worker() async {
       while (true) {
         if (!mounted || cursor >= sources.length) return;
@@ -352,6 +364,12 @@ class _DetailImageWarmupState extends State<_DetailImageWarmup> {
     await Future.wait(
       List<Future<void>>.generate(workerCount, (_) => worker()),
     );
+  }
+
+  @override
+  void dispose() {
+    _warmupTimer?.cancel();
+    super.dispose();
   }
 
   @override

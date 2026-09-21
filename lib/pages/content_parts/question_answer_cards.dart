@@ -24,7 +24,15 @@ class _QuestionAnswerRow extends StatelessWidget {
     final excerpt = _answerListExcerpt(value);
     final images = contentImageUrlsOf(value, limit: 3);
     final metrics = ContentMetrics.from(value);
-    final relationship = AnswerRelationship.from(value);
+    final relationship = metrics.hasEngagement
+        ? AnswerRelationship.from(value)
+        : const AnswerRelationship(
+            voting: '',
+            isThanked: null,
+            isFavorited: null,
+            isAuthor: null,
+            isFollowingAuthor: null,
+          );
     final date = contentDateLabel(metrics);
     final avatarFallback = author.isEmpty ? '知' : author.characters.first;
     return Material(

@@ -43,7 +43,6 @@ class ZhLiquidGlassIconButton extends StatelessWidget {
         ? const LiquidOval()
         : LiquidRoundedRectangle(borderRadius: borderRadius);
     return GlassButton.custom(
-      key: key,
       onTap: onPressed ?? _disabledAction,
       enabled: onPressed != null,
       label: semanticLabel ?? '',
@@ -52,7 +51,7 @@ class ZhLiquidGlassIconButton extends StatelessWidget {
       shape: glassShape,
       useOwnLayer: true,
       settings: _zhToolbarGlassSettings,
-      quality: GlassQuality.premium,
+      quality: GlassQuality.standard,
       // Leave the interaction values at the package defaults. They provide
       // the native press inflation, spring return and touch-following glass
       // that a toolbar control is expected to have.
@@ -117,14 +116,13 @@ class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GlassMenu(
-    key: key,
     menuWidth: menuWidth,
     menuAlignment: menuAlignment,
     menuBorderRadius: 28,
     itemBorderRadius: 20,
     menuPadding: const EdgeInsets.symmetric(vertical: 8),
     settings: _zhToolbarGlassSettings,
-    quality: GlassQuality.premium,
+    quality: GlassQuality.standard,
     triggerBuilder: (context, toggleMenu) => ZhLiquidGlassIconButton(
       icon: icon,
       onPressed: toggleMenu,
@@ -198,7 +196,6 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final foreground = prominent ? ZhPalette.background : ZhPalette.ink;
     return GlassButton.custom(
-      key: key,
       onTap: onPressed ?? _disabledAction,
       enabled: onPressed != null,
       label: semanticLabel ?? label,
@@ -207,7 +204,7 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
       shape: const LiquidRoundedRectangle(borderRadius: 18),
       settings: prominent ? _prominentSettings : _settings,
       useOwnLayer: true,
-      quality: GlassQuality.premium,
+      quality: GlassQuality.standard,
       style: prominent ? GlassButtonStyle.prominent : GlassButtonStyle.filled,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -271,7 +268,6 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GlassButtonGroup.icons(
-    key: key,
     items: [
       for (final action in actions)
         GlassButtonGroupItem(
@@ -285,7 +281,7 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
     itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
     iconSize: 22,
     settings: _settings,
-    quality: GlassQuality.premium,
+    quality: GlassQuality.standard,
     useOwnLayer: true,
     showDividers: false,
   );
@@ -321,7 +317,6 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => GlassButtonGroup.icons(
-    key: key,
     items: [
       for (final action in [primaryAction, ...additionalActions])
         GlassButtonGroupItem(
@@ -354,7 +349,7 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
     itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
     iconSize: 22,
     settings: ZhLiquidGlassCapsuleActionGroup._settings,
-    quality: GlassQuality.premium,
+    quality: GlassQuality.standard,
     useOwnLayer: true,
     showDividers: false,
   );
@@ -452,7 +447,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
           ),
           settings: _settings,
           useOwnLayer: true,
-          quality: GlassQuality.premium,
+          quality: GlassQuality.standard,
           interactionBehavior: GlassInteractionBehavior.scaleOnly,
           glowColor: Colors.transparent,
           glowRadius: 0,
@@ -600,7 +595,9 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
           indicatorPinchStrength: .18,
           settings: _scrollableSettings,
           useOwnLayer: true,
-          quality: GlassQuality.premium,
+          // Search/result tabs remain in the route while it is being popped;
+          // the lightweight shader avoids a second dual-layer capture.
+          quality: GlassQuality.standard,
           maskingQuality: MaskingQuality.high,
         ),
       );
@@ -625,8 +622,8 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
       selectedLabelStyle: _selectedStyle,
       unselectedLabelStyle: _unselectedStyle,
       settings: _settings.copyWith(shadowElevation: shadowElevation),
-      quality: GlassQuality.premium,
-      backgroundQuality: GlassQuality.premium,
+      quality: GlassQuality.standard,
+      backgroundQuality: GlassQuality.standard,
       pressScale: pressScale,
       // Inline sort controls should not flash a full-surface directional glow
       // when their parent list starts a new request. The selected lens still
@@ -670,13 +667,12 @@ class _ZhLiquidGlassStaticSegmentedTabs extends StatelessWidget {
       final segmentWidth = width / labels.length;
       final selected = selectedIndex.clamp(0, labels.length - 1).toInt();
       return GlassButtonGroup(
-        key: key,
         borderRadius: height / 2,
         borderColor: Colors.transparent,
         settings: ZhLiquidGlassSegmentedTabs._settings.copyWith(
           shadowElevation: shadowElevation,
         ),
-        quality: GlassQuality.premium,
+        quality: GlassQuality.standard,
         useOwnLayer: true,
         showDividers: false,
         itemPadding: EdgeInsets.zero,
@@ -996,6 +992,12 @@ class ZhLiquidGlassTopNavigation extends StatelessWidget
           labels: labels,
           selectedIndex: selectedIndex,
           onSelected: onTabSelected,
+          // The home pager is already moving an image-heavy surface. The
+          // package's inline tab bar paints a second selected-label pass so
+          // it can refract text; the static glass group keeps the same
+          // rounded lens/press treatment with one text layer and no duplicate
+          // compositing during a section switch.
+          plainSelection: true,
         );
 
         final constrainedTabs = desktop

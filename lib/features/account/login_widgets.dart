@@ -252,7 +252,10 @@ class _LoginProgress extends StatelessWidget {
         height: 1.2,
       ),
       settings: _loginProgressGlassSettings,
-      quality: GlassQuality.premium,
+      // The submit control can remain mounted while the login route is
+      // being dismissed. Use the lightweight shader so a route transition
+      // never competes with a second full glass capture.
+      quality: GlassQuality.standard,
       backgroundQuality: GlassQuality.standard,
       interactionBehavior: GlassInteractionBehavior.full,
       pressScale: 1.02,

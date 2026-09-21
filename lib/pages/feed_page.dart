@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../core/api_client.dart';
 import '../core/api_response.dart';
@@ -83,8 +84,11 @@ class _FeedPageState extends State<FeedPage>
   late final Map<HomeFeedChannel, ValueNotifier<int>> _refreshSignals = {
     for (final channel in HomeFeedChannel.values) channel: ValueNotifier(0),
   };
+  Timer? _hiddenPreloadTimer;
+  int _preloadGeneration = 0;
   bool _channelDragActive = false;
   int _channelDragStartIndex = 0;
+  int? _channelDragTargetIndex;
 
   @override
   bool get wantKeepAlive => true;
@@ -108,6 +112,7 @@ class _FeedPageState extends State<FeedPage>
   void dispose() {
     widget.api.session.removeListener(_sessionChanged);
     widget.controller?.removeListener(_controllerChanged);
+    _hiddenPreloadTimer?.cancel();
     _pageController.dispose();
     for (final signal in _refreshSignals.values) {
       signal.dispose();
@@ -182,17 +187,55 @@ class _FeedPageState extends State<FeedPage>
     final hasFollowingAccess =
         widget.api.session.hasAccountSession ||
         widget.api.session.sessionKind == 'imported';
-    _preloadPool
-        .warmAll(
-          HomeFeedChannel.values.where(
-            // The official follow feed is account-scoped. Avoid a guaranteed
-            // 403 during anonymous startup, but still load it on demand if
-            // selected.
-            (channel) =>
-                channel != HomeFeedChannel.following || hasFollowingAccess,
-          ),
+    final generation = ++_preloadGeneration;
+    _hiddenPreloadTimer?.cancel();
+
+    // The selected page is the only request that can improve the first
+    // frame. Starting every other section in the same isolate turn makes
+    // response parsing and image metadata work compete with the first scroll.
+    final eligibleChannels = HomeFeedChannel.values
+        .where(
+          // The official follow feed is account-scoped. Avoid a guaranteed
+          // 403 during anonymous startup, but still load it on demand if
+          // selected.
+          (channel) =>
+              channel != HomeFeedChannel.following || hasFollowingAccess,
         )
-        .ignore();
+        .toList(growable: false);
+    if (eligibleChannels.contains(_channel)) {
+      _preloadPool.warm(_channel).ignore();
+    }
+
+    final hiddenChannels = eligibleChannels
+        .where((channel) => channel != _channel)
+        .toList(growable: false);
+    if (hiddenChannels.isEmpty) return;
+
+    // Keep the first interaction window free. Hidden sections are warmed one
+    // at a time after the current page has had a chance to settle, so a tab
+    // tap can reuse a response without creating a four-request burst.
+    _hiddenPreloadTimer = Timer(const Duration(milliseconds: 850), () {
+      if (!mounted || generation != _preloadGeneration) return;
+      unawaited(_warmHiddenChannels(hiddenChannels, generation));
+    });
+  }
+
+  Future<void> _warmHiddenChannels(
+    List<HomeFeedChannel> channels,
+    int generation,
+  ) async {
+    for (var index = 0; index < channels.length; index++) {
+      if (!mounted || generation != _preloadGeneration) return;
+      try {
+        await _preloadPool.warm(channels[index]);
+      } catch (_) {
+        // The selected page owns user-visible error handling. A background
+        // section failure should not interrupt the remaining warm-up queue.
+      }
+      if (index + 1 < channels.length) {
+        await Future<void>.delayed(const Duration(milliseconds: 220));
+      }
+    }
   }
 
   String _sessionRequestScope() {
@@ -228,6 +271,7 @@ class _FeedPageState extends State<FeedPage>
     // A tab tap is an explicit destination change. Jumping directly avoids
     // compositing two image-heavy feed pages for 260ms; center swipe gestures
     // still retain the physical drag and settle animation below.
+    _preloadPool.warm(channel).ignore();
     setState(() => _channel = channel);
     _pageController.jumpToPage(index);
   }
@@ -253,6 +297,7 @@ class _FeedPageState extends State<FeedPage>
 
   void _channelDragStart(DragStartDetails details, double width) {
     final inset = _channelGestureInset(width);
+    _channelDragTargetIndex = null;
     _channelDragActive =
         !_isFollowingHeaderGestureRegion(details.localPosition.dy) &&
         details.localPosition.dx >= inset &&
@@ -266,6 +311,26 @@ class _FeedPageState extends State<FeedPage>
     if (!_channelDragActive || !_pageController.hasClients) return;
     final position = _pageController.position;
     if (!position.hasContentDimensions) return;
+    final direction = details.delta.dx < 0
+        ? 1
+        : details.delta.dx > 0
+        ? -1
+        : 0;
+    if (direction != 0) {
+      final targetIndex = (_channelDragStartIndex + direction)
+          .clamp(0, _channels.length - 1)
+          .toInt();
+      final nextTargetIndex = targetIndex == _channelDragStartIndex
+          ? null
+          : targetIndex;
+      if (_channelDragTargetIndex != nextTargetIndex) {
+        _channelDragTargetIndex = nextTargetIndex;
+        if (nextTargetIndex != null) {
+          _preloadPool.warm(_channels[nextTargetIndex]).ignore();
+        }
+        setState(() {});
+      }
+    }
     final target = (position.pixels - details.delta.dx).clamp(
       position.minScrollExtent,
       position.maxScrollExtent,
@@ -285,25 +350,43 @@ class _FeedPageState extends State<FeedPage>
       target += page > _channelDragStartIndex ? 1 : -1;
     }
     target = target.clamp(0, _channels.length - 1);
-    _pageController.animateToPage(
-      target,
-      duration: const Duration(milliseconds: 240),
-      curve: Curves.easeOutCubic,
-    );
+    if (target != _channelDragStartIndex) {
+      _channelDragTargetIndex = target;
+      _preloadPool.warm(_channels[target]).ignore();
+    }
+    if (mounted) setState(() {});
+    _settleChannelDrag(target);
   }
 
   void _channelDragCancel() {
     if (!_channelDragActive || !_pageController.hasClients) return;
     _channelDragActive = false;
-    _pageController.animateToPage(
+    _settleChannelDrag(
       _channelDragStartIndex,
       duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _settleChannelDrag(
+    int target, {
+    Duration duration = const Duration(milliseconds: 240),
+  }) {
+    final settlingTarget = _channelDragTargetIndex;
+    unawaited(
+      _pageController
+          .animateToPage(target, duration: duration, curve: Curves.easeOutCubic)
+          .whenComplete(() {
+            if (!mounted || settlingTarget != _channelDragTargetIndex) {
+              return;
+            }
+            setState(() => _channelDragTargetIndex = null);
+          }),
     );
   }
 
   Widget _pageAt(int index) {
     final channel = _channels[index];
+    final isActive = _isChannelActive(channel);
     // The home body is already hosted by the shell's edge-to-edge glass
     // scaffold. Its scroll views contribute the system safe-area padding;
     // reserving it a second time here creates the blank band seen below the
@@ -322,10 +405,11 @@ class _FeedPageState extends State<FeedPage>
         child: SaltStoryHome(
           key: const ValueKey('home-story-feed'),
           api: widget.api,
+          isActive: isActive,
           // The story feed shares the same floating channel chrome as the
           // ordinary feeds. Do not reserve the track twice.
           topInset: contentTopInset + 48,
-          initialResponse: _preloadPool.warm(channel),
+          initialResponse: isActive ? _preloadPool.warm(channel) : null,
           isRequestScopeCurrent: isRequestScopeCurrent,
           refreshSignal: refreshSignal,
           onOpenCard: _openStoryCard,
@@ -341,7 +425,8 @@ class _FeedPageState extends State<FeedPage>
         key: ValueKey('home-${channel.name}-feed'),
         api: widget.api,
         channel: channel,
-        initialResponse: _preloadPool.warm(channel),
+        isActive: isActive,
+        initialResponse: isActive ? _preloadPool.warm(channel) : null,
         isRequestScopeCurrent: isRequestScopeCurrent,
         refreshSignal: refreshSignal,
         topInset: contentTopInset,
@@ -353,6 +438,15 @@ class _FeedPageState extends State<FeedPage>
             : RecommendationMode.server,
       ),
     );
+  }
+
+  bool _isChannelActive(HomeFeedChannel channel) {
+    if (_channel == channel) return true;
+    final targetIndex = _channelDragTargetIndex;
+    return targetIndex != null &&
+        targetIndex >= 0 &&
+        targetIndex < _channels.length &&
+        _channels[targetIndex] == channel;
   }
 
   void _openStoryShortcut(Map<String, dynamic> value) {
@@ -478,15 +572,6 @@ class _HomeFeedPreloadPool {
     );
     _initial[channel] = request;
     return request;
-  }
-
-  /// Starts every eligible request in the current isolate turn, then waits
-  /// for the batch only to attach error handling. The individual Futures stay
-  /// cached for their lazily built tabs to consume later.
-  Future<void> warmAll(Iterable<HomeFeedChannel> channels) async {
-    await Future.wait<ApiResponse>([
-      for (final channel in channels) warm(channel),
-    ], eagerError: false);
   }
 
   void invalidate(HomeFeedChannel channel) => _initial.remove(channel);

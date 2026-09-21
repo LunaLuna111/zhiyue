@@ -25,6 +25,7 @@ class _FeedStreamTab extends StatefulWidget {
     super.key,
     required this.api,
     required this.channel,
+    required this.isActive,
     required this.topInset,
     required this.compact,
     required this.showImages,
@@ -36,6 +37,7 @@ class _FeedStreamTab extends StatefulWidget {
   });
   final ZhihuApiClient api;
   final HomeFeedChannel channel;
+  final bool isActive;
   final double topInset;
   final bool compact;
   final bool showImages;
@@ -74,7 +76,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
     widget.refreshSignal.addListener(_refreshRequested);
     RecommendationBehaviorStore.instance.addListener(_behaviorChanged);
     unawaited(RecommendationBehaviorStore.instance.load());
-    _load(reset: true);
+    if (widget.isActive) _load(reset: true);
   }
 
   @override
@@ -84,7 +86,11 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
       oldWidget.refreshSignal.removeListener(_refreshRequested);
       widget.refreshSignal.addListener(_refreshRequested);
     }
-    if (!identical(oldWidget.initialResponse, widget.initialResponse) &&
+    final becameActive = !oldWidget.isActive && widget.isActive;
+    if (becameActive && _rows.isEmpty && !_loading) {
+      _consumedInitialResponse = false;
+      _load(reset: true);
+    } else if (!identical(oldWidget.initialResponse, widget.initialResponse) &&
         _rows.isEmpty &&
         !_loading) {
       _consumedInitialResponse = false;
@@ -282,12 +288,15 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
             context,
             incoming,
             // Warming dozens of 960px decodes competes directly with the
-            // first fling. Cover only the visible viewport with two workers;
-            // the lazy list owns everything after it.
+            // first fling. Warm content thumbnails after the first
+            // interaction window with one worker; the lazy list owns the
+            // rest as it approaches the viewport.
             limit: 8,
-            concurrency: 2,
+            concurrency: 1,
             avatarCacheSize: 72,
             cacheFeedPresentation: true,
+            includeAvatars: false,
+            warmupDelay: const Duration(milliseconds: 600),
           );
         }
         setState(() {
@@ -349,6 +358,12 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
   }
 
   Widget _buildList() {
+    if (!widget.isActive && _rows.isEmpty && !_loading) {
+      // PageView keeps a neighboring child mounted for a smooth settle. Do
+      // not initialize a second feed just because it was laid out; it will
+      // become active on the first drag/tap that actually targets it.
+      return const SizedBox.expand();
+    }
     final followingHeader = widget.channel == HomeFeedChannel.following;
     final headerCount = followingHeader ? 2 : 0;
     if (_loading && _rows.isEmpty && !_refreshing) {
@@ -387,6 +402,9 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
       key: ValueKey('home-${widget.channel.name}-scroll'),
       controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
+      // Keep roughly one image-bearing card ready on either side without
+      // letting PageView's neighboring feed build a large second cache.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(320),
       itemCount: _rows.length + headerCount + 2,
       itemBuilder: (context, index) {
         if (index == 0) return SizedBox(height: widget.topInset);

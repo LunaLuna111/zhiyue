@@ -106,8 +106,12 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
         labelFontSize: 11,
         settings: ZhLiquidGlassNavigationStyle.barSettings,
         indicatorSettings: ZhLiquidGlassNavigationStyle.indicatorSettings,
-        quality: GlassQuality.premium,
-        backgroundQuality: GlassQuality.premium,
+        // The home bar is visible underneath every pushed route during
+        // predictive back. Both layers must stay on the lightweight shader;
+        // premium texture capture here makes the returning route redraw the
+        // whole feed and glass platter together.
+        quality: GlassQuality.standard,
+        backgroundQuality: GlassQuality.standard,
         // The package's selected layer follows the animated lens while it
         // moves, so the active icon and label become blue before the spring
         // settles instead of waiting for a separate page repaint.
@@ -376,7 +380,10 @@ class _ZhLiquidGlassFloatingActionBarState
         labelFontSize: 11,
         settings: ZhLiquidGlassNavigationStyle.barSettings,
         indicatorSettings: ZhLiquidGlassNavigationStyle.indicatorSettings,
-        quality: GlassQuality.premium,
+        // Detail pages are frequently transformed during back navigation.
+        // Standard keeps the same liquid surface while avoiding a premium
+        // backdrop capture on every gesture frame.
+        quality: GlassQuality.standard,
         backgroundQuality: GlassQuality.standard,
         selectedIconColor: ZhLiquidGlassNavigationStyle.selectedColor,
         unselectedIconColor: ZhLiquidGlassNavigationStyle.unselectedColor,

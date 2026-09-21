@@ -17,38 +17,60 @@ void prefetchObjectImages(
   int contentThumbnailCacheWidth = 384,
   int? contentThumbnailCacheHeight,
   bool cacheFeedPresentation = false,
+  bool includeAvatars = true,
   bool deferUntilPostFrame = true,
+  Duration warmupDelay = const Duration(milliseconds: 300),
 }) {
   final candidates = <String, _ImageWarmupCandidate>{};
+  void addCandidate(_ImageWarmupCandidate candidate) {
+    candidates.putIfAbsent(candidate.url, () => candidate);
+  }
+
+  // Content thumbnails are the expensive part of a feed card. Put them ahead
+  // of avatars in the queue so a first fling warms the images the user is
+  // actually about to see instead of spending the small budget on several
+  // 24px portraits. The map still de-duplicates URLs shared by rows.
   for (final row in rows) {
+    if (candidates.length >= limit) break;
     final feedData = cacheFeedPresentation
         ? (_feedCardStaticDataCache[row] ??= _FeedCardStaticData.from(row))
         : null;
-    final avatar = feedData?.avatar ?? authorAvatarOf(row);
-    if (Uri.tryParse(avatar)?.scheme == 'https') {
-      candidates[avatar] = _ImageWarmupCandidate(
-        url: avatar,
-        cacheWidth: avatarCacheSize,
-        cacheHeight: avatarCacheSize,
-      );
-    }
     final contentUrls =
         feedData?.images.take(3).toList(growable: false) ??
         contentImageUrlsOf(row, limit: 3);
     final usesThumbnailStrip = contentUrls.length > 1;
     for (final url in contentUrls) {
-      candidates[url] = _ImageWarmupCandidate(
-        url: url,
-        cacheWidth: usesThumbnailStrip
-            ? contentThumbnailCacheWidth
-            : contentCacheWidth,
-        cacheHeight: usesThumbnailStrip
-            ? contentThumbnailCacheHeight
-            : contentCacheHeight,
-      );
       if (candidates.length >= limit) break;
+      addCandidate(
+        _ImageWarmupCandidate(
+          url: url,
+          cacheWidth: usesThumbnailStrip
+              ? contentThumbnailCacheWidth
+              : contentCacheWidth,
+          cacheHeight: usesThumbnailStrip
+              ? contentThumbnailCacheHeight
+              : contentCacheHeight,
+        ),
+      );
     }
-    if (candidates.length >= limit) break;
+  }
+  if (includeAvatars) {
+    for (final row in rows) {
+      if (candidates.length >= limit) break;
+      final feedData = cacheFeedPresentation
+          ? (_feedCardStaticDataCache[row] ??= _FeedCardStaticData.from(row))
+          : null;
+      final avatar = feedData?.avatar ?? authorAvatarOf(row);
+      if (Uri.tryParse(avatar)?.scheme == 'https') {
+        addCandidate(
+          _ImageWarmupCandidate(
+            url: avatar,
+            cacheWidth: avatarCacheSize,
+            cacheHeight: avatarCacheSize,
+          ),
+        );
+      }
+    }
   }
   if (candidates.isEmpty) return;
   void startWarmup() {
@@ -60,10 +82,21 @@ void prefetchObjectImages(
     ).ignore();
   }
 
+  void scheduleWarmup() {
+    if (warmupDelay <= Duration.zero) {
+      startWarmup();
+    } else {
+      // Let the first layout and gesture frame win. Image decode is
+      // asynchronous, but completion still schedules raster work; starting
+      // it on the same frame as a first fling causes a visible hitch.
+      Timer(warmupDelay, startWarmup);
+    }
+  }
+
   if (deferUntilPostFrame) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => startWarmup());
+    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleWarmup());
   } else {
-    startWarmup();
+    scheduleWarmup();
   }
 }
 

@@ -6,6 +6,7 @@ class SaltStoryHome extends StatefulWidget {
     required this.api,
     required this.onOpenCard,
     required this.onOpenShortcut,
+    this.isActive = true,
     this.topInset = 0,
     this.initialResponse,
     this.isRequestScopeCurrent,
@@ -15,6 +16,7 @@ class SaltStoryHome extends StatefulWidget {
   final ZhihuApiClient api;
   final ValueChanged<Map<String, dynamic>> onOpenCard;
   final ValueChanged<Map<String, dynamic>> onOpenShortcut;
+  final bool isActive;
   final double topInset;
   final Future<ApiResponse>? initialResponse;
   final bool Function()? isRequestScopeCurrent;
@@ -44,12 +46,19 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
     super.initState();
     _scrollController.addListener(_maybeLoadMore);
     widget.refreshSignal?.addListener(_refreshRequested);
-    _load(reset: true);
+    if (widget.isActive) _load(reset: true);
   }
 
   @override
   void didUpdateWidget(covariant SaltStoryHome oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive &&
+        widget.isActive &&
+        _modules.isEmpty &&
+        !_loading) {
+      _consumedInitialResponse = false;
+      _load(reset: true);
+    }
     if (identical(oldWidget.refreshSignal, widget.refreshSignal)) return;
     oldWidget.refreshSignal?.removeListener(_refreshRequested);
     widget.refreshSignal?.addListener(_refreshRequested);
@@ -131,10 +140,11 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
           prefetchObjectImages(
             context,
             extractSaltStoryRows(response.json),
-            limit: 36,
-            concurrency: 12,
+            limit: 12,
+            concurrency: 2,
             contentCacheWidth: saltStoryCoverCacheWidth,
-            deferUntilPostFrame: false,
+            includeAvatars: false,
+            warmupDelay: const Duration(milliseconds: 700),
           );
         }
         setState(() {
@@ -181,6 +191,11 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (!widget.isActive && _modules.isEmpty && !_loading) {
+      // The home PageView keeps neighboring sections mounted. Leave the
+      // inactive story surface inert until the user actually opens it.
+      return const SizedBox.expand();
+    }
     if (_loading && _modules.isEmpty) {
       return _SaltStoryLoading(topInset: widget.topInset);
     }
@@ -216,6 +231,10 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
       child: ListView.builder(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
+        // Story cards carry larger covers; one modest card-sized buffer is
+        // enough to hide creation latency without decoding a whole module
+        // collection during a section switch.
+        scrollCacheExtent: const ScrollCacheExtent.pixels(360),
         padding: const EdgeInsets.only(bottom: ZhSpace.xl),
         itemCount: blocks.length + 2,
         itemBuilder: (context, index) {

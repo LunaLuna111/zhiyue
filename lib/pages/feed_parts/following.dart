@@ -16,19 +16,29 @@ class _FollowingPeopleStrip extends StatefulWidget {
 
 class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
   List<Map<String, dynamic>> _people = const [];
+  Timer? _recommendationTimer;
+
   @override
   void initState() {
     super.initState();
-    unawaited(_load());
+    unawaited(_loadMostVisited());
+    _scheduleRecommendationsFallback();
   }
 
-  Future<void> _load() async {
-    // The native header uses the private “most visits” feed, while some
-    // server variants expose extra followed creators only through the public
-    // recommendation endpoint. Start both together and paint each batch as
-    // soon as it arrives instead of making the rail wait for the slower one.
-    unawaited(_loadMostVisited());
-    unawaited(_loadRecommendations());
+  @override
+  void dispose() {
+    _recommendationTimer?.cancel();
+    super.dispose();
+  }
+
+  void _scheduleRecommendationsFallback() {
+    _recommendationTimer?.cancel();
+    _recommendationTimer = Timer(const Duration(milliseconds: 450), () {
+      _recommendationTimer = null;
+      if (mounted && _people.length < 12) {
+        unawaited(_loadRecommendations());
+      }
+    });
   }
 
   Future<void> _loadMostVisited() async {
@@ -73,6 +83,10 @@ class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
       if (key.isEmpty || !seen.add(key)) continue;
       merged.add(person);
       if (merged.length >= 12) break;
+    }
+    if (merged.length >= 12) {
+      _recommendationTimer?.cancel();
+      _recommendationTimer = null;
     }
     if (merged.length != _people.length) {
       setState(() => _people = List.unmodifiable(merged));

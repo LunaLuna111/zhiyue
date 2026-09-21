@@ -55,18 +55,25 @@ class _NotificationsPageState extends State<NotificationsPage> {
           : await widget.api.getUri(widget.api.validatePagingUri(_next!));
       if (!mounted) return;
       if (!response.isSuccess) {
-        setState(() => _error = response);
+        setState(() {
+          _error = response;
+          _loading = false;
+        });
       } else {
         setState(() {
           if (reset) _root = response.jsonMap;
           _rows.addAll(notificationRows(response.json));
           _next = pagingNext(response.json);
+          _loading = false;
         });
       }
     } catch (error) {
-      if (mounted) setState(() => _error = error);
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _loading = false;
+        });
+      }
     }
   }
 

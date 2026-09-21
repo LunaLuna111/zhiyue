@@ -361,11 +361,14 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     }
     final firstPage =
         !_relatedStarted || (_relatedError != null && _relatedNext == null);
-    setState(() {
-      _relatedLoading = true;
-      _relatedError = null;
-      _relatedStarted = true;
-    });
+    final hadVisibleError = _relatedError != null;
+    _relatedLoading = true;
+    _relatedError = null;
+    _relatedStarted = true;
+    // Loading itself is intentionally hidden in the detail body. Only clear
+    // an existing retry button here; otherwise starting a background request
+    // would rebuild the whole long answer for no visible change.
+    if (hadVisibleError && mounted) setState(() {});
     try {
       final response = firstPage
           ? await _loadRelatedFirstPage(questionId)
@@ -404,10 +407,9 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         if (!_relatedCurrentSeen || !existing.add(id)) continue;
         incoming.add(answer);
       }
-      setState(() {
-        _relatedAnswers.addAll(incoming);
-        _relatedNext = pagingNext(response.json);
-      });
+      _relatedAnswers.addAll(incoming);
+      _relatedNext = pagingNext(response.json);
+      if (incoming.isNotEmpty && mounted) setState(() {});
       _prefetchNextAnswerDetail();
       if (firstPage &&
           widget.api.session.prefetchImages &&
@@ -434,7 +436,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     } catch (error) {
       if (mounted) setState(() => _relatedError = error);
     } finally {
-      if (mounted) setState(() => _relatedLoading = false);
+      _relatedLoading = false;
     }
   }
 

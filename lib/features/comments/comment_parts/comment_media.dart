@@ -54,14 +54,14 @@ class _CommentMediaTile extends StatelessWidget {
                 fit: single ? BoxFit.contain : BoxFit.cover,
                 cacheWidth: 576,
                 filterQuality: FilterQuality.medium,
-                loadingBuilder: (_, child, progress) => progress == null
-                    ? child
-                    : const Center(
+                frameBuilder: (_, child, frame, _) => frame == null
+                    ? const Center(
                         child: SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                      ),
+                      )
+                    : child,
                 errorBuilder: (_, _, _) => const Center(
                   child: Icon(
                     Icons.image_not_supported_outlined,

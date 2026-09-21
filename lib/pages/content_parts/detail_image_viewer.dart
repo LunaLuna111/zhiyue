@@ -407,8 +407,8 @@ class _DetailImageTile extends StatelessWidget {
             alignment: Alignment.center,
             cacheWidth: _detailImageCacheWidth(context),
             filterQuality: FilterQuality.medium,
-            loadingBuilder: (_, child, progress) =>
-                progress == null ? child : const _DetailImagePlaceholder(),
+            frameBuilder: (_, child, frame, _) =>
+                frame == null ? const _DetailImagePlaceholder() : child,
             errorBuilder: (_, _, _) =>
                 const _DetailImagePlaceholder(failed: true),
           ),

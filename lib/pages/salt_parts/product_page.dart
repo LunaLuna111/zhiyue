@@ -217,15 +217,24 @@ class _SaltProductPageState extends State<SaltProductPage> {
         forceRefresh: forceRefresh,
       );
       if (_isCurrentCatalogLoad(businessId, generation)) {
-        setState(() => _catalog = catalog);
+        setState(() {
+          _catalog = catalog;
+          _catalogLoading = false;
+        });
         unawaited(_enrichHeaderMetadata(catalog));
       }
     } catch (error) {
-      if (_isCurrentCatalogLoad(businessId, generation) && _catalog == null) {
-        setState(() => _catalogError = error);
+      if (_isCurrentCatalogLoad(businessId, generation)) {
+        setState(() {
+          if (_catalog == null) _catalogError = error;
+          _catalogLoading = false;
+        });
       }
     } finally {
-      if (_isCurrentCatalogLoad(businessId, generation)) {
+      // Success and current-request errors commit the loading flag together
+      // with their payload. Keep this fallback for a cancelled/early return
+      // so a stale catalog request cannot leave the page spinning forever.
+      if (_isCurrentCatalogLoad(businessId, generation) && _catalogLoading) {
         setState(() => _catalogLoading = false);
       }
     }

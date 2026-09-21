@@ -689,6 +689,10 @@ class _SaltProductPageState extends State<SaltProductPage> {
     return ListView.builder(
       padding: EdgeInsets.only(top: topInset),
       physics: const AlwaysScrollableScrollPhysics(),
+      // The catalog rows sit below an image-heavy product header. Keep one
+      // short row-sized buffer ready without constructing a large hidden
+      // section batch during a fast fling.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(320),
       itemCount: rows.length + (header == null ? 0 : 1) + 2,
       itemBuilder: (context, index) {
         if (header != null && index == 0) return header;

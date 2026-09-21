@@ -193,8 +193,8 @@ class _CommentEditingController extends TextEditingController {
         fit: BoxFit.contain,
         cacheWidth: 66,
         cacheHeight: 66,
-        loadingBuilder: (_, child, progress) =>
-            progress == null ? child : fallback(),
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? fallback() : child,
         errorBuilder: (_, _, _) => fallback(),
       );
     }

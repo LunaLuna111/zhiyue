@@ -141,9 +141,14 @@ class RecommendationBehaviorStore extends ChangeNotifier {
   Future<void>? _loading;
   Future<void> _writing = Future<void>.value();
   bool _loaded = false;
+  RecommendationBehaviorProfile? _profileCache;
 
   RecommendationBehaviorProfile get profile {
-    if (_events.isEmpty) return const RecommendationBehaviorProfile.empty();
+    final cached = _profileCache;
+    if (cached != null) return cached;
+    if (_events.isEmpty) {
+      return _profileCache = const RecommendationBehaviorProfile.empty();
+    }
     final topics = <String, int>{};
     final authors = <String, int>{};
     final documents = <String>[];
@@ -176,7 +181,7 @@ class RecommendationBehaviorStore extends ChangeNotifier {
         final score = right.value.compareTo(left.value);
         return score == 0 ? left.key.compareTo(right.key) : score;
       });
-    return RecommendationBehaviorProfile(
+    return _profileCache = RecommendationBehaviorProfile(
       totalEvents: _events.length,
       openedCount: opened,
       feedbackCount: feedback,
@@ -225,6 +230,7 @@ class RecommendationBehaviorStore extends ChangeNotifier {
         ),
       );
     } finally {
+      _profileCache = null;
       _loaded = true;
       notifyListeners();
     }
@@ -264,6 +270,7 @@ class RecommendationBehaviorStore extends ChangeNotifier {
     while (_events.length > _maximumEvents) {
       _events.removeAt(0);
     }
+    _profileCache = null;
     notifyListeners();
     _writing = _writing.then((_) async {
       try {
@@ -288,6 +295,7 @@ class RecommendationBehaviorStore extends ChangeNotifier {
   Future<void> clear() async {
     await load();
     _events.clear();
+    _profileCache = null;
     notifyListeners();
     await _cache.remove(_cacheKey);
   }

@@ -78,6 +78,7 @@ class CommentCard extends StatefulWidget {
 class _CommentCardState extends State<CommentCard> {
   late bool _liked;
   late int _likeCount;
+  late ContentMetrics _metrics;
   bool _likeBusy = false;
 
   @override
@@ -89,12 +90,16 @@ class _CommentCardState extends State<CommentCard> {
   @override
   void didUpdateWidget(covariant CommentCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (idOf(oldWidget.value) != idOf(widget.value)) _readReaction();
+    if (idOf(oldWidget.value) != idOf(widget.value) ||
+        !identical(oldWidget.value, widget.value)) {
+      _readReaction();
+    }
   }
 
   void _readReaction() {
+    _metrics = ContentMetrics.from(widget.value);
     _liked = AnswerRelationship.from(widget.value).isUpvoted;
-    _likeCount = ContentMetrics.from(widget.value).voteupCount ?? 0;
+    _likeCount = _metrics.voteupCount ?? 0;
   }
 
   Future<void> _toggleLike() async {
@@ -134,7 +139,7 @@ class _CommentCardState extends State<CommentCard> {
       rawContent.isEmpty ? content : rawContent,
     );
     final linkTags = commentLinkTagsOf(widget.value);
-    final metrics = ContentMetrics.from(widget.value);
+    final metrics = _metrics;
     final dateLabel = contentDateLabel(metrics);
     final object = unwrapObject(widget.value);
     final authorLabels = _mergeCommentIdentityLabels(

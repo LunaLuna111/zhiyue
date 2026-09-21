@@ -29,6 +29,7 @@ class SaltStoryHome extends StatefulWidget {
 class _SaltStoryHomeState extends State<SaltStoryHome>
     with AutomaticKeepAliveClientMixin {
   final _modules = <Map<String, dynamic>>[];
+  List<_SaltStoryBlock>? _blockCache;
   final _scrollController = ScrollController();
   final _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
   Object? _error;
@@ -123,6 +124,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
       _error = null;
       if (reset && !refreshing) {
         _modules.clear();
+        _blockCache = null;
         _next = null;
       }
     });
@@ -160,6 +162,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
             _next = null;
           }
           _modules.addAll(modules);
+          _blockCache = null;
           final candidate = pagingNext(response.json);
           _next = candidate == _next ? null : candidate;
           _loading = false;
@@ -230,7 +233,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
         ),
       );
     }
-    final blocks = _saltStoryBlocks(_modules);
+    final blocks = _blockCache ??= _saltStoryBlocks(_modules);
     return RefreshIndicator(
       key: _refreshIndicatorKey,
       edgeOffset: widget.topInset,

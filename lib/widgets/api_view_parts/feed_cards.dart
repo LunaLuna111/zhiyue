@@ -104,12 +104,16 @@ class _FeedObjectCard extends StatelessWidget {
                             cacheWidth: 72,
                             cacheHeight: 72,
                             filterQuality: FilterQuality.medium,
-                            loadingBuilder: (context, child, progress) =>
-                                progress == null
-                                ? child
-                                : _FeedAvatarPlaceholder(
+                            // A frame callback keeps the placeholder stable
+                            // while bytes arrive. Loading callbacks can fire
+                            // for every chunk and rebuild the whole card
+                            // during a fast fling.
+                            frameBuilder: (context, child, frame, _) =>
+                                frame == null
+                                ? _FeedAvatarPlaceholder(
                                     fallback: avatarFallback,
-                                  ),
+                                  )
+                                : child,
                             errorBuilder: (_, _, _) => _FeedAvatarPlaceholder(
                               fallback: avatarFallback,
                             ),
@@ -377,9 +381,8 @@ class SingleContentCardImage extends StatelessWidget {
         // aspect ratio, after which the fixed frame performs a real crop.
         cacheWidth: 960,
         filterQuality: FilterQuality.low,
-        loadingBuilder: (_, child, progress) => progress == null
-            ? child
-            : const ColoredBox(color: ZhPalette.canvas),
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? const ColoredBox(color: ZhPalette.canvas) : child,
         errorBuilder: (_, _, _) => const ColoredBox(
           color: ZhPalette.canvas,
           child: Center(
@@ -410,8 +413,8 @@ class _CardContentImage extends StatelessWidget {
       fit: BoxFit.cover,
       cacheWidth: cacheWidth,
       filterQuality: FilterQuality.low,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : const ColoredBox(color: ZhPalette.canvas),
+      frameBuilder: (_, child, frame, _) =>
+          frame == null ? const ColoredBox(color: ZhPalette.canvas) : child,
       errorBuilder: (_, _, _) => const ColoredBox(
         color: ZhPalette.canvas,
         child: Center(

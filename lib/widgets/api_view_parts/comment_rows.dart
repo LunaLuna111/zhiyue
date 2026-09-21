@@ -794,7 +794,7 @@ class _CommentAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         cacheWidth: 120,
         cacheHeight: 120,
-        filterQuality: FilterQuality.medium,
+        filterQuality: FilterQuality.low,
         frameBuilder: (_, child, frame, _) =>
             frame == null ? placeholder : child,
         errorBuilder: (_, _, _) => placeholder,

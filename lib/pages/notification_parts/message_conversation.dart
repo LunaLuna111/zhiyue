@@ -115,6 +115,7 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
         _next = null;
       }
     });
+    var loadStateCommitted = false;
     try {
       final response = reset
           ? await widget.api.getUri(
@@ -133,7 +134,9 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
           _messages.insertAll(0, incoming);
         }
         _next = pagingNext(response.json);
+        _loading = false;
       });
+      loadStateCommitted = true;
       if (reset) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (_controller.hasClients) {
@@ -155,9 +158,17 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
         });
       }
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _loading = false;
+        });
+        loadStateCommitted = true;
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && !loadStateCommitted) {
+        setState(() => _loading = false);
+      }
     }
   }
 

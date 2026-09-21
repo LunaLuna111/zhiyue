@@ -319,8 +319,8 @@ class _CommentRichTextState extends State<CommentRichText> {
           fit: BoxFit.contain,
           cacheWidth: (extent * 3).round(),
           cacheHeight: (extent * 3).round(),
-          loadingBuilder: (_, child, progress) =>
-              progress == null ? child : fallback(),
+          frameBuilder: (_, child, frame, _) =>
+              frame == null ? fallback() : child,
           errorBuilder: (_, _, _) => fallback(),
         ),
       ),
@@ -402,8 +402,8 @@ class _CommentRichTextState extends State<CommentRichText> {
         fit: BoxFit.contain,
         cacheWidth: (extent * 3).round(),
         cacheHeight: (extent * 3).round(),
-        loadingBuilder: (_, child, progress) =>
-            progress == null ? child : fallback(),
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? fallback() : child,
         errorBuilder: (_, _, _) => fallback(),
       );
     }

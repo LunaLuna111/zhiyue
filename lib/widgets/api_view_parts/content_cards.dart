@@ -176,14 +176,13 @@ class ObjectCard extends StatelessWidget {
                       cacheWidth: (leadingSize * 3).round(),
                       cacheHeight: (leadingSize * 3).round(),
                       filterQuality: FilterQuality.medium,
-                      loadingBuilder: (context, child, progress) =>
-                          progress == null
-                          ? child
-                          : _TypeIcon(
+                      frameBuilder: (_, child, frame, _) => frame == null
+                          ? _TypeIcon(
                               type: type,
                               size: leadingSize,
                               circular: usesAvatar,
-                            ),
+                            )
+                          : child,
                       errorBuilder: (_, _, _) => _TypeIcon(
                         type: type,
                         size: leadingSize,

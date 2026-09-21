@@ -28,12 +28,19 @@ class _FeedObjectCard extends StatelessWidget {
     final data = _feedCardStaticDataCache[value] ??= _FeedCardStaticData.from(
       value,
     );
-    final metrics = ContentMetrics.from(data.source);
-    final images = showImages ? data.images : const <String>[];
-    final dateLabel = contentDateLabel(metrics);
-    final relationship = AnswerRelationship.from(data.source);
     final hotMode = presentation == FeedCardPresentation.hot;
     final followingMode = presentation == FeedCardPresentation.following;
+    final showCardMetrics = showMetrics && !hotMode;
+    // Hot cards and metric-hidden feeds do not render engagement state. Avoid
+    // walking nested response maps for those rows during list creation.
+    final metrics = showCardMetrics
+        ? ContentMetrics.from(data.source)
+        : const ContentMetrics();
+    final images = showImages ? data.images : const <String>[];
+    final dateLabel = showCardMetrics ? contentDateLabel(metrics) : '';
+    final relationship = showCardMetrics
+        ? AnswerRelationship.from(data.source)
+        : null;
     final avatarFallback = data.author.isEmpty
         ? '知'
         : data.author.characters.first;
@@ -200,8 +207,7 @@ class _FeedObjectCard extends StatelessWidget {
                   singleHeight: hotMode ? 194 : null,
                 ),
               ],
-              if (showMetrics &&
-                  !hotMode &&
+              if (showCardMetrics &&
                   (metrics.hasEngagement || dateLabel.isNotEmpty)) ...[
                 SizedBox(height: compact ? 6 : 9),
                 Row(
@@ -211,7 +217,7 @@ class _FeedObjectCard extends StatelessWidget {
                         icon: Icons.change_history_outlined,
                         label: compactCount(count),
                         semanticLabel: '赞同 ${compactCount(count)}',
-                        selected: relationship.isUpvoted,
+                        selected: relationship?.isUpvoted == true,
                         onTap: onAction == null
                             ? null
                             : () => onAction!(ContentCardAction.vote),
@@ -222,7 +228,7 @@ class _FeedObjectCard extends StatelessWidget {
                         icon: Icons.star_border_rounded,
                         label: compactCount(count),
                         semanticLabel: '收藏 ${compactCount(count)}',
-                        selected: relationship.isFavorited == true,
+                        selected: relationship?.isFavorited == true,
                         onTap: onAction == null
                             ? null
                             : () => onAction!(ContentCardAction.favorite),

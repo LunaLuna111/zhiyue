@@ -21,6 +21,11 @@ void prefetchObjectImages(
   bool deferUntilPostFrame = true,
   Duration warmupDelay = const Duration(milliseconds: 300),
 }) {
+  // A refresh or account-scope change can schedule a newer warm-up before the
+  // previous delay expires. Keep only the latest queue for a page context so
+  // stale candidates cannot decode during the next fling.
+  _scheduledImageWarmups[context]?.cancel();
+  _scheduledImageWarmups[context] = null;
   final candidates = <String, _ImageWarmupCandidate>{};
   void addCandidate(_ImageWarmupCandidate candidate) {
     candidates.putIfAbsent(candidate.url, () => candidate);
@@ -89,7 +94,14 @@ void prefetchObjectImages(
       // Let the first layout and gesture frame win. Image decode is
       // asynchronous, but completion still schedules raster work; starting
       // it on the same frame as a first fling causes a visible hitch.
-      Timer(warmupDelay, startWarmup);
+      late final Timer timer;
+      timer = Timer(warmupDelay, () {
+        if (identical(_scheduledImageWarmups[context], timer)) {
+          _scheduledImageWarmups[context] = null;
+        }
+        startWarmup();
+      });
+      _scheduledImageWarmups[context] = timer;
     }
   }
 
@@ -100,6 +112,7 @@ void prefetchObjectImages(
   }
 }
 
+final _scheduledImageWarmups = Expando<Timer>('scheduled-image-warmups');
 final _activeImageWarmups = <String>{};
 
 class _ImageWarmupCandidate {

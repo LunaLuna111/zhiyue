@@ -170,8 +170,8 @@ class _ActorAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         cacheWidth: 84,
         cacheHeight: 84,
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : placeholder,
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? placeholder : child,
         errorBuilder: (_, _, _) => placeholder,
       ),
     );

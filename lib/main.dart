@@ -65,9 +65,11 @@ Future<void> main() async {
   };
   final contract = await ApiContract.load();
   runApp(
-    LiquidGlassWidgets.wrap(
-      child: ZhiyueApp(session: session, contract: contract),
-      brightnessResolver: Theme.maybeBrightnessOf,
+    ZhMobileViewportSurface(
+      child: LiquidGlassWidgets.wrap(
+        child: ZhiyueApp(session: session, contract: contract),
+        brightnessResolver: Theme.maybeBrightnessOf,
+      ),
     ),
   );
 }
@@ -145,9 +147,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
               textScaler: TextScaler.linear(combinedScale),
               disableAnimations: widget.session.reduceMotion,
             ),
-            child: ZhMobileViewportSurface(
-              child: child ?? const SizedBox.shrink(),
-            ),
+            child: child ?? const SizedBox.shrink(),
           );
         },
         home: AccountSessionCleanupPrompt(

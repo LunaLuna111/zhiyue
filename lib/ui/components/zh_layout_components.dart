@@ -53,9 +53,11 @@ class ZhPageWidth extends StatelessWidget {
 /// Android's predictive-back transition can temporarily move a pushed route
 /// outside the display's normal rounded viewport. Pages that paint behind a
 /// transparent app bar then expose square white corners during the gesture.
-/// Keeping this clip above the Navigator means every route (including custom
-/// PageRouteBuilder pages) keeps the same phone-shaped surface while it is
-/// being transformed.
+/// Keeping this clip above the app itself means every route (including custom
+/// PageRouteBuilder pages, root overlays, and nested Navigators) keeps the same
+/// phone-shaped surface while it is being transformed. This must stay outside
+/// MaterialApp: a builder inside MaterialApp is still below some root-level
+/// overlay/compositing layers used during predictive back.
 class ZhMobileViewportSurface extends StatelessWidget {
   const ZhMobileViewportSurface({super.key, required this.child});
 

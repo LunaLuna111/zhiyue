@@ -442,9 +442,9 @@ class _QuestionHeaderImage extends StatelessWidget {
             cacheWidth: 960,
             cacheHeight: 540,
             filterQuality: FilterQuality.low,
-            loadingBuilder: (_, child, progress) => progress == null
-                ? child
-                : const ColoredBox(color: ZhPalette.canvas),
+            frameBuilder: (_, child, frame, _) => frame == null
+                ? const ColoredBox(color: ZhPalette.canvas)
+                : child,
             errorBuilder: (_, _, _) => const ColoredBox(
               color: ZhPalette.canvas,
               child: Center(

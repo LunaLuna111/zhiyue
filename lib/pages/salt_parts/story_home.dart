@@ -132,7 +132,11 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
           : await widget.api.getSaltUri(widget.api.validatePagingUri(_next!));
       if (!mounted || !(isRequestScopeCurrent?.call() ?? true)) return;
       if (!response.isSuccess) {
-        setState(() => _error = ApiFailure.forAnonymousRead(response));
+        setState(() {
+          _error = ApiFailure.forAnonymousRead(response);
+          _loading = false;
+          _refreshing = false;
+        });
       } else {
         final modules = extractSaltStoryModules(response.json);
         if (widget.api.session.prefetchImages &&
@@ -158,13 +162,14 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
           _modules.addAll(modules);
           final candidate = pagingNext(response.json);
           _next = candidate == _next ? null : candidate;
+          _loading = false;
+          _refreshing = false;
         });
       }
     } catch (error) {
-      if (canCommit()) setState(() => _error = error);
-    } finally {
       if (canCommit()) {
         setState(() {
+          _error = error;
           _loading = false;
           _refreshing = false;
         });

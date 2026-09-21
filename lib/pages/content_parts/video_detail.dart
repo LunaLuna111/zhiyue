@@ -186,7 +186,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
             )
           else if (document != null)
             const _ZVideoMissingPlayer(),
-          Expanded(child: _buildDocument(document)),
+          Expanded(child: _buildDocument(document, metrics: metrics)),
         ],
       ),
       bottomNavigationBar: document == null
@@ -200,7 +200,10 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
     );
   }
 
-  Widget _buildDocument(Map<String, dynamic>? document) {
+  Widget _buildDocument(
+    Map<String, dynamic>? document, {
+    ContentMetrics? metrics,
+  }) {
     if (_loading && document == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -215,8 +218,8 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
     final authorHeadline = authorHeadlineOf(document);
     final authorAvatar = authorAvatarOf(document);
     final authorId = authorIdOf(document);
-    final metrics = ContentMetrics.from(document);
-    final date = contentDateLabel(metrics);
+    final resolvedMetrics = metrics ?? ContentMetrics.from(document);
+    final date = contentDateLabel(resolvedMetrics);
     final topics = _topicLabels(document);
     return ZhResponsiveFrame(
       maxWidth: 920,
@@ -289,7 +292,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
               ),
             ),
           const SizedBox(height: 12),
-          _ZVideoMetadata(metrics: metrics, dateLabel: date),
+          _ZVideoMetadata(metrics: resolvedMetrics, dateLabel: date),
           if (description.isNotEmpty) ...[
             const Divider(height: 28),
             Text(
@@ -313,9 +316,9 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
           ZhOutlineButton(
             onPressed: _openComments,
             icon: Icons.chat_bubble_outline_rounded,
-            label: metrics.commentCount == null
+            label: resolvedMetrics.commentCount == null
                 ? '查看评论'
-                : '查看 ${compactCount(metrics.commentCount!)} 条评论',
+                : '查看 ${compactCount(resolvedMetrics.commentCount!)} 条评论',
             expand: true,
           ),
         ],

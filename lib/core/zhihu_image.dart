@@ -274,9 +274,13 @@ class ZhihuImageBytesCache {
 class _ZhihuImageDiskStore {
   static const _maxFileBytes = 12 * 1024 * 1024;
   static const _maxTotalBytes = 192 * 1024 * 1024;
+  static const _touchInterval = Duration(minutes: 5);
+  static const _maxTouchMarks = 512;
+
   Directory? _directory;
   Future<Directory?>? _directoryFuture;
   Future<void>? _trimFuture;
+  final _touchMarks = <String, DateTime>{};
 
   Future<Directory?> _getDirectory() {
     final existing = _directoryFuture;
@@ -315,9 +319,19 @@ class _ZhihuImageDiskStore {
         } catch (_) {}
         return null;
       }
-      // Do not make image decode wait for an mtime write. The cache hit is on
-      // the scroll path; refreshing LRU metadata can finish in the background.
-      unawaited(_touch(file));
+      // Do not write mtime metadata on every cache hit. Fast scrolling often
+      // revisits the same thumbnails; throttling keeps disk maintenance from
+      // competing with image decode while retaining a useful LRU signal.
+      final now = DateTime.now();
+      final lastTouch = _touchMarks[key];
+      if (lastTouch == null || now.difference(lastTouch) >= _touchInterval) {
+        _touchMarks.remove(key);
+        if (_touchMarks.length >= _maxTouchMarks) {
+          _touchMarks.remove(_touchMarks.keys.first);
+        }
+        _touchMarks[key] = now;
+        unawaited(_touch(file));
+      }
       return bytes;
     } catch (_) {
       return null;

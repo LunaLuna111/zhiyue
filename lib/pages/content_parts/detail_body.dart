@@ -32,7 +32,12 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final object = _document ?? <String, dynamic>{};
     final content = htmlContent(object);
     final structuredSegments = structuredContentSegments(object);
-    final structured = structuredContentText(object);
+    // structuredContentText() derives the same segments again. The structured
+    // renderer already consumes the parsed list, so only build the flattened
+    // text fallback when there is no renderable structured body.
+    final structured = structuredSegments.isEmpty
+        ? structuredContentText(object)
+        : '';
     final contentText = plainText(content);
     final paidContent = isPaidStructuredContent(object);
     final paidContentUnlocked = hasUnlockedVipStructuredContent(object);

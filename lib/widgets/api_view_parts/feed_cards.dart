@@ -343,6 +343,25 @@ class ContentImageStrip extends StatelessWidget {
             : 360.0;
         final tileWidth =
             (availableWidth - gap * (visibleColumns - 1)) / visibleColumns;
+        Widget imageTile(int index) => SizedBox(
+          key: ValueKey('content-preview-frame-multi-${urls[index]}'),
+          width: tileWidth,
+          height: SingleContentCardImage.previewHeight,
+          child: _CardContentImage(url: urls[index], cacheWidth: 384),
+        );
+        if (urls.length <= 3) {
+          return SizedBox(
+            height: SingleContentCardImage.previewHeight,
+            child: Row(
+              children: [
+                for (var index = 0; index < urls.length; index++) ...[
+                  if (index > 0) const SizedBox(width: gap),
+                  imageTile(index),
+                ],
+              ],
+            ),
+          );
+        }
         return SizedBox(
           height: SingleContentCardImage.previewHeight,
           child: ListView.separated(
@@ -350,11 +369,7 @@ class ContentImageStrip extends StatelessWidget {
             physics: const BouncingScrollPhysics(),
             itemCount: urls.length,
             separatorBuilder: (_, _) => const SizedBox(width: gap),
-            itemBuilder: (context, index) => SizedBox(
-              key: ValueKey('content-preview-frame-multi-${urls[index]}'),
-              width: tileWidth,
-              child: _CardContentImage(url: urls[index], cacheWidth: 384),
-            ),
+            itemBuilder: (context, index) => imageTile(index),
           ),
         );
       },

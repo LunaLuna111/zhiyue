@@ -1258,7 +1258,9 @@ class ZhProgressiveGlassBackdrop extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           const ProgressiveBlur(
-            maxSigma: 6,
+            // A smaller radius keeps the progressive glass dissolve while
+            // reducing background samples during list and route motion.
+            maxSigma: 4,
             // The lower edge should dissolve into the page while the upper
             // edge carries the strongest blur, matching the iOS 26 toolbar
             // gradient.

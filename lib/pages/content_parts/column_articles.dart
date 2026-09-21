@@ -229,6 +229,11 @@ class ColumnHeaderCard extends StatelessWidget {
                         width: 62,
                         height: 62,
                         fit: BoxFit.cover,
+                        cacheWidth: 186,
+                        cacheHeight: 186,
+                        filterQuality: FilterQuality.low,
+                        frameBuilder: (_, child, frame, _) =>
+                            frame == null ? placeholder : child,
                         errorBuilder: (_, _, _) => placeholder,
                       )
                     : placeholder,

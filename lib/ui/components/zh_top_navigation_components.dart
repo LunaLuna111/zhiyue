@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -1132,20 +1130,17 @@ class _ZhLiquidGlassScrollableSurface extends StatelessWidget {
       clipBehavior: Clip.none,
       children: [
         Positioned.fill(
-          child: ClipRRect(
-            borderRadius: radius,
-            child: BackdropFilter(
-              filter: ui.ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Color(0xCFFFFFFF), Color(0x82EEF5FF)],
-                  ),
-                  borderRadius: radius,
-                ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              // GlassSegmentedControl owns the moving glass indicator. Keep
+              // this outer track translucent but avoid a second full-surface
+              // backdrop capture behind every list frame.
+              gradient: const LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xCFFFFFFF), Color(0x82EEF5FF)],
               ),
+              borderRadius: radius,
             ),
           ),
         ),

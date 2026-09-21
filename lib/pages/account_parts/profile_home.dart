@@ -73,6 +73,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
       _loading = true;
       _error = null;
     });
+    var loadStateCommitted = false;
     try {
       final selfResponse = await widget.api.get('/people/self');
       if (!widget.session.hasAccountSession) {
@@ -107,11 +108,21 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
           ...?publicProfile,
           ...?detailProfile,
         });
+        _loading = false;
       });
+      loadStateCommitted = true;
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _loading = false;
+        });
+        loadStateCommitted = true;
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && !loadStateCommitted) {
+        setState(() => _loading = false);
+      }
     }
   }
 

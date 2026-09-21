@@ -795,8 +795,8 @@ class _CommentAvatar extends StatelessWidget {
         cacheWidth: 120,
         cacheHeight: 120,
         filterQuality: FilterQuality.medium,
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : placeholder,
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? placeholder : child,
         errorBuilder: (_, _, _) => placeholder,
       ),
     );

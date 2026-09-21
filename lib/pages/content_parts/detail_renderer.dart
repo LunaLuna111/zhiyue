@@ -428,6 +428,7 @@ class InlineRichContent extends StatelessWidget {
     required this.html,
     this.fallbackImages = const [],
     this.videos = const [],
+    this.precomputedBlocks,
     this.videoApi,
     this.onCommentSelection,
     this.onLink,
@@ -438,6 +439,7 @@ class InlineRichContent extends StatelessWidget {
   final String html;
   final List<String> fallbackImages;
   final List<RichContentVideo> videos;
+  final List<RichContentBlock>? precomputedBlocks;
   final ZhihuApiClient? videoApi;
   final ValueChanged<ContentSelection>? onCommentSelection;
   final void Function(String url, String title)? onLink;
@@ -453,7 +455,7 @@ class InlineRichContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final blocks = richContentBlocks(html, videos: videos);
+    final blocks = precomputedBlocks ?? richContentBlocks(html, videos: videos);
     final htmlDimensions = _detailHtmlImageDimensions(html);
     final sourcesByUrl = <String, _DetailImageSource>{};
     _DetailImageSource sourceFor(String url) => sourcesByUrl.putIfAbsent(

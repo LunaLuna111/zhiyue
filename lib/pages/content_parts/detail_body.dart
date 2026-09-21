@@ -18,10 +18,18 @@ class _DetailBodyProjection {
     required this.structuredText,
     required this.images,
     required this.videos,
+    required this.inlineBlocks,
   });
 
   factory _DetailBodyProjection.from(Map<String, dynamic> object) {
     final structuredSegments = structuredContentSegments(object);
+    final content = htmlContent(object);
+    final videos = contentVideosOf(object);
+    final canUseInlineBlocks =
+        structuredSegments.isEmpty &&
+        (content != null || videos.isNotEmpty) &&
+        !(isPaidStructuredContent(object) &&
+            hasUnlockedVipStructuredContent(object));
     return _DetailBodyProjection(
       structuredSegments: structuredSegments,
       // The text helper derives the same segment tree. Only use it for the
@@ -31,7 +39,10 @@ class _DetailBodyProjection {
           ? structuredContentText(object)
           : '',
       images: contentImageUrlsOf(object, limit: 20),
-      videos: contentVideosOf(object),
+      videos: videos,
+      inlineBlocks: canUseInlineBlocks
+          ? richContentBlocks(content ?? '', videos: videos)
+          : null,
     );
   }
 
@@ -39,6 +50,7 @@ class _DetailBodyProjection {
   final String structuredText;
   final List<String> images;
   final List<RichContentVideo> videos;
+  final List<RichContentBlock>? inlineBlocks;
 }
 
 extension _ContentDetailBody on _ContentDetailPageState {
@@ -193,6 +205,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
           html: content ?? '',
           fallbackImages: images,
           videos: videos,
+          precomputedBlocks: bodyProjection.inlineBlocks,
           videoApi: widget.api,
           contentType: widget.contentType,
           contentId: widget.contentId,

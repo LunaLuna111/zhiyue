@@ -291,21 +291,32 @@ class _ContentDetailPageState extends State<ContentDetailPage>
               _adopt(fallback.jsonMap!, '匿名 www API v4 回退');
               _startRelatedAnswerPreload();
             } else if (_document == null) {
-              setState(() => _error = response);
+              setState(() {
+                _error = response;
+                _loading = false;
+              });
             }
           } else if (_document == null) {
-            setState(() => _error = response);
+            setState(() {
+              _error = response;
+              _loading = false;
+            });
           }
         }
       }
     } catch (error) {
-      if (mounted && _document == null) setState(() => _error = error);
+      if (mounted && _document == null) {
+        setState(() {
+          _error = error;
+          _loading = false;
+        });
+      }
     } finally {
       if (mounted) {
         if (networkSucceeded && _document != null) {
           unawaited(_persistAnswerCache(_document!));
         }
-        setState(() => _loading = false);
+        if (_loading) setState(() => _loading = false);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _maybeLoadRelatedAnswers();
         });
@@ -662,6 +673,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         _document = mergeListMetadata(_document!, normalized);
       }
       _error = null;
+      _loading = false;
     });
   }
 

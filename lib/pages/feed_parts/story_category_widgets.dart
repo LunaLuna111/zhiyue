@@ -527,6 +527,10 @@ class _SaltShortStoryCard extends StatelessWidget {
                 height: 88,
                 fit: BoxFit.cover,
                 cacheWidth: 384,
+                filterQuality: FilterQuality.low,
+                frameBuilder: (_, child, frame, _) => frame == null
+                    ? const ColoredBox(color: ZhPalette.canvas)
+                    : child,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
               ),
             ),

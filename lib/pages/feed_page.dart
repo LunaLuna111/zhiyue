@@ -220,6 +220,15 @@ class _FeedPageState extends State<FeedPage>
     });
   }
 
+  void _cancelHiddenPreloadForInteraction() {
+    _hiddenPreloadTimer?.cancel();
+    _hiddenPreloadTimer = null;
+    // An already-running hidden request cannot be cancelled at the transport
+    // layer, but it can be prevented from starting the next section as soon
+    // as the user begins a real channel interaction.
+    _preloadGeneration++;
+  }
+
   Future<void> _warmHiddenChannels(
     List<HomeFeedChannel> channels,
     int generation,
@@ -268,6 +277,7 @@ class _FeedPageState extends State<FeedPage>
     if (_channel == channel) return;
     final index = _channels.indexOf(channel);
     if (index < 0 || !_pageController.hasClients) return;
+    _cancelHiddenPreloadForInteraction();
     // A tab tap is an explicit destination change. Jumping directly avoids
     // compositing two image-heavy feed pages for 260ms; center swipe gestures
     // still retain the physical drag and settle animation below.
@@ -304,6 +314,7 @@ class _FeedPageState extends State<FeedPage>
         details.localPosition.dx <= width - inset &&
         _pageController.hasClients &&
         _pageController.position.hasContentDimensions;
+    if (_channelDragActive) _cancelHiddenPreloadForInteraction();
     _channelDragStartIndex = _channels.indexOf(_channel);
   }
 

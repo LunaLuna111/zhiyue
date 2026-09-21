@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 
 import '../core/api_client.dart';
 import '../core/api_response.dart';
@@ -279,6 +280,9 @@ class _PagedListPageState extends State<PagedListPage> {
       return CustomScrollView(
         controller: widget.embedded ? null : _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
+        // Paged rows can contain avatars and thumbnails. Keep one short card
+        // buffer ready without building a large hidden batch on first load.
+        scrollCacheExtent: const ScrollCacheExtent.pixels(320),
         slivers: [
           if (topInset > 0)
             SliverToBoxAdapter(child: SizedBox(height: topInset)),
@@ -299,6 +303,9 @@ class _PagedListPageState extends State<PagedListPage> {
     return ListView.builder(
       controller: widget.embedded ? null : _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
+      // Keep pagination responsive while limiting image-bearing row creation
+      // during a fast fling.
+      scrollCacheExtent: const ScrollCacheExtent.pixels(320),
       padding: EdgeInsets.only(top: topInset),
       itemCount:
           _rows.length +

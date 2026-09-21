@@ -239,7 +239,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                       widget.desktopSidebar,
                       const VerticalDivider(width: 1, thickness: 1),
                       Expanded(
-                        child: IndexedStack(
+                        child: _ZhLazyIndexedStack(
                           index: widget.selectedIndex,
                           children: widget.pages,
                         ),
@@ -266,7 +266,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
       onDestinationSelected: widget.onSelectedIndex,
       destinations: widget.destinations,
     );
-    final body = IndexedStack(
+    final body = _ZhLazyIndexedStack(
       index: widget.selectedIndex,
       children: widget.pages,
     );
@@ -289,10 +289,10 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     final mainScaffold = _KeyboardStableHome(
       child: Scaffold(
         key: widget.scaffoldKey,
-        // Every home section is kept alive in the IndexedStack. Letting this
-        // outer Scaffold follow the IME would therefore lay out all four page
-        // trees on every keyboard animation frame. Input pages and modal
-        // composers handle their own keyboard insets instead.
+        // Once a home section is selected it stays alive in the lazy indexed
+        // stack. Letting this outer Scaffold follow the IME would therefore
+        // lay out all four page trees on every keyboard animation frame.
+        // Input pages and modal composers handle their own keyboard insets.
         resizeToAvoidBottomInset: false,
         body: homeScaffold,
       ),
@@ -419,6 +419,68 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
           ),
         );
       },
+    );
+  }
+}
+
+/// Mounts only the selected home section on startup, then keeps visited
+/// sections alive for instant return without paying for every page's initial
+/// network/list/image setup during the first recommendation frame.
+class _ZhLazyIndexedStack extends StatefulWidget {
+  const _ZhLazyIndexedStack({required this.index, required this.children});
+
+  final int index;
+  final List<Widget> children;
+
+  @override
+  State<_ZhLazyIndexedStack> createState() => _ZhLazyIndexedStackState();
+}
+
+class _ZhLazyIndexedStackState extends State<_ZhLazyIndexedStack> {
+  late Set<int> _mountedIndexes;
+
+  int get _safeIndex => widget.children.isEmpty
+      ? 0
+      : widget.index.clamp(0, widget.children.length - 1).toInt();
+
+  @override
+  void initState() {
+    super.initState();
+    _mountedIndexes = {_safeIndex};
+  }
+
+  @override
+  void didUpdateWidget(covariant _ZhLazyIndexedStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.children.isEmpty) return;
+    final nextIndex = _safeIndex;
+    if (_mountedIndexes.contains(nextIndex)) return;
+    _mountedIndexes = {..._mountedIndexes, nextIndex};
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.children.isEmpty) return const SizedBox.shrink();
+    final index = _safeIndex;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (
+          var childIndex = 0;
+          childIndex < widget.children.length;
+          childIndex++
+        )
+          if (_mountedIndexes.contains(childIndex))
+            Offstage(
+              offstage: childIndex != index,
+              child: TickerMode(
+                enabled: childIndex == index,
+                child: widget.children[childIndex],
+              ),
+            )
+          else
+            const SizedBox.shrink(),
+      ],
     );
   }
 }

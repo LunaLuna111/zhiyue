@@ -238,6 +238,15 @@ class _SaltMembershipCard extends StatelessWidget {
                       iconUrl,
                       headers: zhihuImageRequestHeaders,
                       fit: BoxFit.contain,
+                      cacheWidth: 84,
+                      cacheHeight: 84,
+                      filterQuality: FilterQuality.low,
+                      frameBuilder: (_, child, frame, _) => frame == null
+                          ? const Icon(
+                              Icons.workspace_premium_outlined,
+                              color: Colors.white,
+                            )
+                          : child,
                       errorBuilder: (_, _, _) => const Icon(
                         Icons.workspace_premium_outlined,
                         color: Colors.white,
@@ -374,6 +383,12 @@ class _SaltShortcutButton extends StatelessWidget {
                   width: 28,
                   height: 28,
                   fit: BoxFit.contain,
+                  cacheWidth: 84,
+                  cacheHeight: 84,
+                  filterQuality: FilterQuality.low,
+                  frameBuilder: (_, child, frame, _) => frame == null
+                      ? Icon(icon, size: 28, color: iconColor)
+                      : child,
                   errorBuilder: (_, _, _) =>
                       Icon(icon, size: 28, color: iconColor),
                 )

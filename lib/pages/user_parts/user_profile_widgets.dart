@@ -406,8 +406,10 @@ class _ProfileAvatar extends StatelessWidget {
                 imageUrl,
                 headers: zhihuImageRequestHeaders,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) =>
-                    progress == null ? child : placeholder,
+                cacheWidth: (size * 3).round(),
+                cacheHeight: (size * 3).round(),
+                frameBuilder: (_, child, frame, _) =>
+                    frame == null ? placeholder : child,
                 errorBuilder: (_, _, _) => placeholder,
               ),
       ),

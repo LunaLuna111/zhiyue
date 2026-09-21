@@ -262,7 +262,10 @@ class ZhihuImageBytesCache {
     }
     final bytes = builder.takeBytes();
     if (bytes.isEmpty) throw StateError('Image response is empty');
-    await _store.write(canonical, bytes);
+    // Persisting encoded bytes is only a future cache hit optimization. Do
+    // not make the first decoded frame wait for filesystem I/O on the scroll
+    // path.
+    unawaited(_store.write(canonical, bytes));
     return bytes;
   }
 }

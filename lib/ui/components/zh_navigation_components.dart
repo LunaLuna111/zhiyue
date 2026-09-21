@@ -122,6 +122,9 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
         // whole feed and glass platter together.
         quality: GlassQuality.standard,
         backgroundQuality: GlassQuality.standard,
+        // Keep the standard glass indicator and press feedback, but avoid
+        // the dual-layer jelly mask while the feed is moving underneath it.
+        maskingQuality: MaskingQuality.off,
         // The package's selected layer follows the animated lens while it
         // moves, so the active icon and label become blue before the spring
         // settles instead of waiting for a separate page repaint.
@@ -475,7 +478,10 @@ class _ZhLiquidGlassFloatingActionBarState
           horizontal: 9,
           vertical: 7,
         ),
-        maskingQuality: MaskingQuality.high,
+        // The action bar is transformed during predictive back. Simple
+        // clipping keeps its glass surface while removing the high-cost
+        // jelly mask from every transition frame.
+        maskingQuality: MaskingQuality.off,
         interactionGlowColor: ZhLiquidGlassNavigationStyle.interactionGlowColor,
         interactionBehavior: GlassInteractionBehavior.full,
         pressScale: 1.02,

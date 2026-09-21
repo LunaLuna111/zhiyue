@@ -46,6 +46,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
       _loading = true;
       _error = null;
     });
+    var loadStateCommitted = false;
     try {
       final response = await widget.api.get(
         '/zvideos/${Uri.encodeComponent(widget.videoId)}',
@@ -64,14 +65,28 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
         setState(() {
           _document = mergeListMetadata(candidate, _document);
           _error = null;
+          _loading = false;
         });
+        loadStateCommitted = true;
       } else if (_document == null) {
-        setState(() => _error = response);
+        setState(() {
+          _error = response;
+          _loading = false;
+        });
+        loadStateCommitted = true;
       }
     } catch (error) {
-      if (mounted && _document == null) setState(() => _error = error);
+      if (mounted && _document == null) {
+        setState(() {
+          _error = error;
+          _loading = false;
+        });
+        loadStateCommitted = true;
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && !loadStateCommitted) {
+        setState(() => _loading = false);
+      }
     }
   }
 

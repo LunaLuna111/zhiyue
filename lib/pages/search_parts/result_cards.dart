@@ -66,6 +66,7 @@ class _SearchResultTab extends StatefulWidget {
     required this.contentTopPadding,
     required this.onOpenRecent,
     required this.onOpenType,
+    this.isActive = true,
     this.filters = const {},
   });
 
@@ -75,6 +76,7 @@ class _SearchResultTab extends StatefulWidget {
   final double contentTopPadding;
   final VoidCallback onOpenRecent;
   final ValueChanged<String> onOpenType;
+  final bool isActive;
   final Map<String, String> filters;
 
   @override
@@ -97,7 +99,15 @@ class _SearchResultTabState extends State<_SearchResultTab> {
     super.initState();
     _searchId = ZhihuApiClient.newSearchId();
     _scroll.addListener(_maybeLoadMore);
-    _load(reset: true);
+    if (widget.isActive) _load(reset: true);
+  }
+
+  @override
+  void didUpdateWidget(covariant _SearchResultTab oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isActive && widget.isActive && _rows.isEmpty && !_loading) {
+      _load(reset: true);
+    }
   }
 
   @override

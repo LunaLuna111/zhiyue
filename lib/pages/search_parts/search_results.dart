@@ -484,6 +484,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       api: widget.api,
       query: _submittedQuery,
       type: officialSearchTabs[index].type,
+      isActive: index == _index,
       contentTopPadding: contentTopPadding,
       filters: index == 0 ? Map.unmodifiable(_selectedFilters) : const {},
       onOpenRecent: _openRecentResults,

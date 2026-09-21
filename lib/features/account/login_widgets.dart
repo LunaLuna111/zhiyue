@@ -142,8 +142,11 @@ class _LoginGlassTextField extends StatelessWidget {
     iconSpacing: 12,
     shape: const LiquidRoundedRectangle(borderRadius: 32),
     settings: _loginGlassSettings,
+    // Keep the field's own clipped glass surface so the pill shape and
+    // refraction are preserved. The standard renderer avoids the premium
+    // texture's stale-frame flash when this surface moves in the ListView.
     useOwnLayer: true,
-    quality: GlassQuality.premium,
+    quality: GlassQuality.standard,
     interactionBehavior: GlassInteractionBehavior.full,
     pressScale: 1.015,
     textStyle: Theme.of(
@@ -164,40 +167,27 @@ class _LoginHeader extends StatelessWidget {
   final bool qrMode;
 
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.center,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      DecoratedBox(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(23),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x18000000),
-              blurRadius: 22,
-              offset: Offset(0, 10),
-            ),
-          ],
+      Text(
+        '登录知乎',
+        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+          fontSize: 30,
+          height: 1.12,
+          letterSpacing: -.5,
         ),
-        child: const ZhBrandMark(size: 66),
       ),
-      const SizedBox(width: 18),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('登录知乎', style: Theme.of(context).textTheme.headlineLarge),
-            const SizedBox(height: 4),
-            Text(
-              qrMode
-                  ? '知乎 App 扫码登录'
-                  : passwordMode
-                  ? '使用账号密码安全登录'
-                  : '手机号快捷登录',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
-            ),
-          ],
+      const SizedBox(height: 3),
+      Text(
+        qrMode
+            ? '知乎 App 扫码登录'
+            : passwordMode
+            ? '使用账号密码安全登录'
+            : '手机号快捷登录',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: ZhPalette.mutedInk,
+          fontSize: 16,
         ),
       ),
     ],
@@ -238,26 +228,26 @@ class _LoginProgress extends StatelessWidget {
       onTabSelected: onStepSelected ?? (_) {},
       horizontalPadding: 0,
       verticalPadding: 0,
-      barHeight: 58,
-      barBorderRadius: 29,
+      barHeight: 52,
+      barBorderRadius: 26,
       spacing: 0,
       tabPadding: const EdgeInsets.symmetric(horizontal: 4),
       indicatorExpansion: const EdgeInsets.symmetric(
         horizontal: 4,
-        vertical: 5,
+        vertical: 4,
       ),
       indicatorColor: const Color(0x24000000),
       indicatorSettings: _loginProgressIndicatorSettings,
       indicatorPinchStrength: .28,
       selectedLabelStyle: const TextStyle(
         color: ZhPalette.ink,
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: FontWeight.w800,
         height: 1.2,
       ),
       unselectedLabelStyle: const TextStyle(
         color: ZhPalette.mutedInk,
-        fontSize: 17,
+        fontSize: 16,
         fontWeight: FontWeight.w600,
         height: 1.2,
       ),

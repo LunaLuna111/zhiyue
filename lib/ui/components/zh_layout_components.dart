@@ -48,6 +48,37 @@ class ZhPageWidth extends StatelessWidget {
   );
 }
 
+/// Clips the app's mobile viewport independently from the route below it.
+///
+/// Android's predictive-back transition can temporarily move a pushed route
+/// outside the display's normal rounded viewport. Pages that paint behind a
+/// transparent app bar then expose square white corners during the gesture.
+/// Keeping this clip above the Navigator means every route (including custom
+/// PageRouteBuilder pages) keeps the same phone-shaped surface while it is
+/// being transformed.
+class ZhMobileViewportSurface extends StatelessWidget {
+  const ZhMobileViewportSurface({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    if (size.width >= ZhViewport.compact) return child;
+    return ColoredBox(
+      color: ZhPalette.canvas,
+      child: ClipRRect(
+        clipBehavior: Clip.hardEdge,
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(30),
+          bottom: Radius.circular(30),
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
 /// Breakpoints shared by pages that need to adapt from a phone-sized canvas to
 /// a desktop window. Keeping these values in one place prevents each page
 /// from growing a subtly different definition of "desktop".

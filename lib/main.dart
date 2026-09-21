@@ -26,6 +26,7 @@ import 'pages/search_page.dart';
 import 'pages/content_pages.dart';
 import 'pages/user_page.dart';
 import 'ui/zh_scroll_behavior.dart';
+import 'ui/zh_components.dart';
 import 'ui/zh_theme.dart';
 import 'widgets/app_drawer.dart';
 import 'widgets/account_session_cleanup_prompt.dart';
@@ -144,7 +145,9 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
               textScaler: TextScaler.linear(combinedScale),
               disableAnimations: widget.session.reduceMotion,
             ),
-            child: child ?? const SizedBox.shrink(),
+            child: ZhMobileViewportSurface(
+              child: child ?? const SizedBox.shrink(),
+            ),
           );
         },
         home: AccountSessionCleanupPrompt(

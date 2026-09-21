@@ -62,6 +62,10 @@ class _ProfileAvatar extends StatelessWidget {
                 imageUrl,
                 headers: zhihuImageRequestHeaders,
                 fit: BoxFit.cover,
+                cacheWidth: (size * 3).round(),
+                cacheHeight: (size * 3).round(),
+                frameBuilder: (_, child, frame, _) =>
+                    frame == null ? placeholder : child,
                 errorBuilder: (_, _, _) => placeholder,
               ),
       ),

@@ -137,6 +137,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         _searchId = ZhihuApiClient.newSearchId();
       }
     });
+    var loadStateCommitted = false;
     try {
       var uri = reset
           ? widget.api.searchInitialUri(
@@ -166,11 +167,13 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         if (!response.isSuccess) {
           setState(() {
             _next = requestKey;
+            _loading = false;
             // Search is a public read route. A stale/missing mobile context
             // must remain retryable and must not be presented as an account
             // requirement; preserve real network challenges separately.
             _error = zhihu_api.ApiFailure.forAnonymousRead(response);
           });
+          loadStateCommitted = true;
           return;
         }
         _loadedPageUris.add(requestKey);
@@ -252,11 +255,21 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       setState(() {
         _rows.addAll(incoming);
         _next = resolvedNext;
+        _loading = false;
       });
+      loadStateCommitted = true;
     } catch (error) {
-      if (mounted) setState(() => _error = error);
+      if (mounted) {
+        setState(() {
+          _error = error;
+          _loading = false;
+        });
+        loadStateCommitted = true;
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && !loadStateCommitted) {
+        setState(() => _loading = false);
+      }
     }
   }
 

@@ -303,6 +303,10 @@ class _FollowingAvatar extends StatelessWidget {
                 fit: BoxFit.cover,
                 cacheWidth: 168,
                 cacheHeight: 168,
+                filterQuality: FilterQuality.low,
+                frameBuilder: (_, child, frame, _) => frame == null
+                    ? _FollowingPersonFallback(name: name)
+                    : child,
                 errorBuilder: (_, _, _) => _FollowingPersonFallback(name: name),
               )
             : _FollowingPersonFallback(name: name, size: 56),

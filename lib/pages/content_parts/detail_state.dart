@@ -419,6 +419,8 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           concurrency: 2,
           avatarCacheSize: 108,
           cacheFeedPresentation: true,
+          includeAvatars: false,
+          warmupDelay: const Duration(milliseconds: 600),
         );
       }
       // A first page can contain only the answer currently open. Continue to
@@ -475,6 +477,8 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           concurrency: 2,
           avatarCacheSize: 108,
           cacheFeedPresentation: true,
+          includeAvatars: false,
+          warmupDelay: const Duration(milliseconds: 600),
         );
       }
     }());

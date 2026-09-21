@@ -27,6 +27,11 @@ class _SaltStoryCategoryCard extends StatelessWidget {
                   image,
                   headers: zhihuImageRequestHeaders,
                   fit: BoxFit.cover,
+                  cacheWidth: 960,
+                  filterQuality: FilterQuality.low,
+                  frameBuilder: (_, child, frame, _) => frame == null
+                      ? const ColoredBox(color: ZhPalette.canvas)
+                      : child,
                   errorBuilder: (_, _, _) =>
                       const ColoredBox(color: ZhPalette.canvas),
                 )

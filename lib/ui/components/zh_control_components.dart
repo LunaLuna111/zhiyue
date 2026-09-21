@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
+import '../zh_glass.dart';
+import '../zh_theme.dart';
+
 /// The client's shared iOS 26-style toggle.
 ///
 /// The interaction, thumb animation, haptics and accessibility behavior stay
@@ -25,8 +28,25 @@ class ZhLiquidGlassSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = onChanged != null;
+    if (!ZhGlassScope.enabledOf(context)) {
+      return Semantics(
+        container: true,
+        button: true,
+        enabled: enabled,
+        toggled: value,
+        label: semanticLabel,
+        child: Switch(
+          value: value,
+          onChanged: onChanged,
+          activeThumbColor: ZhPalette.background,
+          activeTrackColor: ZhPalette.ink,
+          inactiveThumbColor: ZhPalette.background,
+          inactiveTrackColor: ZhPalette.canvas,
+          trackOutlineColor: WidgetStatePropertyAll(ZhPalette.border),
+        ),
+      );
+    }
     final switchWidget = GlassSwitch(
-      key: key,
       value: value,
       onChanged: onChanged ?? (_) {},
       activeColor: _activeColor,

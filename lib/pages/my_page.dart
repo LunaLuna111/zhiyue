@@ -463,6 +463,16 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                     value: session.reduceMotion,
                     onChanged: session.setReduceMotion,
                   ),
+                  const Divider(),
+                  _SwitchTile(
+                    icon: Icons.blur_on_outlined,
+                    title: '液态玻璃效果',
+                    subtitle: session.glassEffectsEnabled
+                        ? '保留玻璃反馈与透明层次'
+                        : '流畅模式：使用低开销的实色按钮和导航栏',
+                    value: session.glassEffectsEnabled,
+                    onChanged: session.setGlassEffectsEnabled,
+                  ),
                 ],
               ),
               const _SectionLabel('个性化功能'),

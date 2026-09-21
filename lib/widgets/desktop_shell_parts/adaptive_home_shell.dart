@@ -260,6 +260,32 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     final preferredDrawerWidth = (width * .86).clamp(300.0, 368.0).toDouble();
     final drawerWidth = preferredDrawerWidth.clamp(0.0, width).toDouble();
     _drawerExtent = drawerWidth;
+    final navigation = ZhLiquidGlassBottomNavigation(
+      key: const ValueKey('zh-liquid-glass-bottom-navigation-host'),
+      selectedIndex: widget.selectedIndex,
+      onDestinationSelected: widget.onSelectedIndex,
+      destinations: widget.destinations,
+    );
+    final body = IndexedStack(
+      index: widget.selectedIndex,
+      children: widget.pages,
+    );
+    final homeScaffold = ZhGlassScope.enabledOf(context)
+        ? GlassScaffold(
+            backgroundColor: ZhPalette.background,
+            edgeFade: true,
+            bottomEdgeFadeExtent: 12,
+            extendBody: true,
+            resizeToAvoidBottomInset: false,
+            body: body,
+            bottomBar: navigation,
+          )
+        : Scaffold(
+            backgroundColor: ZhPalette.background,
+            resizeToAvoidBottomInset: false,
+            body: body,
+            bottomNavigationBar: navigation,
+          );
     final mainScaffold = _KeyboardStableHome(
       child: Scaffold(
         key: widget.scaffoldKey,
@@ -268,29 +294,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
         // trees on every keyboard animation frame. Input pages and modal
         // composers handle their own keyboard insets instead.
         resizeToAvoidBottomInset: false,
-        // Keep the page content behind the floating glass platter. A regular
-        // Scaffold reserves the bottom-bar slot, leaving the bar over an
-        // opaque blank strip; the liquid refraction then has no useful
-        // backdrop to sample. GlassScaffold keeps the z-order and edge fade
-        // used by the upstream iOS 26 demo while preserving this Scaffold's
-        // state key for the push drawer.
-        body: GlassScaffold(
-          backgroundColor: ZhPalette.background,
-          edgeFade: true,
-          bottomEdgeFadeExtent: 12,
-          extendBody: true,
-          resizeToAvoidBottomInset: false,
-          body: IndexedStack(
-            index: widget.selectedIndex,
-            children: widget.pages,
-          ),
-          bottomBar: ZhLiquidGlassBottomNavigation(
-            key: const ValueKey('zh-liquid-glass-bottom-navigation-host'),
-            selectedIndex: widget.selectedIndex,
-            onDestinationSelected: widget.onSelectedIndex,
-            destinations: widget.destinations,
-          ),
-        ),
+        body: homeScaffold,
       ),
     );
     return AnimatedBuilder(

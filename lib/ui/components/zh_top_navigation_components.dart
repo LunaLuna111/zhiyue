@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
+import '../zh_glass.dart';
 import '../zh_theme.dart';
 
 const _zhToolbarGlassSettings = LiquidGlassSettings(
@@ -15,6 +16,103 @@ const _zhToolbarGlassSettings = LiquidGlassSettings(
   ambientStrength: .8,
   glassColor: Color(0xA6F8F8FA),
 );
+
+class _ZhPlainIconButton extends StatelessWidget {
+  const _ZhPlainIconButton({
+    required this.icon,
+    required this.onPressed,
+    required this.semanticLabel,
+    required this.size,
+    required this.iconSize,
+    required this.shape,
+    required this.borderRadius,
+  });
+
+  final Widget icon;
+  final VoidCallback? onPressed;
+  final String? semanticLabel;
+  final double size;
+  final double? iconSize;
+  final GlassIconButtonShape shape;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) => _ZhPlainIconButtonVisual(
+    icon: icon,
+    onPressed: onPressed,
+    semanticLabel: semanticLabel,
+    size: size,
+    iconSize: iconSize,
+    shape: shape,
+    borderRadius: borderRadius,
+  );
+}
+
+class _ZhPlainIconButtonVisual extends StatelessWidget {
+  const _ZhPlainIconButtonVisual({
+    required this.icon,
+    required this.onPressed,
+    required this.semanticLabel,
+    required this.size,
+    required this.iconSize,
+    required this.shape,
+    required this.borderRadius,
+  });
+
+  final Widget icon;
+  final VoidCallback? onPressed;
+  final String? semanticLabel;
+  final double size;
+  final double? iconSize;
+  final GlassIconButtonShape shape;
+  final double borderRadius;
+
+  @override
+  Widget build(BuildContext context) {
+    final shapeBorder = shape == GlassIconButtonShape.circle
+        ? const CircleBorder()
+        : RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(borderRadius),
+          );
+    return SizedBox(
+      width: size,
+      height: size,
+      child: IconButton(
+        tooltip: semanticLabel,
+        onPressed: onPressed,
+        padding: EdgeInsets.zero,
+        iconSize: iconSize ?? size * .5,
+        style: IconButton.styleFrom(
+          foregroundColor: onPressed == null
+              ? ZhPalette.subtleInk
+              : ZhPalette.ink,
+          backgroundColor: ZhPalette.canvas,
+          disabledForegroundColor: ZhPalette.subtleInk,
+          side: const BorderSide(color: ZhPalette.border),
+          shape: shapeBorder,
+        ),
+        icon: icon,
+      ),
+    );
+  }
+}
+
+class _ZhPlainActionGroup extends StatelessWidget {
+  const _ZhPlainActionGroup({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: ZhPalette.canvas,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(28),
+      side: const BorderSide(color: ZhPalette.border),
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: Row(mainAxisSize: MainAxisSize.min, children: children),
+  );
+}
 
 /// A circular iOS 26-style glass control for navigation and toolbar actions.
 class ZhLiquidGlassIconButton extends StatelessWidget {
@@ -39,6 +137,17 @@ class ZhLiquidGlassIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return _ZhPlainIconButton(
+        icon: icon,
+        onPressed: onPressed,
+        semanticLabel: semanticLabel,
+        size: size,
+        iconSize: iconSize,
+        shape: shape,
+        borderRadius: borderRadius,
+      );
+    }
     final glassShape = shape == GlassIconButtonShape.circle
         ? const LiquidOval()
         : LiquidRoundedRectangle(borderRadius: borderRadius);
@@ -115,34 +224,83 @@ class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
   final double borderRadius;
 
   @override
-  Widget build(BuildContext context) => GlassMenu(
-    menuWidth: menuWidth,
-    menuAlignment: menuAlignment,
-    menuBorderRadius: 28,
-    itemBorderRadius: 20,
-    menuPadding: const EdgeInsets.symmetric(vertical: 8),
-    settings: _zhToolbarGlassSettings,
-    quality: GlassQuality.standard,
-    triggerBuilder: (context, toggleMenu) => ZhLiquidGlassIconButton(
-      icon: icon,
-      onPressed: toggleMenu,
-      semanticLabel: semanticLabel,
-      size: size,
-      iconSize: iconSize,
-      shape: shape,
-      borderRadius: borderRadius,
-    ),
-    items: [
-      for (final item in items)
-        GlassMenuItem(
-          title: item.label,
-          icon: item.icon,
-          enabled: item.enabled,
-          isDestructive: item.destructive,
-          onTap: item.enabled ? () => onSelected(item.value) : () {},
+  Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return PopupMenuButton<T>(
+        tooltip: semanticLabel,
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
+        onSelected: onSelected,
+        itemBuilder: (context) => [
+          for (final item in items)
+            PopupMenuItem<T>(
+              value: item.value,
+              enabled: item.enabled,
+              child: Row(
+                children: [
+                  if (item.icon != null) ...[
+                    IconTheme(
+                      data: IconThemeData(
+                        color: item.destructive
+                            ? ZhPalette.danger
+                            : ZhPalette.ink,
+                      ),
+                      child: item.icon!,
+                    ),
+                    const SizedBox(width: 10),
+                  ],
+                  Expanded(
+                    child: Text(
+                      item.label,
+                      style: item.destructive
+                          ? const TextStyle(color: ZhPalette.danger)
+                          : null,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+        child: _ZhPlainIconButtonVisual(
+          icon: icon,
+          onPressed: null,
+          semanticLabel: semanticLabel,
+          size: size,
+          iconSize: iconSize,
+          shape: shape,
+          borderRadius: borderRadius,
         ),
-    ],
-  );
+      );
+    }
+    return GlassMenu(
+      menuWidth: menuWidth,
+      menuAlignment: menuAlignment,
+      menuBorderRadius: 28,
+      itemBorderRadius: 20,
+      menuPadding: const EdgeInsets.symmetric(vertical: 8),
+      settings: _zhToolbarGlassSettings,
+      quality: GlassQuality.standard,
+      triggerBuilder: (context, toggleMenu) => ZhLiquidGlassIconButton(
+        icon: icon,
+        onPressed: toggleMenu,
+        semanticLabel: semanticLabel,
+        size: size,
+        iconSize: iconSize,
+        shape: shape,
+        borderRadius: borderRadius,
+      ),
+      items: [
+        for (final item in items)
+          GlassMenuItem(
+            title: item.label,
+            icon: item.icon,
+            enabled: item.enabled,
+            isDestructive: item.destructive,
+            onTap: item.enabled ? () => onSelected(item.value) : () {},
+          ),
+      ],
+    );
+  }
 }
 
 /// A text-and-icon action that uses the package's native iOS 26 glass button.
@@ -195,6 +353,35 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final foreground = prominent ? ZhPalette.background : ZhPalette.ink;
+    final content = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ?leading,
+        if (leading != null && (icon != null || label.isNotEmpty))
+          const SizedBox(width: 8),
+        if (icon != null) Icon(icon, size: 18, color: foreground),
+        if (icon != null && label.isNotEmpty) const SizedBox(width: 8),
+        if (label.isNotEmpty)
+          Text(
+            label,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: foreground,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0,
+            ),
+          ),
+      ],
+    );
+    if (!ZhGlassScope.enabledOf(context)) {
+      final button = prominent
+          ? FilledButton(onPressed: onPressed, child: content)
+          : OutlinedButton(onPressed: onPressed, child: content);
+      return SizedBox(
+        width: expand ? double.infinity : null,
+        height: 50,
+        child: button,
+      );
+    }
     return GlassButton.custom(
       onTap: onPressed ?? _disabledAction,
       enabled: onPressed != null,
@@ -206,25 +393,7 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
       useOwnLayer: true,
       quality: GlassQuality.standard,
       style: prominent ? GlassButtonStyle.prominent : GlassButtonStyle.filled,
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ?leading,
-          if (leading != null && (icon != null || label.isNotEmpty))
-            const SizedBox(width: 8),
-          if (icon != null) Icon(icon, size: 18, color: foreground),
-          if (icon != null && label.isNotEmpty) const SizedBox(width: 8),
-          if (label.isNotEmpty)
-            Text(
-              label,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: foreground,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0,
-              ),
-            ),
-        ],
-      ),
+      child: content,
     );
   }
 
@@ -267,24 +436,42 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
   final List<ZhLiquidGlassCapsuleAction> actions;
 
   @override
-  Widget build(BuildContext context) => GlassButtonGroup.icons(
-    items: [
-      for (final action in actions)
-        GlassButtonGroupItem(
-          icon: action.icon,
-          label: action.semanticLabel,
-          enabled: action.onPressed != null,
-          onTap: action.onPressed ?? _disabledAction,
-        ),
-    ],
-    borderRadius: 28,
-    itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
-    iconSize: 22,
-    settings: _settings,
-    quality: GlassQuality.standard,
-    useOwnLayer: true,
-    showDividers: false,
-  );
+  Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return _ZhPlainActionGroup(
+        children: [
+          for (final action in actions)
+            _ZhPlainIconButtonVisual(
+              icon: action.icon,
+              onPressed: action.onPressed,
+              semanticLabel: action.semanticLabel,
+              size: 44,
+              iconSize: 22,
+              shape: GlassIconButtonShape.circle,
+              borderRadius: 16,
+            ),
+        ],
+      );
+    }
+    return GlassButtonGroup.icons(
+      items: [
+        for (final action in actions)
+          GlassButtonGroupItem(
+            icon: action.icon,
+            label: action.semanticLabel,
+            enabled: action.onPressed != null,
+            onTap: action.onPressed ?? _disabledAction,
+          ),
+      ],
+      borderRadius: 28,
+      itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
+      iconSize: 22,
+      settings: _settings,
+      quality: GlassQuality.standard,
+      useOwnLayer: true,
+      showDividers: false,
+    );
+  }
 
   static void _disabledAction() {}
 }
@@ -316,43 +503,95 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
   final GlassMenuAlignment? menuAlignment;
 
   @override
-  Widget build(BuildContext context) => GlassButtonGroup.icons(
-    items: [
-      for (final action in [primaryAction, ...additionalActions])
-        GlassButtonGroupItem(
-          icon: action.icon,
-          label: action.semanticLabel,
-          enabled: action.onPressed != null,
-          onTap: action.onPressed ?? _disabledAction,
-        ),
-      GlassButtonGroupItem.menu(
-        icon: menuIcon,
-        label: menuSemanticLabel,
-        menuWidth: menuWidth,
-        menuAlignment: menuAlignment,
-        menuItems: [
-          for (final item in menuItems)
-            GlassMenuItem(
-              title: item.label,
-              icon: item.icon,
-              subtitle: item.subtitle,
-              enabled: item.enabled,
-              isDestructive: item.destructive,
-              onTap: item.enabled
-                  ? () => onSelected(item.value)
-                  : _disabledAction,
+  Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return _ZhPlainActionGroup(
+        children: [
+          for (final action in [primaryAction, ...additionalActions])
+            _ZhPlainIconButtonVisual(
+              icon: action.icon,
+              onPressed: action.onPressed,
+              semanticLabel: action.semanticLabel,
+              size: 44,
+              iconSize: 22,
+              shape: GlassIconButtonShape.circle,
+              borderRadius: 16,
             ),
+          PopupMenuButton<T>(
+            tooltip: menuSemanticLabel,
+            padding: EdgeInsets.zero,
+            constraints: BoxConstraints(
+              minWidth: menuWidth,
+              maxWidth: menuWidth,
+            ),
+            onSelected: onSelected,
+            itemBuilder: (context) => [
+              for (final item in menuItems)
+                PopupMenuItem<T>(
+                  value: item.value,
+                  enabled: item.enabled,
+                  child: Row(
+                    children: [
+                      if (item.icon != null) ...[
+                        item.icon!,
+                        const SizedBox(width: 10),
+                      ],
+                      Expanded(child: Text(item.label)),
+                    ],
+                  ),
+                ),
+            ],
+            child: _ZhPlainIconButtonVisual(
+              icon: menuIcon,
+              onPressed: null,
+              semanticLabel: menuSemanticLabel,
+              size: 44,
+              iconSize: 22,
+              shape: GlassIconButtonShape.circle,
+              borderRadius: 16,
+            ),
+          ),
         ],
-      ),
-    ],
-    borderRadius: 28,
-    itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
-    iconSize: 22,
-    settings: ZhLiquidGlassCapsuleActionGroup._settings,
-    quality: GlassQuality.standard,
-    useOwnLayer: true,
-    showDividers: false,
-  );
+      );
+    }
+    return GlassButtonGroup.icons(
+      items: [
+        for (final action in [primaryAction, ...additionalActions])
+          GlassButtonGroupItem(
+            icon: action.icon,
+            label: action.semanticLabel,
+            enabled: action.onPressed != null,
+            onTap: action.onPressed ?? _disabledAction,
+          ),
+        GlassButtonGroupItem.menu(
+          icon: menuIcon,
+          label: menuSemanticLabel,
+          menuWidth: menuWidth,
+          menuAlignment: menuAlignment,
+          menuItems: [
+            for (final item in menuItems)
+              GlassMenuItem(
+                title: item.label,
+                icon: item.icon,
+                subtitle: item.subtitle,
+                enabled: item.enabled,
+                isDestructive: item.destructive,
+                onTap: item.enabled
+                    ? () => onSelected(item.value)
+                    : _disabledAction,
+              ),
+          ],
+        ),
+      ],
+      borderRadius: 28,
+      itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
+      iconSize: 22,
+      settings: ZhLiquidGlassCapsuleActionGroup._settings,
+      quality: GlassQuality.standard,
+      useOwnLayer: true,
+      showDividers: false,
+    );
+  }
 
   static void _disabledAction() {}
 }
@@ -398,18 +637,8 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
   Widget build(BuildContext context) =>
       ValueListenableBuilder<TextEditingValue>(
         valueListenable: controller,
-        builder: (context, value, _) => GlassTextField(
-          controller: controller,
-          focusNode: focusNode,
-          placeholder: hintText,
-          autofocus: autofocus,
-          keyboardType: TextInputType.text,
-          textInputAction: TextInputAction.search,
-          height: compact ? 48 : 56,
-          padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
-          shape: LiquidRoundedRectangle(borderRadius: compact ? 24 : 28),
-          prefixIcon: const Icon(Icons.search_rounded, size: 22),
-          suffixIcon: inlineActions
+        builder: (context, value, _) {
+          final suffix = inlineActions
               ? Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -432,27 +661,66 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
                     ),
                   ],
                 )
-              : null,
-          onChanged: onChanged,
-          onSubmitted: onSubmitted,
-          textStyle: const TextStyle(
-            color: ZhPalette.ink,
-            fontSize: 16,
-            height: 1.2,
-          ),
-          placeholderStyle: const TextStyle(
-            color: ZhPalette.mutedInk,
-            fontSize: 16,
-            height: 1.2,
-          ),
-          settings: _settings,
-          useOwnLayer: true,
-          quality: GlassQuality.standard,
-          interactionBehavior: GlassInteractionBehavior.scaleOnly,
-          glowColor: Colors.transparent,
-          glowRadius: 0,
-          pressScale: 1.005,
-        ),
+              : null;
+          if (!ZhGlassScope.enabledOf(context)) {
+            return SizedBox(
+              height: compact ? 48 : 56,
+              child: TextField(
+                controller: controller,
+                focusNode: focusNode,
+                autofocus: autofocus,
+                keyboardType: TextInputType.text,
+                textInputAction: TextInputAction.search,
+                onChanged: onChanged,
+                onSubmitted: onSubmitted,
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 22),
+                  suffixIcon: suffix,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: compact ? 12 : 16,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(compact ? 24 : 28),
+                    borderSide: const BorderSide(color: ZhPalette.border),
+                  ),
+                ),
+              ),
+            );
+          }
+          return GlassTextField(
+            controller: controller,
+            focusNode: focusNode,
+            placeholder: hintText,
+            autofocus: autofocus,
+            keyboardType: TextInputType.text,
+            textInputAction: TextInputAction.search,
+            height: compact ? 48 : 56,
+            padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 16),
+            shape: LiquidRoundedRectangle(borderRadius: compact ? 24 : 28),
+            prefixIcon: const Icon(Icons.search_rounded, size: 22),
+            suffixIcon: suffix,
+            onChanged: onChanged,
+            onSubmitted: onSubmitted,
+            textStyle: const TextStyle(
+              color: ZhPalette.ink,
+              fontSize: 16,
+              height: 1.2,
+            ),
+            placeholderStyle: const TextStyle(
+              color: ZhPalette.mutedInk,
+              fontSize: 16,
+              height: 1.2,
+            ),
+            settings: _settings,
+            useOwnLayer: true,
+            quality: GlassQuality.standard,
+            interactionBehavior: GlassInteractionBehavior.scaleOnly,
+            glowColor: Colors.transparent,
+            glowRadius: 0,
+            pressScale: 1.005,
+          );
+        },
       );
 }
 
@@ -553,6 +821,17 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return _ZhPlainSegmentedTabs(
+        labels: labels,
+        selectedIndex: _safeIndex,
+        onSelected: onSelected,
+        semanticPrefix: semanticPrefix,
+        scrollable: scrollable,
+        height: height,
+        labelFontSize: labelFontSize,
+      );
+    }
     if (plainSelection) {
       return _ZhLiquidGlassStaticSegmentedTabs(
         key: key,
@@ -745,6 +1024,92 @@ class _ZhLiquidGlassStaticSegmentedTabs extends StatelessWidget {
   );
 }
 
+class _ZhPlainSegmentedTabs extends StatelessWidget {
+  const _ZhPlainSegmentedTabs({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.semanticPrefix,
+    required this.scrollable,
+    required this.height,
+    required this.labelFontSize,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final String semanticPrefix;
+  final bool scrollable;
+  final double height;
+  final double labelFontSize;
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = selectedIndex.clamp(0, labels.length - 1).toInt();
+    Widget segment(int index) {
+      final active = index == selected;
+      final child = AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        height: height - 4,
+        padding: EdgeInsets.symmetric(horizontal: scrollable ? 14 : 8),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: active ? ZhPalette.ink : Colors.transparent,
+          borderRadius: BorderRadius.circular(height / 2),
+        ),
+        child: Text(
+          labels[index],
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            color: active ? ZhPalette.background : ZhPalette.mutedInk,
+            fontSize: labelFontSize,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+            height: 1.2,
+          ),
+        ),
+      );
+      return Semantics(
+        button: true,
+        selected: active,
+        label: '$semanticPrefix${labels[index]}',
+        onTap: () => onSelected(index),
+        child: InkWell(
+          onTap: () => onSelected(index),
+          borderRadius: BorderRadius.circular(height / 2),
+          child: child,
+        ),
+      );
+    }
+
+    final row = Row(
+      mainAxisSize: scrollable ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        for (var index = 0; index < labels.length; index++)
+          scrollable ? segment(index) : Expanded(child: segment(index)),
+      ],
+    );
+    return Material(
+      color: ZhPalette.canvas,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(height / 2),
+        side: const BorderSide(color: ZhPalette.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(2),
+        child: scrollable
+            ? SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: row,
+              )
+            : row,
+      ),
+    );
+  }
+}
+
 /// A frosted glass track for long tab collections.
 ///
 /// `GlassSegmentedControl.scrollable` owns the actual liquid indicator and
@@ -826,6 +1191,23 @@ class ZhLiquidGlassAppBar extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return AppBar(
+        title: title,
+        leading: leading,
+        actions: actions,
+        centerTitle: centerTitle,
+        toolbarHeight: toolbarHeight,
+        bottom: bottom,
+        automaticallyImplyLeading: false,
+        backgroundColor: ZhPalette.background,
+        foregroundColor: ZhPalette.ink,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        shape: const Border(bottom: BorderSide(color: ZhPalette.border)),
+      );
+    }
     final appBar = GlassAppBar(
       title: title,
       leading: leading,
@@ -870,23 +1252,31 @@ class ZhProgressiveGlassBackdrop extends StatelessWidget {
   final Gradient? gradient;
 
   @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        const ProgressiveBlur(
-          maxSigma: 6,
-          // The lower edge should dissolve into the page while the upper edge
-          // carries the strongest blur, matching the iOS 26 toolbar gradient.
-          direction: ProgressiveBlurDirection.topToBottom,
-          falloff: 1.8,
-        ),
-        DecoratedBox(
-          decoration: BoxDecoration(gradient: gradient ?? _defaultGradient),
-        ),
-      ],
-    ),
-  );
+  Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return const IgnorePointer(
+        child: ColoredBox(color: ZhPalette.background),
+      );
+    }
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const ProgressiveBlur(
+            maxSigma: 6,
+            // The lower edge should dissolve into the page while the upper
+            // edge carries the strongest blur, matching the iOS 26 toolbar
+            // gradient.
+            direction: ProgressiveBlurDirection.topToBottom,
+            falloff: 1.8,
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(gradient: gradient ?? _defaultGradient),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 /// The shared top-level navigation surface used by ordinary pages.

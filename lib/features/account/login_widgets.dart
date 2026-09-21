@@ -37,39 +37,50 @@ class _LoginBackdrop extends StatelessWidget {
   const _LoginBackdrop();
 
   @override
-  Widget build(BuildContext context) => IgnorePointer(
-    child: Stack(
-      fit: StackFit.expand,
-      children: [
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFF1F6FF), Color(0xFFF9FBFF), Color(0xFFF4F6FA)],
-              stops: [0, .52, 1],
+  Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return const IgnorePointer(
+        child: ColoredBox(color: ZhPalette.background),
+      );
+    }
+    return IgnorePointer(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF1F6FF),
+                  Color(0xFFF9FBFF),
+                  Color(0xFFF4F6FA),
+                ],
+                stops: [0, .52, 1],
+              ),
             ),
           ),
-        ),
-        Positioned(
-          top: -86,
-          right: -54,
-          child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 34, sigmaY: 34),
-            child: const _LoginGlow(size: 230, color: Color(0x2D9AC8FF)),
+          Positioned(
+            top: -86,
+            right: -54,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 34, sigmaY: 34),
+              child: const _LoginGlow(size: 230, color: Color(0x2D9AC8FF)),
+            ),
           ),
-        ),
-        Positioned(
-          left: -112,
-          bottom: 80,
-          child: ImageFiltered(
-            imageFilter: ui.ImageFilter.blur(sigmaX: 46, sigmaY: 46),
-            child: const _LoginGlow(size: 260, color: Color(0x1ECCD8FF)),
+          Positioned(
+            left: -112,
+            bottom: 80,
+            child: ImageFiltered(
+              imageFilter: ui.ImageFilter.blur(sigmaX: 46, sigmaY: 46),
+              child: const _LoginGlow(size: 260, color: Color(0x1ECCD8FF)),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
+        ],
+      ),
+    );
+  }
 }
 
 class _LoginGlow extends StatelessWidget {
@@ -118,46 +129,90 @@ class _LoginGlassTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
 
   @override
-  Widget build(BuildContext context) => GlassTextField(
-    key: key,
-    controller: controller,
-    focusNode: focusNode,
-    enabled: enabled,
-    obscureText: obscureText,
-    placeholder: placeholder,
-    keyboardType: keyboardType,
-    textInputAction: textInputAction,
-    inputFormatters: inputFormatters,
-    onChanged: onChanged,
-    onSubmitted: onSubmitted,
-    prefixIcon: Icon(
+  Widget build(BuildContext context) {
+    final prefix = Icon(
       prefixIcon,
       size: 21,
       color: enabled ? ZhPalette.mutedInk : ZhPalette.subtleInk,
-    ),
-    suffixIcon: suffixIcon,
-    onSuffixTap: onSuffixTap,
-    height: 64,
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-    iconSpacing: 12,
-    shape: const LiquidRoundedRectangle(borderRadius: 32),
-    settings: _loginGlassSettings,
-    // Keep the field's own clipped glass surface so the pill shape and
-    // refraction are preserved. The standard renderer avoids the premium
-    // texture's stale-frame flash when this surface moves in the ListView.
-    useOwnLayer: true,
-    quality: GlassQuality.standard,
-    interactionBehavior: GlassInteractionBehavior.full,
-    pressScale: 1.015,
-    textStyle: Theme.of(
-      context,
-    ).textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.2),
-    placeholderStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-      color: ZhPalette.subtleInk,
-      fontSize: 17,
-      height: 1.2,
-    ),
-  );
+    );
+    final suffix = suffixIcon == null
+        ? null
+        : IconButton(
+            onPressed: onSuffixTap,
+            icon: suffixIcon!,
+            color: ZhPalette.mutedInk,
+          );
+    if (!ZhGlassScope.enabledOf(context)) {
+      return TextField(
+        controller: controller,
+        focusNode: focusNode,
+        enabled: enabled,
+        obscureText: obscureText,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        inputFormatters: inputFormatters,
+        onChanged: onChanged,
+        onSubmitted: onSubmitted,
+        decoration: InputDecoration(
+          hintText: placeholder,
+          prefixIcon: prefix,
+          suffixIcon: suffix,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 16,
+          ),
+          filled: true,
+          fillColor: ZhPalette.canvas,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: const BorderSide(color: ZhPalette.border),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(32),
+            borderSide: const BorderSide(color: ZhPalette.border),
+          ),
+        ),
+        style: Theme.of(
+          context,
+        ).textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.2),
+      );
+    }
+    return GlassTextField(
+      controller: controller,
+      focusNode: focusNode,
+      enabled: enabled,
+      obscureText: obscureText,
+      placeholder: placeholder,
+      keyboardType: keyboardType,
+      textInputAction: textInputAction,
+      inputFormatters: inputFormatters,
+      onChanged: onChanged,
+      onSubmitted: onSubmitted,
+      prefixIcon: prefix,
+      suffixIcon: suffixIcon,
+      onSuffixTap: onSuffixTap,
+      height: 64,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      iconSpacing: 12,
+      shape: const LiquidRoundedRectangle(borderRadius: 32),
+      settings: _loginGlassSettings,
+      // Keep the field's own clipped glass surface so the pill shape and
+      // refraction are preserved. The standard renderer avoids the premium
+      // texture's stale-frame flash when this surface moves in the ListView.
+      useOwnLayer: true,
+      quality: GlassQuality.standard,
+      interactionBehavior: GlassInteractionBehavior.full,
+      pressScale: 1.015,
+      textStyle: Theme.of(
+        context,
+      ).textTheme.bodyLarge?.copyWith(fontSize: 17, height: 1.2),
+      placeholderStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
+        color: ZhPalette.subtleInk,
+        fontSize: 17,
+        height: 1.2,
+      ),
+    );
+  }
 }
 
 class _LoginHeader extends StatelessWidget {
@@ -206,61 +261,78 @@ class _LoginProgress extends StatelessWidget {
   final ValueChanged<int>? onStepSelected;
 
   @override
-  Widget build(BuildContext context) => Semantics(
-    label: passwordMode
+  Widget build(BuildContext context) {
+    final selectedIndex = passwordMode ? 0 : (codeSent ? 1 : 0);
+    final labels = passwordMode ? const ['账号', '密码'] : const ['手机号', '验证码'];
+    final semanticLabel = passwordMode
         ? '登录进度：账号密码'
         : codeSent
         ? '登录进度：验证码'
-        : '登录进度：手机号',
-    child: GlassTabBar.inline(
-      key: const ValueKey('login-progress-tabs'),
-      tabs: [
-        GlassTab(
-          label: passwordMode ? '账号' : '手机号',
-          semanticLabel: passwordMode ? '账号' : '手机号',
+        : '登录进度：手机号';
+    if (!ZhGlassScope.enabledOf(context)) {
+      return Semantics(
+        label: semanticLabel,
+        child: ZhLiquidGlassSegmentedTabs(
+          labels: labels,
+          selectedIndex: selectedIndex,
+          onSelected: onStepSelected ?? (_) {},
+          height: 52,
+          labelFontSize: 16,
         ),
-        GlassTab(
-          label: passwordMode ? '密码' : '验证码',
-          semanticLabel: passwordMode ? '密码' : '验证码',
+      );
+    }
+    return Semantics(
+      label: semanticLabel,
+      child: GlassTabBar.inline(
+        key: const ValueKey('login-progress-tabs'),
+        tabs: [
+          GlassTab(
+            label: passwordMode ? '账号' : '手机号',
+            semanticLabel: passwordMode ? '账号' : '手机号',
+          ),
+          GlassTab(
+            label: passwordMode ? '密码' : '验证码',
+            semanticLabel: passwordMode ? '密码' : '验证码',
+          ),
+        ],
+        selectedIndex: selectedIndex,
+        onTabSelected: onStepSelected ?? (_) {},
+        horizontalPadding: 0,
+        verticalPadding: 0,
+        barHeight: 52,
+        barBorderRadius: 26,
+        spacing: 0,
+        tabPadding: const EdgeInsets.symmetric(horizontal: 4),
+        indicatorExpansion: const EdgeInsets.symmetric(
+          horizontal: 4,
+          vertical: 4,
         ),
-      ],
-      selectedIndex: passwordMode ? 0 : (codeSent ? 1 : 0),
-      onTabSelected: onStepSelected ?? (_) {},
-      horizontalPadding: 0,
-      verticalPadding: 0,
-      barHeight: 52,
-      barBorderRadius: 26,
-      spacing: 0,
-      tabPadding: const EdgeInsets.symmetric(horizontal: 4),
-      indicatorExpansion: const EdgeInsets.symmetric(
-        horizontal: 4,
-        vertical: 4,
+        indicatorColor: const Color(0x24000000),
+        indicatorSettings: _loginProgressIndicatorSettings,
+        indicatorPinchStrength: .28,
+        selectedLabelStyle: const TextStyle(
+          color: ZhPalette.ink,
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+          height: 1.2,
+        ),
+        unselectedLabelStyle: const TextStyle(
+          color: ZhPalette.mutedInk,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          height: 1.2,
+        ),
+        settings: _loginProgressGlassSettings,
+        // The submit control can remain mounted while the login route is
+        // being dismissed. Use the lightweight shader so a route transition
+        // never competes with a second full glass capture.
+        quality: GlassQuality.standard,
+        backgroundQuality: GlassQuality.standard,
+        interactionBehavior: GlassInteractionBehavior.full,
+        pressScale: 1.02,
       ),
-      indicatorColor: const Color(0x24000000),
-      indicatorSettings: _loginProgressIndicatorSettings,
-      indicatorPinchStrength: .28,
-      selectedLabelStyle: const TextStyle(
-        color: ZhPalette.ink,
-        fontSize: 16,
-        fontWeight: FontWeight.w800,
-        height: 1.2,
-      ),
-      unselectedLabelStyle: const TextStyle(
-        color: ZhPalette.mutedInk,
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.2,
-      ),
-      settings: _loginProgressGlassSettings,
-      // The submit control can remain mounted while the login route is
-      // being dismissed. Use the lightweight shader so a route transition
-      // never competes with a second full glass capture.
-      quality: GlassQuality.standard,
-      backgroundQuality: GlassQuality.standard,
-      interactionBehavior: GlassInteractionBehavior.full,
-      pressScale: 1.02,
-    ),
-  );
+    );
+  }
 }
 
 class _LoginTextButton extends StatelessWidget {

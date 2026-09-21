@@ -18,6 +18,16 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     _notifyChanged();
   }
 
+  Future<void> setGlassEffectsEnabled(bool value) async {
+    if (glassEffectsEnabled == value) return;
+    glassEffectsEnabled = value;
+    await _writePreference(
+      _SessionStoreCore._glassEffectsEnabledKey,
+      value.toString(),
+    );
+    _notifyChanged();
+  }
+
   Future<void> setPrefetchImages(bool value) async {
     if (prefetchImages == value) return;
     prefetchImages = value;
@@ -205,6 +215,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
   Future<void> resetAppPreferences() async {
     readingTextSize = ReadingTextSize.standard;
     reduceMotion = false;
+    glassEffectsEnabled = true;
     prefetchImages = true;
     rememberSearchHistory = true;
     showSearchHotSearch = true;
@@ -229,6 +240,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
       await Future.wait([
         _safeDelete(_SessionStoreCore._readingTextSizeKey),
         _safeDelete(_SessionStoreCore._reduceMotionKey),
+        _safeDelete(_SessionStoreCore._glassEffectsEnabledKey),
         _safeDelete(_SessionStoreCore._prefetchImagesKey),
         _safeDelete(_SessionStoreCore._rememberSearchKey),
         _safeDelete(_SessionStoreCore._showSearchHotKey),

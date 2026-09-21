@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
+import '../zh_glass.dart';
+import '../zh_theme.dart';
+
 /// Shared visual tokens for every action/navigation tab bar in the client.
 ///
 /// Pages provide only their tab data and callbacks. The selected foreground,
@@ -73,6 +76,13 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      return _ZhPlainBottomNavigation(
+        destinations: destinations,
+        selectedIndex: selectedIndex,
+        onDestinationSelected: onDestinationSelected,
+      );
+    }
     final tabs = [
       for (final destination in destinations)
         GlassTab(
@@ -278,6 +288,48 @@ class _ZhReleaseActivatedGlassTabBarState
   );
 }
 
+class _ZhPlainBottomNavigation extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _ZhPlainBottomNavigation({
+    required this.destinations,
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+
+  final List<NavigationDestination> destinations;
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(104);
+
+  @override
+  Widget build(BuildContext context) {
+    final safeIndex = selectedIndex.clamp(0, destinations.length - 1).toInt();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Material(
+        color: ZhPalette.background,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: ZhPalette.border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: NavigationBar(
+          height: 64,
+          selectedIndex: safeIndex,
+          onDestinationSelected: onDestinationSelected,
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          indicatorColor: ZhPalette.ink,
+          destinations: destinations,
+        ),
+      ),
+    );
+  }
+}
+
 /// A floating, draggable glass action bar for detail pages.
 ///
 /// [GlassTabBar.bottom] supplies the un-clipped spring indicator and the
@@ -350,6 +402,33 @@ class _ZhLiquidGlassFloatingActionBarState
 
   @override
   Widget build(BuildContext context) {
+    if (!ZhGlassScope.enabledOf(context)) {
+      final plainBar = _ZhPlainFloatingActionBar(
+        items: widget.items,
+        selectedIndex: _selectedIndex,
+        onSelected: _select,
+      );
+      if (widget.trailing == null) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: plainBar,
+        );
+      }
+      return Padding(
+        padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
+        child: SizedBox(
+          height: 88,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: plainBar),
+              const SizedBox(width: 8),
+              widget.trailing!,
+            ],
+          ),
+        ),
+      );
+    }
     final tabs = [
       for (final item in widget.items)
         GlassTab(
@@ -437,6 +516,86 @@ class _ZhLiquidGlassFloatingActionBarState
             Expanded(child: animatedGlassBar),
             const SizedBox(width: 8),
             widget.trailing!,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ZhPlainFloatingActionBar extends StatelessWidget {
+  const _ZhPlainFloatingActionBar({
+    required this.items,
+    required this.selectedIndex,
+    required this.onSelected,
+  });
+
+  final List<ZhLiquidGlassActionItem> items;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeIndex = selectedIndex.clamp(0, items.length - 1).toInt();
+    return Material(
+      color: ZhPalette.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: const BorderSide(color: ZhPalette.border),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: SizedBox(
+        height: 64,
+        child: Row(
+          children: [
+            for (var index = 0; index < items.length; index++)
+              Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: index == safeIndex,
+                  label: items[index].semanticLabel,
+                  onTap: () => onSelected(index),
+                  child: InkWell(
+                    onTap: () => onSelected(index),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          IconTheme(
+                            data: IconThemeData(
+                              size: 22,
+                              color: index == safeIndex
+                                  ? ZhLiquidGlassNavigationStyle.selectedColor
+                                  : ZhLiquidGlassNavigationStyle
+                                        .unselectedColor,
+                            ),
+                            child: index == safeIndex
+                                ? (items[index].activeIcon ?? items[index].icon)
+                                : items[index].icon,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            items[index].label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: index == safeIndex
+                                  ? ZhLiquidGlassNavigationStyle.selectedColor
+                                  : ZhLiquidGlassNavigationStyle
+                                        .unselectedColor,
+                              fontSize: 11,
+                              fontWeight: index == safeIndex
+                                  ? FontWeight.w700
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

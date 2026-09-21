@@ -27,6 +27,7 @@ import 'pages/content_pages.dart';
 import 'pages/user_page.dart';
 import 'ui/zh_scroll_behavior.dart';
 import 'ui/zh_components.dart';
+import 'ui/zh_glass.dart';
 import 'ui/zh_theme.dart';
 import 'widgets/app_drawer.dart';
 import 'widgets/account_session_cleanup_prompt.dart';
@@ -66,10 +67,7 @@ Future<void> main() async {
   final contract = await ApiContract.load();
   runApp(
     ZhMobileViewportSurface(
-      child: LiquidGlassWidgets.wrap(
-        child: ZhiyueApp(session: session, contract: contract),
-        brightnessResolver: Theme.maybeBrightnessOf,
-      ),
+      child: ZhiyueApp(session: session, contract: contract),
     ),
   );
 }
@@ -92,6 +90,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
     widget.session.readingTextSize,
     widget.session.followSystemTextScale,
     widget.session.reduceMotion,
+    widget.session.glassEffectsEnabled,
   );
 
   void _applyImageCachePolicy() {
@@ -126,7 +125,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
 
   @override
   Widget build(BuildContext context) {
-    return ShadTheme(
+    final app = ShadTheme(
       data: ZhTheme.shad,
       child: MaterialApp(
         title: '知阅',
@@ -161,6 +160,15 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
           ),
         ),
       ),
+    );
+    final scopedApp = ZhGlassScope(
+      enabled: widget.session.glassEffectsEnabled,
+      child: app,
+    );
+    if (!widget.session.glassEffectsEnabled) return scopedApp;
+    return LiquidGlassWidgets.wrap(
+      child: scopedApp,
+      brightnessResolver: Theme.maybeBrightnessOf,
     );
   }
 }

@@ -308,7 +308,6 @@ class _ZhihuImageDiskStore {
     if (directory == null) return null;
     try {
       final file = _file(directory, key);
-      if (!await file.exists()) return null;
       final bytes = await file.readAsBytes();
       if (bytes.isEmpty || bytes.length > _maxFileBytes) {
         try {
@@ -316,14 +315,19 @@ class _ZhihuImageDiskStore {
         } catch (_) {}
         return null;
       }
-      // Touch the file so cleanup keeps recently used images.
-      try {
-        await file.setLastModified(DateTime.now());
-      } catch (_) {}
+      // Do not make image decode wait for an mtime write. The cache hit is on
+      // the scroll path; refreshing LRU metadata can finish in the background.
+      unawaited(_touch(file));
       return bytes;
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> _touch(File file) async {
+    try {
+      await file.setLastModified(DateTime.now());
+    } catch (_) {}
   }
 
   Future<void> write(String key, Uint8List bytes) async {

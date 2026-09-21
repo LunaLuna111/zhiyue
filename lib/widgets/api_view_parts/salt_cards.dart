@@ -120,13 +120,12 @@ class SaltCatalogCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     cacheWidth: saltStoryCoverCacheWidth,
                     filterQuality: FilterQuality.medium,
-                    loadingBuilder: (context, child, progress) =>
-                        progress == null
-                        ? child
-                        : _SaltCoverPlaceholder(
+                    frameBuilder: (_, child, frame, _) => frame == null
+                        ? _SaltCoverPlaceholder(
                             width: coverWidth,
                             height: coverHeight,
-                          ),
+                          )
+                        : child,
                     errorBuilder: (_, _, _) => _SaltCoverPlaceholder(
                       width: coverWidth,
                       height: coverHeight,

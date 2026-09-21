@@ -34,6 +34,9 @@ class _SaltProductPageState extends State<SaltProductPage> {
   bool _catalogLoading = false;
   bool _catalogDescending = false;
   int _catalogLoadGeneration = 0;
+  SaltCatalogSnapshot? _sortedCatalogSource;
+  List<Map<String, dynamic>>? _sortedCatalogRows;
+  bool _sortedCatalogDescending = false;
   final _metadataEnrichmentInFlight = <String, Future<void>>{};
   final _metadataEnrichmentAttemptedAt = <String, DateTime>{};
   static const _metadataRetryDelay = Duration(minutes: 2);
@@ -211,6 +214,24 @@ class _SaltProductPageState extends State<SaltProductPage> {
       mounted &&
       widget.businessId == businessId &&
       _catalogLoadGeneration == generation;
+
+  List<Map<String, dynamic>> _catalogRowsFor(SaltCatalogSnapshot? catalog) {
+    if (catalog == null) return const <Map<String, dynamic>>[];
+    final cached = _sortedCatalogRows;
+    if (cached != null &&
+        identical(_sortedCatalogSource, catalog) &&
+        _sortedCatalogDescending == _catalogDescending) {
+      return cached;
+    }
+    final sorted = sortSaltCatalogSections(
+      catalog.rows,
+      descending: _catalogDescending,
+    );
+    _sortedCatalogSource = catalog;
+    _sortedCatalogDescending = _catalogDescending;
+    _sortedCatalogRows = sorted;
+    return sorted;
+  }
 
   /// The catalog endpoint intentionally keeps the first response small and
   /// may return `author: null`.  The official reader then fetches
@@ -665,10 +686,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
       );
     }
     final sourceRows = catalog?.rows ?? const <Map<String, dynamic>>[];
-    final rows = sortSaltCatalogSections(
-      sourceRows,
-      descending: _catalogDescending,
-    );
+    final rows = _catalogRowsFor(catalog);
     final catalogRoot = catalog == null
         ? const <String, dynamic>{}
         : _effectiveRoot(catalog.root);

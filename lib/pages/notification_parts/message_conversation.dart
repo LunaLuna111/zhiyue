@@ -190,6 +190,10 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
                     key: const ValueKey('message-conversation'),
                     controller: _controller,
                     padding: const EdgeInsets.fromLTRB(14, 10, 14, 16),
+                    // Keep a short bubble-sized buffer. Older messages can
+                    // be numerous and each incoming avatar/text row is
+                    // otherwise built before it is close to the viewport.
+                    scrollCacheExtent: const ScrollCacheExtent.pixels(320),
                     itemCount: _messages.length + 1,
                     itemBuilder: (context, index) {
                       if (index == 0) {

@@ -171,8 +171,8 @@ class _AuthorAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         cacheWidth: (size * 3).round(),
         cacheHeight: (size * 3).round(),
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : placeholder,
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? placeholder : child,
         errorBuilder: (_, _, _) => placeholder,
       ),
     );

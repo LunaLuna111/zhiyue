@@ -103,7 +103,7 @@ class _FeedObjectCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             cacheWidth: 72,
                             cacheHeight: 72,
-                            filterQuality: FilterQuality.medium,
+                            filterQuality: FilterQuality.low,
                             // A frame callback keeps the placeholder stable
                             // while bytes arrive. Loading callbacks can fire
                             // for every chunk and rebuild the whole card

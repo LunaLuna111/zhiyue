@@ -127,10 +127,21 @@ class ObjectCard extends StatelessWidget {
     final authorName = authorNameOf(value);
     final authorHeadline = authorHeadlineOf(value);
     final authorBadges = authorBadgeLabelsOf(value);
-    final relationship = AnswerRelationship.from(value);
     final interactive = const {'answer', 'article', 'pin'}.contains(type);
     final image = _imageOf(object);
     final metrics = ContentMetrics.from(value);
+    // Rows without engagement metrics never paint a selected interaction
+    // state. Avoid walking relationship/reaction wrappers for those common
+    // summary rows while preserving the full state for interactive cards.
+    final relationship = metrics.hasEngagement
+        ? AnswerRelationship.from(value)
+        : const AnswerRelationship(
+            voting: '',
+            isThanked: null,
+            isFavorited: null,
+            isAuthor: null,
+            isFollowingAuthor: null,
+          );
     final dateLabel = contentDateLabel(metrics);
     final contentImages = contentImageUrlsOf(value, limit: 12);
     final showsObjectSummary =

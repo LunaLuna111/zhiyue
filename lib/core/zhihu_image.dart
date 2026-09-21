@@ -209,6 +209,7 @@ class ZhihuImageBytesCache {
 
   static final instance = ZhihuImageBytesCache._();
   final _store = _ZhihuImageDiskStore();
+  final _client = http.Client();
   final _inFlight = <String, Future<Uint8List>>{};
 
   Future<Uint8List> load(
@@ -238,36 +239,31 @@ class ZhihuImageBytesCache {
     final cached = await _store.read(canonical);
     if (cached != null && cached.isNotEmpty) return cached;
 
-    final client = http.Client();
-    try {
-      final request = http.Request('GET', Uri.parse(requestUrl));
-      if (headers != null) request.headers.addAll(headers);
-      final response = await client.send(request);
-      if (response.statusCode != 200) {
-        await response.stream.drain<void>();
-        throw HttpException(
-          'Image request failed (${response.statusCode})',
-          uri: Uri.tryParse(requestUrl),
-        );
-      }
-      final builder = BytesBuilder(copy: false);
-      var loaded = 0;
-      final contentLength = response.contentLength;
-      final total = contentLength != null && contentLength > 0
-          ? contentLength
-          : null;
-      await for (final chunk in response.stream) {
-        builder.add(chunk);
-        loaded += chunk.length;
-        onProgress?.call(loaded, total);
-      }
-      final bytes = builder.takeBytes();
-      if (bytes.isEmpty) throw StateError('Image response is empty');
-      await _store.write(canonical, bytes);
-      return bytes;
-    } finally {
-      client.close();
+    final request = http.Request('GET', Uri.parse(requestUrl));
+    if (headers != null) request.headers.addAll(headers);
+    final response = await _client.send(request);
+    if (response.statusCode != 200) {
+      await response.stream.drain<void>();
+      throw HttpException(
+        'Image request failed (${response.statusCode})',
+        uri: Uri.tryParse(requestUrl),
+      );
     }
+    final builder = BytesBuilder(copy: false);
+    var loaded = 0;
+    final contentLength = response.contentLength;
+    final total = contentLength != null && contentLength > 0
+        ? contentLength
+        : null;
+    await for (final chunk in response.stream) {
+      builder.add(chunk);
+      loaded += chunk.length;
+      onProgress?.call(loaded, total);
+    }
+    final bytes = builder.takeBytes();
+    if (bytes.isEmpty) throw StateError('Image response is empty');
+    await _store.write(canonical, bytes);
+    return bytes;
   }
 }
 

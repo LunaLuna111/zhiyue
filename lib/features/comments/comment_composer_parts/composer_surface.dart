@@ -336,6 +336,14 @@ class _EmoticonPanel extends StatelessWidget {
                             headers: zhihuImageRequestHeaders,
                             width: 24,
                             height: 24,
+                            cacheWidth: 72,
+                            cacheHeight: 72,
+                            filterQuality: FilterQuality.low,
+                            frameBuilder: (_, child, frame, _) => frame == null
+                                ? const Icon(
+                                    Icons.sentiment_satisfied_alt_outlined,
+                                  )
+                                : child,
                             errorBuilder: (_, _, _) => const Icon(
                               Icons.sentiment_satisfied_alt_outlined,
                             ),
@@ -376,6 +384,11 @@ class _EmoticonImage extends StatelessWidget {
       width: size,
       height: size,
       fit: BoxFit.contain,
+      cacheWidth: (size * 3).round(),
+      cacheHeight: (size * 3).round(),
+      frameBuilder: (_, child, frame, _) => frame == null
+          ? Text(value.title, style: TextStyle(fontSize: size * .72))
+          : child,
       errorBuilder: (_, _, _) => Text(
         value.title,
         style: TextStyle(fontSize: size * .45),

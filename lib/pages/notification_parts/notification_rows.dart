@@ -112,6 +112,18 @@ class _NotificationAvatar extends StatelessWidget {
               url,
               headers: zhihuImageRequestHeaders,
               fit: BoxFit.cover,
+              // Notification rows only display a small avatar. Avoid
+              // decoding the original CDN bitmap while a message list is
+              // being created or rapidly scrolled.
+              cacheWidth: (size * 3).round(),
+              cacheHeight: (size * 3).round(),
+              filterQuality: FilterQuality.low,
+              frameBuilder: (_, child, frame, _) => frame == null
+                  ? const Icon(
+                      Icons.notifications_none_rounded,
+                      color: ZhPalette.mutedInk,
+                    )
+                  : child,
               errorBuilder: (_, _, _) => const Icon(
                 Icons.notifications_none_rounded,
                 color: ZhPalette.mutedInk,

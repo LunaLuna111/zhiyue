@@ -144,13 +144,19 @@ class _PagedListPageState extends State<PagedListPage> {
     _loading = true;
     _error = null;
     if (showInitialLoading && mounted) setState(() {});
+    var loadStateCommitted = false;
     try {
       final response = reset
           ? await widget.loadInitial()
           : await widget.api.getUri(widget.api.validatePagingUri(_next!));
       if (!mounted) return;
       if (!response.isSuccess) {
-        setState(() => _error = response);
+        setState(() {
+          _error = response;
+          _loading = false;
+          if (reset) _initialLoadComplete = true;
+        });
+        loadStateCommitted = true;
       } else {
         final incoming =
             widget.rowsExtractor?.call(response.json) ??
@@ -175,21 +181,31 @@ class _PagedListPageState extends State<PagedListPage> {
           }
           _next = pagingNext(response.json);
           if (reset) _responseRoot = response.jsonMap;
+          _loading = false;
+          if (reset) _initialLoadComplete = true;
         });
+        loadStateCommitted = true;
       }
     } catch (error) {
-      if (mounted) setState(() => _error = error);
-    } finally {
       if (mounted) {
+        setState(() {
+          _error = error;
+          _loading = false;
+          if (reset) _initialLoadComplete = true;
+        });
+        loadStateCommitted = true;
+      }
+    } finally {
+      if (mounted && !loadStateCommitted) {
         setState(() {
           _loading = false;
           if (reset) _initialLoadComplete = true;
         });
-        if (_next != null && _error == null) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) _maybeLoadMore();
-          });
-        }
+      }
+      if (mounted && _next != null && _error == null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _maybeLoadMore();
+        });
       }
     }
   }

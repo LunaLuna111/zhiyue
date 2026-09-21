@@ -238,10 +238,19 @@ class _UserProfileCover extends StatelessWidget {
     if (Uri.tryParse(imageUrl)?.scheme != 'https') {
       return const ColoredBox(color: Color(0xFF326A66));
     }
+    final cacheWidth =
+        (MediaQuery.sizeOf(context).width *
+                MediaQuery.devicePixelRatioOf(context))
+            .clamp(720.0, 1920.0)
+            .round();
     return ZhihuImage.network(
       imageUrl,
       headers: zhihuImageRequestHeaders,
       fit: BoxFit.cover,
+      cacheWidth: cacheWidth,
+      filterQuality: FilterQuality.low,
+      frameBuilder: (_, child, frame, _) =>
+          frame == null ? const ColoredBox(color: Color(0xFF326A66)) : child,
       errorBuilder: (_, _, _) => const ColoredBox(color: Color(0xFF326A66)),
     );
   }

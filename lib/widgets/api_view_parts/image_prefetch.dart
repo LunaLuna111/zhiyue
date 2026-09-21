@@ -115,6 +115,34 @@ void prefetchObjectImages(
 final _scheduledImageWarmups = Expando<Timer>('scheduled-image-warmups');
 final _activeImageWarmups = <String>{};
 
+class _ImageWarmupGate {
+  static const _maxActive = 2;
+
+  var _active = 0;
+  final _waiters = <Completer<void>>[];
+
+  Future<void> acquire() {
+    if (_active < _maxActive) {
+      _active++;
+      return Future<void>.value();
+    }
+    final waiter = Completer<void>();
+    _waiters.add(waiter);
+    return waiter.future;
+  }
+
+  void release() {
+    final next = _waiters.isEmpty ? null : _waiters.removeAt(0);
+    if (next != null) {
+      next.complete();
+    } else {
+      _active--;
+    }
+  }
+}
+
+final _imageWarmupGate = _ImageWarmupGate();
+
 class _ImageWarmupCandidate {
   const _ImageWarmupCandidate({
     required this.url,
@@ -147,7 +175,9 @@ Future<void> _warmImages(
           '${candidate.url}|${candidate.cacheWidth}x'
           '${candidate.cacheHeight ?? 0}';
       if (!_activeImageWarmups.add(warmupKey)) continue;
+      await _imageWarmupGate.acquire();
       try {
+        if (!context.mounted) return;
         final provider = ResizeImage.resizeIfNeeded(
           candidate.cacheWidth,
           candidate.cacheHeight,
@@ -169,6 +199,7 @@ Future<void> _warmImages(
         // The card's errorBuilder owns user-visible failure state. A failed
         // warm-up must not cancel the rest of the bounded queue.
       } finally {
+        _imageWarmupGate.release();
         _activeImageWarmups.remove(warmupKey);
       }
     }

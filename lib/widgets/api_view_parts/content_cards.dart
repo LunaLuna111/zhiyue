@@ -175,7 +175,7 @@ class ObjectCard extends StatelessWidget {
                       fit: BoxFit.cover,
                       cacheWidth: (leadingSize * 3).round(),
                       cacheHeight: (leadingSize * 3).round(),
-                      filterQuality: FilterQuality.medium,
+                      filterQuality: FilterQuality.low,
                       frameBuilder: (_, child, frame, _) => frame == null
                           ? _TypeIcon(
                               type: type,

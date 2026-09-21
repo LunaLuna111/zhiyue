@@ -375,6 +375,10 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         controller: _scroll,
         padding: EdgeInsets.only(top: widget.contentTopPadding),
         physics: const AlwaysScrollableScrollPhysics(),
+        // Search result rows also carry avatars and content thumbnails. Keep
+        // one short screen ready for a fling without building a large hidden
+        // batch while the result page is still settling.
+        scrollCacheExtent: const ScrollCacheExtent.pixels(320),
         itemCount: _rows.length + 1,
         itemBuilder: (context, index) {
           if (index < _rows.length) {

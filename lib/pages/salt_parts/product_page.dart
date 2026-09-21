@@ -25,6 +25,7 @@ class SaltProductPage extends StatefulWidget {
 }
 
 class _SaltProductPageState extends State<SaltProductPage> {
+  static final _fallbackMetadataSource = Object();
   final _bookshelf = SaltBookshelfStore.instance;
   final _catalogStore = SaltCatalogStore.instance;
   bool _bookshelfSaving = false;
@@ -37,6 +38,9 @@ class _SaltProductPageState extends State<SaltProductPage> {
   SaltCatalogSnapshot? _sortedCatalogSource;
   List<Map<String, dynamic>>? _sortedCatalogRows;
   bool _sortedCatalogDescending = false;
+  Object? _metadataSourceCache;
+  Map<String, dynamic>? _metadataParentCache;
+  SaltCatalogWorkMetadata? _workMetadataCache;
   final _metadataEnrichmentInFlight = <String, Future<void>>{};
   final _metadataEnrichmentAttemptedAt = <String, DateTime>{};
   static const _metadataRetryDelay = Duration(minutes: 2);
@@ -136,10 +140,27 @@ class _SaltProductPageState extends State<SaltProductPage> {
   }
 
   SaltCatalogWorkMetadata get _workMetadata {
+    final source = _metadataSource;
+    final cached = _workMetadataCache;
+    if (cached != null && identical(_metadataSourceCache, source)) {
+      return cached;
+    }
     final root = _catalog?.root;
-    return saltCatalogWorkMetadata(
-      root == null ? {'parent': _fallbackParent} : _effectiveRoot(root),
-    );
+    final metadataRoot = root == null
+        ? <String, dynamic>{'parent': _fallbackParent}
+        : _effectiveRoot(root);
+    final metadata = saltCatalogWorkMetadata(metadataRoot);
+    _metadataSourceCache = source;
+    _metadataParentCache = _saltMap(metadataRoot['parent']) ?? _fallbackParent;
+    return _workMetadataCache = metadata;
+  }
+
+  Object get _metadataSource =>
+      _catalog ?? widget.initialMetadata ?? _fallbackMetadataSource;
+
+  Map<String, dynamic> get _workMetadataRoot {
+    _workMetadata;
+    return _metadataParentCache ?? _fallbackParent;
   }
 
   String get _displayTitle {
@@ -524,14 +545,6 @@ class _SaltProductPageState extends State<SaltProductPage> {
     } finally {
       if (mounted) setState(() => _bookshelfSaving = false);
     }
-  }
-
-  Map<String, dynamic> get _workMetadataRoot {
-    final root = _catalog?.root;
-    final parent = root == null
-        ? _fallbackParent
-        : _saltMap(_effectiveRoot(root)['parent']) ?? _fallbackParent;
-    return parent;
   }
 
   Future<void> _showMoreMenu() async {

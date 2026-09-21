@@ -234,7 +234,10 @@ extension _ContentDetailNavigation on _ContentDetailPageState {
           begin: const Offset(0, .12),
           end: Offset.zero,
         ).animate(curved),
-        child: FadeTransition(opacity: curved, child: child),
+        // Keep the route motion, but avoid compositing the entire detail page
+        // through an opacity layer while a long answer and its glass chrome
+        // are entering together.
+        child: child,
       );
     },
   );

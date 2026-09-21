@@ -38,7 +38,7 @@ class _FeedObjectCard extends StatelessWidget {
         : const ContentMetrics();
     final images = showImages ? data.images : const <String>[];
     final dateLabel = showCardMetrics ? contentDateLabel(metrics) : '';
-    final relationship = showCardMetrics
+    final relationship = showCardMetrics && metrics.hasEngagement
         ? AnswerRelationship.from(data.source)
         : null;
     final avatarFallback = data.author.isEmpty

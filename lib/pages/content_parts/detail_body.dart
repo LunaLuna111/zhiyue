@@ -12,7 +12,47 @@ const _answerQuestionHeaderGradient = LinearGradient(
   stops: [0, .38, 1],
 );
 
+class _DetailBodyProjection {
+  const _DetailBodyProjection({
+    required this.structuredSegments,
+    required this.structuredText,
+    required this.images,
+    required this.videos,
+  });
+
+  factory _DetailBodyProjection.from(Map<String, dynamic> object) {
+    final structuredSegments = structuredContentSegments(object);
+    return _DetailBodyProjection(
+      structuredSegments: structuredSegments,
+      // The text helper derives the same segment tree. Only use it for the
+      // fallback representation, and keep its result with the document so a
+      // metadata-only rebuild does not parse the body again.
+      structuredText: structuredSegments.isEmpty
+          ? structuredContentText(object)
+          : '',
+      images: contentImageUrlsOf(object, limit: 20),
+      videos: contentVideosOf(object),
+    );
+  }
+
+  final List<Map<String, dynamic>> structuredSegments;
+  final String structuredText;
+  final List<String> images;
+  final List<RichContentVideo> videos;
+}
+
 extension _ContentDetailBody on _ContentDetailPageState {
+  _DetailBodyProjection _bodyProjectionFor(Map<String, dynamic> object) {
+    final cached = _bodyProjection;
+    if (cached != null && identical(_bodyProjectionSource, object)) {
+      return cached;
+    }
+    final next = _DetailBodyProjection.from(object);
+    _bodyProjectionSource = object;
+    _bodyProjection = next;
+    return next;
+  }
+
   Widget _body({double topInset = 0, Widget? answerQuestionHeader}) {
     if (_loading && _document == null) {
       return const Center(child: CircularProgressIndicator());
@@ -30,14 +70,10 @@ extension _ContentDetailBody on _ContentDetailPageState {
       );
     }
     final object = _document ?? <String, dynamic>{};
+    final bodyProjection = _bodyProjectionFor(object);
     final content = htmlContent(object);
-    final structuredSegments = structuredContentSegments(object);
-    // structuredContentText() derives the same segments again. The structured
-    // renderer already consumes the parsed list, so only build the flattened
-    // text fallback when there is no renderable structured body.
-    final structured = structuredSegments.isEmpty
-        ? structuredContentText(object)
-        : '';
+    final structuredSegments = bodyProjection.structuredSegments;
+    final structured = bodyProjection.structuredText;
     final contentText = plainText(content);
     final paidContent = isPaidStructuredContent(object);
     final paidContentUnlocked = hasUnlockedVipStructuredContent(object);
@@ -57,11 +93,11 @@ extension _ContentDetailBody on _ContentDetailPageState {
     final listCompletenessUnknown = _source == '推荐/列表响应随附内容';
     final metrics = ContentMetrics.from(object);
     final relationship = AnswerRelationship.from(object);
-    final images = contentImageUrlsOf(object, limit: 20);
+    final images = bodyProjection.images;
     final fallbackImageSources = [
       for (final url in images) _DetailImageSource(url: url),
     ];
-    final videos = contentVideosOf(object);
+    final videos = bodyProjection.videos;
     final dateLabel = contentDateLabel(metrics);
     final contentEndLabel = contentEndInfoLabel(object, fallback: dateLabel);
     final sourceNeedsWarning =

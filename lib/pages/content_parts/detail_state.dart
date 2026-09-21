@@ -11,6 +11,8 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   final _relatedAnswers = <Map<String, dynamic>>[];
   Map<String, dynamic>? _document;
   Map<String, dynamic>? _initialSemantic;
+  Map<String, dynamic>? _bodyProjectionSource;
+  _DetailBodyProjection? _bodyProjection;
   Map<String, dynamic>? _previousAnswerPreview;
   Object? _error;
   Object? _relatedError;

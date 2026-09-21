@@ -156,7 +156,14 @@ class _PagedListPageState extends State<PagedListPage> {
             widget.rowsExtractor?.call(response.json) ??
             extractRows(response.json);
         if (widget.api.session.prefetchImages) {
-          prefetchObjectImages(context, incoming);
+          prefetchObjectImages(
+            context,
+            incoming,
+            limit: 8,
+            concurrency: 2,
+            includeAvatars: false,
+            warmupDelay: const Duration(milliseconds: 600),
+          );
         }
         setState(() {
           if (reset) {

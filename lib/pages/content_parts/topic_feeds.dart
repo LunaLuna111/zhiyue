@@ -188,6 +188,11 @@ class TopicHeaderCard extends StatelessWidget {
                         width: 58,
                         height: 58,
                         fit: BoxFit.cover,
+                        cacheWidth: 174,
+                        cacheHeight: 174,
+                        filterQuality: FilterQuality.low,
+                        frameBuilder: (_, child, frame, _) =>
+                            frame == null ? const _TopicPlaceholder() : child,
                         errorBuilder: (_, _, _) => const _TopicPlaceholder(),
                       )
                     : const _TopicPlaceholder(),

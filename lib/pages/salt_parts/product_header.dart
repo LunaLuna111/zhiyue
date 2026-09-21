@@ -326,6 +326,11 @@ Widget? _saltProductHeader(
                         width: 112,
                         height: 150,
                         fit: BoxFit.cover,
+                        cacheWidth: 336,
+                        cacheHeight: 450,
+                        filterQuality: FilterQuality.low,
+                        frameBuilder: (_, child, frame, _) =>
+                            frame == null ? _saltHeaderPlaceholder() : child,
                         errorBuilder: (_, _, _) => _saltHeaderPlaceholder(),
                       )
                     : _saltHeaderPlaceholder(),
@@ -368,6 +373,13 @@ Widget? _saltProductHeader(
                                       width: 32,
                                       height: 32,
                                       fit: BoxFit.cover,
+                                      cacheWidth: 96,
+                                      cacheHeight: 96,
+                                      filterQuality: FilterQuality.low,
+                                      frameBuilder: (_, child, frame, _) =>
+                                          frame == null
+                                          ? _saltAuthorAvatarPlaceholder()
+                                          : child,
                                       errorBuilder: (_, _, _) =>
                                           _saltAuthorAvatarPlaceholder(),
                                     )

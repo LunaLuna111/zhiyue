@@ -197,6 +197,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
         key: const ValueKey('notifications-list'),
         controller: _controller,
         physics: const AlwaysScrollableScrollPhysics(),
+        // Notification rows contain avatars and rich text. Keep a short
+        // card-sized buffer ready without building a large hidden batch.
+        scrollCacheExtent: const ScrollCacheExtent.pixels(320),
         itemCount: 2 + _rows.length + (_next != null || _error != null ? 1 : 0),
         itemBuilder: (context, index) {
           if (index == 0) {

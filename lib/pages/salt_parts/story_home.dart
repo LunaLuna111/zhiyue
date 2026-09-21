@@ -140,8 +140,11 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
           prefetchObjectImages(
             context,
             extractSaltStoryRows(response.json),
-            limit: 12,
-            concurrency: 2,
+            // Story covers are still image-bearing, but warming a whole
+            // module batch competes with the first vertical fling. Keep the
+            // same delayed queue while matching the ordinary feed budget.
+            limit: 8,
+            concurrency: 1,
             contentCacheWidth: saltStoryCoverCacheWidth,
             includeAvatars: false,
             warmupDelay: const Duration(milliseconds: 700),
@@ -234,7 +237,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
         // Story cards carry larger covers; one modest card-sized buffer is
         // enough to hide creation latency without decoding a whole module
         // collection during a section switch.
-        scrollCacheExtent: const ScrollCacheExtent.pixels(360),
+        scrollCacheExtent: const ScrollCacheExtent.pixels(320),
         padding: const EdgeInsets.only(bottom: ZhSpace.xl),
         itemCount: blocks.length + 2,
         itemBuilder: (context, index) {

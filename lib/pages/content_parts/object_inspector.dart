@@ -196,6 +196,11 @@ class _GenericImageGallery extends StatelessWidget {
         width: 178,
         height: 126,
         fit: BoxFit.cover,
+        cacheWidth: 534,
+        cacheHeight: 378,
+        filterQuality: FilterQuality.low,
+        frameBuilder: (_, child, frame, _) =>
+            frame == null ? const ColoredBox(color: ZhPalette.canvas) : child,
         errorBuilder: (_, _, _) => Container(
           width: 178,
           color: ZhPalette.canvas,

@@ -875,7 +875,9 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
           // Search/result tabs remain in the route while it is being popped;
           // the lightweight shader avoids a second dual-layer capture.
           quality: GlassQuality.standard,
-          maskingQuality: MaskingQuality.high,
+          // Keep the standard glass indicator without the dual-layer jelly
+          // mask while the result list is moving underneath the tabs.
+          maskingQuality: MaskingQuality.off,
         ),
       );
     }

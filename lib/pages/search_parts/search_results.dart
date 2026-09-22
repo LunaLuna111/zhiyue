@@ -40,6 +40,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   int _filterCatalogGeneration = 0;
   double _resultHeaderHeight = 0;
   double _headerCollapseProgress = 0;
+  bool _showCollapsedActions = false;
 
   static const _headerCollapseDistance = 56.0;
 
@@ -83,8 +84,21 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
 
   void _setHeaderCollapseProgress(double value) {
     final next = value.clamp(0.0, 1.0).toDouble();
-    if ((_headerCollapseProgress - next).abs() < .01 || !mounted) return;
-    setState(() => _headerCollapseProgress = next);
+    // Keep a small threshold band between collapse and expansion. Without it,
+    // tiny scroll physics corrections near the hand-off point repeatedly swap
+    // the action capsule between three buttons and the filter button.
+    final showCollapsedActions = _showCollapsedActions
+        ? next > .58
+        : next >= .78;
+    if (((_headerCollapseProgress - next).abs() < .01 &&
+            _showCollapsedActions == showCollapsedActions) ||
+        !mounted) {
+      return;
+    }
+    setState(() {
+      _headerCollapseProgress = next;
+      _showCollapsedActions = showCollapsedActions;
+    });
   }
 
   void _onResultScrollOffsetChanged(double offset) {
@@ -408,7 +422,31 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                 iconSize: 22,
               ),
               actions: [
-                _searchActions(collapsed: _headerCollapseProgress >= .8),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 220),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.centerRight,
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    reverseDuration: const Duration(milliseconds: 150),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInCubic,
+                    layoutBuilder: (currentChild, previousChildren) => Stack(
+                      alignment: Alignment.centerRight,
+                      children: [...previousChildren, ?currentChild],
+                    ),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SizeTransition(
+                        sizeFactor: animation,
+                        axis: Axis.horizontal,
+                        alignment: Alignment.centerRight,
+                        child: child,
+                      ),
+                    ),
+                    child: _searchActions(collapsed: _showCollapsedActions),
+                  ),
+                ),
               ],
             ),
           ),

@@ -134,6 +134,11 @@ class ZhLiquidGlassBottomNavigation extends StatelessWidget
         unselectedLabelColor: ZhLiquidGlassNavigationStyle.unselectedColor,
         indicatorColor: ZhLiquidGlassNavigationStyle.indicatorColor,
         indicatorBorderRadius: ZhLiquidGlassNavigationStyle.capsuleRadius,
+        // The lightweight indicator path keeps the unselected icon layer
+        // visible beneath the selected layer. Do not magnify the selected
+        // icon here: the default 1.15 scale makes the blue active glyph
+        // visibly drift from the original icon bounds.
+        magnification: 1.0,
         indicatorPinchStrength: .46,
         indicatorExpansion: const EdgeInsets.symmetric(
           horizontal: 10,

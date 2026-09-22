@@ -17,7 +17,9 @@ class ZhLiquidGlassSwitch extends StatelessWidget {
     this.semanticLabel,
   });
 
-  static const _activeColor = Color(0xEE141414);
+  // Keep the active track dark like the reference design, but leave enough
+  // alpha for the package's specular glass highlight to remain visible.
+  static const _activeColor = Color(0xE02B2B2D);
   static const _inactiveColor = Color(0xB8D8DADF);
   static const _thumbColor = Color(0xFFFDFDFD);
 
@@ -39,7 +41,7 @@ class ZhLiquidGlassSwitch extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           activeThumbColor: ZhPalette.background,
-          activeTrackColor: ZhPalette.ink,
+          activeTrackColor: Color(0xFF3478F6),
           inactiveThumbColor: ZhPalette.background,
           inactiveTrackColor: ZhPalette.canvas,
           trackOutlineColor: WidgetStatePropertyAll(ZhPalette.border),

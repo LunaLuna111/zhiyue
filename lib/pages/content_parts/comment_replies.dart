@@ -387,36 +387,33 @@ class _OfficialCommentEditorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
     key: const Key('official-comment-editor-bar'),
-    decoration: const BoxDecoration(
-      color: Color(0xFFFFFFFF),
-      border: Border(top: BorderSide(color: Color(0xFFEBECED), width: .5)),
-    ),
+    decoration: const BoxDecoration(color: Color(0xFFFFFFFF)),
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 7, 16, 7),
+      padding: const EdgeInsets.fromLTRB(16, 7, 16, 8),
       child: Row(
         children: [
           const CircleAvatar(
-            radius: 16,
+            radius: 18,
             backgroundColor: Color(0xFFF0F2F5),
             child: Icon(
               Icons.person_rounded,
-              size: 20,
+              size: 22,
               color: Color(0xFF9196A1),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: Material(
-              color: const Color(0xFFF8F8FA),
-              borderRadius: BorderRadius.circular(20),
+              color: const Color(0xFFF4F5F7),
+              shape: const StadiumBorder(),
               child: InkWell(
                 key: const Key('comment-editor-entry'),
                 onTap: onTap,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(28),
                 child: SizedBox(
-                  height: 38,
+                  height: 46,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
                         Expanded(
@@ -426,7 +423,7 @@ class _OfficialCommentEditorBar extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: Color(0xFF9196A1),
-                              fontSize: 14,
+                              fontSize: 15,
                             ),
                           ),
                         ),

@@ -703,7 +703,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         ),
         child: Container(
           height: targetHeight,
-          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, ZhSpace.xs),
           decoration: BoxDecoration(
             color: const Color(0xFFF4F5F7),

@@ -160,60 +160,62 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
         ),
       );
     }
-    if (_index == 0) {
-      final selectedCount = _selectedFilters.length;
-      final active = _showFilters || selectedCount > 0;
-      final semanticLabel = selectedCount == 0
-          ? '筛选'
-          : '筛选，已选择 $selectedCount 项';
-      actions.add(
-        ZhLiquidGlassCapsuleAction(
-          icon: KeyedSubtree(
-            key: const ValueKey('search-filter-toggle'),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(
-                  active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
-                  color: active ? const Color(0xFF1769E0) : ZhPalette.ink,
-                ),
-                if (selectedCount > 0)
-                  Positioned(
-                    top: -4,
-                    right: -5,
-                    child: IgnorePointer(
-                      child: DecoratedBox(
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF1769E0),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(3),
-                          child: Text(
-                            '$selectedCount',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              height: 1,
-                            ),
+    final selectedCount = _selectedFilters.length;
+    final active = _showFilters || selectedCount > 0;
+    final semanticLabel = selectedCount == 0 ? '筛选' : '筛选，已选择 $selectedCount 项';
+    actions.add(
+      ZhLiquidGlassCapsuleAction(
+        icon: KeyedSubtree(
+          key: const ValueKey('search-filter-toggle'),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Icon(
+                active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
+                color: active ? const Color(0xFF1769E0) : ZhPalette.ink,
+              ),
+              if (selectedCount > 0)
+                Positioned(
+                  top: -4,
+                  right: -5,
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF1769E0),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(3),
+                        child: Text(
+                          '$selectedCount',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            height: 1,
                           ),
                         ),
                       ),
                     ),
                   ),
-              ],
-            ),
+                ),
+            ],
           ),
-          semanticLabel: semanticLabel,
-          onPressed: _toggleFilters,
         ),
-      );
-    }
-    if (collapsed && _index == 0) {
+        semanticLabel: semanticLabel,
+        onPressed: _toggleFilters,
+      ),
+    );
+    if (collapsed) {
       return ZhLiquidGlassCapsuleActionGroup(
         key: const ValueKey('search-results-collapsed-actions'),
         actions: [actions.last],
+      );
+    }
+    if (_index != 0) {
+      return ZhLiquidGlassCapsuleActionGroup(
+        key: const ValueKey('search-results-actions'),
+        actions: actions.sublist(0, actions.length - 1),
       );
     }
     return ZhLiquidGlassCapsuleActionGroup(

@@ -13,16 +13,9 @@
 以下截图来自 Android 手机模拟器，未包含登录凭据、手机号或账号资料。
 
 <p align="center">
-  <img src="docs/recommend.png" width="30%" alt="推荐页面">
-  <img src="docs/answer.png" width="30%" alt="回答阅读页面">
-  <img src="docs/story.png" width="30%" alt="故事与盐选榜单">
-</p>
-
-<p align="center">
-  <img src="docs/novel-detail.png" width="23%" alt="长篇小说详情与目录">
-  <img src="docs/novel-reader.png" width="23%" alt="小说阅读器">
-  <img src="docs/search.png" width="23%" alt="搜索页面">
-  <img src="docs/login.png" width="23%" alt="登录页面">
+  <img src="docs/story.png" width="30%" alt="故事榜单">
+  <img src="docs/search.png" width="30%" alt="搜索页面">
+  <img src="docs/login.png" width="30%" alt="登录页面">
 </p>
 
 ## 主要功能

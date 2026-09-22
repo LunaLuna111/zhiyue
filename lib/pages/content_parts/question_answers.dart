@@ -438,13 +438,13 @@ Widget? _questionAnswersHeader(
   required ValueChanged<_QuestionAnswerSort> onSortChanged,
 }) {
   final title = question == null ? '' : titleOf(question);
-  final metrics = question == null
-      ? const ContentMetrics()
-      : ContentMetrics.from(question);
-  final presentation = question == null
+  final projection = question == null
       ? null
-      : _QuestionHeaderPresentation.from(question);
-  final topics = _questionTopics(question);
+      : (_questionHeaderProjectionCache[question] ??=
+            _QuestionHeaderProjection.from(question));
+  final metrics = projection?.metrics ?? const ContentMetrics();
+  final presentation = projection?.presentation;
+  final topics = projection?.topics ?? const <_QuestionTopic>[];
   final resolvedTitle = title.isNotEmpty ? title : fallbackTitle;
   final metricLabels = <String>[];
   if (metrics.followerCount case final count?) {

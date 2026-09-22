@@ -418,6 +418,29 @@ class _QuestionHeaderPresentation {
   bool get hasContent => summary != null || media.isNotEmpty;
 }
 
+final _questionHeaderProjectionCache = Expando<_QuestionHeaderProjection>(
+  'question-header-projection',
+);
+
+class _QuestionHeaderProjection {
+  const _QuestionHeaderProjection({
+    required this.metrics,
+    required this.presentation,
+    required this.topics,
+  });
+
+  factory _QuestionHeaderProjection.from(Map<String, dynamic> question) =>
+      _QuestionHeaderProjection(
+        metrics: ContentMetrics.from(question),
+        presentation: _QuestionHeaderPresentation.from(question),
+        topics: _questionTopics(question),
+      );
+
+  final ContentMetrics metrics;
+  final _QuestionHeaderPresentation presentation;
+  final List<_QuestionTopic> topics;
+}
+
 class _QuestionHeaderImage extends StatelessWidget {
   const _QuestionHeaderImage({required this.url});
 

@@ -301,6 +301,13 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
             warmupDelay: const Duration(milliseconds: 600),
           );
         }
+        // A refresh returns a new first page, but the rows already on screen
+        // are still useful history. Keep them after the fresh rows so a
+        // refresh does not make older recommendations disappear from the
+        // scrollable feed.
+        final previousRows = reset && refreshing
+            ? List<Map<String, dynamic>>.of(_rows)
+            : const <Map<String, dynamic>>[];
         setState(() {
           if (reset) {
             _rows.clear();
@@ -311,8 +318,17 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
           for (final row in incoming) {
             if (_seenRows.add(_rowKey(row))) _rows.add(row);
           }
+          if (reset && refreshing) {
+            for (final row in previousRows) {
+              if (_seenRows.add(_rowKey(row))) _rows.add(row);
+            }
+          }
           final candidate = pagingNext(response.json);
-          _next = candidate == _next ? null : candidate;
+          _next = reset && refreshing
+              ? candidate
+              : candidate == _next
+              ? null
+              : candidate;
           _loading = false;
           _refreshing = false;
         });

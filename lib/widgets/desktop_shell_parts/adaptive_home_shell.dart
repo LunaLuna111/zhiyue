@@ -38,6 +38,7 @@ class ZhAdaptiveHomeShell extends StatefulWidget {
 class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     with SingleTickerProviderStateMixin {
   static const _motionCurve = Cubic(.2, .9, .3, 1);
+  static const _drawerCornerRadius = 28.0;
   late final AnimationController _progress = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 360),
@@ -345,7 +346,14 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                         excluding: value == 0,
                         child: RepaintBoundary(
                           key: const ValueKey('push-drawer-repaint-boundary'),
-                          child: widget.drawer,
+                          child: ClipRRect(
+                            borderRadius: const BorderRadius.only(
+                              topRight: Radius.circular(_drawerCornerRadius),
+                              bottomRight: Radius.circular(_drawerCornerRadius),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: widget.drawer,
+                          ),
                         ),
                       ),
                     ),
@@ -366,7 +374,18 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                           shadowColor: Colors.black54,
                           borderRadius: BorderRadius.zero,
                           clipBehavior: Clip.none,
-                          child: mainScaffold,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(
+                                _drawerCornerRadius * value,
+                              ),
+                              bottomLeft: Radius.circular(
+                                _drawerCornerRadius * value,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: mainScaffold,
+                          ),
                         ),
                       ),
                     ),

@@ -72,7 +72,10 @@ class ZhAppDrawer extends StatelessWidget {
           color: ZhPalette.background,
           elevation: 0,
           surfaceTintColor: Colors.transparent,
-          clipBehavior: Clip.none,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.horizontal(right: Radius.circular(28)),
+          ),
+          clipBehavior: Clip.antiAlias,
           child: SafeArea(
             child: Column(
               children: [

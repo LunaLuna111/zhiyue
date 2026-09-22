@@ -392,16 +392,23 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
         ),
       );
     }
-    final richText = SelectableText.rich(
-      TextSpan(style: baseStyle, children: spans),
+    final span = TextSpan(style: baseStyle, children: spans);
+    final richText = _ZhSelectableHitRegion(
+      textSpan: span,
       textAlign: TextAlign.start,
-      contextMenuBuilder: (context, editableTextState) =>
-          _ZhihuSelectionToolbar(
-            state: editableTextState,
-            onCommentSelection: widget.onCommentSelection,
-            selectionContext: widget.selectionContext,
-            segmentIdsForRange: _segmentIdsForRange,
-          ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      child: SelectableText.rich(
+        span,
+        textAlign: TextAlign.start,
+        contextMenuBuilder: (context, editableTextState) =>
+            _ZhihuSelectionToolbar(
+              state: editableTextState,
+              onCommentSelection: widget.onCommentSelection,
+              selectionContext: widget.selectionContext,
+              segmentIdsForRange: _segmentIdsForRange,
+            ),
+      ),
     );
     if (isQuote) {
       return DecoratedBox(

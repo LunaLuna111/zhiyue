@@ -350,7 +350,10 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
       children: [
         RefreshIndicator(
           key: _refreshIndicatorKey,
-          edgeOffset: widget.topInset,
+          // The feed body is edge-to-edge under the floating four-channel
+          // track. Keep the pull-to-refresh affordance below that track so it
+          // is visible instead of being painted behind the selected tab.
+          edgeOffset: widget.topInset + ZhLiquidGlassTopNavigation.barHeight,
           displacement: 24,
           onRefresh: () => _load(reset: true, refreshing: true),
           child: _buildList(),

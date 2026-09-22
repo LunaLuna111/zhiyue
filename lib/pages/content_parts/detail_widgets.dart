@@ -119,23 +119,145 @@ class _ZhihuSelectableTextState extends State<_ZhihuSelectableText> {
         ? null
         : (TapGestureRecognizer()
             ..onTap = () => widget.onLink!(widget.linkUrl, widget.data));
-    return SelectableText.rich(
-      TextSpan(
-        text: widget.data,
-        style: widget.style?.merge(
-          widget.linkUrl.isEmpty
-              ? null
-              : const TextStyle(color: Color(0xFF175199)),
-        ),
-        recognizer: _recognizer,
+    final span = TextSpan(
+      text: widget.data,
+      style: (widget.style ?? DefaultTextStyle.of(context).style).merge(
+        widget.linkUrl.isEmpty
+            ? null
+            : const TextStyle(color: Color(0xFF175199)),
       ),
-      contextMenuBuilder: (context, editableTextState) =>
-          _ZhihuSelectionToolbar(
-            state: editableTextState,
-            onCommentSelection: widget.onCommentSelection,
-            selectionContext: widget.selectionContext,
-          ),
+      recognizer: _recognizer,
     );
+    return _ZhSelectableHitRegion(
+      textSpan: span,
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      child: SelectableText.rich(
+        span,
+        contextMenuBuilder: (context, editableTextState) =>
+            _ZhihuSelectionToolbar(
+              state: editableTextState,
+              onCommentSelection: widget.onCommentSelection,
+              selectionContext: widget.selectionContext,
+            ),
+      ),
+    );
+  }
+}
+
+/// Restricts SelectableText's gesture surface to actual glyph bounds.
+///
+/// SelectableText lays out a render box for the whole available line width.
+/// Without this gate, a long press in the empty trailing part of a paragraph
+/// still enters the selection arena and opens the toolbar. The child remains a
+/// normal SelectableText, so selection, links, semantics, and the platform
+/// context menu are unchanged once the initial pointer lands on a glyph.
+class _ZhSelectableHitRegion extends SingleChildRenderObjectWidget {
+  const _ZhSelectableHitRegion({
+    required this.textSpan,
+    required this.textDirection,
+    required this.textScaler,
+    required super.child,
+    this.textAlign = TextAlign.start,
+  });
+
+  final InlineSpan textSpan;
+  final TextAlign textAlign;
+  final TextDirection textDirection;
+  final TextScaler textScaler;
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderZhSelectableHitRegion(
+        textSpan: textSpan,
+        textAlign: textAlign,
+        textDirection: textDirection,
+        textScaler: textScaler,
+      );
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    covariant _RenderZhSelectableHitRegion renderObject,
+  ) {
+    renderObject
+      ..textSpan = textSpan
+      ..textAlign = textAlign
+      ..textDirection = textDirection
+      ..textScaler = textScaler;
+  }
+}
+
+class _RenderZhSelectableHitRegion extends RenderProxyBox {
+  _RenderZhSelectableHitRegion({
+    required InlineSpan textSpan,
+    required TextAlign textAlign,
+    required TextDirection textDirection,
+    required TextScaler textScaler,
+  }) : _textPainter = TextPainter(
+         text: textSpan,
+         textAlign: textAlign,
+         textDirection: textDirection,
+         textScaler: textScaler,
+       );
+
+  final TextPainter _textPainter;
+
+  set textSpan(InlineSpan value) {
+    if (_textPainter.text == value) return;
+    _textPainter.text = value;
+    markNeedsLayout();
+  }
+
+  set textAlign(TextAlign value) {
+    if (_textPainter.textAlign == value) return;
+    _textPainter.textAlign = value;
+    markNeedsLayout();
+  }
+
+  set textDirection(TextDirection value) {
+    if (_textPainter.textDirection == value) return;
+    _textPainter.textDirection = value;
+    markNeedsLayout();
+  }
+
+  set textScaler(TextScaler value) {
+    if (_textPainter.textScaler == value) return;
+    _textPainter.textScaler = value;
+    markNeedsLayout();
+  }
+
+  @override
+  void performLayout() {
+    super.performLayout();
+    _textPainter.layout(maxWidth: size.width);
+  }
+
+  @override
+  bool hitTestChildren(BoxHitTestResult result, {required Offset position}) {
+    if (!_isGlyphHit(position)) return false;
+    return super.hitTestChildren(result, position: position);
+  }
+
+  bool _isGlyphHit(Offset position) {
+    if (!size.contains(position)) return false;
+    final plainText = _textPainter.text?.toPlainText() ?? '';
+    if (plainText.isEmpty) return false;
+
+    final positionInText = _textPainter.getPositionForOffset(position);
+    final candidates = <int>{positionInText.offset, positionInText.offset - 1};
+    for (final offset in candidates) {
+      if (offset < 0 || offset >= plainText.length) continue;
+      final character = String.fromCharCode(plainText.codeUnitAt(offset));
+      if (character.trim().isEmpty) continue;
+      final boxes = _textPainter.getBoxesForSelection(
+        TextSelection(baseOffset: offset, extentOffset: offset + 1),
+      );
+      if (boxes.any((box) => box.toRect().inflate(2).contains(position))) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

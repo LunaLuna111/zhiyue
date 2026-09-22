@@ -401,12 +401,9 @@ class _CommentThreadViewState extends State<CommentThreadView> {
       // retiring IME as a downward drag and dismisses the editor instead of
       // letting the pending panel state finish.
       enableDrag: false,
-      // While the IME is being replaced, the editor surface moves with the
-      // insets. The original pointer can therefore finish outside the moved
-      // surface; a dismissible barrier would treat that finish as an outside
-      // tap and pop the editor before the emoji panel is shown. Back still
-      // dismisses the route, while toolbar transitions remain stable.
-      isDismissible: false,
+      // Let a tap on the dimmed page close the editor; toolbar interactions
+      // begin inside the sheet and keep their existing pointer-down handling.
+      isDismissible: true,
       showDragHandle: false,
       requestFocus: !showEmoticons,
       backgroundColor: Colors.transparent,

@@ -270,22 +270,18 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
       index: widget.selectedIndex,
       children: widget.pages,
     );
-    final homeScaffold = ZhGlassScope.enabledOf(context)
-        ? GlassScaffold(
-            backgroundColor: ZhPalette.background,
-            edgeFade: true,
-            bottomEdgeFadeExtent: 12,
-            extendBody: true,
-            resizeToAvoidBottomInset: false,
-            body: body,
-            bottomBar: navigation,
-          )
-        : Scaffold(
-            backgroundColor: ZhPalette.background,
-            resizeToAvoidBottomInset: false,
-            body: body,
-            bottomNavigationBar: navigation,
-          );
+    // Keep the package-owned edge fade in both visual modes. The plain mode
+    // removes refraction from the controls, not the iOS 26 content dissolve
+    // around the top and bottom chrome.
+    final homeScaffold = GlassScaffold(
+      backgroundColor: ZhPalette.background,
+      edgeFade: true,
+      bottomEdgeFadeExtent: 12,
+      extendBody: true,
+      resizeToAvoidBottomInset: false,
+      body: body,
+      bottomBar: navigation,
+    );
     final mainScaffold = _KeyboardStableHome(
       child: Scaffold(
         key: widget.scaffoldKey,

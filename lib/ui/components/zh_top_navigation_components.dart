@@ -1207,7 +1207,7 @@ class ZhLiquidGlassAppBar extends StatelessWidget
   @override
   Widget build(BuildContext context) {
     if (!ZhGlassScope.enabledOf(context)) {
-      return AppBar(
+      final appBar = AppBar(
         title: title,
         leading: leading == null
             ? null
@@ -1232,6 +1232,14 @@ class ZhLiquidGlassAppBar extends StatelessWidget
         elevation: 0,
         scrolledUnderElevation: 0,
         shadowColor: Colors.transparent,
+      );
+      return Stack(
+        fit: StackFit.passthrough,
+        clipBehavior: Clip.none,
+        children: [
+          const Positioned.fill(child: ZhProgressiveGlassBackdrop()),
+          appBar,
+        ],
       );
     }
     final appBar = GlassAppBar(
@@ -1266,11 +1274,6 @@ class ZhProgressiveGlassBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!ZhGlassScope.enabledOf(context)) {
-      return const IgnorePointer(
-        child: ColoredBox(color: ZhPalette.background),
-      );
-    }
     return LayoutBuilder(
       builder: (context, constraints) {
         final fadeHeight = constraints.maxHeight.isFinite

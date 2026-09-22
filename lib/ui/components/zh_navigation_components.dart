@@ -319,10 +319,10 @@ class _ZhPlainBottomNavigation extends StatelessWidget
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
       child: Material(
-        color: ZhPalette.background,
+        color: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(32),
-          side: const BorderSide(color: ZhPalette.border),
+          side: BorderSide(color: ZhPalette.border.withValues(alpha: .82)),
         ),
         clipBehavior: Clip.antiAlias,
         child: SizedBox(
@@ -621,10 +621,10 @@ class _ZhPlainFloatingActionBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final safeIndex = selectedIndex.clamp(0, items.length - 1).toInt();
     return Material(
-      color: ZhPalette.background,
+      color: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(24),
-        side: const BorderSide(color: ZhPalette.border),
+        side: BorderSide(color: ZhPalette.border.withValues(alpha: .82)),
       ),
       clipBehavior: Clip.antiAlias,
       child: SizedBox(

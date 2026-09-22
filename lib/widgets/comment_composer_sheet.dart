@@ -681,7 +681,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     // The official editor uses a compact 164dp bottom surface and grows only
     // when its own emoticon panel is visible. It is not a second titled page.
     final collapsedHeight =
-        (_compactComposer ? (_expandedComposer ? 200.0 : 168.0) : 164.0) +
+        (_compactComposer ? (_expandedComposer ? 202.0 : 170.0) : 164.0) +
         (_selectedSticker == null ? 0 : 48) +
         (_image == null ? 0 : 64) +
         (_error.isEmpty ? 0 : 36);
@@ -696,14 +696,28 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       enabled: !_showEmoticons,
       child: Material(
         key: const Key('comment-composer-surface'),
-        color: ZhPalette.background,
-        clipBehavior: Clip.antiAlias,
+        color: Colors.transparent,
+        clipBehavior: Clip.none,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
         ),
         child: Container(
           height: targetHeight,
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, ZhSpace.xs),
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, ZhSpace.xs),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF4F5F7),
+            borderRadius: BorderRadius.circular(32),
+            border: Border.all(color: const Color(0xFFE2E5E9)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x22000000),
+                blurRadius: 24,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -714,53 +728,48 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   onToggleExpanded: () =>
                       setState(() => _expandedComposer = !_expandedComposer),
                 ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F6F8),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: const Color(0xFFE6E8EC)),
-                ),
-                child: SizedBox(
-                  height: _compactComposer
-                      ? (_expandedComposer ? 84.0 : 52.0)
-                      : 104.0,
-                  child: TextField(
-                    key: const Key('comment-composer-field'),
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    autofocus: !_showEmoticons && !_pendingEmoticons,
-                    expands: true,
-                    minLines: null,
-                    maxLines: null,
-                    maxLength: widget.maxLength,
-                    textInputAction: TextInputAction.newline,
-                    style: const TextStyle(
-                      color: Color(0xFF191B1F),
-                      fontSize: 15,
-                      height: 1.45,
+              SizedBox(
+                height: _compactComposer
+                    ? (_expandedComposer ? 84.0 : 52.0)
+                    : 104.0,
+                child: TextField(
+                  key: const Key('comment-composer-field'),
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  autofocus: !_showEmoticons && !_pendingEmoticons,
+                  expands: true,
+                  minLines: null,
+                  maxLines: null,
+                  maxLength: widget.maxLength,
+                  textInputAction: TextInputAction.newline,
+                  style: const TextStyle(
+                    color: Color(0xFF191B1F),
+                    fontSize: 15,
+                    height: 1.45,
+                  ),
+                  onTapOutside: (_) {},
+                  onTap: () {
+                    _pendingEmoticons = false;
+                    if (_showEmoticons) {
+                      setState(() => _showEmoticons = false);
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (mounted) _focusNode.requestFocus();
+                      });
+                    }
+                  },
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.transparent,
+                    hintText: replyHint.isEmpty ? '理性发言，友善互动' : replyHint,
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF9196A1),
+                      fontSize: 17,
                     ),
-                    onTapOutside: (_) {},
-                    onTap: () {
-                      _pendingEmoticons = false;
-                      if (_showEmoticons) {
-                        setState(() => _showEmoticons = false);
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) _focusNode.requestFocus();
-                        });
-                      }
-                    },
-                    decoration: InputDecoration(
-                      hintText: replyHint.isEmpty ? '理性发言，友善互动' : replyHint,
-                      hintStyle: const TextStyle(
-                        color: Color(0xFF9196A1),
-                        fontSize: 15,
-                      ),
-                      counterText: '',
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                    ),
+                    counterText: '',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    contentPadding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
                   ),
                 ),
               ),

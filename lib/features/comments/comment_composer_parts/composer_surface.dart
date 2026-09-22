@@ -92,14 +92,14 @@ class _ComposerToolbar extends StatelessWidget {
               backgroundColor: const Color(0xFF1772F6),
               disabledForegroundColor: Colors.white,
               disabledBackgroundColor: const Color(0xFFC9DCF8),
-              minimumSize: const Size(64, 30),
-              padding: const EdgeInsets.symmetric(horizontal: 13),
+              minimumSize: const Size(96, 42),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               shape: const StadiumBorder(),
             ),
             child: Text(
               sending ? '发布中' : submitLabel,
-              style: const TextStyle(fontSize: 15, height: 1),
+              style: const TextStyle(fontSize: 17, height: 1),
             ),
           ),
         ),
@@ -126,11 +126,11 @@ class _ComposerHeader extends StatelessWidget {
     child: Row(
       children: [
         const CircleAvatar(
-          radius: 16,
+          radius: 20,
           backgroundColor: Color(0xFFE8EDF2),
           child: Icon(
             Icons.person_outline_rounded,
-            size: 20,
+            size: 24,
             color: Color(0xFF65717D),
           ),
         ),
@@ -142,7 +142,7 @@ class _ComposerHeader extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(
               color: Color(0xFF25282D),
-              fontSize: 16,
+              fontSize: 19,
               fontWeight: FontWeight.w700,
               height: 1.2,
             ),

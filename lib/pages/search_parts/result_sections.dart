@@ -1,5 +1,41 @@
 part of '../search_page.dart';
 
+final _searchHotTimingItemStaticDataCache =
+    Expando<_SearchHotTimingItemStaticData>(
+      'search-hot-timing-item-static-data',
+    );
+
+class _SearchHotTimingItemStaticData {
+  const _SearchHotTimingItemStaticData({
+    required this.title,
+    required this.author,
+    required this.excerpt,
+    required this.metrics,
+    required this.date,
+    required this.image,
+  });
+
+  factory _SearchHotTimingItemStaticData.from(Map<String, dynamic> value) {
+    final metrics = ContentMetrics.from(value);
+    final images = contentImageUrlsOf(value, limit: 1);
+    return _SearchHotTimingItemStaticData(
+      title: titleOf(value),
+      author: authorNameOf(value),
+      excerpt: subtitleOf(value),
+      metrics: metrics,
+      date: contentDateLabel(metrics),
+      image: images.isEmpty ? null : images.first,
+    );
+  }
+
+  final String title;
+  final String author;
+  final String excerpt;
+  final ContentMetrics metrics;
+  final String date;
+  final String? image;
+}
+
 class _SearchHotTimingCard extends StatelessWidget {
   const _SearchHotTimingCard({
     required this.value,
@@ -156,13 +192,14 @@ class _SearchHotTimingItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = titleOf(value);
-    final author = authorNameOf(value);
-    final excerpt = subtitleOf(value);
-    final metrics = ContentMetrics.from(value);
-    final date = contentDateLabel(metrics);
-    final images = contentImageUrlsOf(value, limit: 1);
-    final image = images.isEmpty ? null : images.first;
+    final data = _searchHotTimingItemStaticDataCache[value] ??=
+        _SearchHotTimingItemStaticData.from(value);
+    final title = data.title;
+    final author = data.author;
+    final excerpt = data.excerpt;
+    final metrics = data.metrics;
+    final date = data.date;
+    final image = data.image;
     return InkWell(
       onTap: onTap,
       child: Padding(

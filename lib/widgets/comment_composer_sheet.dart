@@ -681,7 +681,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     // The official editor uses a compact 164dp bottom surface and grows only
     // when its own emoticon panel is visible. It is not a second titled page.
     final collapsedHeight =
-        (_compactComposer ? (_expandedComposer ? 190.0 : 166.0) : 164.0) +
+        (_compactComposer ? (_expandedComposer ? 156.0 : 148.0) : 164.0) +
         (_selectedSticker == null ? 0 : 48) +
         (_image == null ? 0 : 64) +
         (_error.isEmpty ? 0 : 36);
@@ -703,10 +703,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         ),
         child: Container(
           height: targetHeight,
-          margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, ZhSpace.xs),
+          margin: const EdgeInsets.fromLTRB(2, 0, 2, 2),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, ZhSpace.xs),
           decoration: BoxDecoration(
-            color: const Color(0xFFF4F5F7),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(32),
             border: Border.all(color: const Color(0xFFE2E5E9)),
             boxShadow: const [
@@ -725,12 +725,13 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                 _ComposerHeader(
                   title: _composerTitle,
                   expanded: _expandedComposer,
+                  onMention: _mention,
                   onToggleExpanded: () =>
                       setState(() => _expandedComposer = !_expandedComposer),
                 ),
               SizedBox(
                 height: _compactComposer
-                    ? (_expandedComposer ? 76.0 : 52.0)
+                    ? (_expandedComposer ? 52.0 : 44.0)
                     : 104.0,
                 child: TextField(
                   key: const Key('comment-composer-field'),
@@ -799,12 +800,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: _ComposerToolbar(
-                  showEmoticons: _showEmoticons,
                   canSubmit: _canSubmit,
                   sending: _sending,
                   submitLabel: _submitLabel,
                   onEmoticons: _toggleEmoticons,
-                  onMention: _mention,
                   onImage: widget.enableImage ? _pickImage : null,
                   onGift: widget.enableGift ? _openGiftPanel : null,
                   onSubmit: _submit,

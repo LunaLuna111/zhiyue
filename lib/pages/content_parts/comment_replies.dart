@@ -262,7 +262,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
       pinResponseHeader: true,
       bottomNavigationBar: _OfficialCommentEditorBar(
         enabled: true,
-        hint: rootName.isEmpty ? '写回复…' : '回复 @$rootName',
+        title: '发布你的回复',
         onTap: () => _reply(
           widget.commentId,
           rootName,
@@ -376,81 +376,129 @@ class _OfficialCommentEditorBar extends StatelessWidget {
     required this.enabled,
     required this.onTap,
     required this.onEmoticon,
-    this.hint = '理性发言，友善互动',
+    this.title = '理性发言，友善互动',
   });
 
   final bool enabled;
+  final String title;
   final VoidCallback onTap;
   final VoidCallback onEmoticon;
-  final String hint;
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
     key: const Key('official-comment-editor-bar'),
     decoration: const BoxDecoration(color: Color(0xFFFFFFFF)),
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(16, 7, 16, 8),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 18,
-            backgroundColor: Color(0xFFF0F2F5),
-            child: Icon(
-              Icons.person_rounded,
-              size: 22,
-              color: Color(0xFF9196A1),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Material(
-              color: const Color(0xFFF4F5F7),
-              shape: const StadiumBorder(),
-              child: InkWell(
-                key: const Key('comment-editor-entry'),
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(28),
-                child: SizedBox(
-                  height: 46,
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            enabled ? hint : '暂时无法发表评论',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: Color(0xFF9196A1),
-                              fontSize: 15,
-                            ),
-                          ),
-                        ),
-                        Semantics(
-                          button: true,
-                          label: '表情',
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: onEmoticon,
-                            child: const Padding(
-                              padding: EdgeInsets.all(8),
-                              child: Icon(
-                                Icons.sentiment_satisfied_alt_outlined,
-                                size: 21,
-                                color: Color(0xFF81858F),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      child: Material(
+        color: enabled ? const Color(0xFFF1F2F4) : const Color(0xFFF6F6F7),
+        shape: const StadiumBorder(),
+        elevation: 0,
+        child: InkWell(
+          key: const Key('comment-editor-entry'),
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(32),
+          child: SizedBox(
+            height: 58,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Color(0xFFE0E5EA),
+                    child: Icon(
+                      Icons.person_rounded,
+                      size: 23,
+                      color: Color(0xFF68737E),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      enabled ? title : '暂时无法发表评论',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF66717C),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  _EditorBarAction(
+                    label: '图片',
+                    icon: Icons.image_outlined,
+                    onTap: enabled ? onTap : null,
+                  ),
+                  _EditorBarAction(
+                    label: 'GIF',
+                    gif: true,
+                    onTap: enabled ? onEmoticon : null,
+                  ),
+                  _EditorBarAction(
+                    label: '展开编辑器',
+                    icon: Icons.open_in_full_rounded,
+                    onTap: enabled ? onTap : null,
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _EditorBarAction extends StatelessWidget {
+  const _EditorBarAction({
+    required this.label,
+    required this.onTap,
+    this.icon,
+    this.gif = false,
+  });
+
+  final String label;
+  final VoidCallback? onTap;
+  final IconData? icon;
+  final bool gif;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    enabled: onTap != null,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: SizedBox(
+        width: 48,
+        height: 58,
+        child: Center(
+          child: gif
+              ? Container(
+                  width: 30,
+                  height: 24,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: const Color(0xFF68737E),
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'GIF',
+                    style: TextStyle(
+                      color: Color(0xFF68737E),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                )
+              : Icon(icon, size: 26, color: const Color(0xFF68737E)),
+        ),
       ),
     ),
   );

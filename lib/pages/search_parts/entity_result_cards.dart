@@ -127,6 +127,46 @@ List<String> _searchEntityMetricsOf(Map<String, dynamic> value) {
   return items.take(2).toList(growable: false);
 }
 
+final _searchEntityStaticDataCache = Expando<_SearchEntityStaticData>(
+  'search-entity-static-data',
+);
+
+class _SearchEntityStaticData {
+  const _SearchEntityStaticData({
+    required this.type,
+    required this.image,
+    required this.title,
+    required this.subtitle,
+    required this.description,
+    required this.metrics,
+    required this.date,
+    required this.typeLabel,
+  });
+
+  factory _SearchEntityStaticData.from(Map<String, dynamic> value) {
+    final metrics = ContentMetrics.from(value);
+    return _SearchEntityStaticData(
+      type: typeOf(value).replaceAll('search_', ''),
+      image: _searchEntityImageOf(value),
+      title: titleOf(value),
+      subtitle: _searchEntitySubtitleOf(value),
+      description: subtitleOf(value),
+      metrics: _searchEntityMetricsOf(value),
+      date: contentDateLabel(metrics),
+      typeLabel: contentKindLabelOf(value),
+    );
+  }
+
+  final String type;
+  final String image;
+  final String title;
+  final String subtitle;
+  final String description;
+  final List<String> metrics;
+  final String date;
+  final String typeLabel;
+}
+
 class _SearchEntityResultRow extends StatelessWidget {
   const _SearchEntityResultRow({
     required this.value,
@@ -140,13 +180,15 @@ class _SearchEntityResultRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final type = typeOf(value).replaceAll('search_', '');
-    final image = _searchEntityImageOf(value);
-    final title = titleOf(value);
-    final subtitle = _searchEntitySubtitleOf(value);
-    final description = subtitleOf(value);
-    final metrics = _searchEntityMetricsOf(value);
-    final date = contentDateLabel(ContentMetrics.from(value));
+    final data = _searchEntityStaticDataCache[value] ??=
+        _SearchEntityStaticData.from(value);
+    final type = data.type;
+    final image = data.image;
+    final title = data.title;
+    final subtitle = data.subtitle;
+    final description = data.description;
+    final metrics = data.metrics;
+    final date = data.date;
     final circular = type == 'people' || type == 'member' || type == 'topic';
     return Material(
       color: ZhPalette.background,
@@ -202,7 +244,7 @@ class _SearchEntityResultRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          contentKindLabelOf(value),
+                          data.typeLabel,
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(color: ZhPalette.subtleInk),
                         ),

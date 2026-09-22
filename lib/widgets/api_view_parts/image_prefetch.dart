@@ -20,6 +20,7 @@ VoidCallback prefetchObjectImages(
   bool includeAvatars = true,
   bool deferUntilPostFrame = true,
   Duration warmupDelay = const Duration(milliseconds: 300),
+  bool retainDecodedFrames = false,
 }) {
   // A refresh or account-scope change can schedule a newer warm-up before the
   // previous delay expires. Keep only the latest queue for a page context so
@@ -92,6 +93,7 @@ VoidCallback prefetchObjectImages(
       context,
       candidates.values.take(limit).toList(growable: false),
       concurrency: concurrency,
+      retainDecodedFrames: retainDecodedFrames,
     ).ignore();
   }
 
@@ -137,6 +139,28 @@ final _scheduledImageWarmups = Expando<_ImageWarmupJob>(
   'scheduled-image-warmups',
 );
 final _activeImageWarmups = <String>{};
+final _retainedImageFrames = <_RetainedImageFrame>[];
+
+class _RetainedImageFrame {
+  const _RetainedImageFrame(this.key, this.handle);
+
+  final String key;
+  final ImageStreamCompleterHandle handle;
+}
+
+void _retainDecodedImageFrame(String key, ImageStreamCompleter? completer) {
+  if (completer == null ||
+      _retainedImageFrames.any((entry) => entry.key == key)) {
+    return;
+  }
+  _retainedImageFrames.add(_RetainedImageFrame(key, completer.keepAlive()));
+  // The feed only needs a small return window. Keeping this bounded prevents
+  // visiting many detail pages from turning the image warm-up into an
+  // unbounded decoded-frame cache.
+  while (_retainedImageFrames.length > 24) {
+    _retainedImageFrames.removeAt(0).handle.dispose();
+  }
+}
 
 class _ImageWarmupGate {
   static const _maxActive = 2;
@@ -182,6 +206,7 @@ Future<void> _warmImages(
   BuildContext context,
   List<_ImageWarmupCandidate> candidates, {
   required int concurrency,
+  required bool retainDecodedFrames,
 }) async {
   if (candidates.isEmpty || !context.mounted) return;
   // Capture inherited image settings while the owning element is known to be
@@ -217,6 +242,12 @@ Future<void> _warmImages(
             status?.live != true) {
           if (!context.mounted) return;
           await precacheImage(provider, context);
+        }
+        if (retainDecodedFrames && context.mounted) {
+          _retainDecodedImageFrame(
+            warmupKey,
+            provider.resolve(configuration).completer,
+          );
         }
       } catch (_) {
         // The card's errorBuilder owns user-visible failure state. A failed

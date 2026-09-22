@@ -158,6 +158,24 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
     if (_scrollController.position.extentAfter < 620) _load(reset: false);
   }
 
+  void _warmRowBeforeOpen(Map<String, dynamic> row) {
+    if (!widget.showImages || !widget.api.session.prefetchImages) return;
+    // The card is still on screen while the detail route is pushed. Retain its
+    // decoded frame before that route starts decoding large body images, so a
+    // later pop can reuse the exact feed-sized bitmap without a blank flash.
+    _cancelImageWarmup = prefetchObjectImages(
+      context,
+      [row],
+      limit: 4,
+      concurrency: 1,
+      cacheFeedPresentation: true,
+      includeAvatars: false,
+      deferUntilPostFrame: false,
+      warmupDelay: Duration.zero,
+      retainDecodedFrames: true,
+    );
+  }
+
   Future<void> _returnToTopAndRefresh() async {
     if (_loading) return;
     final isRequestScopeCurrent = widget.isRequestScopeCurrent;
@@ -285,7 +303,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
           mode: widget.recommendationMode,
           localSignals: _localRecommendationSignals,
         );
-        if (reset && widget.api.session.prefetchImages && widget.showImages) {
+        if (widget.api.session.prefetchImages && widget.showImages) {
           _cancelImageWarmup = prefetchObjectImages(
             context,
             incoming,
@@ -299,6 +317,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
             cacheFeedPresentation: true,
             includeAvatars: false,
             warmupDelay: const Duration(milliseconds: 600),
+            retainDecodedFrames: true,
           );
         }
         // A refresh returns a new first page, but the rows already on screen
@@ -468,8 +487,10 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
               onExpand: () {
                 setState(() => _expandedFollowGroups.add(groupKey));
               },
-              onChildTap: (child) =>
-                  openDetectedObject(context, widget.api, child),
+              onChildTap: (child) {
+                _warmRowBeforeOpen(child);
+                openDetectedObject(context, widget.api, child);
+              },
               onChildAuthorTap: (child) =>
                   openContentAuthor(context, widget.api, child),
             );
@@ -495,7 +516,10 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
               HomeFeedChannel.hot => FeedCardPresentation.hot,
               _ => FeedCardPresentation.generic,
             },
-            onTap: () => openDetectedObject(context, widget.api, row),
+            onTap: () {
+              _warmRowBeforeOpen(row);
+              openDetectedObject(context, widget.api, row);
+            },
             onAuthorTap: authorIdOf(row).isEmpty
                 ? null
                 : () => openContentAuthor(context, widget.api, row),

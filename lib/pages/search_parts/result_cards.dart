@@ -66,6 +66,7 @@ class _SearchResultTab extends StatefulWidget {
     required this.contentTopPadding,
     required this.onOpenRecent,
     required this.onOpenType,
+    required this.onScrollOffsetChanged,
     this.isActive = true,
     this.filters = const {},
   });
@@ -76,6 +77,7 @@ class _SearchResultTab extends StatefulWidget {
   final double contentTopPadding;
   final VoidCallback onOpenRecent;
   final ValueChanged<String> onOpenType;
+  final ValueChanged<double> onScrollOffsetChanged;
   final bool isActive;
   final Map<String, String> filters;
 
@@ -99,7 +101,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
   void initState() {
     super.initState();
     _searchId = ZhihuApiClient.newSearchId();
-    _scroll.addListener(_maybeLoadMore);
+    _scroll.addListener(_onScroll);
     if (widget.isActive) _load(reset: true);
   }
 
@@ -109,15 +111,28 @@ class _SearchResultTabState extends State<_SearchResultTab> {
     if (!oldWidget.isActive && widget.isActive && _rows.isEmpty && !_loading) {
       _load(reset: true);
     }
+    if (!oldWidget.isActive && widget.isActive) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onScrollOffsetChanged(_scroll.hasClients ? _scroll.offset : 0);
+      });
+    }
   }
 
   @override
   void dispose() {
     _cancelImageWarmup?.call();
     _scroll
-      ..removeListener(_maybeLoadMore)
+      ..removeListener(_onScroll)
       ..dispose();
     super.dispose();
+  }
+
+  void _onScroll() {
+    if (widget.isActive) {
+      widget.onScrollOffsetChanged(_scroll.hasClients ? _scroll.offset : 0);
+    }
+    _maybeLoadMore();
   }
 
   void _maybeLoadMore() {
@@ -387,6 +402,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       return RefreshIndicator(
         onRefresh: () => _load(reset: true),
         child: ListView(
+          controller: _scroll,
           padding: EdgeInsets.only(top: widget.contentTopPadding),
           physics: const AlwaysScrollableScrollPhysics(),
           children: [

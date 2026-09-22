@@ -93,6 +93,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
   Object? _error;
   String? _next;
   bool _loading = false;
+  VoidCallback? _cancelImageWarmup;
 
   @override
   void initState() {
@@ -112,6 +113,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
 
   @override
   void dispose() {
+    _cancelImageWarmup?.call();
     _scroll
       ..removeListener(_maybeLoadMore)
       ..dispose();
@@ -242,7 +244,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         // Search tabs can change rapidly. Warm only the first visible images
         // with a small worker pool so decoding cannot compete with IME or tab
         // transition frames.
-        prefetchObjectImages(
+        _cancelImageWarmup = prefetchObjectImages(
           context,
           incoming,
           limit: 6,

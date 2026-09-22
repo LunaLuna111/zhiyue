@@ -64,6 +64,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
   bool _loading = false;
   bool _refreshing = false;
   bool _programmaticRefreshing = false;
+  VoidCallback? _cancelImageWarmup;
   String? _next;
   bool _consumedInitialResponse = false;
   String _followingFilter = _followingChoice;
@@ -120,6 +121,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
 
   @override
   void dispose() {
+    _cancelImageWarmup?.call();
     _scrollController
       ..removeListener(_handleScroll)
       ..dispose();
@@ -284,7 +286,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
           localSignals: _localRecommendationSignals,
         );
         if (reset && widget.api.session.prefetchImages && widget.showImages) {
-          prefetchObjectImages(
+          _cancelImageWarmup = prefetchObjectImages(
             context,
             incoming,
             // Warming dozens of 960px decodes competes directly with the

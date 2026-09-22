@@ -37,6 +37,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
   bool _loading = false;
   bool _refreshing = false;
   bool _programmaticRefreshing = false;
+  VoidCallback? _cancelImageWarmup;
   bool _consumedInitialResponse = false;
 
   @override
@@ -67,6 +68,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
 
   @override
   void dispose() {
+    _cancelImageWarmup?.call();
     _scrollController
       ..removeListener(_maybeLoadMore)
       ..dispose();
@@ -143,7 +145,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
         final modules = extractSaltStoryModules(response.json);
         if (widget.api.session.prefetchImages &&
             widget.api.session.showFeedImages) {
-          prefetchObjectImages(
+          _cancelImageWarmup = prefetchObjectImages(
             context,
             extractSaltStoryRows(response.json),
             // Story covers are still image-bearing, but warming a whole

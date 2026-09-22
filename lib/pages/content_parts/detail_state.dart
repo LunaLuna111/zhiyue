@@ -9,6 +9,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   final _answerOverscrollNotifier = ValueNotifier<double>(0);
   late final AnimationController _answerOverscrollResetAnimation;
   final _relatedAnswers = <Map<String, dynamic>>[];
+  VoidCallback? _cancelImageWarmup;
   Map<String, dynamic>? _document;
   Map<String, dynamic>? _initialSemantic;
   Map<String, dynamic>? _bodyProjectionSource;
@@ -65,6 +66,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
 
   @override
   void dispose() {
+    _cancelImageWarmup?.call();
     _answerOverscrollResetAnimation.dispose();
     _answerOverscrollNotifier.dispose();
     _scrollController
@@ -427,7 +429,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       if (firstPage &&
           widget.api.session.prefetchImages &&
           incoming.isNotEmpty) {
-        prefetchObjectImages(
+        _cancelImageWarmup = prefetchObjectImages(
           context,
           incoming,
           limit: 8,
@@ -485,7 +487,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       if (_readableLength(merged) <= _readableLength(current)) return;
       setState(() => _relatedAnswers[index] = merged);
       if (widget.api.session.prefetchImages) {
-        prefetchObjectImages(
+        _cancelImageWarmup = prefetchObjectImages(
           context,
           [merged],
           limit: 4,

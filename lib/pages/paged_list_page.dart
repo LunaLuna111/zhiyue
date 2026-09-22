@@ -86,6 +86,7 @@ class _PagedListPageState extends State<PagedListPage> {
   bool _initialLoadComplete = false;
   String? _next;
   Map<String, dynamic>? _responseRoot;
+  VoidCallback? _cancelImageWarmup;
 
   @override
   void initState() {
@@ -96,6 +97,7 @@ class _PagedListPageState extends State<PagedListPage> {
 
   @override
   void dispose() {
+    _cancelImageWarmup?.call();
     _scrollController
       ..removeListener(_maybeLoadMore)
       ..dispose();
@@ -162,7 +164,7 @@ class _PagedListPageState extends State<PagedListPage> {
             widget.rowsExtractor?.call(response.json) ??
             extractRows(response.json);
         if (widget.api.session.prefetchImages) {
-          prefetchObjectImages(
+          _cancelImageWarmup = prefetchObjectImages(
             context,
             incoming,
             limit: 8,

@@ -6,7 +6,7 @@ enum ContentCardAction { vote, downvote, favorite, comments }
 /// Matching the card's decode dimensions lets Flutter reuse the warmed image
 /// instead of decoding the original asset and then a resized copy. A small
 /// worker pool avoids both serial loading and a 20+ request burst.
-void prefetchObjectImages(
+VoidCallback prefetchObjectImages(
   BuildContext context,
   Iterable<Map<String, dynamic>> rows, {
   int limit = 12,
@@ -25,7 +25,15 @@ void prefetchObjectImages(
   // previous delay expires. Keep only the latest queue for a page context so
   // stale candidates cannot decode during the next fling.
   _scheduledImageWarmups[context]?.cancel();
-  _scheduledImageWarmups[context] = null;
+  final job = _ImageWarmupJob();
+  _scheduledImageWarmups[context] = job;
+  void cancel() {
+    job.cancel();
+    if (identical(_scheduledImageWarmups[context], job)) {
+      _scheduledImageWarmups[context] = null;
+    }
+  }
+
   final candidates = <String, _ImageWarmupCandidate>{};
   void addCandidate(_ImageWarmupCandidate candidate) {
     candidates.putIfAbsent(candidate.url, () => candidate);
@@ -77,9 +85,9 @@ void prefetchObjectImages(
       }
     }
   }
-  if (candidates.isEmpty) return;
+  if (candidates.isEmpty) return cancel;
   void startWarmup() {
-    if (!context.mounted) return;
+    if (job.cancelled || !context.mounted) return;
     _warmImages(
       context,
       candidates.values.take(limit).toList(growable: false),
@@ -88,31 +96,46 @@ void prefetchObjectImages(
   }
 
   void scheduleWarmup() {
+    if (job.cancelled || !context.mounted) return;
     if (warmupDelay <= Duration.zero) {
       startWarmup();
     } else {
       // Let the first layout and gesture frame win. Image decode is
       // asynchronous, but completion still schedules raster work; starting
       // it on the same frame as a first fling causes a visible hitch.
-      late final Timer timer;
-      timer = Timer(warmupDelay, () {
-        if (identical(_scheduledImageWarmups[context], timer)) {
+      job.timer = Timer(warmupDelay, () {
+        if (identical(_scheduledImageWarmups[context], job)) {
           _scheduledImageWarmups[context] = null;
         }
         startWarmup();
       });
-      _scheduledImageWarmups[context] = timer;
     }
   }
 
   if (deferUntilPostFrame) {
-    WidgetsBinding.instance.addPostFrameCallback((_) => scheduleWarmup());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!job.cancelled) scheduleWarmup();
+    });
   } else {
     scheduleWarmup();
   }
+  return cancel;
 }
 
-final _scheduledImageWarmups = Expando<Timer>('scheduled-image-warmups');
+class _ImageWarmupJob {
+  Timer? timer;
+  bool cancelled = false;
+
+  void cancel() {
+    cancelled = true;
+    timer?.cancel();
+    timer = null;
+  }
+}
+
+final _scheduledImageWarmups = Expando<_ImageWarmupJob>(
+  'scheduled-image-warmups',
+);
 final _activeImageWarmups = <String>{};
 
 class _ImageWarmupGate {

@@ -1255,27 +1255,14 @@ class ZhLiquidGlassAppBar extends StatelessWidget
   }
 }
 
-/// Shared translucent chrome for app bars that float above scrolling content.
+/// Shared edge fade for app bars that float above scrolling content.
 ///
-/// The lower edge remains nearly clear while the upper edge gains a gentle
-/// progressive blur. This lets the scrolling content dissolve naturally into
-/// the toolbar without creating a hard divider or hiding the text below it.
+/// The fade deliberately delegates to the same `soft` edge effect that
+/// `GlassScaffold` uses above the bottom tab bar. Keeping one implementation
+/// for both edges gives the top chrome the same white, diffused iOS 26 finish
+/// instead of introducing a second blue-tinted blur treatment.
 class ZhProgressiveGlassBackdrop extends StatelessWidget {
-  const ZhProgressiveGlassBackdrop({super.key, this.gradient});
-
-  static const _defaultGradient = LinearGradient(
-    begin: Alignment.topCenter,
-    end: Alignment.bottomCenter,
-    stops: [0, .28, .68, 1],
-    colors: [
-      Color(0xD8D7E8FF),
-      Color(0x70EAF6FF),
-      Color(0x20F7FCFF),
-      Color(0x00FFFFFF),
-    ],
-  );
-
-  final Gradient? gradient;
+  const ZhProgressiveGlassBackdrop({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -1284,25 +1271,23 @@ class ZhProgressiveGlassBackdrop extends StatelessWidget {
         child: ColoredBox(color: ZhPalette.background),
       );
     }
-    return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const ProgressiveBlur(
-            // A smaller radius keeps the progressive glass dissolve while
-            // reducing background samples during list and route motion.
-            maxSigma: 4,
-            // The lower edge should dissolve into the page while the upper
-            // edge carries the strongest blur, matching the iOS 26 toolbar
-            // gradient.
-            direction: ProgressiveBlurDirection.topToBottom,
-            falloff: 1.8,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final fadeHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : 96.0;
+        return IgnorePointer(
+          child: GlassScrollEdgeEffect(
+            topFadeHeight: fadeHeight,
+            bottomFadeHeight: 0,
+            fadeTop: true,
+            fadeBottom: false,
+            style: GlassScrollEdgeStyle.soft,
+            fadeColor: ZhPalette.background,
+            child: const SizedBox.expand(),
           ),
-          DecoratedBox(
-            decoration: BoxDecoration(gradient: gradient ?? _defaultGradient),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

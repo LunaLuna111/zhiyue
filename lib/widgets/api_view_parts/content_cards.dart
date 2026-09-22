@@ -1,5 +1,63 @@
 part of '../api_views.dart';
 
+final _contentCardStaticDataCache = Expando<_ContentCardStaticData>(
+  'content-card-static-data',
+);
+
+class _ContentCardStaticData {
+  _ContentCardStaticData._({
+    required this.type,
+    required this.title,
+    required this.subtitle,
+    required this.authorName,
+    required this.authorHeadline,
+    required this.authorBadges,
+    required this.image,
+    required this.contentImages,
+    required this.showsObjectSummary,
+    required this.usesAvatar,
+  });
+
+  factory _ContentCardStaticData.from(Map<String, dynamic> value) {
+    final object = unwrapObject(value);
+    final type = typeOf(value);
+    return _ContentCardStaticData._(
+      type: type,
+      title: titleOf(value),
+      subtitle: subtitleOf(value),
+      authorName: authorNameOf(value),
+      authorHeadline: authorHeadlineOf(value),
+      authorBadges: authorBadgeLabelsOf(value),
+      image: ObjectCard._imageOf(object),
+      contentImages: contentImageUrlsOf(value, limit: 12),
+      showsObjectSummary:
+          type == 'people' ||
+          type == 'member' ||
+          type == 'topic' ||
+          type == 'question' ||
+          type == 'column' ||
+          type == 'collection' ||
+          type == 'favlist',
+      usesAvatar:
+          type == 'answer' ||
+          type == 'people' ||
+          type == 'member' ||
+          object['component_card'] == true,
+    );
+  }
+
+  final String type;
+  final String title;
+  final String subtitle;
+  final String authorName;
+  final String authorHeadline;
+  final List<String> authorBadges;
+  final String? image;
+  final List<String> contentImages;
+  final bool showsObjectSummary;
+  final bool usesAvatar;
+}
+
 // Feed rows are immutable apart from interaction counters/relationship state.
 // Keep the expensive SDUI text/image projection next to the row identity so a
 // pagination setState or a scroll away/back does not repeatedly walk the same
@@ -112,10 +170,11 @@ class ObjectCard extends StatelessWidget {
         presentation: presentation,
       );
     }
-    final object = unwrapObject(value);
-    final title = titleOf(value);
-    final subtitle = subtitleOf(value);
-    final type = typeOf(value);
+    final data = _contentCardStaticDataCache[value] ??=
+        _ContentCardStaticData.from(value);
+    final title = data.title;
+    final subtitle = data.subtitle;
+    final type = data.type;
     if (plainText(
           value['type'],
         ).toLowerCase().contains('aggregate_notification') &&
@@ -124,11 +183,11 @@ class ObjectCard extends StatelessWidget {
         '[zhihu-ui] aggregate-unresolved ${aggregateRoutingSummary(value)}',
       );
     }
-    final authorName = authorNameOf(value);
-    final authorHeadline = authorHeadlineOf(value);
-    final authorBadges = authorBadgeLabelsOf(value);
+    final authorName = data.authorName;
+    final authorHeadline = data.authorHeadline;
+    final authorBadges = data.authorBadges;
     final interactive = const {'answer', 'article', 'pin'}.contains(type);
-    final image = _imageOf(object);
+    final image = data.image;
     final metrics = ContentMetrics.from(value);
     // Rows without engagement metrics never paint a selected interaction
     // state. Avoid walking relationship/reaction wrappers for those common
@@ -143,20 +202,9 @@ class ObjectCard extends StatelessWidget {
             isFollowingAuthor: null,
           );
     final dateLabel = contentDateLabel(metrics);
-    final contentImages = contentImageUrlsOf(value, limit: 12);
-    final showsObjectSummary =
-        type == 'people' ||
-        type == 'member' ||
-        type == 'topic' ||
-        type == 'question' ||
-        type == 'column' ||
-        type == 'collection' ||
-        type == 'favlist';
-    final usesAvatar =
-        type == 'answer' ||
-        type == 'people' ||
-        type == 'member' ||
-        object['component_card'] == true;
+    final contentImages = data.contentImages;
+    final showsObjectSummary = data.showsObjectSummary;
+    final usesAvatar = data.usesAvatar;
     final leadingSize = usesAvatar ? 44.0 : 52.0;
     final primaryText =
         answerListMode && type == 'answer' && subtitle.isNotEmpty
@@ -172,6 +220,7 @@ class ObjectCard extends StatelessWidget {
         children: [
           _ContentAuthorTapTarget(
             value: value,
+            authorName: authorName,
             onTap: type == 'answer' ? onAuthorTap : null,
             child: image != null
                 ? ClipRRect(
@@ -453,7 +502,7 @@ class ObjectCard extends StatelessWidget {
     _ => type.toUpperCase(),
   };
 
-  String? _imageOf(Map<String, dynamic> value) {
+  static String? _imageOf(Map<String, dynamic> value) {
     for (final key in const [
       'image_url',
       'title_image',

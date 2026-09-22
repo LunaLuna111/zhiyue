@@ -100,6 +100,7 @@ class _FeedObjectCard extends StatelessWidget {
                     if (data.avatar != null) ...[
                       _ContentAuthorTapTarget(
                         value: data.source,
+                        authorName: data.author,
                         onTap: onAuthorTap,
                         child: ClipOval(
                           child: ZhihuImage.network(
@@ -269,17 +270,19 @@ class _ContentAuthorTapTarget extends StatelessWidget {
   const _ContentAuthorTapTarget({
     required this.value,
     required this.child,
+    this.authorName,
     this.onTap,
   });
 
   final Map<String, dynamic> value;
   final Widget child;
+  final String? authorName;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     if (onTap == null) return child;
-    final author = authorNameOf(value);
+    final author = authorName ?? authorNameOf(value);
     return Semantics(
       button: true,
       label: author.isEmpty ? '查看作者个人主页' : '查看$author的个人主页',

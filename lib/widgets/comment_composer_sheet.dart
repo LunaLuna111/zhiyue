@@ -681,7 +681,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     // The official editor uses a compact 164dp bottom surface and grows only
     // when its own emoticon panel is visible. It is not a second titled page.
     final collapsedHeight =
-        (_compactComposer ? (_expandedComposer ? 202.0 : 170.0) : 164.0) +
+        (_compactComposer ? (_expandedComposer ? 190.0 : 166.0) : 164.0) +
         (_selectedSticker == null ? 0 : 48) +
         (_image == null ? 0 : 64) +
         (_error.isEmpty ? 0 : 36);
@@ -704,7 +704,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         child: Container(
           height: targetHeight,
           margin: const EdgeInsets.fromLTRB(4, 0, 4, 4),
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, ZhSpace.xs),
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, ZhSpace.xs),
           decoration: BoxDecoration(
             color: const Color(0xFFF4F5F7),
             borderRadius: BorderRadius.circular(32),
@@ -730,7 +730,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                 ),
               SizedBox(
                 height: _compactComposer
-                    ? (_expandedComposer ? 84.0 : 52.0)
+                    ? (_expandedComposer ? 76.0 : 52.0)
                     : 104.0,
                 child: TextField(
                   key: const Key('comment-composer-field'),

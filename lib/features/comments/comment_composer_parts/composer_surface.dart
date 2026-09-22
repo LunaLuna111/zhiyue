@@ -196,10 +196,16 @@ class _ComposerEmojiCircle extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     width: 24,
     height: 24,
+    alignment: Alignment.center,
     decoration: BoxDecoration(
       color: const Color(0xFFF7F8F9),
       shape: BoxShape.circle,
       border: Border.all(color: const Color(0xFFE1E4E8), width: 1.5),
+    ),
+    child: const Icon(
+      Icons.sentiment_satisfied_alt_rounded,
+      size: 17,
+      color: Color(0xFF65717D),
     ),
   );
 }

@@ -15,6 +15,21 @@ const _zhToolbarGlassSettings = LiquidGlassSettings(
   glassColor: Color(0xA6F8F8FA),
 );
 
+// Pull-down menus need a quieter surface than the interactive toolbar glass.
+// The minimal tier deliberately uses Flutter's BackdropFilter path, so the
+// menu reads as a white Gaussian-frosted panel instead of a refractive lens
+// that lets the page text remain too legible underneath it.
+const _zhFrostedMenuSettings = LiquidGlassSettings(
+  thickness: 0,
+  blur: 18,
+  chromaticAberration: 0,
+  lightIntensity: .18,
+  refractiveIndex: 1,
+  saturation: 1,
+  ambientStrength: .18,
+  glassColor: Color(0xD6FFFFFF),
+);
+
 class _ZhPlainIconButton extends StatelessWidget {
   const _ZhPlainIconButton({
     required this.icon,
@@ -286,8 +301,8 @@ class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
       menuBorderRadius: 28,
       itemBorderRadius: 20,
       menuPadding: const EdgeInsets.symmetric(vertical: 8),
-      settings: _zhToolbarGlassSettings,
-      quality: GlassQuality.standard,
+      settings: _zhFrostedMenuSettings,
+      quality: GlassQuality.minimal,
       triggerBuilder: (context, toggleMenu) => ZhLiquidGlassIconButton(
         icon: icon,
         onPressed: toggleMenu,
@@ -565,42 +580,49 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
         ],
       );
     }
-    return GlassButtonGroup.icons(
-      items: [
-        for (final action in [primaryAction, ...additionalActions])
-          GlassButtonGroupItem(
-            icon: action.icon,
-            label: action.semanticLabel,
-            enabled: action.onPressed != null,
-            onTap: action.onPressed ?? _disabledAction,
+    return InheritedLiquidGlass(
+      // GlassButtonGroupItem.menu does not expose the nested GlassMenu's
+      // settings, but GlassMenu intentionally inherits them from this scope.
+      // The direct toolbar buttons keep their own standard-quality settings.
+      settings: _zhFrostedMenuSettings,
+      quality: GlassQuality.minimal,
+      child: GlassButtonGroup.icons(
+        items: [
+          for (final action in [primaryAction, ...additionalActions])
+            GlassButtonGroupItem(
+              icon: action.icon,
+              label: action.semanticLabel,
+              enabled: action.onPressed != null,
+              onTap: action.onPressed ?? _disabledAction,
+            ),
+          GlassButtonGroupItem.menu(
+            icon: menuIcon,
+            label: menuSemanticLabel,
+            menuWidth: menuWidth,
+            menuAlignment: menuAlignment,
+            menuItems: [
+              for (final item in menuItems)
+                GlassMenuItem(
+                  title: item.label,
+                  icon: item.icon,
+                  subtitle: item.subtitle,
+                  enabled: item.enabled,
+                  isDestructive: item.destructive,
+                  onTap: item.enabled
+                      ? () => onSelected(item.value)
+                      : _disabledAction,
+                ),
+            ],
           ),
-        GlassButtonGroupItem.menu(
-          icon: menuIcon,
-          label: menuSemanticLabel,
-          menuWidth: menuWidth,
-          menuAlignment: menuAlignment,
-          menuItems: [
-            for (final item in menuItems)
-              GlassMenuItem(
-                title: item.label,
-                icon: item.icon,
-                subtitle: item.subtitle,
-                enabled: item.enabled,
-                isDestructive: item.destructive,
-                onTap: item.enabled
-                    ? () => onSelected(item.value)
-                    : _disabledAction,
-              ),
-          ],
-        ),
-      ],
-      borderRadius: 28,
-      itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
-      iconSize: 22,
-      settings: ZhLiquidGlassCapsuleActionGroup._settings,
-      quality: GlassQuality.standard,
-      useOwnLayer: true,
-      showDividers: false,
+        ],
+        borderRadius: 28,
+        itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
+        iconSize: 22,
+        settings: ZhLiquidGlassCapsuleActionGroup._settings,
+        quality: GlassQuality.standard,
+        useOwnLayer: true,
+        showDividers: false,
+      ),
     );
   }
 

@@ -1,5 +1,48 @@
 part of '../search_page.dart';
 
+final _searchResultCardStaticDataCache = Expando<_SearchResultCardStaticData>(
+  'search-result-card-static-data',
+);
+
+class _SearchResultCardStaticData {
+  const _SearchResultCardStaticData({
+    required this.title,
+    required this.excerpt,
+    required this.author,
+    required this.avatar,
+    required this.images,
+    required this.statistics,
+    required this.metrics,
+    required this.date,
+    required this.typeLabel,
+  });
+
+  factory _SearchResultCardStaticData.from(Map<String, dynamic> value) {
+    final metrics = ContentMetrics.from(value);
+    return _SearchResultCardStaticData(
+      title: titleOf(value),
+      excerpt: subtitleOf(value),
+      author: authorNameOf(value),
+      avatar: authorAvatarOf(value),
+      images: contentImageUrlsOf(value, limit: 3),
+      statistics: searchStatisticsOf(value),
+      metrics: metrics,
+      date: contentDateLabel(metrics),
+      typeLabel: contentKindLabelOf(value),
+    );
+  }
+
+  final String title;
+  final String excerpt;
+  final String author;
+  final String avatar;
+  final List<String> images;
+  final List<(String, int)> statistics;
+  final ContentMetrics metrics;
+  final String date;
+  final String typeLabel;
+}
+
 class _SearchResultCard extends StatelessWidget {
   const _SearchResultCard({
     required this.value,
@@ -71,8 +114,6 @@ class _SearchResultCard extends StatelessWidget {
     if (value['_search_novel_card'] == true) {
       return _SearchNovelResultCard(value: value, onTap: onTap);
     }
-    final title = titleOf(value);
-    final excerpt = subtitleOf(value);
     final type = typeOf(value).replaceAll('search_', '');
     if (type == 'zvideo' ||
         type == 'video' ||
@@ -87,13 +128,17 @@ class _SearchResultCard extends StatelessWidget {
     if (_isSearchEntityType(type)) {
       return _SearchEntityResultRow(value: value, onTap: onTap);
     }
-    final author = authorNameOf(value);
-    final avatar = authorAvatarOf(value);
-    final images = contentImageUrlsOf(value, limit: 3);
-    final statistics = searchStatisticsOf(value);
-    final metrics = ContentMetrics.from(value);
-    final date = contentDateLabel(metrics);
-    final typeLabel = contentKindLabelOf(value);
+    final data = _searchResultCardStaticDataCache[value] ??=
+        _SearchResultCardStaticData.from(value);
+    final title = data.title;
+    final excerpt = data.excerpt;
+    final author = data.author;
+    final avatar = data.avatar;
+    final images = data.images;
+    final statistics = data.statistics;
+    final metrics = data.metrics;
+    final date = data.date;
+    final typeLabel = data.typeLabel;
     return Material(
       color: ZhPalette.background,
       child: InkWell(

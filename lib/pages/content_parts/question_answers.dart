@@ -26,6 +26,9 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   bool? _followingQuestionOverride;
   Map<String, dynamic>? _embeddedQuestion;
   Map<String, dynamic>? _questionDetail;
+  Map<String, dynamic>? _resolvedQuestionCache;
+  Map<String, dynamic>? _resolvedQuestionEmbeddedSource;
+  Map<String, dynamic>? _resolvedQuestionDetailSource;
 
   String get _effectiveQuestionId {
     final direct = widget.questionId.trim();
@@ -45,9 +48,16 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   }
 
   Map<String, dynamic>? get _resolvedQuestion {
-    if (_embeddedQuestion == null && _questionDetail == null) return null;
-    final resolved = <String, dynamic>{...?_embeddedQuestion};
+    final embedded = _embeddedQuestion;
     final detail = _questionDetail;
+    final cached = _resolvedQuestionCache;
+    if (cached != null &&
+        identical(_resolvedQuestionEmbeddedSource, embedded) &&
+        identical(_resolvedQuestionDetailSource, detail)) {
+      return cached;
+    }
+    if (embedded == null && detail == null) return null;
+    final resolved = <String, dynamic>{...?embedded};
     if (detail != null) {
       for (final entry in detail.entries) {
         if (_hasUsefulQuestionValue(entry.value) ||
@@ -56,7 +66,9 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
         }
       }
     }
-    return resolved;
+    _resolvedQuestionEmbeddedSource = embedded;
+    _resolvedQuestionDetailSource = detail;
+    return _resolvedQuestionCache = resolved;
   }
 
   bool? _questionFollowing(Map<String, dynamic>? question) {
@@ -120,6 +132,7 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
               : followerCount + 1;
         }
       }
+      _resolvedQuestionCache = null;
       setState(() => _followingQuestionOverride = !wasFollowing);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

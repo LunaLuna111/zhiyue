@@ -55,6 +55,7 @@ class _ZhPlainIconButtonVisual extends StatelessWidget {
     required this.iconSize,
     required this.shape,
     required this.borderRadius,
+    this.grouped = false,
   });
 
   final Widget icon;
@@ -64,6 +65,7 @@ class _ZhPlainIconButtonVisual extends StatelessWidget {
   final double? iconSize;
   final GlassIconButtonShape shape;
   final double borderRadius;
+  final bool grouped;
 
   @override
   Widget build(BuildContext context) {
@@ -84,9 +86,11 @@ class _ZhPlainIconButtonVisual extends StatelessWidget {
           foregroundColor: onPressed == null
               ? ZhPalette.subtleInk
               : ZhPalette.ink,
-          backgroundColor: ZhPalette.canvas,
+          backgroundColor: grouped ? Colors.transparent : ZhPalette.canvas,
           disabledForegroundColor: ZhPalette.subtleInk,
-          side: const BorderSide(color: ZhPalette.border),
+          side: grouped
+              ? BorderSide.none
+              : const BorderSide(color: ZhPalette.border),
           shape: shapeBorder,
         ),
         icon: icon,
@@ -108,7 +112,13 @@ class _ZhPlainActionGroup extends StatelessWidget {
       side: const BorderSide(color: ZhPalette.border),
     ),
     clipBehavior: Clip.antiAlias,
-    child: Row(mainAxisSize: MainAxisSize.min, children: children),
+    child: SizedBox(
+      height: 52,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(mainAxisSize: MainAxisSize.min, children: children),
+      ),
+    ),
   );
 }
 
@@ -447,6 +457,7 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
               iconSize: 22,
               shape: GlassIconButtonShape.circle,
               borderRadius: 16,
+              grouped: true,
             ),
         ],
       );
@@ -514,6 +525,7 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
               iconSize: 22,
               shape: GlassIconButtonShape.circle,
               borderRadius: 16,
+              grouped: true,
             ),
           PopupMenuButton<T>(
             tooltip: menuSemanticLabel,
@@ -547,6 +559,7 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
               iconSize: 22,
               shape: GlassIconButtonShape.circle,
               borderRadius: 16,
+              grouped: true,
             ),
           ),
         ],
@@ -1060,7 +1073,7 @@ class _ZhPlainSegmentedTabs extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: scrollable ? 14 : 8),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? ZhPalette.ink : Colors.transparent,
+          color: active ? const Color(0xFFE1E3E8) : Colors.transparent,
           borderRadius: BorderRadius.circular(height / 2),
         ),
         child: Text(
@@ -1068,7 +1081,7 @@ class _ZhPlainSegmentedTabs extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: active ? ZhPalette.background : ZhPalette.mutedInk,
+            color: active ? const Color(0xFF1677FF) : ZhPalette.mutedInk,
             fontSize: labelFontSize,
             fontWeight: active ? FontWeight.w800 : FontWeight.w600,
             height: 1.2,
@@ -1196,18 +1209,29 @@ class ZhLiquidGlassAppBar extends StatelessWidget
     if (!ZhGlassScope.enabledOf(context)) {
       return AppBar(
         title: title,
-        leading: leading,
-        actions: actions,
+        leading: leading == null
+            ? null
+            : Padding(padding: const EdgeInsets.only(left: 12), child: leading),
+        leadingWidth: leading == null ? 0 : 58,
+        actions: actions.isEmpty
+            ? const <Widget>[]
+            : [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: actions),
+                ),
+              ],
+        titleSpacing: leading == null ? 12 : 10,
         centerTitle: centerTitle,
         toolbarHeight: toolbarHeight,
         bottom: bottom,
         automaticallyImplyLeading: false,
-        backgroundColor: ZhPalette.background,
+        backgroundColor: Colors.transparent,
         foregroundColor: ZhPalette.ink,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        shape: const Border(bottom: BorderSide(color: ZhPalette.border)),
+        shadowColor: Colors.transparent,
       );
     }
     final appBar = GlassAppBar(

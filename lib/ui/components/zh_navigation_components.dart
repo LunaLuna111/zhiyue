@@ -321,19 +321,89 @@ class _ZhPlainBottomNavigation extends StatelessWidget
       child: Material(
         color: ZhPalette.background,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(32),
           side: const BorderSide(color: ZhPalette.border),
         ),
         clipBehavior: Clip.antiAlias,
-        child: NavigationBar(
+        child: SizedBox(
           height: 64,
-          selectedIndex: safeIndex,
-          onDestinationSelected: onDestinationSelected,
-          backgroundColor: Colors.transparent,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          indicatorColor: ZhPalette.ink,
-          destinations: destinations,
+          child: Row(
+            children: [
+              for (var index = 0; index < destinations.length; index++)
+                Expanded(
+                  child: _ZhPlainBottomNavigationItem(
+                    destination: destinations[index],
+                    selected: index == safeIndex,
+                    onPressed: () => onDestinationSelected(index),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ZhPlainBottomNavigationItem extends StatelessWidget {
+  const _ZhPlainBottomNavigationItem({
+    required this.destination,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final NavigationDestination destination;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = selected
+        ? (destination.selectedIcon ?? destination.icon)
+        : destination.icon;
+    final foreground = selected
+        ? ZhLiquidGlassNavigationStyle.selectedColor
+        : ZhLiquidGlassNavigationStyle.unselectedColor;
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: destination.label,
+      onTap: onPressed,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(28),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            height: 54,
+            decoration: BoxDecoration(
+              color: selected ? const Color(0xFFE1E3E8) : Colors.transparent,
+              borderRadius: BorderRadius.circular(27),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconTheme(
+                  data: IconThemeData(color: foreground, size: 24),
+                  child: icon,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  destination.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: foreground,
+                    fontSize: 11,
+                    height: 1.2,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

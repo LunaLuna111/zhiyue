@@ -29,6 +29,7 @@ class _ComposerToolbar extends StatelessWidget {
     required this.showEmoticons,
     required this.canSubmit,
     required this.sending,
+    required this.submitLabel,
     required this.onEmoticons,
     required this.onMention,
     required this.onImage,
@@ -39,6 +40,7 @@ class _ComposerToolbar extends StatelessWidget {
   final bool showEmoticons;
   final bool canSubmit;
   final bool sending;
+  final String submitLabel;
   final VoidCallback onEmoticons;
   final VoidCallback onMention;
   final VoidCallback? onImage;
@@ -96,12 +98,73 @@ class _ComposerToolbar extends StatelessWidget {
               shape: const StadiumBorder(),
             ),
             child: Text(
-              sending ? '发布中' : '发布',
+              sending ? '发布中' : submitLabel,
               style: const TextStyle(fontSize: 15, height: 1),
             ),
           ),
         ),
         const SizedBox(width: 8),
+      ],
+    ),
+  );
+}
+
+class _ComposerHeader extends StatelessWidget {
+  const _ComposerHeader({
+    required this.title,
+    required this.expanded,
+    required this.onToggleExpanded,
+  });
+
+  final String title;
+  final bool expanded;
+  final VoidCallback onToggleExpanded;
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    height: 48,
+    child: Row(
+      children: [
+        const CircleAvatar(
+          radius: 16,
+          backgroundColor: Color(0xFFE8EDF2),
+          child: Icon(
+            Icons.person_outline_rounded,
+            size: 20,
+            color: Color(0xFF65717D),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF25282D),
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              height: 1.2,
+            ),
+          ),
+        ),
+        Semantics(
+          button: true,
+          label: expanded ? '收起编辑器' : '展开编辑器',
+          child: IconButton(
+            key: const Key('comment-composer-expand'),
+            tooltip: expanded ? '收起编辑器' : '展开编辑器',
+            onPressed: onToggleExpanded,
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              expanded
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.open_in_full_rounded,
+              color: const Color(0xFF65717D),
+              size: 22,
+            ),
+          ),
+        ),
       ],
     ),
   );

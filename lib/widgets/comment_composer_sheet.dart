@@ -91,6 +91,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
   CommentEmoticon? _selectedSticker;
   int _selectedGroup = 0;
   bool _showEmoticons = false;
+  bool _expandedComposer = true;
   bool _pendingEmoticons = false;
   int _surfaceTransition = 0;
   Timer? _imeTransitionTimer;
@@ -221,6 +222,18 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       !_sending &&
       !_imageUploading &&
       (_hasText || _selectedSticker != null || _image != null);
+
+  bool get _compactComposer => widget.maxLength <= 5000;
+
+  String get _composerTitle {
+    if (widget.title.startsWith('回复')) return '发布你的回复';
+    if (widget.title == '写评论' || widget.title == '评论这段话') {
+      return '发布你的评论';
+    }
+    return widget.title;
+  }
+
+  String get _submitLabel => widget.title.startsWith('回复') ? '回复' : '发布';
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
@@ -668,7 +681,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     // The official editor uses a compact 164dp bottom surface and grows only
     // when its own emoticon panel is visible. It is not a second titled page.
     final collapsedHeight =
-        164.0 +
+        (_compactComposer ? (_expandedComposer ? 200.0 : 168.0) : 164.0) +
         (_selectedSticker == null ? 0 : 48) +
         (_image == null ? 0 : 64) +
         (_error.isEmpty ? 0 : 36);
@@ -690,48 +703,64 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         ),
         child: Container(
           height: targetHeight,
-          padding: const EdgeInsets.only(bottom: ZhSpace.xs),
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, ZhSpace.xs),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                height: 104,
-                child: TextField(
-                  key: const Key('comment-composer-field'),
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  autofocus: !_showEmoticons && !_pendingEmoticons,
-                  expands: true,
-                  minLines: null,
-                  maxLines: null,
-                  maxLength: widget.maxLength,
-                  textInputAction: TextInputAction.newline,
-                  style: const TextStyle(
-                    color: Color(0xFF191B1F),
-                    fontSize: 15,
-                    height: 1.45,
-                  ),
-                  onTapOutside: (_) {},
-                  onTap: () {
-                    _pendingEmoticons = false;
-                    if (_showEmoticons) {
-                      setState(() => _showEmoticons = false);
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) _focusNode.requestFocus();
-                      });
-                    }
-                  },
-                  decoration: InputDecoration(
-                    hintText: replyHint.isEmpty ? '理性发言，友善互动' : replyHint,
-                    hintStyle: const TextStyle(
-                      color: Color(0xFF9196A1),
+              if (_compactComposer)
+                _ComposerHeader(
+                  title: _composerTitle,
+                  expanded: _expandedComposer,
+                  onToggleExpanded: () =>
+                      setState(() => _expandedComposer = !_expandedComposer),
+                ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F6F8),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFE6E8EC)),
+                ),
+                child: SizedBox(
+                  height: _compactComposer
+                      ? (_expandedComposer ? 84.0 : 52.0)
+                      : 104.0,
+                  child: TextField(
+                    key: const Key('comment-composer-field'),
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    autofocus: !_showEmoticons && !_pendingEmoticons,
+                    expands: true,
+                    minLines: null,
+                    maxLines: null,
+                    maxLength: widget.maxLength,
+                    textInputAction: TextInputAction.newline,
+                    style: const TextStyle(
+                      color: Color(0xFF191B1F),
                       fontSize: 15,
+                      height: 1.45,
                     ),
-                    counterText: '',
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.fromLTRB(16, 14, 49, 8),
+                    onTapOutside: (_) {},
+                    onTap: () {
+                      _pendingEmoticons = false;
+                      if (_showEmoticons) {
+                        setState(() => _showEmoticons = false);
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          if (mounted) _focusNode.requestFocus();
+                        });
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: replyHint.isEmpty ? '理性发言，友善互动' : replyHint,
+                      hintStyle: const TextStyle(
+                        color: Color(0xFF9196A1),
+                        fontSize: 15,
+                      ),
+                      counterText: '',
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      contentPadding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    ),
                   ),
                 ),
               ),
@@ -764,6 +793,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   showEmoticons: _showEmoticons,
                   canSubmit: _canSubmit,
                   sending: _sending,
+                  submitLabel: _submitLabel,
                   onEmoticons: _toggleEmoticons,
                   onMention: _mention,
                   onImage: widget.enableImage ? _pickImage : null,

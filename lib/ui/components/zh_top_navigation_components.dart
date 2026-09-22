@@ -903,10 +903,11 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
       settings: _settings.copyWith(shadowElevation: shadowElevation),
       quality: GlassQuality.standard,
       backgroundQuality: GlassQuality.standard,
-      // Inline tabs often sit directly above a moving list. Keep the
-      // standard glass indicator and press feedback without the extra
-      // dual-layer mask capture on every list frame.
-      maskingQuality: MaskingQuality.off,
+      // GlassTabBar.inline has the same fractional selected-row issue as the
+      // bottom bar when its lightweight path is used: selected labels are
+      // painted inside the wrong sub-slot and overlap the base labels. Keep
+      // the standard shader quality, but use the aligned mask layout.
+      maskingQuality: MaskingQuality.high,
       pressScale: pressScale,
       // Inline sort controls should not flash a full-surface directional glow
       // when their parent list starts a new request. The selected lens still

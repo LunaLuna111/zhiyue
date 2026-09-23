@@ -239,34 +239,42 @@ extension _ContentDetailBody on _ContentDetailPageState {
         ),
       const SizedBox(height: ZhSpace.sm),
     ];
-    final contentList = CustomScrollView(
-      controller: _scrollController,
-      physics: const ClampingScrollPhysics(
-        parent: AlwaysScrollableScrollPhysics(),
-      ),
-      slivers: [
-        if (answerQuestionHeader != null)
-          SliverPersistentHeader(
-            floating: true,
-            delegate: _CollapsibleAnswerQuestionHeaderDelegate(
-              child: answerQuestionHeader,
-              topInset: topInset,
-            ),
-          )
-        else
-          SliverToBoxAdapter(child: SizedBox(height: topInset)),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(
-            18,
-            18,
-            18,
-            _detailBottomOverlayInset,
-          ),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate(contentChildren),
-          ),
+    final contentList = Listener(
+      behavior: HitTestBehavior.translucent,
+      // The glyph-only hit region intentionally lets blank trailing space
+      // fall through the selectable text. Keep the dismiss gesture at the
+      // scroll-container level so a tap anywhere in the reading surface
+      // closes an already visible selection menu.
+      onPointerDown: (_) => ContextMenuController.removeAny(),
+      child: CustomScrollView(
+        controller: _scrollController,
+        physics: const ClampingScrollPhysics(
+          parent: AlwaysScrollableScrollPhysics(),
         ),
-      ],
+        slivers: [
+          if (answerQuestionHeader != null)
+            SliverPersistentHeader(
+              floating: true,
+              delegate: _CollapsibleAnswerQuestionHeaderDelegate(
+                child: answerQuestionHeader,
+                topInset: topInset,
+              ),
+            )
+          else
+            SliverToBoxAdapter(child: SizedBox(height: topInset)),
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              18,
+              18,
+              18,
+              _detailBottomOverlayInset,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(contentChildren),
+            ),
+          ),
+        ],
+      ),
     );
     return ValueListenableBuilder<double>(
       valueListenable: _answerOverscrollNotifier,

@@ -299,7 +299,10 @@ class _DetailImageWarmup extends StatefulWidget {
 }
 
 class _DetailImageWarmupState extends State<_DetailImageWarmup> {
-  static const _warmupImageLimit = 4;
+  // The image tiles below defer their own providers until they approach the
+  // viewport. Keep only the first two images warm for the initial view so a
+  // long answer cannot fill the decoded-image cache during the first frame.
+  static const _warmupImageLimit = 2;
   static const _warmupDelay = Duration(milliseconds: 550);
 
   final _scheduled = <String>{};
@@ -399,37 +402,115 @@ class _DetailImageGallery extends StatelessWidget {
   }
 }
 
-class _DetailImageTile extends StatelessWidget {
+class _DetailImageTile extends StatefulWidget {
   const _DetailImageTile({required this.source});
 
   final _DetailImageSource source;
+
+  @override
+  State<_DetailImageTile> createState() => _DetailImageTileState();
+}
+
+class _DetailImageTileState extends State<_DetailImageTile> {
+  static const _preloadViewportMultiplier = 1.25;
+
+  ScrollPosition? _scrollPosition;
+  ScrollableState? _scrollable;
+  var _imageEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _attachToScrollable();
+      _updateVisibility();
+    });
+  }
+
+  void _attachToScrollable() {
+    final scrollable = Scrollable.maybeOf(context);
+    final position = scrollable?.position;
+    if (identical(position, _scrollPosition)) return;
+    _scrollPosition?.removeListener(_handleScroll);
+    _scrollable = scrollable;
+    _scrollPosition = position;
+    position?.addListener(_handleScroll);
+  }
+
+  void _handleScroll() {
+    if (_imageEnabled) {
+      _scrollPosition?.removeListener(_handleScroll);
+      _scrollPosition = null;
+      _scrollable = null;
+      return;
+    }
+    _updateVisibility();
+  }
+
+  void _updateVisibility() {
+    if (!mounted || _imageEnabled) return;
+    if (!_isNearViewport()) return;
+    setState(() => _imageEnabled = true);
+    _scrollPosition?.removeListener(_handleScroll);
+    _scrollPosition = null;
+    _scrollable = null;
+  }
+
+  bool _isNearViewport() {
+    final tile = context.findRenderObject();
+    final viewport = _scrollable?.context.findRenderObject();
+    if (tile is! RenderBox ||
+        viewport is! RenderBox ||
+        !tile.hasSize ||
+        !viewport.hasSize) {
+      // A tile outside a scrollable, or a transiently unavailable render
+      // object, should remain usable instead of becoming a permanent blank.
+      return true;
+    }
+    final tileTop = tile.localToGlobal(Offset.zero).dy;
+    final tileBottom = tile.localToGlobal(Offset(0, tile.size.height)).dy;
+    final viewportTop = viewport.localToGlobal(Offset.zero).dy;
+    final viewportBottom = viewportTop + viewport.size.height;
+    final margin = viewport.size.height * _preloadViewportMultiplier;
+    return tileBottom >= viewportTop - margin &&
+        tileTop <= viewportBottom + margin;
+  }
+
+  @override
+  void dispose() {
+    _scrollPosition?.removeListener(_handleScroll);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
     label: '查看正文图片原图',
     child: InkWell(
-      key: ValueKey('answer-image-${source.url}'),
-      onTap: () => _showDetailImagePreview(context, source.url),
+      key: ValueKey('answer-image-${widget.source.url}'),
+      onTap: () => _showDetailImagePreview(context, widget.source.url),
       borderRadius: BorderRadius.circular(ZhRadius.card),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ZhRadius.card),
         child: AspectRatio(
-          aspectRatio: source.aspectRatio,
-          child: ZhihuImage.network(
-            source.url,
-            headers: zhihuImageRequestHeaders,
-            width: double.infinity,
-            height: double.infinity,
-            fit: BoxFit.contain,
-            alignment: Alignment.center,
-            cacheWidth: _detailImageCacheWidth(context),
-            filterQuality: FilterQuality.medium,
-            frameBuilder: (_, child, frame, _) =>
-                frame == null ? const _DetailImagePlaceholder() : child,
-            errorBuilder: (_, _, _) =>
-                const _DetailImagePlaceholder(failed: true),
-          ),
+          aspectRatio: widget.source.aspectRatio,
+          child: _imageEnabled
+              ? ZhihuImage.network(
+                  widget.source.url,
+                  headers: zhihuImageRequestHeaders,
+                  width: double.infinity,
+                  height: double.infinity,
+                  fit: BoxFit.contain,
+                  alignment: Alignment.center,
+                  cacheWidth: _detailImageCacheWidth(context),
+                  filterQuality: FilterQuality.medium,
+                  frameBuilder: (_, child, frame, _) =>
+                      frame == null ? const _DetailImagePlaceholder() : child,
+                  errorBuilder: (_, _, _) =>
+                      const _DetailImagePlaceholder(failed: true),
+                )
+              : const _DetailImagePlaceholder(),
         ),
       ),
     ),

@@ -80,20 +80,14 @@ class ZhAppDrawer extends StatelessWidget {
             child: Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 14, 14, 18),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 14, 10),
                   child: Row(
                     children: [
-                      const ZhBrandMark(size: 46),
-                      const SizedBox(width: 13),
-                      Expanded(
-                        child: Text(
-                          '知阅',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                      ),
-                      IconButton(
+                      const Spacer(),
+                      ZhLiquidGlassIconButton(
                         key: const ValueKey('close-side-drawer'),
-                        tooltip: '关闭侧边栏',
+                        semanticLabel: '关闭侧边栏',
+                        size: 46,
                         onPressed:
                             onClose ?? () => Navigator.of(context).maybePop(),
                         icon: const Icon(Icons.close_rounded),
@@ -101,10 +95,9 @@ class ZhAppDrawer extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Divider(height: 1),
                 Expanded(
                   child: ListView(
-                    padding: const EdgeInsets.fromLTRB(12, 15, 12, 18),
+                    padding: const EdgeInsets.fromLTRB(12, 10, 12, 18),
                     children: [
                       const _DrawerSectionLabel('浏览'),
                       _DrawerTile(

@@ -57,35 +57,35 @@ class ZhPageWidth extends StatelessWidget {
 /// Keeping this clip above the app itself means every route (including custom
 /// PageRouteBuilder pages, root overlays, and nested Navigators) keeps the same
 /// phone-shaped surface while it is being transformed. The leading corners
-/// relax with the transient sidebar so its surface can stay flush to the edge.
+/// stay square for the full visible lifetime of the transient sidebar, then
+/// return to the normal rounded viewport when the sidebar closes.
 /// This must stay outside MaterialApp: a builder inside MaterialApp is still
 /// below some root-level overlay/compositing layers used during predictive back.
 class ZhMobileViewportSurface extends StatelessWidget {
   const ZhMobileViewportSurface({
     super.key,
     required this.child,
-    this.drawerProgress,
+    this.drawerVisible,
   });
 
   final Widget child;
-  final ValueListenable<double>? drawerProgress;
+  final ValueListenable<bool>? drawerVisible;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     if (size.width >= ZhViewport.compact) return child;
-    final progress = drawerProgress;
-    if (progress == null) return _buildSurface(child, 0);
-    return ValueListenableBuilder<double>(
-      valueListenable: progress,
+    final visible = drawerVisible;
+    if (visible == null) return _buildSurface(child, false);
+    return ValueListenableBuilder<bool>(
+      valueListenable: visible,
       child: child,
       builder: (context, value, child) => _buildSurface(child!, value),
     );
   }
 
-  Widget _buildSurface(Widget child, double drawerProgress) {
-    final progress = drawerProgress.clamp(0.0, 1.0).toDouble();
-    final leadingRadius = 30 * (1 - progress);
+  Widget _buildSurface(Widget child, bool drawerVisible) {
+    final leadingRadius = drawerVisible ? 0.0 : 30.0;
     return ColoredBox(
       color: ZhPalette.canvas,
       child: ClipRRect(

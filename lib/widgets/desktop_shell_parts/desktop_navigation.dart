@@ -34,9 +34,11 @@ class ZhPushDrawerController extends ChangeNotifier {
   int _requestRevision = 0;
   Future<bool> Function(bool open)? _transition;
   final ValueNotifier<double> _animationProgress = ValueNotifier(0);
+  final ValueNotifier<bool> _drawerVisible = ValueNotifier(false);
 
   bool get isOpen => _isOpen;
   ValueListenable<double> get animationProgress => _animationProgress;
+  ValueListenable<bool> get drawerVisible => _drawerVisible;
 
   Future<bool> open() => _request(true);
 
@@ -62,6 +64,8 @@ class ZhPushDrawerController extends ChangeNotifier {
   void _setAnimationProgress(double progress) {
     if (_animationProgress.value == progress) return;
     _animationProgress.value = progress;
+    final visible = progress > 0.0001;
+    if (_drawerVisible.value != visible) _drawerVisible.value = visible;
   }
 
   /// Invalidates outstanding requests when the transient drawer disappears
@@ -84,6 +88,7 @@ class ZhPushDrawerController extends ChangeNotifier {
   @override
   void dispose() {
     _animationProgress.dispose();
+    _drawerVisible.dispose();
     super.dispose();
   }
 }

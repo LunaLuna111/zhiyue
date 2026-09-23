@@ -305,10 +305,13 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
       animation: _progress,
       builder: (context, _) {
         final value = _progress.value;
-        final mainSurfaceBorderRadius = BorderRadius.only(
-          topLeft: Radius.circular(_drawerCornerRadius * value),
-          bottomLeft: Radius.circular(_drawerCornerRadius * value),
-        );
+        final drawerVisible = _drawerController.drawerVisible.value;
+        final mainSurfaceBorderRadius = drawerVisible
+            ? const BorderRadius.vertical(
+                top: Radius.circular(_drawerCornerRadius),
+                bottom: Radius.circular(_drawerCornerRadius),
+              )
+            : BorderRadius.zero;
         return PopScope(
           canPop: value == 0 && !_confirmsAndroidRootExit,
           onPopInvokedWithResult: (didPop, _) =>
@@ -374,30 +377,36 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                     offset: Offset(drawerWidth * value, 0),
                     child: ExcludeSemantics(
                       excluding: value > 0,
-                      child: RepaintBoundary(
+                      child: PhysicalModel(
+                        color: ZhPalette.background,
+                        // Keep expensive physical shape/shadow geometry stable
+                        // through the 360 ms slide; only toggle it at the
+                        // visible/hidden boundary.
+                        elevation: drawerVisible ? 18 : 0,
+                        shadowColor: drawerVisible
+                            ? Colors.black.withValues(alpha: .22)
+                            : Colors.transparent,
+                        borderRadius: mainSurfaceBorderRadius,
+                        clipBehavior: Clip.none,
                         child: PhysicalModel(
-                          color: ZhPalette.background,
-                          // Cast the shadow from the exact same animated
-                          // rounded outline as the page. A blurred BoxShadow
-                          // can leave square-looking ends at this narrow edge.
-                          elevation: 18,
-                          shadowColor: Colors.black.withValues(
-                            alpha: .22 * value,
-                          ),
-                          borderRadius: mainSurfaceBorderRadius,
+                          key: const ValueKey('push-main-physical-surface'),
+                          // Keep the page's physical node static; the outer
+                          // surface owns the animated silhouette and shadow.
+                          color: Colors.transparent,
+                          elevation: 0,
+                          shadowColor: Colors.transparent,
+                          borderRadius: BorderRadius.zero,
                           clipBehavior: Clip.none,
-                          child: PhysicalModel(
-                            key: const ValueKey('push-main-physical-surface'),
-                            // Keep the page's expensive physical node static;
-                            // the outer surface owns the animated silhouette.
-                            color: Colors.transparent,
-                            elevation: 0,
-                            shadowColor: Colors.transparent,
-                            borderRadius: BorderRadius.zero,
-                            clipBehavior: Clip.none,
-                            child: ClipRRect(
-                              borderRadius: mainSurfaceBorderRadius,
-                              clipBehavior: Clip.antiAlias,
+                          child: ClipRRect(
+                            borderRadius: mainSurfaceBorderRadius,
+                            clipBehavior: Clip.antiAlias,
+                            // Cache the page below the animated physical
+                            // shape so each radius/shadow tick doesn't repaint
+                            // image-heavy feed content.
+                            child: RepaintBoundary(
+                              key: const ValueKey(
+                                'push-main-content-repaint-boundary',
+                              ),
                               child: mainScaffold,
                             ),
                           ),

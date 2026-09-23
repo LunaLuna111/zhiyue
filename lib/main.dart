@@ -192,7 +192,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
           )
         : scopedApp;
     return ZhMobileViewportSurface(
-      drawerProgress: widget.drawerController.animationProgress,
+      drawerVisible: widget.drawerController.drawerVisible,
       child: glassApp,
     );
   }

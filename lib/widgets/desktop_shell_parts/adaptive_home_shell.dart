@@ -370,6 +370,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                       child: RepaintBoundary(
                         child: DecoratedBox(
                           decoration: BoxDecoration(
+                            color: ZhPalette.background,
                             borderRadius: mainSurfaceBorderRadius,
                             boxShadow: [
                               BoxShadow(
@@ -383,10 +384,11 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                           ),
                           child: PhysicalModel(
                             key: const ValueKey('push-main-physical-surface'),
-                            color: ZhPalette.background,
-                            // Keep this physical layer's geometry static so
-                            // the image-heavy page retains its render object
-                            // throughout the drawer animation.
+                            // Keep this physical layer transparent and static
+                            // so its rectangular paint can't fill the rounded
+                            // corners supplied by the animated surface, while
+                            // the image-heavy page retains its render object.
+                            color: Colors.transparent,
                             elevation: 0,
                             shadowColor: Colors.transparent,
                             borderRadius: BorderRadius.zero,

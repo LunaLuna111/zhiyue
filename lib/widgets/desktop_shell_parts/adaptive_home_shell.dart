@@ -298,6 +298,10 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
       animation: _progress,
       builder: (context, _) {
         final value = _progress.value;
+        final mainSurfaceBorderRadius = BorderRadius.only(
+          topLeft: Radius.circular(_drawerCornerRadius * value),
+          bottomLeft: Radius.circular(_drawerCornerRadius * value),
+        );
         return PopScope(
           canPop: value == 0 && !_confirmsAndroidRootExit,
           onPopInvokedWithResult: (didPop, _) =>
@@ -364,27 +368,34 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                     child: ExcludeSemantics(
                       excluding: value > 0,
                       child: RepaintBoundary(
-                        child: PhysicalModel(
-                          key: const ValueKey('push-main-physical-surface'),
-                          color: ZhPalette.background,
-                          // Keep the physical layer static while it moves. A
-                          // changing elevation forces Flutter to regenerate a
-                          // large shadow texture on every animation tick.
-                          elevation: 18,
-                          shadowColor: Colors.black54,
-                          borderRadius: BorderRadius.zero,
-                          clipBehavior: Clip.none,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(
-                                _drawerCornerRadius * value,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: mainSurfaceBorderRadius,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(
+                                  alpha: .18 * value,
+                                ),
+                                blurRadius: 22,
+                                offset: const Offset(-5, 0),
                               ),
-                              bottomLeft: Radius.circular(
-                                _drawerCornerRadius * value,
-                              ),
+                            ],
+                          ),
+                          child: PhysicalModel(
+                            key: const ValueKey('push-main-physical-surface'),
+                            color: ZhPalette.background,
+                            // Keep this physical layer's geometry static so
+                            // the image-heavy page retains its render object
+                            // throughout the drawer animation.
+                            elevation: 0,
+                            shadowColor: Colors.transparent,
+                            borderRadius: BorderRadius.zero,
+                            clipBehavior: Clip.none,
+                            child: ClipRRect(
+                              borderRadius: mainSurfaceBorderRadius,
+                              clipBehavior: Clip.antiAlias,
+                              child: mainScaffold,
                             ),
-                            clipBehavior: Clip.antiAlias,
-                            child: mainScaffold,
                           ),
                         ),
                       ),

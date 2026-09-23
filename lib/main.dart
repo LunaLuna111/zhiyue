@@ -65,18 +65,27 @@ Future<void> main() async {
     return false;
   };
   final contract = await ApiContract.load();
+  final drawerController = ZhPushDrawerController();
   runApp(
-    ZhMobileViewportSurface(
-      child: ZhiyueApp(session: session, contract: contract),
+    ZhiyueApp(
+      session: session,
+      contract: contract,
+      drawerController: drawerController,
     ),
   );
 }
 
 class ZhiyueApp extends StatefulWidget {
-  const ZhiyueApp({super.key, required this.session, required this.contract});
+  const ZhiyueApp({
+    super.key,
+    required this.session,
+    required this.contract,
+    required this.drawerController,
+  });
 
   final SessionStore session;
   final ApiContract contract;
+  final ZhPushDrawerController drawerController;
 
   @override
   State<ZhiyueApp> createState() => _ZhiyueAppState();
@@ -120,6 +129,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
   void dispose() {
     widget.session.removeListener(_sessionChanged);
     _api.close();
+    widget.drawerController.dispose();
     super.dispose();
   }
 
@@ -156,6 +166,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
               api: _api,
               session: widget.session,
               contract: widget.contract,
+              drawerController: widget.drawerController,
             ),
           ),
         ),
@@ -165,20 +176,24 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
       enabled: widget.session.glassEffectsEnabled,
       child: app,
     );
-    if (!widget.session.glassEffectsEnabled) return scopedApp;
-    return LiquidGlassWidgets.wrap(
-      child: scopedApp,
-      brightnessResolver: Theme.maybeBrightnessOf,
-      // Keep the normal glass language, but let the library fall back to its
-      // lightweight glass tier when measured raster frames exceed budget.
-      // Premium is intentionally not part of the client performance target.
-      adaptiveQuality: true,
-      adaptiveConfig: const GlassAdaptiveScopeConfig(
-        minQuality: GlassQuality.minimal,
-        maxQuality: GlassQuality.standard,
-        initialQuality: GlassQuality.standard,
-        allowStepUp: false,
-      ),
+    final glassApp = widget.session.glassEffectsEnabled
+        ? LiquidGlassWidgets.wrap(
+            child: scopedApp,
+            brightnessResolver: Theme.maybeBrightnessOf,
+            // Keep the normal glass language, but let the library fall back
+            // to its lightweight tier when raster frames exceed budget.
+            adaptiveQuality: true,
+            adaptiveConfig: const GlassAdaptiveScopeConfig(
+              minQuality: GlassQuality.minimal,
+              maxQuality: GlassQuality.standard,
+              initialQuality: GlassQuality.standard,
+              allowStepUp: false,
+            ),
+          )
+        : scopedApp;
+    return ZhMobileViewportSurface(
+      drawerProgress: widget.drawerController.animationProgress,
+      child: glassApp,
     );
   }
 }
@@ -189,11 +204,13 @@ class HomeShell extends StatefulWidget {
     required this.api,
     required this.session,
     required this.contract,
+    required this.drawerController,
   });
 
   final ZhihuApiClient api;
   final SessionStore session;
   final ApiContract contract;
+  final ZhPushDrawerController drawerController;
 
   @override
   State<HomeShell> createState() => _HomeShellState();
@@ -201,7 +218,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
-  final _drawerController = ZhPushDrawerController();
+  ZhPushDrawerController get _drawerController => widget.drawerController;
   final _feedController = HomeFeedController();
   final _searchController = SearchPageController();
   final _accountStore = AccountSessionStore.instance;
@@ -250,7 +267,6 @@ class _HomeShellState extends State<HomeShell> {
     widget.session.removeListener(_sessionChanged);
     _feedController.dispose();
     _searchController.dispose();
-    _drawerController.dispose();
     _webDav.dispose();
     super.dispose();
   }
@@ -507,9 +523,9 @@ class _HomeShellState extends State<HomeShell> {
     return ZhAdaptiveHomeShell(
       scaffoldKey: _scaffoldKey,
       pushDrawerController: _drawerController,
-      drawerEnableOpenDragGesture: _index == 0,
-      // Wide enough to acquire reliably without reaching the center-only home
-      // channel swipe zone.
+      drawerEnableOpenDragGesture: true,
+      // Keep the gesture confined to the leading edge to avoid taking over
+      // ordinary horizontal paging swipes across the rest of the app.
       drawerEdgeDragWidth: 72,
       drawerScrimColor: ZhPalette.ink.withValues(alpha: .2),
       drawer: drawer,

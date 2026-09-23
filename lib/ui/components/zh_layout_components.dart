@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../zh_theme.dart';
@@ -55,25 +56,45 @@ class ZhPageWidth extends StatelessWidget {
 /// transparent app bar then expose square white corners during the gesture.
 /// Keeping this clip above the app itself means every route (including custom
 /// PageRouteBuilder pages, root overlays, and nested Navigators) keeps the same
-/// phone-shaped surface while it is being transformed. This must stay outside
-/// MaterialApp: a builder inside MaterialApp is still below some root-level
-/// overlay/compositing layers used during predictive back.
+/// phone-shaped surface while it is being transformed. The leading corners
+/// relax with the transient sidebar so its surface can stay flush to the edge.
+/// This must stay outside MaterialApp: a builder inside MaterialApp is still
+/// below some root-level overlay/compositing layers used during predictive back.
 class ZhMobileViewportSurface extends StatelessWidget {
-  const ZhMobileViewportSurface({super.key, required this.child});
+  const ZhMobileViewportSurface({
+    super.key,
+    required this.child,
+    this.drawerProgress,
+  });
 
   final Widget child;
+  final ValueListenable<double>? drawerProgress;
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     if (size.width >= ZhViewport.compact) return child;
+    final progress = drawerProgress;
+    if (progress == null) return _buildSurface(child, 0);
+    return ValueListenableBuilder<double>(
+      valueListenable: progress,
+      child: child,
+      builder: (context, value, child) => _buildSurface(child!, value),
+    );
+  }
+
+  Widget _buildSurface(Widget child, double drawerProgress) {
+    final progress = drawerProgress.clamp(0.0, 1.0).toDouble();
+    final leadingRadius = 30 * (1 - progress);
     return ColoredBox(
       color: ZhPalette.canvas,
       child: ClipRRect(
         clipBehavior: Clip.hardEdge,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(30),
-          bottom: Radius.circular(30),
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(leadingRadius),
+          bottomLeft: Radius.circular(leadingRadius),
+          topRight: const Radius.circular(30),
+          bottomRight: const Radius.circular(30),
         ),
         child: child,
       ),

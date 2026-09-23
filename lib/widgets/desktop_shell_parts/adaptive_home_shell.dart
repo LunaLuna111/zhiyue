@@ -63,6 +63,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
   @override
   void initState() {
     super.initState();
+    _progress.addListener(_publishDrawerProgress);
     _attachController(widget.pushDrawerController ?? _ownedController);
   }
 
@@ -79,7 +80,12 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
   void _attachController(ZhPushDrawerController controller) {
     _drawerController = controller;
     _progress.value = controller.isOpen ? 1 : 0;
+    controller._setAnimationProgress(_progress.value);
     controller._attach(_transition);
+  }
+
+  void _publishDrawerProgress() {
+    _drawerController._setAnimationProgress(_progress.value);
   }
 
   Future<bool> _animateDrawer(bool open) async {
@@ -207,6 +213,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
 
   @override
   void dispose() {
+    _progress.removeListener(_publishDrawerProgress);
     _drawerController._detach(_transition);
     _ownedController.dispose();
     _progress.dispose();
@@ -334,7 +341,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                 fit: StackFit.expand,
                 clipBehavior: Clip.hardEdge,
                 children: [
-                  ColoredBox(color: ZhPalette.canvas),
+                  ColoredBox(color: ZhPalette.background),
                   Positioned(
                     left: 0,
                     top: 0,
@@ -409,9 +416,17 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                           key: const ValueKey('push-drawer-dismiss'),
                           behavior: HitTestBehavior.opaque,
                           onTap: _drawerController.close,
-                          child: ColoredBox(
-                            color: (widget.drawerScrimColor ?? ZhPalette.ink)
-                                .withValues(alpha: .08 * value),
+                          child: ClipRRect(
+                            // Keep the dimming layer inside the same silhouette
+                            // as the shifted page. Otherwise it tints the white
+                            // cutout outside the rounded corner gray, breaking
+                            // the continuous surface between drawer and page.
+                            borderRadius: mainSurfaceBorderRadius,
+                            clipBehavior: Clip.antiAlias,
+                            child: ColoredBox(
+                              color: (widget.drawerScrimColor ?? ZhPalette.ink)
+                                  .withValues(alpha: .08 * value),
+                            ),
                           ),
                         ),
                       ),

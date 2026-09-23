@@ -165,6 +165,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
       if (structuredSegments.isNotEmpty)
         StructuredAnswerContent(
           segments: structuredSegments,
+          fallbackImages: images,
           videos: videos,
           videoApi: widget.api,
           contentType: widget.contentType,

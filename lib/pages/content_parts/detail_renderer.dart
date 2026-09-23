@@ -8,6 +8,7 @@ class StructuredAnswerContent extends StatelessWidget {
   const StructuredAnswerContent({
     super.key,
     required this.segments,
+    this.fallbackImages = const [],
     this.videos = const [],
     this.videoApi,
     this.onSentenceComments,
@@ -18,6 +19,7 @@ class StructuredAnswerContent extends StatelessWidget {
   });
 
   final List<Map<String, dynamic>> segments;
+  final List<String> fallbackImages;
   final List<RichContentVideo> videos;
   final ZhihuApiClient? videoApi;
   final void Function(List<String> sentenceIds, String quote)?
@@ -62,6 +64,7 @@ class StructuredAnswerContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final children = <Widget>[];
     final imageSources = <_DetailImageSource>[];
+    final renderedImageKeys = <String>{};
     var videoCursor = 0;
     for (var index = 0; index < segments.length; index++) {
       final segment = segments[index];
@@ -73,6 +76,7 @@ class StructuredAnswerContent extends StatelessWidget {
           final image = _contentMap(segment['image']);
           final source = _detailImageSource(url, metadata: image);
           imageSources.add(source);
+          renderedImageKeys.add(source.identity);
           final caption = plainText(image?['description']);
           child = Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,6 +183,19 @@ class StructuredAnswerContent extends StatelessWidget {
       children.add(
         InlineAnswerVideo(video: videos[videoCursor++], api: videoApi),
       );
+    }
+    final remainingImages = <_DetailImageSource>[];
+    for (final url in fallbackImages) {
+      final source = _DetailImageSource(url: url);
+      if (source.url.isEmpty || !renderedImageKeys.add(source.identity)) {
+        continue;
+      }
+      remainingImages.add(source);
+      imageSources.add(source);
+    }
+    if (remainingImages.isNotEmpty) {
+      if (children.isNotEmpty) children.add(const SizedBox(height: ZhSpace.md));
+      children.add(_DetailImageGallery(sources: remainingImages));
     }
     return _DetailImageWarmup(
       sources: imageSources,

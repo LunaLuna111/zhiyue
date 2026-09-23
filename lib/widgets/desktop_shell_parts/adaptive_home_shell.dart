@@ -368,26 +368,21 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                     child: ExcludeSemantics(
                       excluding: value > 0,
                       child: RepaintBoundary(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: ZhPalette.background,
-                            borderRadius: mainSurfaceBorderRadius,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(
-                                  alpha: .18 * value,
-                                ),
-                                blurRadius: 22,
-                                offset: const Offset(-5, 0),
-                              ),
-                            ],
+                        child: PhysicalModel(
+                          color: ZhPalette.background,
+                          // Cast the shadow from the exact same animated
+                          // rounded outline as the page. A blurred BoxShadow
+                          // can leave square-looking ends at this narrow edge.
+                          elevation: 18,
+                          shadowColor: Colors.black.withValues(
+                            alpha: .22 * value,
                           ),
+                          borderRadius: mainSurfaceBorderRadius,
+                          clipBehavior: Clip.none,
                           child: PhysicalModel(
                             key: const ValueKey('push-main-physical-surface'),
-                            // Keep this physical layer transparent and static
-                            // so its rectangular paint can't fill the rounded
-                            // corners supplied by the animated surface, while
-                            // the image-heavy page retains its render object.
+                            // Keep the page's expensive physical node static;
+                            // the outer surface owns the animated silhouette.
                             color: Colors.transparent,
                             elevation: 0,
                             shadowColor: Colors.transparent,

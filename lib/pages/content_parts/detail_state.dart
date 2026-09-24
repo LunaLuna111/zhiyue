@@ -894,80 +894,88 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           ),
           menuItems: detailMenuItems,
         );
-    return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      appBar: ZhTopBar(
-        toolbarHeight: 56,
-        leading: ZhLiquidGlassIconButton(
-          key: const ValueKey('content-detail-back'),
-          icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            Navigator.of(context).maybePop();
-          },
-          semanticLabel: '返回',
-          size: 46,
-          iconSize: 24,
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      // Selection text deliberately ignores blank trailing glyph space so a
+      // long press there cannot create a menu. Dismiss from the whole detail
+      // surface instead, including the app bar and bottom action bar.
+      onPointerDown: (_) => ContextMenuController.removeAny(),
+      child: Scaffold(
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        appBar: ZhTopBar(
+          toolbarHeight: 56,
+          leading: ZhLiquidGlassIconButton(
+            key: const ValueKey('content-detail-back'),
+            icon: const Icon(Icons.arrow_back_rounded),
+            onPressed: () {
+              Navigator.of(context).maybePop();
+            },
+            semanticLabel: '返回',
+            size: 46,
+            iconSize: 24,
+          ),
+          actions: [detailActionGroup],
+          title: ContentDetailAppBarTitle(title: authorDisplayName),
         ),
-        actions: [detailActionGroup],
-        title: ContentDetailAppBarTitle(title: authorDisplayName),
+        body: Builder(
+          builder: (bodyContext) {
+            // With extendBodyBehindAppBar, Scaffold exposes the app bar's
+            // occupied height as the body's top MediaQuery padding. Put that
+            // inset inside the scrollable content instead of around the whole
+            // body, so later content can continue underneath the translucent
+            // top chrome and be progressively blurred while scrolling.
+            final topInset = MediaQuery.paddingOf(bodyContext).top;
+            final body = desktop && document != null
+                ? ZhResponsiveTwoPane(
+                    primary: _body(
+                      topInset: topInset,
+                      answerQuestionHeader: answerQuestionHeader,
+                    ),
+                    secondary: _DetailDesktopRail(
+                      contentType: widget.contentType,
+                      metrics: documentMetrics!,
+                      relationship: documentRelationship!,
+                      dateLabel: contentDateLabel(documentMetrics),
+                      onComments: _openComments,
+                    ),
+                  )
+                : ZhResponsiveFrame(
+                    maxWidth: 920,
+                    child: _body(
+                      topInset: topInset,
+                      answerQuestionHeader: answerQuestionHeader,
+                    ),
+                  );
+            return body;
+          },
+        ),
+        bottomNavigationBar: document == null
+            ? null
+            : DetailEngagementBar(
+                metrics: documentMetrics!,
+                relationship: documentRelationship!,
+                busyAction: _busyAction,
+                onComments: _openComments,
+                onAction: _handleDetailAction,
+                onJumpToTop: _jumpAnswerToTop,
+                onJumpToBottom: _jumpAnswerToBottom,
+                authorName: authorDisplayName,
+                authorAvatar: authorAvatar,
+                authorFollowing: authorFollowing,
+                authorFollowBusy: _authorFollowBusy,
+                onAuthor: authorPageId.isEmpty
+                    ? null
+                    : () => _openAuthorPage(authorPageId),
+                onToggleAuthorFollowing:
+                    authorActionId.isEmpty ||
+                        documentRelationship.isAuthor == true ||
+                        _authorFollowBusy
+                    ? null
+                    : () =>
+                          _toggleAuthorFollowing(detailObject, authorActionId),
+              ),
       ),
-      body: Builder(
-        builder: (bodyContext) {
-          // With extendBodyBehindAppBar, Scaffold exposes the app bar's
-          // occupied height as the body's top MediaQuery padding. Put that
-          // inset inside the scrollable content instead of around the whole
-          // body, so later content can continue underneath the translucent
-          // top chrome and be progressively blurred while scrolling.
-          final topInset = MediaQuery.paddingOf(bodyContext).top;
-          final body = desktop && document != null
-              ? ZhResponsiveTwoPane(
-                  primary: _body(
-                    topInset: topInset,
-                    answerQuestionHeader: answerQuestionHeader,
-                  ),
-                  secondary: _DetailDesktopRail(
-                    contentType: widget.contentType,
-                    metrics: documentMetrics!,
-                    relationship: documentRelationship!,
-                    dateLabel: contentDateLabel(documentMetrics),
-                    onComments: _openComments,
-                  ),
-                )
-              : ZhResponsiveFrame(
-                  maxWidth: 920,
-                  child: _body(
-                    topInset: topInset,
-                    answerQuestionHeader: answerQuestionHeader,
-                  ),
-                );
-          return body;
-        },
-      ),
-      bottomNavigationBar: document == null
-          ? null
-          : DetailEngagementBar(
-              metrics: documentMetrics!,
-              relationship: documentRelationship!,
-              busyAction: _busyAction,
-              onComments: _openComments,
-              onAction: _handleDetailAction,
-              onJumpToTop: _jumpAnswerToTop,
-              onJumpToBottom: _jumpAnswerToBottom,
-              authorName: authorDisplayName,
-              authorAvatar: authorAvatar,
-              authorFollowing: authorFollowing,
-              authorFollowBusy: _authorFollowBusy,
-              onAuthor: authorPageId.isEmpty
-                  ? null
-                  : () => _openAuthorPage(authorPageId),
-              onToggleAuthorFollowing:
-                  authorActionId.isEmpty ||
-                      documentRelationship.isAuthor == true ||
-                      _authorFollowBusy
-                  ? null
-                  : () => _toggleAuthorFollowing(detailObject, authorActionId),
-            ),
     );
   }
 }

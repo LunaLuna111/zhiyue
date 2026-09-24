@@ -10,8 +10,6 @@
 
 ## 界面预览
 
-以下截图来自 Android 手机模拟器，未包含登录凭据、手机号或账号资料。
-
 <p align="center">
   <img src="docs/answer.png" width="23%" alt="回答阅读页面">
   <img src="docs/story.png" width="23%" alt="故事榜单">
@@ -275,23 +273,6 @@ flutter build apk \
 - 外部网页访问前显示目标域名与完整地址。
 - Release 构建不需要共享更新密钥或日志上传令牌。
 
-提交代码前应再次检查：
-
-```bash
-git status --short
-git diff --check
-flutter analyze --no-pub
-flutter test --no-pub
-```
-
-请勿提交以下内容：
-
-- `.env`、私钥、证书和 keystore
-- Android `local.properties` 或签名配置
-- 登录会话、Cookie、访问令牌和网络抓取数据
-- APK、AAB、符号文件和本机构建缓存
-- 包含个人路径、账号或设备信息的日志与截图
-
 ## 已知限制
 
 - Android、macOS 和 Windows 的平台插件能力并不完全相同。
@@ -303,11 +284,9 @@ flutter test --no-pub
 
 欢迎提交 Issue 和 Pull Request。提交前请确保：
 
-1. 修改范围明确，没有加入账号数据或本机文件。
-2. 新增接口能力优先放入独立 `zhihu_api` 包。
-3. 客户端只保留 UI、状态管理和平台适配。
-4. 静态分析及相关测试通过。
-5. 涉及交互时附上不包含隐私信息的截图或复现步骤。
+1. 新增接口能力优先放入独立 `zhihu_api` 包。
+2. 客户端只保留 UI、状态管理和平台适配。
+3. 静态分析及相关测试通过。
 
 ## 免责声明
 

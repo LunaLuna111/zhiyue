@@ -57,7 +57,7 @@ class _FeedObjectCard extends StatelessWidget {
             11,
             compact ? 9 : 12,
           ),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: 0.7),
             ),
@@ -406,8 +406,8 @@ class SingleContentCardImage extends StatelessWidget {
         cacheWidth: 960,
         filterQuality: FilterQuality.low,
         frameBuilder: (_, child, frame, _) =>
-            frame == null ? const ColoredBox(color: ZhPalette.canvas) : child,
-        errorBuilder: (_, _, _) => const ColoredBox(
+            frame == null ? ColoredBox(color: ZhPalette.canvas) : child,
+        errorBuilder: (_, _, _) => ColoredBox(
           color: ZhPalette.canvas,
           child: Center(
             child: Icon(
@@ -438,8 +438,8 @@ class _CardContentImage extends StatelessWidget {
       cacheWidth: cacheWidth,
       filterQuality: FilterQuality.low,
       frameBuilder: (_, child, frame, _) =>
-          frame == null ? const ColoredBox(color: ZhPalette.canvas) : child,
-      errorBuilder: (_, _, _) => const ColoredBox(
+          frame == null ? ColoredBox(color: ZhPalette.canvas) : child,
+      errorBuilder: (_, _, _) => ColoredBox(
         color: ZhPalette.canvas,
         child: Center(
           child: Icon(

@@ -179,9 +179,7 @@ class _ZhihuSelectableTextState extends State<_ZhihuSelectableText> {
     final span = TextSpan(
       text: widget.data,
       style: (widget.style ?? DefaultTextStyle.of(context).style).merge(
-        widget.linkUrl.isEmpty
-            ? null
-            : const TextStyle(color: Color(0xFF175199)),
+        widget.linkUrl.isEmpty ? null : TextStyle(color: ZhPalette.link),
       ),
       recognizer: _recognizer,
     );
@@ -412,9 +410,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
     ZhLiquidGlassActionItem(
       icon: Icon(
         Icons.change_history_outlined,
-        color: widget.relationship.isUpvoted
-            ? const Color(0xFF1677FF)
-            : ZhPalette.ink,
+        color: widget.relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
       ),
       label: widget.metrics.voteupCount == null
           ? '赞同'
@@ -430,7 +426,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
         child: Icon(
           Icons.change_history_outlined,
           color: widget.relationship.isDownvoted
-              ? const Color(0xFF1677FF)
+              ? ZhPalette.accent
               : ZhPalette.ink,
         ),
       ),
@@ -452,7 +448,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
       icon: Icon(
         Icons.star_border_rounded,
         color: widget.relationship.isFavorited == true
-            ? const Color(0xFF1677FF)
+            ? ZhPalette.accent
             : ZhPalette.ink,
       ),
       label: widget.metrics.favoriteCount == null

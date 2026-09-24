@@ -4,7 +4,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import '../zh_glass.dart';
 import '../zh_theme.dart';
 
-const _zhToolbarGlassSettings = LiquidGlassSettings(
+LiquidGlassSettings get _zhToolbarGlassSettings => LiquidGlassSettings(
   thickness: 30,
   blur: 10,
   chromaticAberration: .18,
@@ -12,14 +12,16 @@ const _zhToolbarGlassSettings = LiquidGlassSettings(
   refractiveIndex: 1.52,
   saturation: .9,
   ambientStrength: .8,
-  glassColor: Color(0xA6F8F8FA),
+  glassColor: ZhPalette.isDark
+      ? const Color(0xB820252C)
+      : const Color(0xA6F8F8FA),
 );
 
 // Pull-down menus need a quieter surface than the interactive toolbar glass.
 // The minimal tier deliberately uses Flutter's BackdropFilter path, so the
 // menu reads as a white Gaussian-frosted panel instead of a refractive lens
 // that lets the page text remain too legible underneath it.
-const _zhFrostedMenuSettings = LiquidGlassSettings(
+LiquidGlassSettings get _zhFrostedMenuSettings => LiquidGlassSettings(
   thickness: 0,
   blur: 18,
   chromaticAberration: 0,
@@ -27,7 +29,9 @@ const _zhFrostedMenuSettings = LiquidGlassSettings(
   refractiveIndex: 1,
   saturation: 1,
   ambientStrength: .18,
-  glassColor: Color(0xD6FFFFFF),
+  glassColor: ZhPalette.isDark
+      ? const Color(0xE61B2026)
+      : const Color(0xD6FFFFFF),
 );
 
 class _ZhPlainIconButton extends StatelessWidget {
@@ -103,9 +107,7 @@ class _ZhPlainIconButtonVisual extends StatelessWidget {
               : ZhPalette.ink,
           backgroundColor: grouped ? Colors.transparent : ZhPalette.canvas,
           disabledForegroundColor: ZhPalette.subtleInk,
-          side: grouped
-              ? BorderSide.none
-              : const BorderSide(color: ZhPalette.border),
+          side: grouped ? BorderSide.none : BorderSide(color: ZhPalette.border),
           shape: shapeBorder,
         ),
         icon: icon,
@@ -124,7 +126,7 @@ class _ZhPlainActionGroup extends StatelessWidget {
     color: ZhPalette.canvas,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(28),
-      side: const BorderSide(color: ZhPalette.border),
+      side: BorderSide(color: ZhPalette.border),
     ),
     clipBehavior: Clip.antiAlias,
     child: SizedBox(
@@ -276,7 +278,7 @@ class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
                     child: Text(
                       item.label,
                       style: item.destructive
-                          ? const TextStyle(color: ZhPalette.danger)
+                          ? TextStyle(color: ZhPalette.danger)
                           : null,
                     ),
                   ),
@@ -343,7 +345,7 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
     this.semanticLabel,
   });
 
-  static const LiquidGlassSettings _settings = LiquidGlassSettings(
+  static LiquidGlassSettings get _settings => LiquidGlassSettings(
     thickness: 28,
     blur: 8,
     chromaticAberration: .2,
@@ -351,10 +353,12 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
     refractiveIndex: 1.52,
     saturation: .94,
     ambientStrength: .85,
-    glassColor: Color(0xB8F8F8FA),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xB820252C)
+        : const Color(0xB8F8F8FA),
   );
 
-  static const LiquidGlassSettings _prominentSettings = LiquidGlassSettings(
+  static LiquidGlassSettings get _prominentSettings => LiquidGlassSettings(
     thickness: 34,
     blur: 7,
     chromaticAberration: .16,
@@ -362,7 +366,9 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
     refractiveIndex: 1.5,
     saturation: .9,
     ambientStrength: .88,
-    glassColor: Color(0xE3141414),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xE3E2E7ED)
+        : const Color(0xE3141414),
   );
 
   final String label;
@@ -375,7 +381,9 @@ class ZhLiquidGlassLabelButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final foreground = prominent ? ZhPalette.background : ZhPalette.ink;
+    final foreground = prominent
+        ? (ZhPalette.isDark ? ZhPalette.ink : ZhPalette.background)
+        : ZhPalette.ink;
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -445,7 +453,7 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
   const ZhLiquidGlassCapsuleActionGroup({super.key, required this.actions})
     : assert(actions.length > 0);
 
-  static const LiquidGlassSettings _settings = LiquidGlassSettings(
+  static LiquidGlassSettings get _settings => LiquidGlassSettings(
     thickness: 30,
     blur: 6,
     chromaticAberration: .24,
@@ -453,7 +461,9 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
     refractiveIndex: 1.56,
     saturation: .92,
     ambientStrength: .9,
-    glassColor: Color(0xB8F8F8FA),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xB820252C)
+        : const Color(0xB8F8F8FA),
   );
 
   final List<ZhLiquidGlassCapsuleAction> actions;
@@ -646,7 +656,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
     this.inlineActions = true,
   });
 
-  static const LiquidGlassSettings _settings = LiquidGlassSettings(
+  static LiquidGlassSettings get _settings => LiquidGlassSettings(
     thickness: 24,
     blur: 11,
     chromaticAberration: .14,
@@ -654,7 +664,9 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
     refractiveIndex: 1.5,
     saturation: .9,
     ambientStrength: .72,
-    glassColor: Color(0xA6F8F8FA),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xB820252C)
+        : const Color(0xA6F8F8FA),
   );
 
   final TextEditingController controller;
@@ -715,7 +727,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(compact ? 24 : 28),
-                    borderSide: const BorderSide(color: ZhPalette.border),
+                    borderSide: BorderSide(color: ZhPalette.border),
                   ),
                 ),
               ),
@@ -735,12 +747,12 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
             suffixIcon: suffix,
             onChanged: onChanged,
             onSubmitted: onSubmitted,
-            textStyle: const TextStyle(
+            textStyle: TextStyle(
               color: ZhPalette.ink,
               fontSize: 16,
               height: 1.2,
             ),
-            placeholderStyle: const TextStyle(
+            placeholderStyle: TextStyle(
               color: ZhPalette.mutedInk,
               fontSize: 16,
               height: 1.2,
@@ -783,7 +795,7 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
     this.plainSelection = false,
   }) : assert(labels.length > 0);
 
-  static const LiquidGlassSettings _settings = LiquidGlassSettings(
+  static LiquidGlassSettings get _settings => LiquidGlassSettings(
     thickness: 28,
     blur: 10,
     chromaticAberration: .18,
@@ -791,7 +803,9 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
     refractiveIndex: 1.52,
     saturation: .9,
     ambientStrength: .8,
-    glassColor: Color(0xA6F8F8FA),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xB820252C)
+        : const Color(0xA6F8F8FA),
   );
 
   // The package's scrollable segmented preset intentionally uses a native
@@ -799,7 +813,7 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
   // reads as a flat gray strip on the client's white canvas. Keep the moving
   // lens in the package and use a lighter, low-opacity surface profile for
   // the shared frosted track.
-  static const LiquidGlassSettings _scrollableSettings = LiquidGlassSettings(
+  static LiquidGlassSettings get _scrollableSettings => LiquidGlassSettings(
     thickness: 24,
     blur: 8,
     chromaticAberration: .24,
@@ -807,10 +821,12 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
     refractiveIndex: 1.5,
     saturation: .98,
     ambientStrength: .82,
-    glassColor: Color(0x3DF8FBFF),
+    glassColor: ZhPalette.isDark
+        ? const Color(0x64252B33)
+        : const Color(0x3DF8FBFF),
   );
 
-  static const LiquidGlassSettings _scrollableIndicatorSettings =
+  static LiquidGlassSettings get _scrollableIndicatorSettings =>
       LiquidGlassSettings(
         thickness: 34,
         blur: 3,
@@ -819,7 +835,9 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
         refractiveIndex: 1.48,
         saturation: 1.02,
         ambientStrength: .9,
-        glassColor: Color(0x66FFFFFF),
+        glassColor: ZhPalette.isDark
+            ? const Color(0x9957616D)
+            : const Color(0x66FFFFFF),
       );
 
   final List<String> labels;
@@ -877,6 +895,20 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
         shadowElevation: shadowElevation,
       );
     }
+    // The package's scrollable indicator is intentionally white-biased. On a
+    // dark page its refractive highlight can become a near-white pill even
+    // when the supplied indicator color is dark. Keep the same capsule and
+    // horizontal behavior, but use a palette-owned indicator in dark mode.
+    if (scrollable && ZhPalette.isDark) {
+      return _ZhDarkScrollableSegmentedTabs(
+        labels: labels,
+        selectedIndex: _safeIndex,
+        onSelected: onSelected,
+        semanticPrefix: semanticPrefix,
+        height: height,
+        labelFontSize: labelFontSize,
+      );
+    }
     if (scrollable) {
       return _ZhLiquidGlassScrollableSurface(
         height: height,
@@ -898,7 +930,9 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
           selectedTextStyle: _selectedStyle,
           unselectedTextStyle: _unselectedStyle,
           backgroundColor: Colors.transparent,
-          indicatorColor: const Color(0x42FFFFFF),
+          indicatorColor: ZhPalette.isDark
+              ? const Color(0x7A5E6875)
+              : const Color(0x42FFFFFF),
           indicatorSettings: _scrollableIndicatorSettings,
           // The indicator blooms beyond the resting track while it is being
           // dragged. A finite capsule sentinel keeps its corners circular at
@@ -930,7 +964,9 @@ class ZhLiquidGlassSegmentedTabs extends StatelessWidget {
       spacing: 2,
       tabPadding: const EdgeInsets.symmetric(horizontal: 8),
       indicatorBorderRadius: height / 2,
-      indicatorColor: const Color(0x1C000000),
+      indicatorColor: ZhPalette.isDark
+          ? const Color(0x663A424C)
+          : const Color(0x1C000000),
       indicatorPinchStrength: indicatorPinchStrength,
       indicatorExpansion: indicatorExpansion,
       selectedLabelStyle: _selectedStyle,
@@ -1013,7 +1049,9 @@ class _ZhLiquidGlassStaticSegmentedTabs extends StatelessWidget {
                     padding: const EdgeInsets.all(3),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        color: const Color(0x24000000),
+                        color: ZhPalette.isDark
+                            ? const Color(0x663A424C)
+                            : const Color(0x24000000),
                         borderRadius: BorderRadius.circular(height / 2),
                       ),
                     ),
@@ -1095,7 +1133,7 @@ class _ZhPlainSegmentedTabs extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: scrollable ? 14 : 8),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: active ? const Color(0xFFE1E3E8) : Colors.transparent,
+          color: active ? ZhPalette.pressed : Colors.transparent,
           borderRadius: BorderRadius.circular(height / 2),
         ),
         child: Text(
@@ -1103,7 +1141,7 @@ class _ZhPlainSegmentedTabs extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            color: active ? const Color(0xFF1677FF) : ZhPalette.mutedInk,
+            color: active ? ZhPalette.accent : ZhPalette.mutedInk,
             fontSize: labelFontSize,
             fontWeight: active ? FontWeight.w800 : FontWeight.w600,
             height: 1.2,
@@ -1134,7 +1172,7 @@ class _ZhPlainSegmentedTabs extends StatelessWidget {
       color: ZhPalette.canvas,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(height / 2),
-        side: const BorderSide(color: ZhPalette.border),
+        side: BorderSide(color: ZhPalette.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -1177,10 +1215,12 @@ class _ZhLiquidGlassScrollableSurface extends StatelessWidget {
               // GlassSegmentedControl owns the moving glass indicator. Keep
               // this outer track translucent but avoid a second full-surface
               // backdrop capture behind every list frame.
-              gradient: const LinearGradient(
+              gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xCFFFFFFF), Color(0x82EEF5FF)],
+                colors: ZhPalette.isDark
+                    ? const [Color(0xD1212730), Color(0x6F333C47)]
+                    : const [Color(0xCFFFFFFF), Color(0x82EEF5FF)],
               ),
               borderRadius: radius,
             ),
@@ -1192,12 +1232,157 @@ class _ZhLiquidGlassScrollableSurface extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: radius,
-                border: Border.all(color: const Color(0xB8FFFFFF)),
+                border: Border.all(
+                  color: ZhPalette.isDark
+                      ? const Color(0xB84A535F)
+                      : const Color(0xB8FFFFFF),
+                ),
               ),
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ZhDarkScrollableSegmentedTabs extends StatefulWidget {
+  const _ZhDarkScrollableSegmentedTabs({
+    required this.labels,
+    required this.selectedIndex,
+    required this.onSelected,
+    required this.semanticPrefix,
+    required this.height,
+    required this.labelFontSize,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+  final ValueChanged<int> onSelected;
+  final String semanticPrefix;
+  final double height;
+  final double labelFontSize;
+
+  @override
+  State<_ZhDarkScrollableSegmentedTabs> createState() =>
+      _ZhDarkScrollableSegmentedTabsState();
+}
+
+class _ZhDarkScrollableSegmentedTabsState
+    extends State<_ZhDarkScrollableSegmentedTabs> {
+  late final ScrollController _scrollController;
+  late List<GlobalKey> _itemKeys;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    _itemKeys = [
+      for (var index = 0; index < widget.labels.length; index++) GlobalKey(),
+    ];
+    _ensureSelectedVisible();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ZhDarkScrollableSegmentedTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.labels.length != widget.labels.length) {
+      _itemKeys = [
+        for (var index = 0; index < widget.labels.length; index++) GlobalKey(),
+      ];
+    }
+    if (oldWidget.selectedIndex != widget.selectedIndex ||
+        oldWidget.labels.length != widget.labels.length) {
+      _ensureSelectedVisible();
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _ensureSelectedVisible() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || widget.selectedIndex >= _itemKeys.length) return;
+      final context = _itemKeys[widget.selectedIndex].currentContext;
+      if (context == null) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: .5,
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOutCubic,
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(widget.height / 2);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xD1212730), Color(0x6F333C47)],
+        ),
+        borderRadius: radius,
+        border: Border.all(color: const Color(0xB84A535F)),
+      ),
+      child: ClipRRect(
+        borderRadius: radius,
+        child: SingleChildScrollView(
+          controller: _scrollController,
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.all(2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var index = 0; index < widget.labels.length; index++)
+                Semantics(
+                  key: _itemKeys[index],
+                  button: true,
+                  selected: index == widget.selectedIndex,
+                  label: '${widget.semanticPrefix}${widget.labels[index]}',
+                  onTap: () => widget.onSelected(index),
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => widget.onSelected(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOutCubic,
+                      height: widget.height - 4,
+                      padding: const EdgeInsets.symmetric(horizontal: 11),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: index == widget.selectedIndex
+                            ? const Color(0x7A5E6875)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(widget.height / 2),
+                      ),
+                      child: Text(
+                        widget.labels[index],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: index == widget.selectedIndex
+                              ? ZhPalette.ink
+                              : ZhPalette.mutedInk,
+                          fontSize: widget.labelFontSize,
+                          fontWeight: index == widget.selectedIndex
+                              ? FontWeight.w800
+                              : FontWeight.w600,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

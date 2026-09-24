@@ -23,13 +23,13 @@ class _CardMetric extends StatelessWidget {
         Icon(
           icon,
           size: 17,
-          color: selected ? const Color(0xFF1677FF) : ZhPalette.subtleInk,
+          color: selected ? ZhPalette.accent : ZhPalette.subtleInk,
         ),
         const SizedBox(width: 3),
         Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: selected ? const Color(0xFF1677FF) : ZhPalette.subtleInk,
+            color: selected ? ZhPalette.accent : ZhPalette.subtleInk,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
             fontSize: 11.5,
             height: 1.2,

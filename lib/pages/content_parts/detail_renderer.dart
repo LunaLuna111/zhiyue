@@ -87,8 +87,8 @@ class StructuredAnswerContent extends StatelessWidget {
                 Text(
                   caption,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Color(0xFF9196A1),
+                  style: TextStyle(
+                    color: ZhPalette.subtleInk,
                     fontSize: 13,
                     height: 1.4,
                   ),
@@ -105,9 +105,9 @@ class StructuredAnswerContent extends StatelessWidget {
           );
         }
       } else if (type == 'hr' || type == 'divider') {
-        child = const Padding(
+        child = Padding(
           padding: EdgeInsets.symmetric(vertical: 8),
-          child: Divider(height: 1, color: Color(0xFFEBECED)),
+          child: Divider(height: 1, color: ZhPalette.border),
         );
       } else {
         final node = _textNode(segment, type);
@@ -290,7 +290,7 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
     final isCode = const {'pre', 'code', 'code_block'}.contains(widget.kind);
     final isList = widget.kind.contains('list') || widget.kind == 'list_item';
     final baseStyle = TextStyle(
-      color: isQuote ? const Color(0xFF646873) : const Color(0xFF191B1F),
+      color: isQuote ? ZhPalette.quoteText : ZhPalette.ink,
       fontSize: isHeading
           ? widget.headingLevel <= 1
                 ? 23
@@ -303,7 +303,7 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
       height: isHeading ? 1.4 : 1.78,
       fontWeight: isHeading ? FontWeight.w700 : FontWeight.w400,
       fontFamily: isCode ? 'monospace' : null,
-      backgroundColor: isCode ? const Color(0xFFF6F6F8) : null,
+      backgroundColor: isCode ? ZhPalette.codeSurface : null,
     );
     final boundaries = <int>{0, widget.text.length};
     for (final mark in widget.marks) {
@@ -346,13 +346,13 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
           );
         } else if (type == 'code') {
           style = style.merge(
-            const TextStyle(
+            TextStyle(
               fontFamily: 'monospace',
-              backgroundColor: Color(0xFFF1F2F4),
+              backgroundColor: ZhPalette.softSurface,
             ),
           );
         } else if (type == 'link' || type == 'entity_word') {
-          style = style.merge(const TextStyle(color: Color(0xFF175199)));
+          style = style.merge(TextStyle(color: ZhPalette.link));
           final link = _contentMap(mark[type]);
           final url = plainText(
             mark['url'] ?? mark['href'] ?? link?['url'] ?? link?['href'],
@@ -377,11 +377,11 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
               ? countValue.round()
               : int.tryParse(plainText(countValue)) ?? 0;
           style = style.merge(
-            const TextStyle(
-              color: Color(0xFF175199),
-              backgroundColor: Color(0xFFEAF3FF),
+            TextStyle(
+              color: ZhPalette.link,
+              backgroundColor: ZhPalette.accentSurface,
               decoration: TextDecoration.underline,
-              decorationColor: Color(0xFF1772F6),
+              decorationColor: ZhPalette.accent,
             ),
           );
           semantics = count > 0 ? '$count 条句子评论' : '查看句子评论';
@@ -429,9 +429,11 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
     );
     if (isQuote) {
       return DecoratedBox(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF7F7F8),
-          border: Border(left: BorderSide(color: Color(0xFFC9CCD3), width: 3)),
+        decoration: BoxDecoration(
+          color: ZhPalette.softSurface,
+          border: Border(
+            left: BorderSide(color: ZhPalette.softBorder, width: 3),
+          ),
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(13, 10, 12, 10),

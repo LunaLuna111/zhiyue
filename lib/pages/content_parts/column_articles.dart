@@ -199,7 +199,7 @@ class ColumnHeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
       ),
       alignment: Alignment.center,
-      child: const Icon(
+      child: Icon(
         Icons.view_column_outlined,
         color: ZhPalette.background,
         size: 28,

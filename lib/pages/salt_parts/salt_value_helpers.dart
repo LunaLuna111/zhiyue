@@ -16,7 +16,7 @@ Widget _saltHeaderPlaceholder() => Container(
 Widget _saltAuthorAvatarPlaceholder() => Container(
   color: ZhPalette.pressed,
   alignment: Alignment.center,
-  child: const Icon(
+  child: Icon(
     Icons.person_outline_rounded,
     size: 20,
     color: ZhPalette.subtleInk,

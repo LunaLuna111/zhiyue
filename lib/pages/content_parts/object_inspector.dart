@@ -200,7 +200,7 @@ class _GenericImageGallery extends StatelessWidget {
         cacheHeight: 378,
         filterQuality: FilterQuality.low,
         frameBuilder: (_, child, frame, _) =>
-            frame == null ? const ColoredBox(color: ZhPalette.canvas) : child,
+            frame == null ? ColoredBox(color: ZhPalette.canvas) : child,
         errorBuilder: (_, _, _) => Container(
           width: 178,
           color: ZhPalette.canvas,

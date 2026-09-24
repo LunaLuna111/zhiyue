@@ -1,6 +1,6 @@
 part of '../../pages/native_login_page.dart';
 
-const _loginGlassSettings = LiquidGlassSettings(
+LiquidGlassSettings get _loginGlassSettings => LiquidGlassSettings(
   thickness: 26,
   blur: 12,
   chromaticAberration: .14,
@@ -8,10 +8,12 @@ const _loginGlassSettings = LiquidGlassSettings(
   refractiveIndex: 1.51,
   saturation: .92,
   ambientStrength: .78,
-  glassColor: Color(0xC9FFFFFF),
+  glassColor: ZhPalette.isDark
+      ? const Color(0xD6222A33)
+      : const Color(0xC9FFFFFF),
 );
 
-const _loginProgressGlassSettings = LiquidGlassSettings(
+LiquidGlassSettings get _loginProgressGlassSettings => LiquidGlassSettings(
   thickness: 34,
   blur: 5,
   chromaticAberration: .35,
@@ -19,10 +21,12 @@ const _loginProgressGlassSettings = LiquidGlassSettings(
   refractiveIndex: 1.59,
   saturation: .85,
   ambientStrength: .85,
-  glassColor: Color(0x55FFFFFF),
+  glassColor: ZhPalette.isDark
+      ? const Color(0x55252B33)
+      : const Color(0x55FFFFFF),
 );
 
-const _loginProgressIndicatorSettings = LiquidGlassSettings(
+LiquidGlassSettings get _loginProgressIndicatorSettings => LiquidGlassSettings(
   thickness: 38,
   blur: 2,
   chromaticAberration: .28,
@@ -30,7 +34,9 @@ const _loginProgressIndicatorSettings = LiquidGlassSettings(
   refractiveIndex: 1.5,
   saturation: 1,
   ambientStrength: .95,
-  glassColor: Color(0x66FFFFFF),
+  glassColor: ZhPalette.isDark
+      ? const Color(0x9957616D)
+      : const Color(0x66FFFFFF),
 );
 
 class _LoginBackdrop extends StatelessWidget {
@@ -38,25 +44,30 @@ class _LoginBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
     if (!ZhGlassScope.enabledOf(context)) {
-      return const IgnorePointer(
-        child: ColoredBox(color: ZhPalette.background),
-      );
+      return IgnorePointer(child: ColoredBox(color: ZhPalette.background));
     }
     return IgnorePointer(
       child: Stack(
         fit: StackFit.expand,
         children: [
-          const DecoratedBox(
+          DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFFF1F6FF),
-                  Color(0xFFF9FBFF),
-                  Color(0xFFF4F6FA),
-                ],
+                colors: dark
+                    ? const [
+                        Color(0xFF111821),
+                        Color(0xFF151B24),
+                        Color(0xFF101419),
+                      ]
+                    : const [
+                        Color(0xFFF1F6FF),
+                        Color(0xFFF9FBFF),
+                        Color(0xFFF4F6FA),
+                      ],
                 stops: [0, .52, 1],
               ),
             ),
@@ -66,7 +77,10 @@ class _LoginBackdrop extends StatelessWidget {
             right: -54,
             child: ImageFiltered(
               imageFilter: ui.ImageFilter.blur(sigmaX: 34, sigmaY: 34),
-              child: const _LoginGlow(size: 230, color: Color(0x2D9AC8FF)),
+              child: _LoginGlow(
+                size: 230,
+                color: dark ? const Color(0x3D3E78B8) : const Color(0x2D9AC8FF),
+              ),
             ),
           ),
           Positioned(
@@ -74,7 +88,10 @@ class _LoginBackdrop extends StatelessWidget {
             bottom: 80,
             child: ImageFiltered(
               imageFilter: ui.ImageFilter.blur(sigmaX: 46, sigmaY: 46),
-              child: const _LoginGlow(size: 260, color: Color(0x1ECCD8FF)),
+              child: _LoginGlow(
+                size: 260,
+                color: dark ? const Color(0x243E5E91) : const Color(0x1ECCD8FF),
+              ),
             ),
           ),
         ],
@@ -165,11 +182,11 @@ class _LoginGlassTextField extends StatelessWidget {
           fillColor: ZhPalette.canvas,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(32),
-            borderSide: const BorderSide(color: ZhPalette.border),
+            borderSide: BorderSide(color: ZhPalette.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(32),
-            borderSide: const BorderSide(color: ZhPalette.border),
+            borderSide: BorderSide(color: ZhPalette.border),
           ),
         ),
         style: Theme.of(
@@ -307,16 +324,18 @@ class _LoginProgress extends StatelessWidget {
           horizontal: 4,
           vertical: 4,
         ),
-        indicatorColor: const Color(0x24000000),
+        indicatorColor: ZhPalette.isDark
+            ? const Color(0x663A424C)
+            : const Color(0x24000000),
         indicatorSettings: _loginProgressIndicatorSettings,
         indicatorPinchStrength: .28,
-        selectedLabelStyle: const TextStyle(
+        selectedLabelStyle: TextStyle(
           color: ZhPalette.ink,
           fontSize: 16,
           fontWeight: FontWeight.w800,
           height: 1.2,
         ),
-        unselectedLabelStyle: const TextStyle(
+        unselectedLabelStyle: TextStyle(
           color: ZhPalette.mutedInk,
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -376,11 +395,15 @@ class _LoginPrimaryButton extends StatelessWidget {
     final enabled = onPressed != null;
     final radius = BorderRadius.circular(18);
     final topColor = enabled
-        ? const Color(0xFF2B2B2B)
-        : const Color(0xFF555555);
+        ? (ZhPalette.isDark ? const Color(0xFF7AA7FF) : const Color(0xFF2B2B2B))
+        : (ZhPalette.isDark
+              ? const Color(0xFF3E4C64)
+              : const Color(0xFF555555));
     final bottomColor = enabled
-        ? const Color(0xFF151515)
-        : const Color(0xFF3E3E3E);
+        ? (ZhPalette.isDark ? const Color(0xFF4F79C4) : const Color(0xFF151515))
+        : (ZhPalette.isDark
+              ? const Color(0xFF2B3444)
+              : const Color(0xFF3E3E3E));
 
     // Keep the primary CTA on a regular composited surface. The prominent
     // liquid-glass shader is intentionally unsuitable here: when a scrolling
@@ -416,7 +439,7 @@ class _LoginPrimaryButton extends StatelessWidget {
             borderRadius: radius,
             child: Center(
               child: busy
-                  ? const SizedBox.square(
+                  ? SizedBox.square(
                       dimension: 18,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
@@ -483,7 +506,7 @@ class _AgreementConsentDialog extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(50),
                     foregroundColor: ZhPalette.ink,
-                    side: const BorderSide(color: ZhPalette.border),
+                    side: BorderSide(color: ZhPalette.border),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(25),
                     ),

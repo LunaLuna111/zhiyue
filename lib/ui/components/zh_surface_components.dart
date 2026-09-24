@@ -11,7 +11,7 @@ class ZhSurface extends StatefulWidget {
     this.padding = const EdgeInsets.all(ZhSpace.md),
     this.margin = EdgeInsets.zero,
     this.radius = ZhRadius.card,
-    this.backgroundColor = ZhPalette.background,
+    this.backgroundColor,
   });
 
   final Widget child;
@@ -19,7 +19,7 @@ class ZhSurface extends StatefulWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
   final double radius;
-  final Color backgroundColor;
+  final Color? backgroundColor;
 
   @override
   State<ZhSurface> createState() => _ZhSurfaceState();
@@ -34,7 +34,7 @@ class _ZhSurfaceState extends State<ZhSurface> {
       width: double.infinity,
       padding: widget.padding,
       radius: BorderRadius.circular(widget.radius),
-      backgroundColor: widget.backgroundColor,
+      backgroundColor: widget.backgroundColor ?? ZhPalette.background,
       shadows: const [],
       child: widget.child,
     );
@@ -85,6 +85,8 @@ class _ZhSurfaceState extends State<ZhSurface> {
 /// hover feedback. This lighter primitive is intended for the many small
 /// panels that only need the application's shared fill, border and radius.
 class ZhPanel extends StatelessWidget {
+  static const _paletteBorderMarker = Color(0x01020304);
+
   const ZhPanel({
     super.key,
     required this.child,
@@ -92,8 +94,8 @@ class ZhPanel extends StatelessWidget {
     this.padding = const EdgeInsets.all(ZhSpace.md),
     this.margin = EdgeInsets.zero,
     this.radius = ZhRadius.card,
-    this.backgroundColor = ZhPalette.background,
-    this.borderColor = ZhPalette.border,
+    this.backgroundColor,
+    this.borderColor = _paletteBorderMarker,
     this.borderWidth = 1,
     this.elevation = 0,
   });
@@ -103,23 +105,26 @@ class ZhPanel extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
   final double radius;
-  final Color backgroundColor;
+  final Color? backgroundColor;
   final Color? borderColor;
   final double borderWidth;
   final double elevation;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedBorderColor = borderColor == _paletteBorderMarker
+        ? ZhPalette.border
+        : borderColor;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(radius),
-      side: borderColor == null || borderWidth <= 0
+      side: resolvedBorderColor == null || borderWidth <= 0
           ? BorderSide.none
-          : BorderSide(color: borderColor!, width: borderWidth),
+          : BorderSide(color: resolvedBorderColor, width: borderWidth),
     );
     return Padding(
       padding: margin,
       child: Material(
-        color: backgroundColor,
+        color: backgroundColor ?? ZhPalette.background,
         elevation: elevation,
         shape: shape,
         clipBehavior: Clip.antiAlias,
@@ -178,8 +183,8 @@ class ZhIconTile extends StatelessWidget {
     required this.icon,
     this.size = 44,
     this.iconSize = 21,
-    this.backgroundColor = ZhPalette.canvas,
-    this.iconColor = ZhPalette.ink,
+    this.backgroundColor,
+    this.iconColor,
     this.radius = 14,
     this.circle = false,
     this.borderColor,
@@ -189,8 +194,8 @@ class ZhIconTile extends StatelessWidget {
   final IconData icon;
   final double size;
   final double iconSize;
-  final Color backgroundColor;
-  final Color iconColor;
+  final Color? backgroundColor;
+  final Color? iconColor;
   final double radius;
   final bool circle;
   final Color? borderColor;
@@ -201,14 +206,14 @@ class ZhIconTile extends StatelessWidget {
     dimension: size,
     child: DecoratedBox(
       decoration: BoxDecoration(
-        color: backgroundColor,
+        color: backgroundColor ?? ZhPalette.canvas,
         shape: circle ? BoxShape.circle : BoxShape.rectangle,
         borderRadius: circle ? null : BorderRadius.circular(radius),
         border: borderColor == null || borderWidth <= 0
             ? null
             : Border.all(color: borderColor!, width: borderWidth),
       ),
-      child: Icon(icon, size: iconSize, color: iconColor),
+      child: Icon(icon, size: iconSize, color: iconColor ?? ZhPalette.ink),
     ),
   );
 }

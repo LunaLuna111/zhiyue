@@ -264,7 +264,7 @@ class _CommentRichTextState extends State<CommentRichText> {
         TextSpan(
           text: display,
           style: effectiveStyle.copyWith(
-            color: const Color(0xFF175199),
+            color: ZhPalette.link,
             decoration: TextDecoration.none,
           ),
           recognizer: recognizer,

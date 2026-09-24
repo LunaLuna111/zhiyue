@@ -55,14 +55,13 @@ class _SaltCommentsSheetState extends State<_SaltCommentsSheet> {
                 orderBy: orderBy == 'time' ? 'ts' : orderBy,
               ),
             ),
-            submitComment: (value, target) =>
-                widget.api.createSaltComment(
-                  objectType: widget.objectType,
-                  objectId: widget.objectId,
-                  content: value.text,
-                  replyCommentId: target.replyCommentId,
-                  sticker: value.sticker,
-                ),
+            submitComment: (value, target) => widget.api.createSaltComment(
+              objectType: widget.objectType,
+              objectId: widget.objectId,
+              content: value.text,
+              replyCommentId: target.replyCommentId,
+              sticker: value.sticker,
+            ),
             emptyMessage: widget.title.contains('弹评') ? '还没有弹评' : '还没有评论',
           ),
         ),
@@ -97,8 +96,8 @@ class _SaltSheetHeader extends StatelessWidget {
                 title,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF191B1F),
+                style: TextStyle(
+                  color: ZhPalette.ink,
                   fontSize: 17,
                   height: 1.2,
                   fontWeight: FontWeight.w700,
@@ -109,8 +108,8 @@ class _SaltSheetHeader extends StatelessWidget {
                   subtitle,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Color(0xFF9196A1),
+                  style: TextStyle(
+                    color: ZhPalette.subtleInk,
                     fontSize: 11,
                     height: 1.2,
                   ),
@@ -124,10 +123,10 @@ class _SaltSheetHeader extends StatelessWidget {
             key: const Key('salt-comments-close-action'),
             onPressed: onClose,
             tooltip: '关闭',
-            icon: const Icon(
+            icon: Icon(
               Icons.close_rounded,
               size: 24,
-              color: Color(0xFF9196A1),
+              color: ZhPalette.subtleInk,
             ),
           ),
         ),

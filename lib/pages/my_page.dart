@@ -207,7 +207,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                           width: 30,
                           height: 30,
                           alignment: Alignment.center,
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             color: ZhPalette.canvas,
                             shape: BoxShape.circle,
                           ),
@@ -432,6 +432,17 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
               const _SectionLabel('阅读与显示'),
               _SettingsGroup(
                 children: [
+                  _SwitchTile(
+                    key: const ValueKey('dark-mode-setting'),
+                    icon: Icons.dark_mode_outlined,
+                    title: '黑夜模式',
+                    subtitle: session.darkModeEnabled
+                        ? '使用深色背景和低亮度表面'
+                        : '使用浅色背景和明亮表面',
+                    value: session.darkModeEnabled,
+                    onChanged: session.setDarkModeEnabled,
+                  ),
+                  const Divider(),
                   _ChoiceTile<ReadingTextSize>(
                     icon: Icons.text_fields_rounded,
                     title: '阅读字号',
@@ -737,10 +748,7 @@ class _ActionTile extends StatelessWidget {
       title: Text(
         title,
         style: destructive
-            ? const TextStyle(
-                color: ZhPalette.danger,
-                fontWeight: FontWeight.w700,
-              )
+            ? TextStyle(color: ZhPalette.danger, fontWeight: FontWeight.w700)
             : null,
       ),
       subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),

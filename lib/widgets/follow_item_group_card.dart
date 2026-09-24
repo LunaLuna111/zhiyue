@@ -60,7 +60,7 @@ class FollowItemGroupCard extends StatelessWidget {
                         if (actorName.isNotEmpty)
                           TextSpan(
                             text: actorName,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: ZhPalette.ink,
                               fontWeight: FontWeight.w700,
                             ),
@@ -70,7 +70,7 @@ class FollowItemGroupCard extends StatelessWidget {
                         if (actionText.isNotEmpty)
                           TextSpan(
                             text: actionText,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: ZhPalette.mutedInk,
                               fontWeight: FontWeight.w400,
                             ),
@@ -116,7 +116,7 @@ class FollowItemGroupCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(43, 11, 11, 12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
                     bottom: BorderSide(color: ZhPalette.border, width: 0.7),
                   ),
@@ -134,7 +134,7 @@ class FollowItemGroupCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(
+                    Icon(
                       Icons.keyboard_arrow_down_rounded,
                       color: ZhPalette.mutedInk,
                       size: 20,
@@ -188,10 +188,7 @@ class _AvatarPlaceholder extends StatelessWidget {
     width: 28,
     height: 28,
     alignment: Alignment.center,
-    decoration: const BoxDecoration(
-      color: ZhPalette.canvas,
-      shape: BoxShape.circle,
-    ),
+    decoration: BoxDecoration(color: ZhPalette.canvas, shape: BoxShape.circle),
     child: Text(
       text,
       style: Theme.of(context).textTheme.labelSmall?.copyWith(

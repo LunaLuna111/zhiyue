@@ -86,7 +86,7 @@ class AnswerDetailAppBarTitle extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 2),
-                  const Icon(
+                  Icon(
                     Icons.chevron_right_rounded,
                     size: 18,
                     color: ZhPalette.subtleInk,
@@ -355,7 +355,7 @@ class _QuestionInviteeRowState extends State<_QuestionInviteeRow> {
         child: Container(
           constraints: const BoxConstraints(minHeight: 88),
           padding: const EdgeInsets.fromLTRB(18, 13, 16, 13),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: .7),
             ),
@@ -423,10 +423,10 @@ class _QuestionInviteeRowState extends State<_QuestionInviteeRow> {
                     padding: EdgeInsets.zero,
                     backgroundColor: invited
                         ? ZhPalette.canvas
-                        : const Color(0xFFEAF3FF),
+                        : ZhPalette.accentSurface,
                     foregroundColor: invited
                         ? ZhPalette.mutedInk
-                        : const Color(0xFF0F7BFF),
+                        : ZhPalette.link,
                     shape: const StadiumBorder(),
                   ),
                   child: _busy

@@ -110,7 +110,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                       dimension: 48,
                       child: ZhLiquidGlassIconButton(
                         key: const ValueKey('user-profile-back'),
-                        icon: const Icon(
+                        icon: Icon(
                           Icons.arrow_back_rounded,
                           color: ZhPalette.ink,
                         ),
@@ -142,7 +142,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                       actions: [
                         if (!isSelf)
                           ZhLiquidGlassCapsuleAction(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.search_rounded,
                               color: ZhPalette.ink,
                             ),
@@ -150,7 +150,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                             onPressed: () => _openProfileContentSearch(profile),
                           ),
                         ZhLiquidGlassCapsuleAction(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.share_outlined,
                             color: ZhPalette.ink,
                           ),

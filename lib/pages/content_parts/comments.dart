@@ -514,10 +514,10 @@ class _CommentThreadViewState extends State<CommentThreadView> {
   Widget? get _resolvedTitleWidget {
     if (widget.embedded) return null;
     if (_commentType == 'sentence') {
-      return const Text(
+      return Text(
         '句子评论',
         style: TextStyle(
-          color: Color(0xFF191B1F),
+          color: ZhPalette.ink,
           fontSize: 17,
           height: 1.2,
           fontWeight: FontWeight.w700,
@@ -527,10 +527,10 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     // The discussion recommendation is content metadata, not the title of
     // the comment panel. Keeping it in the toolbar made the sheet look like
     // a second feed header and pushed the author card down unnecessarily.
-    return const Text(
+    return Text(
       '全部评论',
       style: TextStyle(
-        color: Color(0xFF191B1F),
+        color: ZhPalette.ink,
         fontSize: 17,
         height: 1.2,
         fontWeight: FontWeight.w700,
@@ -566,10 +566,10 @@ class _CommentThreadViewState extends State<CommentThreadView> {
                 tooltip: '关闭',
                 onPressed: () =>
                     Navigator.of(context, rootNavigator: true).maybePop(),
-                icon: const Icon(
+                icon: Icon(
                   Icons.close_rounded,
                   size: 24,
-                  color: Color(0xFF9196A1),
+                  color: ZhPalette.subtleInk,
                 ),
               ),
             ]

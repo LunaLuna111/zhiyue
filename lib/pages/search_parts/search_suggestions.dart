@@ -327,7 +327,7 @@ class _SearchSuggestionList extends StatelessWidget {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.search_rounded,
                               size: 20,
                               color: ZhPalette.subtleInk,
@@ -343,7 +343,7 @@ class _SearchSuggestionList extends StatelessWidget {
                             ),
                             if (item.label == 'hot') ...[
                               const SizedBox(width: 8),
-                              const Icon(
+                              Icon(
                                 Icons.local_fire_department_outlined,
                                 size: 18,
                                 color: ZhPalette.subtleInk,

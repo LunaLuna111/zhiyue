@@ -203,7 +203,7 @@ class _SearchEntityResultRow extends StatelessWidget {
           ),
           decoration: compact
               ? null
-              : const BoxDecoration(
+              : BoxDecoration(
                   border: Border(
                     bottom: BorderSide(color: ZhPalette.border, width: .7),
                   ),
@@ -249,7 +249,7 @@ class _SearchEntityResultRow extends StatelessWidget {
                               ?.copyWith(color: ZhPalette.subtleInk),
                         ),
                         const SizedBox(width: 2),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
                           size: 20,
                           color: ZhPalette.subtleInk,

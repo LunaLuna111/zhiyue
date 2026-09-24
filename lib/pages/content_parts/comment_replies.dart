@@ -202,10 +202,10 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
     return PagedListPage(
       key: ValueKey('comment-replies-${widget.commentId}-$_revision'),
       title: '评论回复',
-      titleWidget: const Text(
+      titleWidget: Text(
         '评论回复',
         style: TextStyle(
-          color: Color(0xFF191B1F),
+          color: ZhPalette.ink,
           fontSize: 17,
           height: 1.2,
           fontWeight: FontWeight.w700,
@@ -219,7 +219,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
           ? null
           : Container(
               key: const Key('comment-replies-root'),
-              color: const Color(0xFFFFFFFF),
+              color: ZhPalette.background,
               child: Column(
                 children: [
                   CommentCard(
@@ -246,9 +246,9 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
                     ),
                     compact: true,
                   ),
-                  const SizedBox(
+                  SizedBox(
                     height: 10,
-                    child: ColoredBox(color: Color(0xFFF8F8FA)),
+                    child: ColoredBox(color: ZhPalette.softSurface),
                   ),
                 ],
               ),
@@ -357,12 +357,12 @@ Widget commentReplySummaryHeader(
     key: const Key('comment-reply-summary'),
     height: 48,
     alignment: Alignment.centerLeft,
-    color: const Color(0xFFFFFFFF),
+    color: ZhPalette.background,
     padding: const EdgeInsets.symmetric(horizontal: 16),
     child: Text(
       total == null ? '回复' : '回复 ${compactCount(total)}',
-      style: const TextStyle(
-        color: Color(0xFF191B1F),
+      style: TextStyle(
+        color: ZhPalette.ink,
         fontSize: 15,
         height: 1.2,
         fontWeight: FontWeight.w700,
@@ -387,11 +387,11 @@ class _OfficialCommentEditorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
     key: const Key('official-comment-editor-bar'),
-    decoration: const BoxDecoration(color: Color(0xFFFFFFFF)),
+    decoration: BoxDecoration(color: ZhPalette.background),
     child: Padding(
       padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
       child: Material(
-        color: enabled ? const Color(0xFFF1F2F4) : const Color(0xFFF6F6F7),
+        color: enabled ? ZhPalette.softSurface : ZhPalette.canvas,
         shape: const StadiumBorder(),
         elevation: 0,
         child: InkWell(
@@ -404,13 +404,13 @@ class _OfficialCommentEditorBar extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: Row(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 20,
-                    backgroundColor: Color(0xFFE0E5EA),
+                    backgroundColor: ZhPalette.softBorder,
                     child: Icon(
                       Icons.person_rounded,
                       size: 23,
-                      color: Color(0xFF68737E),
+                      color: ZhPalette.mutedInk,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -419,8 +419,8 @@ class _OfficialCommentEditorBar extends StatelessWidget {
                       enabled ? title : '暂时无法发表评论',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF66717C),
+                      style: TextStyle(
+                        color: ZhPalette.mutedInk,
                         fontSize: 17,
                         fontWeight: FontWeight.w500,
                       ),
@@ -482,22 +482,19 @@ class _EditorBarAction extends StatelessWidget {
                   height: 24,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: const Color(0xFF68737E),
-                      width: 2,
-                    ),
+                    border: Border.all(color: ZhPalette.mutedInk, width: 2),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: const Text(
+                  child: Text(
                     'GIF',
                     style: TextStyle(
-                      color: Color(0xFF68737E),
+                      color: ZhPalette.mutedInk,
                       fontSize: 9,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
                 )
-              : Icon(icon, size: 26, color: const Color(0xFF68737E)),
+              : Icon(icon, size: 26, color: ZhPalette.mutedInk),
         ),
       ),
     ),

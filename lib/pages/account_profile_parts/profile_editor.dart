@@ -375,7 +375,7 @@ class _AccountProfileEditPageState extends State<AccountProfileEditPage> {
             margin: const EdgeInsets.only(bottom: 20),
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             color: ZhPalette.canvas,
-            child: const Text(
+            child: Text(
               '您填写的内容将用于个人页展示及内容推荐',
               style: TextStyle(color: ZhPalette.subtleInk),
             ),
@@ -501,7 +501,7 @@ class _AccountProfileEditPageState extends State<AccountProfileEditPage> {
             child: Container(
               constraints: const BoxConstraints(minHeight: 86),
               padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 border: Border(bottom: BorderSide(color: ZhPalette.border)),
               ),
               child: Text(

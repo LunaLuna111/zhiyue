@@ -21,7 +21,7 @@ class NotificationListRow extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 86),
         padding: const EdgeInsets.fromLTRB(16, 12, 14, 12),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(bottom: BorderSide(color: ZhPalette.border)),
         ),
         child: Row(
@@ -104,10 +104,7 @@ class _NotificationAvatar extends StatelessWidget {
       height: size,
       color: ZhPalette.canvas,
       child: url.isEmpty
-          ? const Icon(
-              Icons.notifications_none_rounded,
-              color: ZhPalette.mutedInk,
-            )
+          ? Icon(Icons.notifications_none_rounded, color: ZhPalette.mutedInk)
           : ZhihuImage.network(
               url,
               headers: zhihuImageRequestHeaders,
@@ -119,12 +116,12 @@ class _NotificationAvatar extends StatelessWidget {
               cacheHeight: (size * 3).round(),
               filterQuality: FilterQuality.low,
               frameBuilder: (_, child, frame, _) => frame == null
-                  ? const Icon(
+                  ? Icon(
                       Icons.notifications_none_rounded,
                       color: ZhPalette.mutedInk,
                     )
                   : child,
-              errorBuilder: (_, _, _) => const Icon(
+              errorBuilder: (_, _, _) => Icon(
                 Icons.notifications_none_rounded,
                 color: ZhPalette.mutedInk,
               ),

@@ -30,13 +30,13 @@ class _SaltStoryCategoryCard extends StatelessWidget {
                   cacheWidth: 960,
                   filterQuality: FilterQuality.low,
                   frameBuilder: (_, child, frame, _) => frame == null
-                      ? const ColoredBox(color: ZhPalette.canvas)
+                      ? ColoredBox(color: ZhPalette.canvas)
                       : child,
                   errorBuilder: (_, _, _) =>
-                      const ColoredBox(color: ZhPalette.canvas),
+                      ColoredBox(color: ZhPalette.canvas),
                 )
               else
-                const ColoredBox(color: ZhPalette.canvas),
+                ColoredBox(color: ZhPalette.canvas),
               const DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(

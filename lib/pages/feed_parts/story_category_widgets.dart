@@ -383,13 +383,13 @@ class _SaltStoryTypeButton extends StatelessWidget {
           Icon(
             icon,
             size: 19,
-            color: selected ? Colors.blue.shade700 : ZhPalette.mutedInk,
+            color: selected ? ZhPalette.link : ZhPalette.mutedInk,
           ),
           const SizedBox(width: 5),
           Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.blue.shade700 : ZhPalette.ink,
+              color: selected ? ZhPalette.link : ZhPalette.ink,
               fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
             ),
           ),
@@ -410,7 +410,7 @@ class _SaltCategoryChip extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? const Color(0xFFEAF2FF) : const Color(0xFFF8F8FA),
+    color: selected ? ZhPalette.accentSurface : ZhPalette.softSurface,
     borderRadius: BorderRadius.circular(8),
     child: InkWell(
       borderRadius: BorderRadius.circular(8),
@@ -420,7 +420,7 @@ class _SaltCategoryChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.blue.shade700 : ZhPalette.mutedInk,
+            color: selected ? ZhPalette.link : ZhPalette.mutedInk,
             fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
           ),
         ),
@@ -528,9 +528,8 @@ class _SaltShortStoryCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 cacheWidth: 384,
                 filterQuality: FilterQuality.low,
-                frameBuilder: (_, child, frame, _) => frame == null
-                    ? const ColoredBox(color: ZhPalette.canvas)
-                    : child,
+                frameBuilder: (_, child, frame, _) =>
+                    frame == null ? ColoredBox(color: ZhPalette.canvas) : child,
                 errorBuilder: (_, _, _) => const SizedBox.shrink(),
               ),
             ),

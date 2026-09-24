@@ -48,7 +48,7 @@ class _ProfileAvatar extends StatelessWidget {
       child: Center(
         child: Text(
           fallback.characters.first,
-          style: const TextStyle(
+          style: TextStyle(
             color: ZhPalette.background,
             fontSize: 26,
             fontWeight: FontWeight.w800,
@@ -60,7 +60,7 @@ class _ProfileAvatar extends StatelessWidget {
       width: size,
       height: size,
       padding: const EdgeInsets.all(3),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: ZhPalette.background,
         shape: BoxShape.circle,
       ),

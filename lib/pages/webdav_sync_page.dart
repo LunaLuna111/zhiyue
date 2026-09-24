@@ -218,7 +218,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.cloud_sync_outlined, color: ZhPalette.ink, size: 30),
+        Icon(Icons.cloud_sync_outlined, color: ZhPalette.ink, size: 30),
         const SizedBox(width: ZhSpace.sm),
         Expanded(
           child: Column(

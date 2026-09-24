@@ -574,13 +574,13 @@ class _SaltRankTile extends StatelessWidget {
                           height: 80,
                           fit: BoxFit.cover,
                           cacheWidth: saltStoryCoverCacheWidth,
-                          errorBuilder: (_, _, _) => const SizedBox(
+                          errorBuilder: (_, _, _) => SizedBox(
                             width: 56,
                             height: 80,
                             child: ColoredBox(color: ZhPalette.canvas),
                           ),
                         )
-                      : const SizedBox(
+                      : SizedBox(
                           width: 56,
                           height: 80,
                           child: ColoredBox(color: ZhPalette.canvas),

@@ -177,7 +177,7 @@ class AccountProfileDetailsPage extends StatelessWidget {
           const SizedBox(height: 12),
           _ProfileSection(
             title: '认证信息',
-            trailing: const Text(
+            trailing: Text(
               '管理认证',
               style: TextStyle(color: ZhPalette.subtleInk),
             ),

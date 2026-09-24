@@ -122,7 +122,7 @@ class _SaltProductSectionRow extends StatelessWidget {
         child: Container(
           constraints: const BoxConstraints(minHeight: 56),
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: 0.7),
             ),
@@ -170,7 +170,7 @@ class _SaltProductSectionRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
                 size: 20,
                 color: ZhPalette.subtleInk,

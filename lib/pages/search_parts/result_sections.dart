@@ -64,7 +64,7 @@ class _SearchHotTimingCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.schedule_rounded,
                       size: 19,
                       color: ZhPalette.ink,

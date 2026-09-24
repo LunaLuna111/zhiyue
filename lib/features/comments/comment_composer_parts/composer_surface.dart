@@ -73,10 +73,10 @@ class _ComposerToolbar extends StatelessWidget {
             key: const Key('comment-composer-submit'),
             onPressed: canSubmit ? onSubmit : null,
             style: FilledButton.styleFrom(
-              foregroundColor: Colors.white,
-              backgroundColor: const Color(0xFF1772F6),
-              disabledForegroundColor: Colors.white,
-              disabledBackgroundColor: const Color(0xFFC9DCF8),
+              foregroundColor: ZhPalette.background,
+              backgroundColor: ZhPalette.accent,
+              disabledForegroundColor: ZhPalette.disabledInk,
+              disabledBackgroundColor: ZhPalette.accentSurface,
               minimumSize: const Size(96, 42),
               padding: const EdgeInsets.symmetric(horizontal: 18),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -119,13 +119,13 @@ class _ComposerHeader extends StatelessWidget {
             key: const Key('comment-composer-mention'),
             behavior: HitTestBehavior.opaque,
             onTap: onMention,
-            child: const CircleAvatar(
+            child: CircleAvatar(
               radius: 20,
-              backgroundColor: Color(0xFFE8EDF2),
+              backgroundColor: ZhPalette.softSurface,
               child: Icon(
                 Icons.person_outline_rounded,
                 size: 24,
-                color: Color(0xFF65717D),
+                color: ZhPalette.mutedInk,
               ),
             ),
           ),
@@ -136,8 +136,8 @@ class _ComposerHeader extends StatelessWidget {
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF25282D),
+            style: TextStyle(
+              color: ZhPalette.ink,
               fontSize: 19,
               fontWeight: FontWeight.w700,
               height: 1.2,
@@ -156,7 +156,7 @@ class _ComposerHeader extends StatelessWidget {
               expanded
                   ? Icons.fullscreen_exit_rounded
                   : Icons.open_in_full_rounded,
-              color: const Color(0xFF65717D),
+              color: ZhPalette.mutedInk,
               size: 22,
             ),
           ),
@@ -175,13 +175,13 @@ class _GifToolbarIcon extends StatelessWidget {
     height: 24,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      border: Border.all(color: const Color(0xFF191B1F), width: 2),
+      border: Border.all(color: ZhPalette.ink, width: 2),
       borderRadius: BorderRadius.circular(6),
     ),
-    child: const Text(
+    child: Text(
       'GIF',
       style: TextStyle(
-        color: Color(0xFF191B1F),
+        color: ZhPalette.ink,
         fontSize: 9,
         fontWeight: FontWeight.w800,
       ),
@@ -198,14 +198,14 @@ class _ComposerEmojiCircle extends StatelessWidget {
     height: 24,
     alignment: Alignment.center,
     decoration: BoxDecoration(
-      color: const Color(0xFFF7F8F9),
+      color: ZhPalette.softSurface,
       shape: BoxShape.circle,
-      border: Border.all(color: const Color(0xFFE1E4E8), width: 1.5),
+      border: Border.all(color: ZhPalette.softBorder, width: 1.5),
     ),
-    child: const Icon(
+    child: Icon(
       Icons.sentiment_satisfied_alt_rounded,
       size: 17,
-      color: Color(0xFF65717D),
+      color: ZhPalette.mutedInk,
     ),
   );
 }

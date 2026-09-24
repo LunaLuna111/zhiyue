@@ -35,6 +35,10 @@ import 'widgets/desktop_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // The app loads its private SQLite-backed session before the first frame.
+  // Register federated Dart plugins explicitly so sqflite and the other
+  // platform stores are ready on every Android/iOS entry path.
+  DartPluginRegistrant.ensureInitialized();
   await LiquidGlassWidgets.initialize(enablePerformanceMonitor: false);
   final session = SessionStore();
   // Initialize diagnostics before loading the credential database so a
@@ -97,6 +101,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
 
   int get _currentPresentationFingerprint => Object.hash(
     widget.session.readingTextSize,
+    widget.session.darkModeEnabled,
     widget.session.followSystemTextScale,
     widget.session.reduceMotion,
     widget.session.glassEffectsEnabled,
@@ -135,13 +140,16 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = widget.session.darkModeEnabled;
+    ZhPalette.isDark = isDark;
     final app = ShadTheme(
-      data: ZhTheme.shad,
+      data: ZhTheme.shadFor(isDark ? Brightness.dark : Brightness.light),
       child: MaterialApp(
         title: '知阅',
         debugShowCheckedModeBanner: false,
-        themeMode: ThemeMode.light,
-        theme: ZhTheme.material,
+        themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+        theme: ZhTheme.materialFor(Brightness.light),
+        darkTheme: ZhTheme.materialFor(Brightness.dark),
         scrollBehavior: const ZhScrollBehavior(),
         builder: (context, child) {
           final media = MediaQuery.of(context);

@@ -54,9 +54,7 @@ class _AnswerSwitchPreview extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
           child: Material(
-            color: triggered
-                ? const Color(0xFFEAF3FF)
-                : const Color(0xFFF4F5F6),
+            color: triggered ? ZhPalette.accentSurface : ZhPalette.softSurface,
             borderRadius: BorderRadius.circular(16),
             child: InkWell(
               key: ValueKey(
@@ -73,9 +71,7 @@ class _AnswerSwitchPreview extends StatelessWidget {
                           ? Icons.arrow_upward_rounded
                           : Icons.arrow_downward_rounded,
                       size: 18,
-                      color: triggered
-                          ? const Color(0xFF175199)
-                          : ZhPalette.mutedInk,
+                      color: triggered ? ZhPalette.link : ZhPalette.mutedInk,
                     ),
                     const SizedBox(width: 8),
                     _AuthorAvatar(
@@ -95,7 +91,7 @@ class _AnswerSwitchPreview extends StatelessWidget {
                             style: Theme.of(context).textTheme.labelMedium
                                 ?.copyWith(
                                   color: triggered
-                                      ? const Color(0xFF175199)
+                                      ? ZhPalette.link
                                       : ZhPalette.mutedInk,
                                   fontWeight: triggered
                                       ? FontWeight.w800
@@ -129,9 +125,7 @@ class _AnswerSwitchPreview extends StatelessWidget {
                     const SizedBox(width: 8),
                     Icon(
                       Icons.chevron_right_rounded,
-                      color: triggered
-                          ? const Color(0xFF175199)
-                          : ZhPalette.mutedInk,
+                      color: triggered ? ZhPalette.link : ZhPalette.mutedInk,
                     ),
                   ],
                 ),

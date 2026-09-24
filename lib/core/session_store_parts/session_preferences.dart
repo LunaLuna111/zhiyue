@@ -8,6 +8,16 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     _notifyChanged();
   }
 
+  Future<void> setDarkModeEnabled(bool value) async {
+    if (darkModeEnabled == value) return;
+    darkModeEnabled = value;
+    await _writePreference(
+      _SessionStoreCore._darkModeEnabledKey,
+      value.toString(),
+    );
+    _notifyChanged();
+  }
+
   Future<void> setReduceMotion(bool value) async {
     if (reduceMotion == value) return;
     reduceMotion = value;
@@ -214,6 +224,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
 
   Future<void> resetAppPreferences() async {
     readingTextSize = ReadingTextSize.standard;
+    darkModeEnabled = false;
     reduceMotion = false;
     glassEffectsEnabled = true;
     prefetchImages = true;
@@ -239,6 +250,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     if (!kIsWeb) {
       await Future.wait([
         _safeDelete(_SessionStoreCore._readingTextSizeKey),
+        _safeDelete(_SessionStoreCore._darkModeEnabledKey),
         _safeDelete(_SessionStoreCore._reduceMotionKey),
         _safeDelete(_SessionStoreCore._glassEffectsEnabledKey),
         _safeDelete(_SessionStoreCore._prefetchImagesKey),

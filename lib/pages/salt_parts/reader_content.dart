@@ -160,9 +160,9 @@ extension _SaltReaderContent on _SaltReaderPageState {
                             ? null
                             : () => _addToBookshelf(manuscript),
                         style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFF1677FF),
+                          foregroundColor: ZhPalette.accent,
                           disabledForegroundColor: _addedToBookshelf
-                              ? const Color(0xFF1677FF)
+                              ? ZhPalette.accent
                               : ZhPalette.subtleInk,
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                         ),

@@ -41,7 +41,7 @@ class _QuestionAnswerRow extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.fromLTRB(18, 14, 14, 13),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: 0.7),
             ),
@@ -80,7 +80,7 @@ class _QuestionAnswerRow extends StatelessWidget {
                             ),
                             if (badges.isNotEmpty) ...[
                               const SizedBox(width: 5),
-                              const Icon(
+                              Icon(
                                 Icons.verified_outlined,
                                 size: 15,
                                 color: ZhPalette.mutedInk,
@@ -295,14 +295,14 @@ class _QuestionAnswerMetric extends StatelessWidget {
               Icon(
                 icon,
                 size: 18,
-                color: selected ? const Color(0xFF1677FF) : ZhPalette.mutedInk,
+                color: selected ? ZhPalette.accent : ZhPalette.mutedInk,
               ),
               const SizedBox(width: 5),
             ],
             Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: selected ? const Color(0xFF1677FF) : ZhPalette.mutedInk,
+                color: selected ? ZhPalette.accent : ZhPalette.mutedInk,
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
                 letterSpacing: 0,
               ),

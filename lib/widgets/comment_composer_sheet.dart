@@ -706,9 +706,9 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
           margin: const EdgeInsets.fromLTRB(2, 0, 2, 2),
           padding: const EdgeInsets.fromLTRB(12, 4, 12, ZhSpace.xs),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: ZhPalette.background,
             borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: const Color(0xFFE2E5E9)),
+            border: Border.all(color: ZhPalette.border),
             boxShadow: const [
               BoxShadow(
                 color: Color(0x22000000),
@@ -743,8 +743,8 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   maxLines: null,
                   maxLength: widget.maxLength,
                   textInputAction: TextInputAction.newline,
-                  style: const TextStyle(
-                    color: Color(0xFF191B1F),
+                  style: TextStyle(
+                    color: ZhPalette.ink,
                     fontSize: 15,
                     height: 1.45,
                   ),
@@ -762,8 +762,8 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                     filled: true,
                     fillColor: Colors.transparent,
                     hintText: replyHint.isEmpty ? '理性发言，友善互动' : replyHint,
-                    hintStyle: const TextStyle(
-                      color: Color(0xFF9196A1),
+                    hintStyle: TextStyle(
+                      color: ZhPalette.subtleInk,
                       fontSize: 17,
                     ),
                     counterText: '',

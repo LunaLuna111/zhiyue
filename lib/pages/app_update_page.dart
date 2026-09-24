@@ -161,7 +161,7 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
                   Container(
                     width: 54,
                     height: 54,
-                    decoration: const BoxDecoration(
+                    decoration: BoxDecoration(
                       color: ZhPalette.canvas,
                       shape: BoxShape.circle,
                     ),
@@ -550,7 +550,7 @@ class _ErrorCard extends StatelessWidget {
       padding: const EdgeInsets.all(ZhSpace.md),
       child: Row(
         children: [
-          const Icon(Icons.error_outline_rounded, color: ZhPalette.danger),
+          Icon(Icons.error_outline_rounded, color: ZhPalette.danger),
           const SizedBox(width: ZhSpace.sm),
           Expanded(child: Text(message)),
         ],

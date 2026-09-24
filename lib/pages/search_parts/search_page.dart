@@ -537,7 +537,7 @@ class _SearchPageState extends State<SearchPage>
           size: 46,
           iconSize: 24,
         ),
-        title: const Text(
+        title: Text(
           '搜索',
           style: TextStyle(
             color: ZhPalette.ink,
@@ -615,7 +615,7 @@ class _SearchPageState extends State<SearchPage>
                           label: Text(item),
                           onPressed: () => _submit(item),
                           backgroundColor: ZhPalette.canvas,
-                          side: const BorderSide(color: ZhPalette.border),
+                          side: BorderSide(color: ZhPalette.border),
                           shape: const StadiumBorder(),
                           visualDensity: VisualDensity.compact,
                           padding: const EdgeInsets.symmetric(horizontal: 4),

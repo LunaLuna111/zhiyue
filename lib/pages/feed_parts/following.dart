@@ -173,7 +173,7 @@ class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
   Widget build(BuildContext context) {
     return Container(
       height: 122,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: ZhPalette.border, width: .7)),
       ),
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 8),
@@ -271,7 +271,7 @@ class _FollowingQuickAction extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(
                 context,
-              ).textTheme.labelSmall?.copyWith(color: const Color(0xFF4E86B9)),
+              ).textTheme.labelSmall?.copyWith(color: ZhPalette.link),
             ),
           ],
         ),
@@ -351,7 +351,7 @@ class _FollowingFilterBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final selectedIndex = filters.indexOf(selected);
     return ColoredBox(
-      color: const Color(0xFFF8FAFD),
+      color: ZhPalette.softSurface,
       child: SizedBox(
         height: 68,
         child: Padding(
@@ -379,10 +379,7 @@ class _FollowingPersonFallback extends StatelessWidget {
     width: size,
     height: size,
     alignment: Alignment.center,
-    decoration: const BoxDecoration(
-      color: ZhPalette.canvas,
-      shape: BoxShape.circle,
-    ),
+    decoration: BoxDecoration(color: ZhPalette.canvas, shape: BoxShape.circle),
     child: Text(
       name.isEmpty ? '知' : name.characters.first,
       style: Theme.of(
@@ -419,7 +416,7 @@ class _FollowingServiceCard extends StatelessWidget {
       color: ZhPalette.background,
       child: Container(
         padding: const EdgeInsets.fromLTRB(12, 14, 12, 14),
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(color: ZhPalette.border, width: .7),
           ),
@@ -430,12 +427,12 @@ class _FollowingServiceCard extends StatelessWidget {
               width: 34,
               height: 34,
               decoration: BoxDecoration(
-                color: const Color(0xFFFFF3D6),
+                color: ZhPalette.accentSurface,
                 borderRadius: BorderRadius.circular(10),
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.workspace_premium_outlined,
-                color: Color(0xFFB87C12),
+                color: ZhPalette.accent,
                 size: 21,
               ),
             ),
@@ -466,7 +463,7 @@ class _FollowingServiceCard extends StatelessWidget {
                 ],
               ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
+            Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
           ],
         ),
       ),

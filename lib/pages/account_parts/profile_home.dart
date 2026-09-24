@@ -226,7 +226,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                               key: const ValueKey('account-profile-menu'),
                               semanticLabel: '打开侧边栏',
                               onPressed: widget.onMenuPressed,
-                              icon: const Icon(
+                              icon: Icon(
                                 Icons.menu_rounded,
                                 color: ZhPalette.ink,
                               ),
@@ -240,7 +240,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                       key: const ValueKey('account-profile-actions'),
                       actions: [
                         ZhLiquidGlassCapsuleAction(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.search_rounded,
                             color: ZhPalette.ink,
                           ),
@@ -252,7 +252,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                           ),
                         ),
                         ZhLiquidGlassCapsuleAction(
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.share_outlined,
                             color: ZhPalette.ink,
                           ),

@@ -555,7 +555,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.cloud_off_outlined,
                               size: 42,
                               color: ZhPalette.danger,
@@ -591,7 +591,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                 top: false,
                 child: Container(
                   height: 58,
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: ZhPalette.background,
                     border: Border(top: BorderSide(color: ZhPalette.border)),
                   ),

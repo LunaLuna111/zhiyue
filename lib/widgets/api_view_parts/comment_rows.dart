@@ -442,8 +442,8 @@ class _CompactCommentRow extends StatelessWidget {
                       rawContent: rawContent,
                       api: api,
                       onLink: onLink,
-                      style: const TextStyle(
-                        color: Color(0xFF191B1F),
+                      style: TextStyle(
+                        color: ZhPalette.ink,
                         fontSize: 15,
                         height: 1.5,
                       ),
@@ -506,8 +506,8 @@ class _CompactCommentRow extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Text(
                           '查看全部 ${compactCount(metrics.replyCount!)} 条回复',
-                          style: const TextStyle(
-                            color: Color(0xFF175199),
+                          style: TextStyle(
+                            color: ZhPalette.link,
                             fontSize: 13,
                             height: 1.2,
                             fontWeight: FontWeight.w500,
@@ -631,8 +631,8 @@ class CommentLinkTagList extends StatelessWidget {
                       groupTitle,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF44474D),
+                      style: TextStyle(
+                        color: ZhPalette.mutedInk,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         height: 1.2,
@@ -659,8 +659,8 @@ class CommentLinkTagList extends StatelessWidget {
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F7F8),
-                  border: Border.all(color: const Color(0xFFE5E7EA)),
+                  color: ZhPalette.softSurface,
+                  border: Border.all(color: ZhPalette.softBorder),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -686,18 +686,18 @@ class CommentLinkTagList extends StatelessWidget {
                         tag.displayText.isEmpty ? '打开链接' : tag.displayText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: Color(0xFF175199),
+                        style: TextStyle(
+                          color: ZhPalette.link,
                           fontSize: 13,
                           height: 1.2,
                         ),
                       ),
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
+                    Icon(
                       Icons.chevron_right_rounded,
                       size: 17,
-                      color: Color(0xFF9196A1),
+                      color: ZhPalette.subtleInk,
                     ),
                   ],
                 ),

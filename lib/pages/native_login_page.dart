@@ -334,18 +334,25 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     final toolbarHeight = widget.embedded ? 56.0 : 46.0;
     final contentTopPadding =
         ZhTopBar.bodyTopInset(context, toolbarHeight: toolbarHeight) + 18;
+    final dark = Theme.of(context).brightness == Brightness.dark;
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Color(0xFFF4F6FA),
-        systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: dark
+            ? const Color(0xFF101419)
+            : const Color(0xFFF4F6FA),
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
       child: Scaffold(
         extendBodyBehindAppBar: true,
-        backgroundColor: const Color(0xFFF1F6FF),
+        backgroundColor: dark
+            ? const Color(0xFF111821)
+            : const Color(0xFFF1F6FF),
         key: widget.embedded ? const ValueKey('embedded-native-login') : null,
         appBar: widget.embedded
             ? ZhTopBar(

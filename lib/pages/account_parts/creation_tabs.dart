@@ -235,12 +235,9 @@ class _CreationMoreList extends StatelessWidget {
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(row.$2, style: const TextStyle(color: ZhPalette.subtleInk)),
+              Text(row.$2, style: TextStyle(color: ZhPalette.subtleInk)),
               const SizedBox(width: 2),
-              const Icon(
-                Icons.chevron_right_rounded,
-                color: ZhPalette.subtleInk,
-              ),
+              Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
             ],
           ),
           onTap: () => _open(context, row.$1, row.$3, headers: row.$4),

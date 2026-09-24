@@ -223,7 +223,7 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
           SafeArea(
             top: false,
             child: DecoratedBox(
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 color: ZhPalette.background,
                 border: Border(top: BorderSide(color: ZhPalette.border)),
               ),

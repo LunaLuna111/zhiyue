@@ -9,11 +9,11 @@ class _SentenceCommentQuote extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     key: const Key('sentence-comment-quote'),
     width: double.infinity,
-    color: const Color(0xFFF8F8FA),
+    color: ZhPalette.softSurface,
     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
     child: DecoratedBox(
-      decoration: const BoxDecoration(
-        border: Border(left: BorderSide(color: Color(0xFF1772F6), width: 3)),
+      decoration: BoxDecoration(
+        border: Border(left: BorderSide(color: ZhPalette.accent, width: 3)),
       ),
       child: Padding(
         padding: const EdgeInsets.only(left: 10),
@@ -21,8 +21,8 @@ class _SentenceCommentQuote extends StatelessWidget {
           text,
           maxLines: 3,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: Color(0xFF646873),
+          style: TextStyle(
+            color: ZhPalette.quoteText,
             fontSize: 14,
             height: 1.45,
           ),
@@ -71,7 +71,7 @@ class CommentContextHeader extends StatelessWidget {
       key: const Key('comment-context-header'),
       height: 76,
       child: ColoredBox(
-        color: const Color(0xFFFFFFFF),
+        color: ZhPalette.background,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -106,8 +106,8 @@ class CommentContextHeader extends StatelessWidget {
                                   authorName.isEmpty ? '知乎用户' : authorName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    color: Color(0xFF373A40),
+                                  style: TextStyle(
+                                    color: ZhPalette.ink,
                                     fontSize: 14,
                                     height: 1.25,
                                     fontWeight: FontWeight.w700,
@@ -126,8 +126,8 @@ class CommentContextHeader extends StatelessWidget {
                               headline,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                color: Color(0xFF9196A1),
+                              style: TextStyle(
+                                color: ZhPalette.subtleInk,
                                 fontSize: 13,
                                 height: 1.2,
                               ),
@@ -149,9 +149,9 @@ class CommentContextHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(
+            SizedBox(
               height: 8,
-              child: ColoredBox(color: Color(0xFFF8F8FA)),
+              child: ColoredBox(color: ZhPalette.softSurface),
             ),
           ],
         ),
@@ -171,14 +171,14 @@ class _CommentContextBadge extends StatelessWidget {
     alignment: Alignment.center,
     padding: const EdgeInsets.symmetric(horizontal: 4),
     decoration: BoxDecoration(
-      border: Border.all(color: const Color(0xFFC4C7CE), width: .8),
+      border: Border.all(color: ZhPalette.softBorder, width: .8),
       borderRadius: BorderRadius.circular(4),
     ),
     child: Text(
       label,
       maxLines: 1,
-      style: const TextStyle(
-        color: Color(0xFF81858F),
+      style: TextStyle(
+        color: ZhPalette.disabledInk,
         fontSize: 10,
         height: 1,
         fontWeight: FontWeight.w500,
@@ -201,9 +201,9 @@ class _OfficialFollowButton extends StatelessWidget {
       key: const Key('comment-content-author-follow'),
       onPressed: busy ? null : onPressed,
       style: TextButton.styleFrom(
-        foregroundColor: const Color(0xFF1772F6),
-        backgroundColor: const Color(0xFFEAF3FF),
-        disabledForegroundColor: const Color(0xFF9FC4F8),
+        foregroundColor: ZhPalette.link,
+        backgroundColor: ZhPalette.accentSurface,
+        disabledForegroundColor: ZhPalette.disabledInk,
         padding: EdgeInsets.zero,
         shape: const StadiumBorder(),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -264,7 +264,7 @@ Widget? commentListSummaryHeader(
   return Container(
     key: const Key('comment-summary-controls'),
     height: 48,
-    color: const Color(0xFFFFFFFF),
+    color: ZhPalette.background,
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
     child: Row(
       children: [
@@ -273,8 +273,8 @@ Widget? commentListSummaryHeader(
             total == null ? '评论' : '评论 ${compactCount(total)}',
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF191B1F),
+            style: TextStyle(
+              color: ZhPalette.ink,
               fontSize: 15,
               height: 1.2,
               fontWeight: FontWeight.w700,
@@ -284,7 +284,7 @@ Widget? commentListSummaryHeader(
         if (sortOptions.isNotEmpty)
           DecoratedBox(
             decoration: BoxDecoration(
-              color: const Color(0xFFF8F8FA),
+              color: ZhPalette.softSurface,
               borderRadius: BorderRadius.circular(14),
             ),
             child: Padding(
@@ -294,10 +294,10 @@ Widget? commentListSummaryHeader(
                 children: [
                   for (var index = 0; index < sortOptions.length; index++) ...[
                     if (index > 0)
-                      const SizedBox(
+                      SizedBox(
                         width: 1,
                         height: 12,
-                        child: ColoredBox(color: Color(0xFFEBECED)),
+                        child: ColoredBox(color: ZhPalette.softBorder),
                       ),
                     _OfficialSortChoice(
                       semanticKey: 'comment-sort-${sortOptions[index].$1}',
@@ -353,16 +353,14 @@ class _OfficialSortChoice extends StatelessWidget {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 4),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFFFFFFF) : Colors.transparent,
+            color: selected ? ZhPalette.background : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
             label,
             maxLines: 1,
             style: TextStyle(
-              color: selected
-                  ? const Color(0xFF191B1F)
-                  : const Color(0xFF81858F),
+              color: selected ? ZhPalette.ink : ZhPalette.disabledInk,
               fontSize: 12,
               height: 1.2,
               fontWeight: FontWeight.w700,

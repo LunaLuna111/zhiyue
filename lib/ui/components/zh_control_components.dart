@@ -17,11 +17,15 @@ class ZhLiquidGlassSwitch extends StatelessWidget {
     this.semanticLabel,
   });
 
-  // Keep the active track dark like the reference design, but leave enough
-  // alpha for the package's specular glass highlight to remain visible.
-  static const _activeColor = Color(0xE02B2B2D);
-  static const _inactiveColor = Color(0xB8D8DADF);
-  static const _thumbColor = Color(0xFFFDFDFD);
+  // Keep the active track dark like the light-mode reference design, while
+  // giving dark mode its own lower-luminance track so an off switch does not
+  // become a bright gray island on a dark settings surface.
+  static const _lightActiveColor = Color(0xE02B2B2D);
+  static const _lightInactiveColor = Color(0xB8D8DADF);
+  static const _darkActiveColor = Color(0xFF376FCE);
+  static const _darkInactiveColor = Color(0xFF343A43);
+  static const _lightThumbColor = Color(0xFFFDFDFD);
+  static const _darkThumbColor = Color(0xFFF4F6F8);
 
   final bool value;
   final ValueChanged<bool>? onChanged;
@@ -41,7 +45,7 @@ class ZhLiquidGlassSwitch extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           activeThumbColor: ZhPalette.background,
-          activeTrackColor: Color(0xFF3478F6),
+          activeTrackColor: ZhPalette.accent,
           inactiveThumbColor: ZhPalette.background,
           inactiveTrackColor: ZhPalette.canvas,
           trackOutlineColor: WidgetStatePropertyAll(ZhPalette.border),
@@ -51,9 +55,11 @@ class ZhLiquidGlassSwitch extends StatelessWidget {
     final switchWidget = GlassSwitch(
       value: value,
       onChanged: onChanged ?? (_) {},
-      activeColor: _activeColor,
-      inactiveColor: _inactiveColor,
-      thumbColor: _thumbColor,
+      activeColor: ZhPalette.isDark ? _darkActiveColor : _lightActiveColor,
+      inactiveColor: ZhPalette.isDark
+          ? _darkInactiveColor
+          : _lightInactiveColor,
+      thumbColor: ZhPalette.isDark ? _darkThumbColor : _lightThumbColor,
       width: 60,
       height: 30,
       useOwnLayer: true,

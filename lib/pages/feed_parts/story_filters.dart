@@ -84,8 +84,8 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
     return Container(
       height: (MediaQuery.sizeOf(context).height * .76).clamp(460.0, 720.0),
       padding: EdgeInsets.fromLTRB(20, 14, 20, 14 + bottomInset),
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: ZhPalette.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -229,7 +229,7 @@ class _SaltFilterOption extends StatelessWidget {
   final VoidCallback onTap;
   @override
   Widget build(BuildContext context) => Material(
-    color: selected ? const Color(0xFFEAF2FF) : const Color(0xFFF8F8FA),
+    color: selected ? ZhPalette.accentSurface : ZhPalette.softSurface,
     borderRadius: BorderRadius.circular(7),
     child: InkWell(
       borderRadius: BorderRadius.circular(7),
@@ -239,7 +239,7 @@ class _SaltFilterOption extends StatelessWidget {
         child: Text(
           title,
           style: TextStyle(
-            color: selected ? Colors.blue.shade700 : ZhPalette.ink,
+            color: selected ? ZhPalette.link : ZhPalette.ink,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),
@@ -321,8 +321,8 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
     );
     return Container(
       height: height,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: ZhPalette.background,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       child: Column(
@@ -373,13 +373,13 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                           vertical: 17,
                         ),
                         color: _sectionIndex == index
-                            ? const Color(0xFFF5F7FF)
+                            ? ZhPalette.accentSurface
                             : Colors.transparent,
                         child: Text(
                           _sections[index],
                           style: TextStyle(
                             color: _sectionIndex == index
-                                ? Colors.blue.shade700
+                                ? ZhPalette.link
                                 : ZhPalette.mutedInk,
                             fontWeight: _sectionIndex == index
                                 ? FontWeight.w600

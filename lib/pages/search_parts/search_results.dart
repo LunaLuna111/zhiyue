@@ -172,7 +172,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             children: [
               Icon(
                 active ? Icons.filter_alt_rounded : Icons.filter_alt_outlined,
-                color: active ? const Color(0xFF1769E0) : ZhPalette.ink,
+                color: active ? ZhPalette.accent : ZhPalette.ink,
               ),
               if (selectedCount > 0)
                 Positioned(
@@ -180,16 +180,16 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   right: -5,
                   child: IgnorePointer(
                     child: DecoratedBox(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF1769E0),
+                      decoration: BoxDecoration(
+                        color: ZhPalette.accent,
                         shape: BoxShape.circle,
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(3),
                         child: Text(
                           '$selectedCount',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style: TextStyle(
+                            color: ZhPalette.background,
                             fontSize: 10,
                             fontWeight: FontWeight.w800,
                             height: 1,
@@ -386,19 +386,26 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
             left: 0,
             right: 0,
             height: topInset,
-            child: const IgnorePointer(
+            child: IgnorePointer(
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     stops: [0, .28, .68, 1],
-                    colors: [
-                      Color(0xD8D7E8FF),
-                      Color(0x70EAF6FF),
-                      Color(0x20F7FCFF),
-                      Color(0x00FFFFFF),
-                    ],
+                    colors: ZhPalette.isDark
+                        ? const [
+                            Color(0xD80D0F12),
+                            Color(0x701B2026),
+                            Color(0x20252B33),
+                            Color(0x000D0F12),
+                          ]
+                        : const [
+                            Color(0xD8D7E8FF),
+                            Color(0x70EAF6FF),
+                            Color(0x20F7FCFF),
+                            Color(0x00FFFFFF),
+                          ],
                   ),
                 ),
               ),

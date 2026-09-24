@@ -197,7 +197,7 @@ class _UserProfileFeedRowState extends State<_UserProfileFeedRow> {
                     if (actorName.isNotEmpty)
                       TextSpan(
                         text: '$actorName  ',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: ZhPalette.ink,
                           fontWeight: FontWeight.w700,
                         ),
@@ -392,8 +392,8 @@ class _ProfileAvatar extends StatelessWidget {
       child: Center(
         child: Text(
           fallback.characters.first,
-          style: const TextStyle(
-            color: Colors.white,
+          style: TextStyle(
+            color: ZhPalette.background,
             fontSize: 24,
             fontWeight: FontWeight.w800,
           ),
@@ -404,7 +404,7 @@ class _ProfileAvatar extends StatelessWidget {
       width: size,
       height: size,
       padding: const EdgeInsets.all(3),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: ZhPalette.background,
         shape: BoxShape.circle,
       ),

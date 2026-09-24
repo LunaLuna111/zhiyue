@@ -153,8 +153,8 @@ class _CompactCommentIdentityLine extends StatelessWidget {
       name,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        color: Color(0xFF373A40),
+      style: TextStyle(
+        color: ZhPalette.ink,
         fontSize: 14,
         fontWeight: FontWeight.w700,
         height: 1.25,
@@ -185,17 +185,13 @@ class _CompactCommentIdentityLine extends StatelessWidget {
         for (final label in authorLabels)
           _CommentIdentityBadge(scope: 'author', label: label),
         if (replyTarget.isNotEmpty) ...[
-          const Icon(
-            Icons.arrow_right_rounded,
-            size: 14,
-            color: Color(0xFF9196A1),
-          ),
+          Icon(Icons.arrow_right_rounded, size: 14, color: ZhPalette.subtleInk),
           Text(
             replyTarget,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF373A40),
+            style: TextStyle(
+              color: ZhPalette.ink,
               fontSize: 14,
               fontWeight: FontWeight.w700,
               height: 1.25,
@@ -256,7 +252,7 @@ class _CompactCommentMenu extends StatelessWidget {
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
         color: ZhPalette.background,
-        icon: const Icon(Icons.more_horiz_rounded, color: Color(0xFF9196A1)),
+        icon: Icon(Icons.more_horiz_rounded, color: ZhPalette.subtleInk),
         onSelected: (action) {
           switch (action) {
             case _CompactCommentMenuAction.reply:
@@ -307,8 +303,8 @@ class _CompactCommentMetadata extends StatelessWidget {
         if (metadata.isNotEmpty)
           Text(
             metadata.join(' · '),
-            style: const TextStyle(
-              color: Color(0xFF9196A1),
+            style: TextStyle(
+              color: ZhPalette.subtleInk,
               fontSize: 12,
               height: 1.25,
             ),
@@ -320,12 +316,12 @@ class _CompactCommentMetadata extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(3),
               onTap: onReply,
-              child: const Padding(
+              child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 1, vertical: 3),
                 child: Text(
                   '回复',
                   style: TextStyle(
-                    color: Color(0xFF9196A1),
+                    color: ZhPalette.subtleInk,
                     fontSize: 12,
                     height: 1.25,
                   ),
@@ -363,16 +359,14 @@ class _CompactCommentReaction extends StatelessWidget {
           Icon(
             icon,
             size: 19,
-            color: selected ? const Color(0xFF175199) : const Color(0xFF9196A1),
+            color: selected ? ZhPalette.link : ZhPalette.subtleInk,
           ),
           if (label.isNotEmpty) ...[
             const SizedBox(width: 4),
             Text(
               label,
               style: TextStyle(
-                color: selected
-                    ? const Color(0xFF175199)
-                    : const Color(0xFF81858F),
+                color: selected ? ZhPalette.link : ZhPalette.disabledInk,
                 fontSize: 12,
                 height: 1.15,
               ),

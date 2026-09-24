@@ -164,7 +164,7 @@ class _UserRelationshipRowState extends State<UserRelationshipRow> {
         child: Container(
           constraints: const BoxConstraints(minHeight: 92),
           padding: const EdgeInsets.fromLTRB(18, 14, 16, 14),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: .7),
             ),
@@ -227,10 +227,10 @@ class _UserRelationshipRowState extends State<UserRelationshipRow> {
                     style: FilledButton.styleFrom(
                       elevation: 0,
                       padding: EdgeInsets.zero,
-                      backgroundColor: const Color(0xFFEAF3FF),
-                      foregroundColor: const Color(0xFF0F7BFF),
-                      disabledBackgroundColor: const Color(0xFFEAF3FF),
-                      disabledForegroundColor: const Color(0xFF0F7BFF),
+                      backgroundColor: ZhPalette.accentSurface,
+                      foregroundColor: ZhPalette.link,
+                      disabledBackgroundColor: ZhPalette.accentSurface,
+                      disabledForegroundColor: ZhPalette.disabledInk,
                       shape: const StadiumBorder(),
                     ),
                     child: _busy

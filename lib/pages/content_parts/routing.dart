@@ -147,27 +147,23 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(
-                Icons.shield_outlined,
-                size: 52,
-                color: Color(0xFF1772F6),
-              ),
+              Icon(Icons.shield_outlined, size: 52, color: ZhPalette.accent),
               const SizedBox(height: 22),
-              const Text(
+              Text(
                 '即将离开知乎',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFF191B1F),
+                  color: ZhPalette.ink,
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
+              Text(
                 '该链接并非知乎官方页面，请注意保护账号、隐私和财产安全。',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFF646873),
+                  color: ZhPalette.quoteText,
                   fontSize: 15,
                   height: 1.55,
                 ),
@@ -186,8 +182,8 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
                     Text(
                       host,
                       key: const Key('external-link-host'),
-                      style: const TextStyle(
-                        color: Color(0xFF191B1F),
+                      style: TextStyle(
+                        color: ZhPalette.ink,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
                       ),
@@ -197,8 +193,8 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
                       url,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF9196A1),
+                      style: TextStyle(
+                        color: ZhPalette.subtleInk,
                         fontSize: 12,
                         height: 1.4,
                       ),

@@ -168,7 +168,7 @@ class _ExpandableQuestionSummaryState
                   minimumSize: Size.zero,
                   padding: const EdgeInsets.only(top: 4, right: 8),
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  foregroundColor: const Color(0xFF1677FF),
+                  foregroundColor: ZhPalette.accent,
                 ),
                 child: Text(_expanded ? '收起' : '展开全文'),
               ),
@@ -190,8 +190,8 @@ class _QuestionTopicChip extends StatelessWidget {
     final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: const Color(0xFFF7F8FA),
-        border: Border.all(color: const Color(0xFFE3E5E8)),
+        color: ZhPalette.softSurface,
+        border: Border.all(color: ZhPalette.softBorder),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Text(
@@ -237,7 +237,7 @@ class _QuestionAnswerSortBar extends StatelessWidget {
     return Container(
       key: const ValueKey('question-answer-sort-bar'),
       height: 50,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: ZhPalette.border, width: .7),
           bottom: BorderSide(color: ZhPalette.border, width: .7),
@@ -465,10 +465,9 @@ class _QuestionHeaderImage extends StatelessWidget {
             cacheWidth: 960,
             cacheHeight: 540,
             filterQuality: FilterQuality.low,
-            frameBuilder: (_, child, frame, _) => frame == null
-                ? const ColoredBox(color: ZhPalette.canvas)
-                : child,
-            errorBuilder: (_, _, _) => const ColoredBox(
+            frameBuilder: (_, child, frame, _) =>
+                frame == null ? ColoredBox(color: ZhPalette.canvas) : child,
+            errorBuilder: (_, _, _) => ColoredBox(
               color: ZhPalette.canvas,
               child: Center(
                 child: Icon(

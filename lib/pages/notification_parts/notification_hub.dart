@@ -262,7 +262,7 @@ class _NotificationCategoryHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => DecoratedBox(
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       border: Border(bottom: BorderSide(color: ZhPalette.border)),
     ),
     child: Padding(
@@ -380,7 +380,7 @@ class _InviteEntry extends StatelessWidget {
             ),
             if (unread > 0) _UnreadBadge(count: unread),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
+            Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
           ],
         ),
       ),

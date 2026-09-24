@@ -83,7 +83,7 @@ class BrowsingHistoryPage extends StatelessWidget {
                     alignment: Alignment.centerRight,
                     padding: const EdgeInsets.only(right: 22),
                     color: ZhPalette.ink,
-                    child: const Icon(
+                    child: Icon(
                       Icons.delete_outline_rounded,
                       color: ZhPalette.background,
                     ),
@@ -169,7 +169,7 @@ class _HistoryRow extends StatelessWidget {
             ],
           ),
         ),
-        const Padding(
+        Padding(
           padding: EdgeInsets.only(top: 9),
           child: Icon(
             Icons.chevron_right_rounded,

@@ -72,6 +72,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   static const _searchHistoryKey = 'zh_search_history';
   static const _maxSearchHistoryItems = 20;
   static const _readingTextSizeKey = 'zh_setting_reading_text_size';
+  static const _darkModeEnabledKey = 'zh_setting_dark_mode_enabled';
   static const _reduceMotionKey = 'zh_setting_reduce_motion';
   static const _glassEffectsEnabledKey = 'zh_setting_glass_effects_enabled';
   static const _prefetchImagesKey = 'zh_setting_prefetch_images';
@@ -141,6 +142,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   int accountLockInSeconds = 0;
   List<String> searchHistory = const [];
   ReadingTextSize readingTextSize = ReadingTextSize.standard;
+  bool darkModeEnabled = false;
   bool reduceMotion = false;
   bool glassEffectsEnabled = true;
   bool prefetchImages = true;
@@ -489,6 +491,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       ReadingTextSize.values,
       ReadingTextSize.standard,
     );
+    darkModeEnabled = _decodeBool(read(_darkModeEnabledKey), fallback: false);
     reduceMotion = _decodeBool(read(_reduceMotionKey), fallback: false);
     glassEffectsEnabled = _decodeBool(
       read(_glassEffectsEnabledKey),

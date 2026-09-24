@@ -44,17 +44,14 @@ class _ProfileValueRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 15),
-    decoration: const BoxDecoration(
+    decoration: BoxDecoration(
       border: Border(bottom: BorderSide(color: ZhPalette.border)),
     ),
     child: Row(
       children: [
         SizedBox(
           width: 86,
-          child: Text(
-            label,
-            style: const TextStyle(color: ZhPalette.subtleInk),
-          ),
+          child: Text(label, style: TextStyle(color: ZhPalette.subtleInk)),
         ),
         Expanded(child: Text(value)),
       ],
@@ -80,7 +77,7 @@ class _ProfileImpactRow extends StatelessWidget {
         Icon(icon, size: 20),
         const SizedBox(width: 12),
         Expanded(child: Text(label)),
-        Text(value, style: const TextStyle(color: ZhPalette.subtleInk)),
+        Text(value, style: TextStyle(color: ZhPalette.subtleInk)),
       ],
     ),
   );
@@ -104,17 +101,14 @@ class _ProfileEditRow extends StatelessWidget {
     child: Container(
       constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: ZhPalette.border)),
       ),
       child: Row(
         children: [
           SizedBox(
             width: 112,
-            child: Text(
-              label,
-              style: const TextStyle(color: ZhPalette.subtleInk),
-            ),
+            child: Text(label, style: TextStyle(color: ZhPalette.subtleInk)),
           ),
           Expanded(
             child: Text(
@@ -124,7 +118,7 @@ class _ProfileEditRow extends StatelessWidget {
               ),
             ),
           ),
-          const Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
+          Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
         ],
       ),
     ),
@@ -162,9 +156,9 @@ class _ProfileImageEditRow extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           else ...[
-            const Text('更换', style: TextStyle(color: ZhPalette.subtleInk)),
+            Text('更换', style: TextStyle(color: ZhPalette.subtleInk)),
             const SizedBox(width: 4),
-            const Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
+            Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
           ],
         ],
       ),

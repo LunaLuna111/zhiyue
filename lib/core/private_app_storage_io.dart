@@ -317,6 +317,7 @@ class PrivateAppStorage
     if (existing != null) return existing;
     final pending = _openingDatabase;
     if (pending != null) return pending;
+    databaseFactoryOrNull ??= databaseFactorySqflitePlugin;
     final root = await getDatabasesPath();
     final opening = openDatabase(
       '$root/$_databaseName',

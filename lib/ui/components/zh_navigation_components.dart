@@ -10,13 +10,14 @@ import '../zh_theme.dart';
 /// neutral moving lens, capsule geometry and interaction glow stay here so a
 /// press has the same feedback on the home bar and on detail-page actions.
 abstract final class ZhLiquidGlassNavigationStyle {
-  static const selectedColor = Color(0xFF1677FF);
-  static const unselectedColor = Color(0xCC202733);
-  static const indicatorColor = Color(0x42000000);
-  static const interactionGlowColor = Color(0x260A6FFF);
+  static Color get selectedColor => ZhPalette.accent;
+  static Color get unselectedColor => ZhPalette.mutedInk;
+  static Color get indicatorColor => ZhPalette.pressed.withValues(alpha: .72);
+  static Color get interactionGlowColor =>
+      ZhPalette.accent.withValues(alpha: .16);
   static const capsuleRadius = GlassDefaults.capsuleRadius;
 
-  static const barSettings = LiquidGlassSettings(
+  static LiquidGlassSettings get barSettings => LiquidGlassSettings(
     thickness: 30,
     blur: 4,
     chromaticAberration: .42,
@@ -24,11 +25,13 @@ abstract final class ZhLiquidGlassNavigationStyle {
     refractiveIndex: 1.59,
     saturation: .8,
     ambientStrength: .72,
-    glassColor: Color(0x4AFFFFFF),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xB8252B33)
+        : const Color(0x4AFFFFFF),
     specularSharpness: GlassSpecularSharpness.soft,
   );
 
-  static const indicatorSettings = LiquidGlassSettings(
+  static LiquidGlassSettings get indicatorSettings => LiquidGlassSettings(
     thickness: 42,
     blur: 4,
     chromaticAberration: .52,
@@ -40,7 +43,9 @@ abstract final class ZhLiquidGlassNavigationStyle {
     fresnelStrength: 1.05,
     edgeAbsorption: .25,
     bodyMode: GlassBodyMode.clear,
-    glassColor: Color(0x702F343D),
+    glassColor: ZhPalette.isDark
+        ? const Color(0xB84A535F)
+        : const Color(0x702F343D),
     specularSharpness: GlassSpecularSharpness.soft,
   );
 }
@@ -379,7 +384,7 @@ class _ZhPlainBottomNavigationItem extends StatelessWidget {
             curve: Curves.easeOutCubic,
             height: 54,
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFFE1E3E8) : Colors.transparent,
+              color: selected ? ZhPalette.pressed : Colors.transparent,
               borderRadius: BorderRadius.circular(27),
             ),
             child: Column(

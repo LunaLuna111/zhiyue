@@ -283,7 +283,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
                       ),
                     ),
                     if (authorId.isNotEmpty)
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
                         color: ZhPalette.mutedInk,
                       ),
@@ -415,9 +415,7 @@ class _ZVideoEngagementBar extends StatelessWidget {
       ZhLiquidGlassActionItem(
         icon: Icon(
           Icons.thumb_up_alt_outlined,
-          color: relationship.isUpvoted
-              ? const Color(0xFF1677FF)
-              : ZhPalette.ink,
+          color: relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
         ),
         label: metrics.voteupCount == null
             ? '赞同'
@@ -437,7 +435,7 @@ class _ZVideoEngagementBar extends StatelessWidget {
         icon: Icon(
           Icons.star_border_rounded,
           color: relationship.isFavorited == true
-              ? const Color(0xFF1677FF)
+              ? ZhPalette.accent
               : ZhPalette.ink,
         ),
         label: metrics.favoriteCount == null

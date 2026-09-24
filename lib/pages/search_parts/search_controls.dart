@@ -65,14 +65,22 @@ class _SearchChoice extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 48),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: selected ? ZhPalette.ink : ZhPalette.canvas,
-        border: Border.all(color: selected ? ZhPalette.ink : ZhPalette.border),
+        color: selected
+            ? (ZhPalette.isDark ? ZhPalette.pressed : ZhPalette.ink)
+            : ZhPalette.canvas,
+        border: Border.all(
+          color: selected
+              ? (ZhPalette.isDark ? ZhPalette.softBorder : ZhPalette.ink)
+              : ZhPalette.border,
+        ),
         borderRadius: BorderRadius.circular(ZhRadius.pill),
       ),
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: selected ? ZhPalette.background : ZhPalette.mutedInk,
+          color: selected
+              ? (ZhPalette.isDark ? ZhPalette.ink : ZhPalette.background)
+              : ZhPalette.mutedInk,
           fontSize: 14,
           fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
         ),
@@ -123,7 +131,7 @@ class _EmptyHistory extends StatelessWidget {
     ),
     child: Row(
       children: [
-        const Icon(Icons.history_rounded, color: ZhPalette.subtleInk),
+        Icon(Icons.history_rounded, color: ZhPalette.subtleInk),
         const SizedBox(width: 12),
         Expanded(
           child: Text(

@@ -62,7 +62,7 @@ class _CommentMediaTile extends StatelessWidget {
                         ),
                       )
                     : child,
-                errorBuilder: (_, _, _) => const Center(
+                errorBuilder: (_, _, _) => Center(
                   child: Icon(
                     Icons.image_not_supported_outlined,
                     color: ZhPalette.subtleInk,

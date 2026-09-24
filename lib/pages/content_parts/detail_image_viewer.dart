@@ -524,13 +524,10 @@ class _DetailImagePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-    color: const Color(0xFFF4F5F6),
+    color: ZhPalette.softSurface,
     child: Center(
       child: failed
-          ? const Icon(
-              Icons.image_not_supported_outlined,
-              color: ZhPalette.subtleInk,
-            )
+          ? Icon(Icons.image_not_supported_outlined, color: ZhPalette.subtleInk)
           : const SizedBox.square(
               dimension: 20,
               child: CircularProgressIndicator(strokeWidth: 2),

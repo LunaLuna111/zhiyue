@@ -66,18 +66,14 @@ class _SearchResultCard extends StatelessWidget {
           onTap: onTap,
           child: Container(
             padding: const EdgeInsets.fromLTRB(15, 13, 10, 13),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               border: Border(
                 bottom: BorderSide(color: ZhPalette.border, width: .7),
               ),
             ),
             child: Row(
               children: [
-                const Icon(
-                  Icons.search_rounded,
-                  size: 21,
-                  color: ZhPalette.mutedInk,
-                ),
+                Icon(Icons.search_rounded, size: 21, color: ZhPalette.mutedInk),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(
@@ -100,7 +96,7 @@ class _SearchResultCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
                   size: 16,
                   color: ZhPalette.subtleInk,
@@ -145,7 +141,7 @@ class _SearchResultCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: .7),
             ),
@@ -342,7 +338,7 @@ class _SearchNovelResultCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: .7),
             ),
@@ -386,7 +382,7 @@ class _SearchNovelResultCard extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 8),
-                        const Text(
+                        Text(
                           '小说',
                           style: TextStyle(color: ZhPalette.subtleInk),
                         ),
@@ -416,7 +412,7 @@ class _SearchNovelResultCard extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 10),
-                    const Align(
+                    Align(
                       alignment: Alignment.bottomRight,
                       child: Icon(
                         Icons.chevron_right_rounded,
@@ -494,7 +490,7 @@ class _SearchVideoResultCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(color: ZhPalette.border, width: .7),
             ),
@@ -527,7 +523,7 @@ class _SearchVideoResultCard extends StatelessWidget {
                           fit: BoxFit.cover,
                           cacheWidth: 1080,
                           errorBuilder: (_, _, _) =>
-                              const ColoredBox(color: ZhPalette.canvas),
+                              ColoredBox(color: ZhPalette.canvas),
                         ),
                         ColoredBox(color: Colors.black.withValues(alpha: .12)),
                         const Center(

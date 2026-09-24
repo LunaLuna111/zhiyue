@@ -11,7 +11,7 @@ extension _SaltReaderContent on _SaltReaderPageState {
         ),
         const SizedBox(height: 14),
         Text(
-          '正在加载正文',
+          context.zhL10n.commonLoading,
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
@@ -118,7 +118,7 @@ extension _SaltReaderContent on _SaltReaderPageState {
           child: Semantics(
             key: const ValueKey('salt-reader-top-toolbar'),
             container: true,
-            label: '阅读顶部栏',
+            label: context.zhL10n.saltReaderTopBar,
             child: Material(
               color: Theme.of(context).colorScheme.surface,
               elevation: 1,
@@ -130,7 +130,7 @@ extension _SaltReaderContent on _SaltReaderPageState {
                     children: [
                       IconButton(
                         onPressed: () => Navigator.of(context).maybePop(),
-                        tooltip: '返回',
+                        tooltip: context.zhL10n.commonBack,
                         icon: const Icon(Icons.arrow_back_ios_new_rounded),
                       ),
                       Expanded(
@@ -184,7 +184,11 @@ extension _SaltReaderContent on _SaltReaderPageState {
                                 size: 21,
                               ),
                             const SizedBox(width: 4),
-                            Text(_addedToBookshelf ? '已加入' : '加入书架'),
+                            Text(
+                              _addedToBookshelf
+                                  ? context.zhL10n.saltAdded
+                                  : context.zhL10n.saltAddToBookshelf,
+                            ),
                           ],
                         ),
                       ),
@@ -192,7 +196,7 @@ extension _SaltReaderContent on _SaltReaderPageState {
                         onPressed: _exporting
                             ? null
                             : () => _showReaderMoreMenu(manuscript, chapter),
-                        tooltip: '更多',
+                        tooltip: context.zhL10n.saltMore,
                         icon: const Icon(Icons.more_vert_rounded),
                       ),
                     ],

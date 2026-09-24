@@ -132,149 +132,155 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: ZhTopBar(
-      title: const Text('分类'),
-      actions: [
-        ZhLiquidGlassIconButton(
-          semanticLabel: '搜索故事',
-          icon: const Icon(Icons.search_rounded),
-          onPressed: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
-            ),
-          ),
-          size: 44,
-          iconSize: 22,
-        ),
-      ],
-    ),
-    body: FutureBuilder<_SaltStoryCategoryPayload>(
-      future: _request,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final payload = snapshot.data;
-        if (payload == null || !payload.hasSuccess) {
-          final response = payload?.header ?? payload?.conditions;
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              SizedBox(
-                height: 460,
-                child: ApiErrorView(
-                  error: response ?? '故事分类暂时无法加载',
-                  onRetry: _retry,
-                  titleOverride: '故事分类暂时无法加载',
-                ),
+  Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    return Scaffold(
+      appBar: ZhTopBar(
+        title: Text(l10n.storyCategoriesTitle),
+        actions: [
+          ZhLiquidGlassIconButton(
+            semanticLabel: l10n.storySearch,
+            icon: const Icon(Icons.search_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => SearchPage(api: widget.api, focusOnOpen: true),
               ),
-            ],
-          );
-        }
-        final headerItems = payload.header?.isSuccess == true
-            ? extractSaltStoryCategoryItems(payload.header!.json)
-            : const <Map<String, dynamic>>[];
-        final conditionItems = payload.conditions?.isSuccess == true
-            ? extractSaltBookCityCategoryItems(payload.conditions!.json)
-            : const <Map<String, dynamic>>[];
-        if (headerItems.isEmpty && conditionItems.isEmpty) {
+            ),
+            size: 44,
+            iconSize: 22,
+          ),
+        ],
+      ),
+      body: FutureBuilder<_SaltStoryCategoryPayload>(
+        future: _request,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final payload = snapshot.data;
+          if (payload == null || !payload.hasSuccess) {
+            final response = payload?.header ?? payload?.conditions;
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              children: [
+                SizedBox(
+                  height: 460,
+                  child: ApiErrorView(
+                    error: response ?? l10n.storyLoadFailed,
+                    onRetry: _retry,
+                    titleOverride: l10n.storyLoadFailed,
+                  ),
+                ),
+              ],
+            );
+          }
+          final headerItems = payload.header?.isSuccess == true
+              ? extractSaltStoryCategoryItems(payload.header!.json)
+              : const <Map<String, dynamic>>[];
+          final conditionItems = payload.conditions?.isSuccess == true
+              ? extractSaltBookCityCategoryItems(payload.conditions!.json)
+              : const <Map<String, dynamic>>[];
+          if (headerItems.isEmpty && conditionItems.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: _retry,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                children: [
+                  SizedBox(
+                    height: 460,
+                    child: Center(child: Text(l10n.storyEmptyCategories)),
+                  ),
+                ],
+              ),
+            );
+          }
+          final conditionGroups = _groupConditionItems(conditionItems, l10n);
+          if (conditionGroups.isNotEmpty) {
+            return _SaltStoryCategoryTabs(
+              api: widget.api,
+              tags: _groupConditionTags(conditionGroups, l10n),
+              conditionItems: conditionItems,
+              headerItems: headerItems,
+              onOpen: _open,
+              onRefresh: _retry,
+            );
+          }
+          final itemCount =
+              1 +
+              (conditionGroups.isEmpty ? 0 : conditionGroups.length + 1) +
+              (headerItems.isEmpty ? 0 : headerItems.length + 1);
           return RefreshIndicator(
             onRefresh: _retry,
-            child: ListView(
+            child: ListView.builder(
               physics: const AlwaysScrollableScrollPhysics(),
-              children: const [
-                SizedBox(height: 460, child: Center(child: Text('暂时没有故事分类'))),
-              ],
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
+              itemCount: itemCount,
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                    child: Text(
+                      l10n.storyBrowseByGenre,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  );
+                }
+                var cursor = 1;
+                if (conditionGroups.isNotEmpty) {
+                  if (index == cursor) {
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
+                      child: Text(
+                        l10n.storyFilterStories,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    );
+                  }
+                  cursor++;
+                  final groupIndex = index - cursor;
+                  if (groupIndex < conditionGroups.length) {
+                    final group = conditionGroups[groupIndex];
+                    return _SaltStoryConditionGroup(
+                      title: group.title,
+                      tagTitle: group.tagTitle,
+                      items: group.items,
+                      onTap: _open,
+                    );
+                  }
+                  cursor += conditionGroups.length;
+                }
+                if (headerItems.isNotEmpty) {
+                  if (index == cursor) {
+                    return Padding(
+                      padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
+                      child: Text(
+                        l10n.storyFeaturedCategories,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    );
+                  }
+                  final item = headerItems[index - cursor - 1];
+                  return _SaltStoryCategoryCard(
+                    value: item,
+                    onTap: () => _open(item),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
           );
-        }
-        final conditionGroups = _groupConditionItems(conditionItems);
-        if (conditionGroups.isNotEmpty) {
-          return _SaltStoryCategoryTabs(
-            api: widget.api,
-            tags: _groupConditionTags(conditionGroups),
-            conditionItems: conditionItems,
-            headerItems: headerItems,
-            onOpen: _open,
-            onRefresh: _retry,
-          );
-        }
-        final itemCount =
-            1 +
-            (conditionGroups.isEmpty ? 0 : conditionGroups.length + 1) +
-            (headerItems.isEmpty ? 0 : headerItems.length + 1);
-        return RefreshIndicator(
-          onRefresh: _retry,
-          child: ListView.builder(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 32),
-            itemCount: itemCount,
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                return Padding(
-                  padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
-                  child: Text(
-                    '按题材浏览故事',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                );
-              }
-              var cursor = 1;
-              if (conditionGroups.isNotEmpty) {
-                if (index == cursor) {
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 2, 4, 10),
-                    child: Text(
-                      '筛选故事',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  );
-                }
-                cursor++;
-                final groupIndex = index - cursor;
-                if (groupIndex < conditionGroups.length) {
-                  final group = conditionGroups[groupIndex];
-                  return _SaltStoryConditionGroup(
-                    title: group.title,
-                    tagTitle: group.tagTitle,
-                    items: group.items,
-                    onTap: _open,
-                  );
-                }
-                cursor += conditionGroups.length;
-              }
-              if (headerItems.isNotEmpty) {
-                if (index == cursor) {
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 14, 4, 10),
-                    child: Text(
-                      '精选分类',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  );
-                }
-                final item = headerItems[index - cursor - 1];
-                return _SaltStoryCategoryCard(
-                  value: item,
-                  onTap: () => _open(item),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
-        );
-      },
-    ),
-  );
+        },
+      ),
+    );
+  }
+
   List<_SaltConditionGroup> _groupConditionItems(
     List<Map<String, dynamic>> items,
+    AppLocalizations l10n,
   ) {
     final groups = <String, _SaltConditionGroup>{};
     for (final item in items) {
@@ -289,9 +295,9 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
           title: parentTitle.isNotEmpty
               ? parentTitle
               : switch (role) {
-                  'quick' => '快捷筛选',
-                  'sort' => '排序',
-                  _ => tagTitle.isEmpty ? '全部' : tagTitle,
+                  'quick' => l10n.storyQuickFilter,
+                  'sort' => l10n.storySort,
+                  _ => tagTitle.isEmpty ? l10n.storyAll : tagTitle,
                 },
           tagTitle: tagTitle,
           items: [item],
@@ -305,6 +311,7 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
 
   List<_SaltStoryConditionTag> _groupConditionTags(
     List<_SaltConditionGroup> groups,
+    AppLocalizations l10n,
   ) {
     final tags = <String, _SaltStoryConditionTag>{};
     for (final group in groups) {
@@ -315,7 +322,7 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
         tags[key] = _SaltStoryConditionTag(
           type: tagType,
           title: group.tagTitle.isEmpty
-              ? (tagType.isEmpty ? '分类' : tagType)
+              ? (tagType.isEmpty ? l10n.storyCategory : tagType)
               : group.tagTitle,
           groups: [group],
         );

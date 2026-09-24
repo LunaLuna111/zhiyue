@@ -11,6 +11,7 @@ import '../core/comment_emoticon_assets.dart';
 import '../core/comment_content_parser.dart';
 import '../core/image_export_service.dart';
 import '../core/json_tools.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 

@@ -8,6 +8,7 @@ class _SaltCommentsSheet extends StatefulWidget {
     required this.title,
     required this.count,
     required this.showSort,
+    required this.bulletComments,
   });
 
   final ZhihuApiClient api;
@@ -16,6 +17,7 @@ class _SaltCommentsSheet extends StatefulWidget {
   final String title;
   final int? count;
   final bool showSort;
+  final bool bulletComments;
 
   @override
   State<_SaltCommentsSheet> createState() => _SaltCommentsSheetState();
@@ -62,7 +64,9 @@ class _SaltCommentsSheetState extends State<_SaltCommentsSheet> {
               replyCommentId: target.replyCommentId,
               sticker: value.sticker,
             ),
-            emptyMessage: widget.title.contains('弹评') ? '还没有弹评' : '还没有评论',
+            emptyMessage: widget.bulletComments
+                ? context.zhL10n.saltBulletCommentsEmpty
+                : context.zhL10n.saltCommentsEmpty,
           ),
         ),
       ],
@@ -122,7 +126,7 @@ class _SaltSheetHeader extends StatelessWidget {
           child: IconButton(
             key: const Key('salt-comments-close-action'),
             onPressed: onClose,
-            tooltip: '关闭',
+            tooltip: context.zhL10n.commonClose,
             icon: Icon(
               Icons.close_rounded,
               size: 24,

@@ -4,6 +4,7 @@ Widget? _saltProductHeader(
   BuildContext context,
   Map<String, dynamic> response,
 ) {
+  final l10n = context.zhL10n;
   final parent = _saltMap(response['parent']);
   final extra = response['extra'];
   final paging = response['paging'];
@@ -54,8 +55,8 @@ Widget? _saltProductHeader(
   ]);
   final subtitle = _saltMetadataText(parent, const ['sub_title', 'subtitle']);
   final introduction = saltProductIntroduction(parent);
-  final typeName = _saltTypeLabel(parent);
-  final completion = _saltCompletionLabel(parent);
+  final typeName = _saltTypeLabel(parent, l10n);
+  final completion = _saltCompletionLabel(parent, l10n);
   final likeMap = _saltMap(parent?['like']);
   var likeText = _saltMetadataText(parent, const [
     'like_text',
@@ -165,8 +166,8 @@ Widget? _saltProductHeader(
           'label_text',
           'producer_label',
         ])
-      : typeName == '长篇'
-      ? '长篇'
+      : typeName == l10n.storyLong
+      ? l10n.saltBrandLong
       : '';
   final typeEnglish = _saltMetadataText(parent, const [
     'type_en',
@@ -200,7 +201,9 @@ Widget? _saltProductHeader(
   ]);
   if (wordCountText.isEmpty) {
     final wordCount = _saltPositiveMetadataInt(parent, const ['word_count']);
-    if (wordCount != null) wordCountText = '${compactCount(wordCount)} 字';
+    if (wordCount != null) {
+      wordCountText = l10n.saltWordCount(compactCount(wordCount));
+    }
   }
   final capacityText = _saltMetadataText(parent, const [
     'sku_cap_text',
@@ -276,28 +279,31 @@ Widget? _saltProductHeader(
     completion: completion,
     updatedTo: updatedTo,
     total: total,
+    l10n: l10n,
   );
   final infoPills = <Widget>[
     if (typeName.isNotEmpty) ZhPill(label: typeName, compact: true),
     if (isVip) const ZhPill(label: 'VIP', compact: true),
     if (completion.isNotEmpty && !summaryLine.contains(completion))
       ZhPill(label: completion, compact: true),
-    if (hasAudio) const ZhPill(label: '可听', compact: true),
-    if (isOnShelf) const ZhPill(label: '已加入书架', compact: true),
-    if (isLiked) const ZhPill(label: '已赞', compact: true),
+    if (hasAudio) ZhPill(label: l10n.saltAudioAvailable, compact: true),
+    if (isOnShelf) ZhPill(label: l10n.saltPillOnShelf, compact: true),
+    if (isLiked) ZhPill(label: l10n.saltPillLiked, compact: true),
     for (final label in labels) ZhPill(label: label, compact: true),
   ];
   final facts = <String>[
     if (wordCountText.isNotEmpty) wordCountText,
     if (capacityText.isNotEmpty && capacityText != wordCountText) capacityText,
-    if (likeText.isNotEmpty) '点赞 ${_saltMetricValue(likeText)}',
-    if (favoriteText.isNotEmpty) '收藏 ${_saltMetricValue(favoriteText)}',
-    if (commentCount != null) '评论 ${compactCount(commentCount)}',
-    if (viewCount != null) '浏览 ${compactCount(viewCount)}',
-    if (commentScore.isNotEmpty) '评分 $commentScore',
+    if (likeText.isNotEmpty) l10n.saltLikeCount(_saltMetricValue(likeText)),
+    if (favoriteText.isNotEmpty)
+      l10n.saltFavoriteCount(_saltMetricValue(favoriteText)),
+    if (commentCount != null) l10n.saltCommentCount(compactCount(commentCount)),
+    if (viewCount != null) l10n.metricViews(compactCount(viewCount)),
+    if (commentScore.isNotEmpty) l10n.saltScore(commentScore),
     if (progressText.isNotEmpty) progressText,
     if (onlineTimeText.isNotEmpty) onlineTimeText,
-    if (updatedCount != null && updatedCount > 0) '更新 $updatedCount 节',
+    if (updatedCount != null && updatedCount > 0)
+      l10n.saltUpdatedSections(updatedCount),
     if (typeEnglish.isNotEmpty && typeEnglish != typeName) typeEnglish,
     if (reportType.isNotEmpty) reportType,
     ...parentMeta,
@@ -392,7 +398,9 @@ Widget? _saltProductHeader(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  producerName.isEmpty ? '作者' : producerName,
+                                  producerName.isEmpty
+                                      ? l10n.saltAuthor
+                                      : producerName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context).textTheme.bodyMedium
@@ -519,7 +527,7 @@ Widget? _saltProductHeader(
         Row(
           children: [
             Text(
-              '目录',
+              l10n.saltCatalogTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0,
@@ -528,7 +536,7 @@ Widget? _saltProductHeader(
             const Spacer(),
             if (total != null)
               Text(
-                '共 $total 节',
+                l10n.saltChapterCount(total),
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: ZhPalette.mutedInk,
                   letterSpacing: 0,

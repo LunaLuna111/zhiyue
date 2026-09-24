@@ -5,6 +5,7 @@ import '../core/api_client.dart';
 import '../core/api_response.dart';
 import '../core/json_tools.dart';
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';

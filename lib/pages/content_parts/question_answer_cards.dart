@@ -17,6 +17,7 @@ class _QuestionAnswerRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final author = authorNameOf(value);
     final headline = authorHeadlineOf(value);
     final badges = authorBadgeLabelsOf(value);
@@ -34,7 +35,9 @@ class _QuestionAnswerRow extends StatelessWidget {
             isFollowingAuthor: null,
           );
     final date = contentDateLabel(metrics);
-    final avatarFallback = author.isEmpty ? '知' : author.characters.first;
+    final avatarFallback = author.isEmpty
+        ? l10n.commonZhihuUser.characters.first
+        : author.characters.first;
     return Material(
       color: ZhPalette.background,
       child: InkWell(
@@ -68,7 +71,9 @@ class _QuestionAnswerRow extends StatelessWidget {
                           children: [
                             Flexible(
                               child: Text(
-                                author.isEmpty ? '知乎用户' : author,
+                                author.isEmpty
+                                    ? context.zhL10n.commonZhihuUser
+                                    : author,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: Theme.of(context).textTheme.titleSmall
@@ -109,7 +114,7 @@ class _QuestionAnswerRow extends StatelessWidget {
                   ),
                   if (onDelete != null)
                     IconButton(
-                      tooltip: '删除回答',
+                      tooltip: context.zhL10n.commonDelete,
                       visualDensity: VisualDensity.compact,
                       onPressed: onDelete,
                       icon: const Icon(Icons.delete_outline_rounded, size: 19),
@@ -146,8 +151,12 @@ class _QuestionAnswerRow extends StatelessWidget {
                             if (metrics.voteupCount case final count?)
                               _QuestionAnswerMetric(
                                 icon: Icons.change_history_outlined,
-                                label: '${compactCount(count)} 赞同',
-                                semanticLabel: '赞同 ${compactCount(count)}',
+                                label: context.zhL10n.metricVoteup(
+                                  compactCount(count),
+                                ),
+                                semanticLabel: context.zhL10n.metricVoteup(
+                                  compactCount(count),
+                                ),
                                 selected: relationship.isUpvoted,
                                 showIcon: false,
                                 onTap: onAction == null
@@ -157,8 +166,12 @@ class _QuestionAnswerRow extends StatelessWidget {
                             if (metrics.favoriteCount case final count?)
                               _QuestionAnswerMetric(
                                 icon: Icons.star_border_rounded,
-                                label: '${compactCount(count)} 收藏',
-                                semanticLabel: '收藏 ${compactCount(count)}',
+                                label: context.zhL10n.metricFavorite(
+                                  compactCount(count),
+                                ),
+                                semanticLabel: context.zhL10n.metricFavorite(
+                                  compactCount(count),
+                                ),
                                 selected: relationship.isFavorited == true,
                                 showIcon: false,
                                 onTap: onAction == null
@@ -169,8 +182,12 @@ class _QuestionAnswerRow extends StatelessWidget {
                             if (metrics.commentCount case final count?)
                               _QuestionAnswerMetric(
                                 icon: Icons.chat_bubble_outline_rounded,
-                                label: '${compactCount(count)} 评论',
-                                semanticLabel: '评论 ${compactCount(count)}',
+                                label: context.zhL10n.metricComment(
+                                  compactCount(count),
+                                ),
+                                semanticLabel: context.zhL10n.metricComment(
+                                  compactCount(count),
+                                ),
                                 showIcon: false,
                                 onTap: onAction == null
                                     ? null
@@ -219,7 +236,9 @@ class _QuestionAnswerAuthorTapTarget extends StatelessWidget {
     final author = authorNameOf(value);
     return Semantics(
       button: true,
-      label: author.isEmpty ? '查看作者个人主页' : '查看$author的个人主页',
+      label: author.isEmpty
+          ? context.zhL10n.commonAuthorProfile
+          : '${context.zhL10n.commonAuthorProfile}: $author',
       child: InkResponse(
         key: ValueKey('content-author-avatar-${idOf(value)}'),
         onTap: onTap,
@@ -341,14 +360,18 @@ class _QuestionAnswersBottomActions extends StatelessWidget {
           child: Icon(Icons.edit_outlined),
         ),
         activeIcon: const Icon(Icons.edit_outlined),
-        label: canWrite ? '写回答' : '登录后写回答',
-        semanticLabel: canWrite ? '写回答' : '登录后写回答',
+        label: canWrite
+            ? context.zhL10n.detailWriteAnswer
+            : context.zhL10n.detailWriteAnswerLogin,
+        semanticLabel: canWrite
+            ? context.zhL10n.detailWriteAnswer
+            : context.zhL10n.detailWriteAnswerLogin,
         onPressed: onWrite,
       ),
       ZhLiquidGlassActionItem(
         icon: const Icon(Icons.person_add_alt_1_outlined),
-        label: '邀请回答',
-        semanticLabel: '邀请回答',
+        label: context.zhL10n.detailInviteAnswer,
+        semanticLabel: context.zhL10n.detailInviteAnswer,
         onPressed: onInvite,
       ),
       ZhLiquidGlassActionItem(
@@ -358,8 +381,12 @@ class _QuestionAnswersBottomActions extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             : Icon(following ? Icons.check_rounded : Icons.add_rounded),
-        label: following ? '已关注' : '关注问题',
-        semanticLabel: following ? '取消关注问题' : '关注问题',
+        label: following
+            ? context.zhL10n.detailFollowed
+            : context.zhL10n.questionFollow,
+        semanticLabel: following
+            ? context.zhL10n.questionUnfollow
+            : context.zhL10n.questionFollow,
         onPressed: followBusy ? null : onFollow,
       ),
     ],

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
+import '../../l10n/zh_localization.dart';
 import '../zh_theme.dart';
 
 class ZhBrandMark extends StatelessWidget {
@@ -11,7 +12,7 @@ class ZhBrandMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     image: true,
-    label: '知阅',
+    label: context.zhL10n.appTitle,
     child: Container(
       width: size,
       height: size,

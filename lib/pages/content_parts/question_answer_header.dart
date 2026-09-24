@@ -125,6 +125,7 @@ class _ExpandableQuestionSummaryState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final textStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
       color: ZhPalette.mutedInk,
       fontSize: 14,
@@ -133,7 +134,11 @@ class _ExpandableQuestionSummaryState
     return Semantics(
       button: _canExpand,
       expanded: _expanded,
-      label: _canExpand ? (_expanded ? '收起问题详情' : '展开问题详情') : null,
+      label: _canExpand
+          ? (_expanded
+                ? l10n.questionCollapseDetails
+                : l10n.questionExpandDetails)
+          : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -170,7 +175,11 @@ class _ExpandableQuestionSummaryState
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   foregroundColor: ZhPalette.accent,
                 ),
-                child: Text(_expanded ? '收起' : '展开全文'),
+                child: Text(
+                  _expanded
+                      ? context.zhL10n.questionCollapse
+                      : context.zhL10n.questionExpandFull,
+                ),
               ),
             ),
         ],
@@ -207,7 +216,7 @@ class _QuestionTopicChip extends StatelessWidget {
     );
     return Semantics(
       button: onTap != null,
-      label: '打开话题 ${topic.label}',
+      label: context.zhL10n.questionOpenTopic(topic.label),
       child: InkWell(
         key: ValueKey('question-topic-${topic.label}'),
         onTap: onTap,
@@ -231,9 +240,10 @@ class _QuestionAnswerSortBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final answerLabel = answerCount == null
-        ? '全部回答'
-        : '全部内容 ${compactCount(answerCount!)}';
+        ? l10n.questionAnswersTitle
+        : l10n.questionAllContentCount(compactCount(answerCount!));
     return Container(
       key: const ValueKey('question-answer-sort-bar'),
       height: 50,
@@ -250,14 +260,14 @@ class _QuestionAnswerSortBar extends StatelessWidget {
             height: 42,
             child: ZhLiquidGlassSegmentedTabs(
               key: const ValueKey('question-answer-sort-control'),
-              labels: const ['默认', '最新'],
+              labels: [l10n.questionSortDefault, l10n.questionSortLatest],
               selectedIndex: sort == _QuestionAnswerSort.latest ? 1 : 0,
               onSelected: (index) => onChanged(
                 index == 1
                     ? _QuestionAnswerSort.latest
                     : _QuestionAnswerSort.defaultOrder,
               ),
-              semanticPrefix: '回答排序：',
+              semanticPrefix: l10n.questionSortSemantic,
               height: 40,
               labelFontSize: 14,
               plainSelection: true,
@@ -291,7 +301,9 @@ class _QuestionHeaderAuthor extends StatelessWidget {
     final headline = authorHeadlineOf(question);
     final avatar = authorAvatarOf(question);
     final memberId = authorIdOf(question);
-    final fallback = name.isEmpty ? '知' : name.characters.first;
+    final fallback = name.isEmpty
+        ? context.zhL10n.commonZhihuUser.characters.first
+        : name.characters.first;
     void openAuthor() {
       if (memberId.isEmpty) return;
       Navigator.of(context).push(
@@ -303,7 +315,7 @@ class _QuestionHeaderAuthor extends StatelessWidget {
 
     return Semantics(
       button: memberId.isNotEmpty,
-      label: '提问者 $name',
+      label: context.zhL10n.questionAuthor(name),
       child: InkWell(
         key: const Key('question-header-author'),
         onTap: memberId.isEmpty ? null : openAuthor,
@@ -339,7 +351,7 @@ class _QuestionHeaderAuthor extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const ZhPill(label: '提问者', compact: true),
+              ZhPill(label: context.zhL10n.questionAuthorBadge, compact: true),
             ],
           ),
         ),
@@ -449,7 +461,7 @@ class _QuestionHeaderImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '查看问题图片原图',
+    label: context.zhL10n.questionViewImage,
     child: InkWell(
       key: ValueKey('question-header-image-$url'),
       onTap: () => _showDetailImagePreview(context, url),

@@ -373,10 +373,10 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
     await _load(reset: true);
   }
 
-  String get _emptyMessage => switch (widget.channel) {
-    HomeFeedChannel.following => '关注流暂时没有新内容',
-    HomeFeedChannel.hot => '当前没有可显示的热榜内容',
-    _ => '当前没有可显示的推荐内容',
+  String _emptyMessage(AppLocalizations l10n) => switch (widget.channel) {
+    HomeFeedChannel.following => l10n.feedEmptyFollowing,
+    HomeFeedChannel.hot => l10n.feedEmptyHot,
+    _ => l10n.feedEmptyRecommend,
   };
   @override
   Widget build(BuildContext context) {
@@ -398,6 +398,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
   }
 
   Widget _buildList() {
+    final l10n = context.zhL10n;
     if (!widget.isActive && _rows.isEmpty && !_loading) {
       // PageView keeps a neighboring child mounted for a smooth settle. Do
       // not initialize a second feed just because it was laid out; it will
@@ -539,7 +540,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
             child: ZhOutlineButton(
               onPressed: () => _load(reset: false),
               icon: Icons.refresh_rounded,
-              label: '续页加载失败，点击重试',
+              label: l10n.feedNextLoadFailed,
               expand: true,
             ),
           );
@@ -549,10 +550,10 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
           child: Center(
             child: Text(
               _rows.isEmpty
-                  ? _emptyMessage
+                  ? _emptyMessage(l10n)
                   : _next == null
-                  ? '已显示当前全部内容'
-                  : '继续下滑加载更多',
+                  ? l10n.feedAllShown
+                  : l10n.feedLoadMore,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -575,7 +576,9 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
         builder: (_) => FollowingPersonRecentPage(
           api: widget.api,
           memberId: memberId,
-          name: titleOf(object).isEmpty ? '关注的人' : titleOf(object),
+          name: titleOf(object).isEmpty
+              ? context.zhL10n.feedFollowingPeople
+              : titleOf(object),
         ),
       ),
     );

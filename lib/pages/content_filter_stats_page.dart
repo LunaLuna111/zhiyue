@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/content_filter_stats.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -17,19 +18,20 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
 
   Future<void> _clear() async {
     if (_store.stats.totalActions == 0) return;
+    final l10n = context.zhL10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清空过滤统计？'),
-        content: const Text('只会删除本机记录，不会改变知乎账号和服务端反馈设置。'),
+        title: Text(l10n.contentFilterClearTitle),
+        content: Text(l10n.contentFilterClearMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('清空'),
+            child: Text(l10n.commonClear),
           ),
         ],
       ),
@@ -39,7 +41,7 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('内容过滤统计已清空')));
+      ).showSnackBar(SnackBar(content: Text(l10n.contentFilterCleared)));
     }
   }
 
@@ -47,11 +49,11 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: ZhTopBar(
-        title: const Text('内容过滤统计'),
+        title: Text(context.zhL10n.contentFilterStatsTitle),
         actions: [
           ZhLiquidGlassIconButton(
             key: const ValueKey('content-filter-stats-clear'),
-            semanticLabel: '清空统计',
+            semanticLabel: context.zhL10n.contentFilterClearStats,
             onPressed: _clear,
             icon: const Icon(Icons.delete_outline_rounded),
             size: 44,
@@ -72,7 +74,7 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
   Widget _body(BuildContext context, ContentFilterStats stats) => Semantics(
     key: const ValueKey('content-filter-stats-page'),
     container: true,
-    label: '内容过滤统计',
+    label: context.zhL10n.contentFilterStatsLabel,
     child: ZhPageWidth(
       maxWidth: 680,
       child: ListView(
@@ -90,7 +92,7 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
                 Expanded(
                   child: _StatValue(
                     key: const ValueKey('content-filter-total'),
-                    label: '反馈操作',
+                    label: context.zhL10n.contentFilterActions,
                     value: stats.totalActions.toString(),
                   ),
                 ),
@@ -98,19 +100,19 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
                 Expanded(
                   child: _StatValue(
                     key: const ValueKey('content-filter-removed'),
-                    label: '已隐藏内容',
+                    label: context.zhL10n.contentFilterHidden,
                     value: stats.removedItems.toString(),
                   ),
                 ),
               ],
             ),
           ),
-          const _StatsHeading('过滤原因'),
+          _StatsHeading(context.zhL10n.contentFilterReasons),
           if (stats.orderedReasons.isEmpty)
             ZhSurface(
               padding: const EdgeInsets.all(ZhSpace.md),
               child: Text(
-                '在首页卡片中选择“减少此类内容”后，这里会按原因累计统计。',
+                context.zhL10n.contentFilterHint,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
@@ -134,7 +136,9 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
                       leading: const Icon(Icons.filter_alt_outlined),
                       title: Text(stats.orderedReasons[index].key),
                       trailing: Text(
-                        '${stats.orderedReasons[index].value} 次',
+                        context.zhL10n.contentFilterCount(
+                          stats.orderedReasons[index].value.toString(),
+                        ),
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ),
@@ -142,12 +146,12 @@ class _ContentFilterStatsPageState extends State<ContentFilterStatsPage> {
                 ],
               ),
             ),
-          const _StatsHeading('最近一次'),
+          _StatsHeading(context.zhL10n.contentFilterLatest),
           ZhSurface(
             padding: const EdgeInsets.all(ZhSpace.md),
             child: stats.lastReason.isEmpty
                 ? Text(
-                    '暂无记录',
+                    context.zhL10n.contentFilterEmpty,
                     style: Theme.of(
                       context,
                     ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),

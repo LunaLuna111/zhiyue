@@ -69,9 +69,9 @@ String _searchEntitySubtitleOf(Map<String, dynamic> value) {
   return subtitleOf(value);
 }
 
-List<String> _searchEntityMetricsOf(Map<String, dynamic> value) {
+List<(String, int)> _searchEntityMetricsOf(Map<String, dynamic> value) {
   final object = unwrapObject(value);
-  final items = <String>[];
+  final items = <(String, int)>[];
   int? searchInt(Object? raw) {
     if (raw is int) return raw;
     if (raw is num) return raw.toInt();
@@ -82,7 +82,7 @@ List<String> _searchEntityMetricsOf(Map<String, dynamic> value) {
     for (final key in keys) {
       final count = searchInt(object[key]);
       if (count != null) {
-        items.add('${compactCount(count)} $label');
+        items.add((label, count));
         return;
       }
     }
@@ -116,7 +116,7 @@ List<String> _searchEntityMetricsOf(Map<String, dynamic> value) {
       final seats = object['seats'];
       if (seats is Map) {
         final taken = searchInt(seats['taken']);
-        if (taken != null) items.add('${compactCount(taken)} 人参与');
+        if (taken != null) items.add(('人参与', taken));
       }
       break;
     case 'ring':
@@ -153,7 +153,7 @@ class _SearchEntityStaticData {
       description: subtitleOf(value),
       metrics: _searchEntityMetricsOf(value),
       date: contentDateLabel(metrics),
-      typeLabel: contentKindLabelOf(value),
+      typeLabel: '',
     );
   }
 
@@ -162,7 +162,7 @@ class _SearchEntityStaticData {
   final String title;
   final String subtitle;
   final String description;
-  final List<String> metrics;
+  final List<(String, int)> metrics;
   final String date;
   final String typeLabel;
 }
@@ -187,7 +187,12 @@ class _SearchEntityResultRow extends StatelessWidget {
     final title = data.title;
     final subtitle = data.subtitle;
     final description = data.description;
-    final metrics = data.metrics;
+    final metrics = data.metrics
+        .map(
+          (metric) =>
+              localizedSearchMetric(context.zhL10n, metric.$2, metric.$1),
+        )
+        .toList(growable: false);
     final date = data.date;
     final circular = type == 'people' || type == 'member' || type == 'topic';
     return Material(
@@ -235,7 +240,9 @@ class _SearchEntityResultRow extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            title.isEmpty ? '未命名内容' : title,
+                            title.isEmpty
+                                ? context.zhL10n.commonUntitledContent
+                                : title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleMedium
@@ -244,7 +251,10 @@ class _SearchEntityResultRow extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          data.typeLabel,
+                          localizedSearchContentKindLabel(
+                            context.zhL10n,
+                            value,
+                          ),
                           style: Theme.of(context).textTheme.labelMedium
                               ?.copyWith(color: ZhPalette.subtleInk),
                         ),

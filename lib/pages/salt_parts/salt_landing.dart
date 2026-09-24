@@ -53,6 +53,7 @@ class _SaltPageState extends State<SaltPage>
 
   Future<void> _loadBookshelf({bool refresh = false}) async {
     if (_bookshelfLoading) return;
+    final l10n = context.zhL10n;
     setState(() {
       _bookshelfLoading = true;
       _bookshelfSyncError = null;
@@ -76,7 +77,7 @@ class _SaltPageState extends State<SaltPage>
           final rows = extractSaltShelfRows(response.json);
           final fallback = rows.isEmpty ? extractRows(response.json) : rows;
           final entries = fallback
-              .map(_bookshelfEntryFromRemote)
+              .map((row) => _bookshelfEntryFromRemote(row, l10n))
               .where((entry) => entry.businessId.isNotEmpty);
           await _bookshelf.addAll(entries);
           received = received || fallback.isNotEmpty;
@@ -85,7 +86,9 @@ class _SaltPageState extends State<SaltPage>
             responses.every(
               (response) => response == null || !response.isSuccess,
             )) {
-          _bookshelfSyncError = const ApiTransportException('云书架暂时无法同步');
+          _bookshelfSyncError = ApiTransportException(
+            l10n.saltCloudShelfUnavailable,
+          );
         }
       }
       await _enrichBookshelfEntries();
@@ -207,7 +210,10 @@ class _SaltPageState extends State<SaltPage>
     });
   }
 
-  SaltBookshelfEntry _bookshelfEntryFromRemote(Map<String, dynamic> row) {
+  SaltBookshelfEntry _bookshelfEntryFromRemote(
+    Map<String, dynamic> row,
+    AppLocalizations l10n,
+  ) {
     final object = unwrapObject(row);
     final navigation = parseSaltStoryNavigation(object);
     final businessId =
@@ -228,7 +234,7 @@ class _SaltPageState extends State<SaltPage>
     return SaltBookshelfEntry(
       businessId: businessId,
       propertyType: propertyType,
-      title: titleOf(row).isEmpty ? '盐选作品' : titleOf(row),
+      title: titleOf(row).isEmpty ? l10n.saltWorkFallback : titleOf(row),
       artwork:
           _findString(object, const [
             'artwork',
@@ -287,12 +293,12 @@ class _SaltPageState extends State<SaltPage>
     unawaited(_loadShelfTab(index));
   }
 
-  List<ReaderShelfTab> get _readerShelfTabs => [
+  List<ReaderShelfTab> _readerShelfTabs(AppLocalizations l10n) => [
     ReaderShelfTab(
       id: 'bookshelf',
-      label: '书架',
+      label: l10n.saltShelfTitle,
       entries: _bookshelf.entries
-          .map(_readerShelfEntryFromLocal)
+          .map((entry) => _readerShelfEntryFromLocal(entry, l10n))
           .toList(growable: false),
       canManage: true,
       isLoading: _bookshelfLoading,
@@ -307,10 +313,10 @@ class _SaltPageState extends State<SaltPage>
           _ => 'lists',
         },
         label: switch (index) {
-          1 => '赞过',
-          2 => '弹评',
-          3 => '历史记录',
-          _ => '书单',
+          1 => l10n.saltShelfLiked,
+          2 => l10n.saltShelfComments,
+          3 => l10n.saltShelfHistory,
+          _ => l10n.saltShelfLists,
         },
         entries: (_shelfRows[index] ?? const <Map<String, dynamic>>[])
             .asMap()
@@ -320,6 +326,7 @@ class _SaltPageState extends State<SaltPage>
                 tab: index,
                 index: entry.key,
                 row: entry.value,
+                l10n: l10n,
               ),
             )
             .toList(growable: false),
@@ -328,13 +335,17 @@ class _SaltPageState extends State<SaltPage>
       ),
   ];
 
-  ReaderShelfEntry _readerShelfEntryFromLocal(SaltBookshelfEntry entry) {
+  ReaderShelfEntry _readerShelfEntryFromLocal(
+    SaltBookshelfEntry entry,
+    AppLocalizations l10n,
+  ) {
     final object = entry.cardJson;
     final book = _readerBookInfo(
       businessId: entry.businessId,
       fallbackTitle: entry.displayTitle,
       fallbackArtwork: entry.artwork,
       value: object,
+      l10n: l10n,
     );
     final total = book.totalChapterCount;
     return ReaderShelfEntry(
@@ -355,8 +366,9 @@ class _SaltPageState extends State<SaltPage>
     required int tab,
     required int index,
     required Map<String, dynamic> row,
+    required AppLocalizations l10n,
   }) {
-    final entry = _bookshelfEntryFromRemote(row);
+    final entry = _bookshelfEntryFromRemote(row, l10n);
     final object = <String, dynamic>{
       ...unwrapObject(row),
       'business_id': entry.businessId,
@@ -370,6 +382,7 @@ class _SaltPageState extends State<SaltPage>
       fallbackTitle: entry.displayTitle,
       fallbackArtwork: entry.artwork,
       value: object,
+      l10n: l10n,
     );
     final downloaded =
         _readerShelfInt(object, const [
@@ -403,6 +416,7 @@ class _SaltPageState extends State<SaltPage>
     required String fallbackTitle,
     required String fallbackArtwork,
     required Map<String, dynamic> value,
+    required AppLocalizations l10n,
   }) {
     final object = unwrapObject(value);
     final parent = _saltMap(object['parent']) ?? const <String, dynamic>{};
@@ -493,7 +507,7 @@ class _SaltPageState extends State<SaltPage>
     };
     return ReaderBookInfo(
       id: businessId,
-      title: title.isEmpty ? '盐选作品' : title,
+      title: title.isEmpty ? l10n.saltWorkFallback : title,
       author: authorName,
       description: description,
       coverUrl: artwork,
@@ -644,7 +658,9 @@ class _SaltPageState extends State<SaltPage>
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => OfficialWebPage(
-              title: titleOf(value).isEmpty ? '盐选' : titleOf(value),
+              title: titleOf(value).isEmpty
+                  ? context.zhL10n.saltWorkFallback
+                  : titleOf(value),
               url: route.toString(),
             ),
           ),
@@ -688,13 +704,15 @@ class _SaltPageState extends State<SaltPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final l10n = context.zhL10n;
+    final shelfTabs = _readerShelfTabs(l10n);
     return Scaffold(
       appBar: ZhTopBar(
         title: ZhLiquidGlassSegmentedTabs(
           key: const ValueKey('reader-shelf-glass-tabs'),
-          labels: [for (final tab in _readerShelfTabs) tab.label],
+          labels: [for (final tab in shelfTabs) tab.label],
           selectedIndex: _shelfTabIndex,
-          semanticPrefix: '书架',
+          semanticPrefix: l10n.saltShelfTitle,
           scrollable: true,
           onSelected: _selectShelfTab,
           height: 48,
@@ -703,7 +721,7 @@ class _SaltPageState extends State<SaltPage>
           ZhLiquidGlassIconButton(
             key: const ValueKey('reader-shelf-category'),
             icon: const Icon(Icons.menu_book_outlined),
-            semanticLabel: '分类',
+            semanticLabel: l10n.saltCategory,
             size: 44,
             iconSize: 23,
             onPressed: () => Navigator.of(context).push(
@@ -718,7 +736,7 @@ class _SaltPageState extends State<SaltPage>
         maxWidth: 1120,
         desktopGutter: 24,
         child: ReaderShelfView(
-          tabs: _readerShelfTabs,
+          tabs: shelfTabs,
           activeTabIndex: _shelfTabIndex,
           onTabChanged: _selectShelfTab,
           itemBuilder: _buildReaderShelfCard,
@@ -727,13 +745,22 @@ class _SaltPageState extends State<SaltPage>
           onRetryTab: _retryShelfTab,
           onDeleteSelected: _deleteSelectedShelfEntries,
           onDownloadSelected: _downloadSelectedShelfEntries,
-          filterOptions: const [
-            ReaderShelfFilterOption(value: 'paid_column', label: '知识专栏'),
-            ReaderShelfFilterOption(value: 'ebook', label: '电子书'),
-            ReaderShelfFilterOption(value: 'ebook_audio', label: '有声书'),
-            ReaderShelfFilterOption(value: 'assessment', label: '测评'),
+          filterOptions: [
+            ReaderShelfFilterOption(
+              value: 'paid_column',
+              label: l10n.saltKnowledgeColumn,
+            ),
+            ReaderShelfFilterOption(value: 'ebook', label: l10n.storyTabBooks),
+            ReaderShelfFilterOption(
+              value: 'ebook_audio',
+              label: l10n.saltAudio,
+            ),
+            ReaderShelfFilterOption(
+              value: 'assessment',
+              label: l10n.storyTypeAssessment,
+            ),
           ],
-          emptyLabel: '本地书架暂无内容',
+          emptyLabel: l10n.saltLocalShelfEmpty,
         ),
       ),
     );

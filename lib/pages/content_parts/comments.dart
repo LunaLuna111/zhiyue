@@ -105,7 +105,7 @@ class CommentsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     Widget page() => CommentThreadView(
       api: api,
-      title: '评论',
+      title: context.zhL10n.commentAll,
       contentType: contentType,
       contentId: contentId,
       contentAuthorIds: contentAuthorIds,
@@ -218,7 +218,7 @@ class CommentThreadView extends StatefulWidget {
     this.showSort = true,
     this.sheetMode = false,
     this.fallbackCount,
-    this.emptyMessage = '还没有评论',
+    this.emptyMessage,
     this.initialCommentType = '',
     this.segmentId = '',
     this.contextQuote = '',
@@ -239,7 +239,7 @@ class CommentThreadView extends StatefulWidget {
   final bool showSort;
   final bool sheetMode;
   final int? fallbackCount;
-  final String emptyMessage;
+  final String? emptyMessage;
   final String initialCommentType;
   final String segmentId;
   final String contextQuote;
@@ -375,9 +375,9 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     bool showEmoticons = false,
   }) async {
     if (widget.submitComment == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('暂时无法发表评论')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.commentEditorUnavailable)),
+      );
       return;
     }
     final resolvedTarget =
@@ -411,8 +411,12 @@ class _CommentThreadViewState extends State<CommentThreadView> {
         api: widget.api,
         replyTarget: resolvedTarget,
         title: resolvedTarget.isReply
-            ? '回复${resolvedTarget.targetUserName.isEmpty ? '这条评论' : ' @${resolvedTarget.targetUserName}'}'
-            : '写评论',
+            ? context.zhL10n.commentReplyTitle(
+                resolvedTarget.targetUserName.isEmpty
+                    ? context.zhL10n.commentReplyTargetComment
+                    : '@${resolvedTarget.targetUserName}',
+              )
+            : context.zhL10n.commentWrite,
         initialShowEmoticons: showEmoticons,
         onSubmit: (value) async {
           final response = await widget.submitComment!(value, resolvedTarget);
@@ -429,7 +433,11 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(resolvedTarget.isReply ? '回复已发布。' : '评论已发布。'),
+        content: Text(
+          resolvedTarget.isReply
+              ? context.zhL10n.commentReplyPublished
+              : context.zhL10n.commentPublished,
+        ),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -441,16 +449,16 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除评论？'),
-        content: const Text('该评论及其当前展示关系将从列表中移除。'),
+        title: Text(context.zhL10n.commentDeleteTitle),
+        content: Text(context.zhL10n.commentDeleteMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(context.zhL10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text(context.zhL10n.commonDelete),
           ),
         ],
       ),
@@ -473,7 +481,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
       });
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('评论已删除。')));
+      ).showSnackBar(SnackBar(content: Text(context.zhL10n.commentDeleted)));
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -505,17 +513,17 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     return response;
   }
 
-  String get _resolvedTitle => _commentType == 'sentence'
-      ? '句子评论'
+  String _resolvedTitle(BuildContext context) => _commentType == 'sentence'
+      ? context.zhL10n.commentSentence
       : widget.embedded
       ? widget.title
-      : '全部评论';
+      : context.zhL10n.commentAll;
 
-  Widget? get _resolvedTitleWidget {
+  Widget? _resolvedTitleWidget(BuildContext context) {
     if (widget.embedded) return null;
     if (_commentType == 'sentence') {
       return Text(
-        '句子评论',
+        context.zhL10n.commentSentence,
         style: TextStyle(
           color: ZhPalette.ink,
           fontSize: 17,
@@ -528,7 +536,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
     // the comment panel. Keeping it in the toolbar made the sheet look like
     // a second feed header and pushed the author card down unnecessarily.
     return Text(
-      '全部评论',
+      context.zhL10n.commentAll,
       style: TextStyle(
         color: ZhPalette.ink,
         fontSize: 17,
@@ -553,8 +561,8 @@ class _CommentThreadViewState extends State<CommentThreadView> {
         'comments-${widget.contentType}-${widget.contentId}-'
         '${widget.segmentId}-$_commentType-$_orderBy-$_revision',
       ),
-      title: _resolvedTitle,
-      titleWidget: _resolvedTitleWidget,
+      title: _resolvedTitle(context),
+      titleWidget: _resolvedTitleWidget(context),
       centerTitle: true,
       toolbarHeight: 52,
       api: widget.api,
@@ -563,7 +571,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
           ? [
               IconButton(
                 key: const Key('comments-close-action'),
-                tooltip: '关闭',
+                tooltip: context.zhL10n.commonClose,
                 onPressed: () =>
                     Navigator.of(context, rootNavigator: true).maybePop(),
                 icon: Icon(
@@ -625,7 +633,7 @@ class _CommentThreadViewState extends State<CommentThreadView> {
       ),
       loadInitial: _loadComments,
       commentListMode: true,
-      emptyMessage: widget.emptyMessage,
+      emptyMessage: widget.emptyMessage ?? context.zhL10n.commentNoComments,
       rowBuilder: (context, value, onTap) => CommentCard(
         value: value,
         api: widget.api,

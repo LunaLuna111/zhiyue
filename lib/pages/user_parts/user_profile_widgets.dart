@@ -77,7 +77,7 @@ class _RemoteUserProfileTabState extends State<_RemoteUserProfileTab> {
     ),
     onObjectTap: (context, value) =>
         openDetectedObject(context, widget.api, value),
-    emptyMessage: '还没有公开内容',
+    emptyMessage: context.zhL10n.userProfileNoPublicContent,
   );
   @override
   Widget build(BuildContext context) {

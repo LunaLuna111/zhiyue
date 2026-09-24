@@ -140,12 +140,13 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
     if (context.mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('主页链接已复制')));
+      ).showSnackBar(SnackBar(content: Text(context.zhL10n.profileLinkCopied)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final profile = _profile;
     if (_loading && profile == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -158,17 +159,17 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
               : ZhLiquidGlassIconButton(
                   size: 46,
                   iconSize: 24,
-                  semanticLabel: '打开侧边栏',
+                  semanticLabel: l10n.profileOpenDrawer,
                   onPressed: widget.onMenuPressed,
                   icon: const Icon(Icons.menu_rounded),
                 ),
-          title: const Text('我的主页'),
+          title: Text(l10n.profileTitle),
         ),
         body: ApiErrorView(
           error: _error!,
           onRetry: _load,
-          titleOverride: '个人资料加载失败',
-          detailOverride: '请检查网络后重试',
+          titleOverride: l10n.profileLoadFailed,
+          detailOverride: l10n.profileNetworkRetry,
         ),
       );
     }
@@ -176,7 +177,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
         ? widget.session.accountUid
         : plainText(profile['id']);
     final name = plainText(profile['name']).isEmpty
-        ? '知乎用户'
+        ? l10n.profileUserFallback
         : plainText(profile['name']);
     final cover = plainText(profile['cover_url']);
     final urlToken = plainText(profile['url_token']).isEmpty
@@ -224,7 +225,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                             dimension: 48,
                             child: ZhLiquidGlassIconButton(
                               key: const ValueKey('account-profile-menu'),
-                              semanticLabel: '打开侧边栏',
+                              semanticLabel: l10n.profileOpenDrawer,
                               onPressed: widget.onMenuPressed,
                               icon: Icon(
                                 Icons.menu_rounded,
@@ -244,7 +245,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                             Icons.search_rounded,
                             color: ZhPalette.ink,
                           ),
-                          semanticLabel: '查找用户',
+                          semanticLabel: l10n.profileFindUser,
                           onPressed: () => Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => UserPage(api: widget.api),
@@ -256,7 +257,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                             Icons.share_outlined,
                             color: ZhPalette.ink,
                           ),
-                          semanticLabel: '复制主页链接',
+                          semanticLabel: l10n.profileCopyHomeLink,
                           onPressed: () =>
                               _copyProfileLink(context, profile, memberId),
                         ),
@@ -304,7 +305,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                   loadInitial: () => widget.api.getUri(
                     widget.api.userActivitiesInitialUri(memberId),
                   ),
-                  emptyMessage: '还没有公开动态',
+                  emptyMessage: l10n.profilePublicActivitiesEmpty,
                   activityMenu: true,
                 ),
                 _ProfileFeedTab(
@@ -313,7 +314,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
                   loadInitial: () => widget.api.getUri(
                     widget.api.userVoteupsInitialUri(memberId),
                   ),
-                  emptyMessage: '还没有公开赞同',
+                  emptyMessage: l10n.profilePublicVoteupsEmpty,
                   activityMenu: true,
                 ),
               ],
@@ -332,6 +333,7 @@ class _ProfileTabsSurface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final controller = DefaultTabController.of(context);
     return AnimatedBuilder(
       animation: controller,
@@ -341,7 +343,12 @@ class _ProfileTabsSurface extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
           child: ZhLiquidGlassSegmentedTabs(
-            labels: const ['灵感', '创作', '动态', '赞同'],
+            labels: [
+              l10n.profileIdeasTab,
+              l10n.profileCreationTab,
+              l10n.profileActivityTab,
+              l10n.profileVoteupTab,
+            ],
             selectedIndex: controller.index,
             onSelected: (index) => controller.animateTo(index),
             height: 48,

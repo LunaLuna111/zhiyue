@@ -18,6 +18,7 @@ class SaltCatalogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final object = unwrapObject(value);
     final title = _saltText(object, const [
       'title',
@@ -89,8 +90,8 @@ class SaltCatalogCard extends StatelessWidget {
         _sectionInt(object['content_count']);
     final downloadText = downloadedCount > 0
         ? totalSectionCount != null && totalSectionCount > 0
-              ? '$downloadedCount/$totalSectionCount 已下载'
-              : '$downloadedCount 节已下载'
+              ? l10n.saltDownloadedProgress(downloadedCount, totalSectionCount)
+              : l10n.saltDownloadedSections(downloadedCount)
         : '';
     final validArtwork = Uri.tryParse(artwork)?.scheme == 'https';
     final businessType = _saltText(object, const [
@@ -98,10 +99,10 @@ class SaltCatalogCard extends StatelessWidget {
       'content_type',
     ]).toLowerCase();
     final kindLabel = businessType.contains('audio')
-        ? '盐选音频'
+        ? l10n.saltAudio
         : businessType.contains('video')
-        ? '盐选视频'
-        : '盐选故事';
+        ? l10n.saltVideo
+        : l10n.saltStory;
     final card = ZhSurface(
       onTap: onTap,
       margin: const EdgeInsets.symmetric(horizontal: ZhSpace.md, vertical: 6),
@@ -143,7 +144,8 @@ class SaltCatalogCard extends StatelessWidget {
                   runSpacing: 5,
                   children: [
                     ZhPill(label: kindLabel, compact: true),
-                    if (isLimitFree) const ZhPill(label: '限时免费', compact: true),
+                    if (isLimitFree)
+                      ZhPill(label: l10n.saltLimitedFree, compact: true),
                     for (final label in labels)
                       ZhPill(label: label, compact: true),
                     for (final label in sellLabels)
@@ -153,7 +155,7 @@ class SaltCatalogCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  title.isEmpty ? '未命名盐选内容' : title,
+                  title.isEmpty ? l10n.saltUntitledContent : title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     height: 1.3,
@@ -221,13 +223,15 @@ class SaltCatalogCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.change_history_outlined,
                           label: likeCountText,
-                          semanticLabel: '点赞 $likeCountText',
+                          semanticLabel: l10n.saltLikeCount(likeCountText),
                         ),
                       if (commentCountText.isNotEmpty)
                         _CardMetric(
                           icon: Icons.chat_bubble_outline_rounded,
                           label: commentCountText,
-                          semanticLabel: '评论 $commentCountText',
+                          semanticLabel: l10n.saltCommentCount(
+                            commentCountText,
+                          ),
                         ),
                       if (wordCount.isNotEmpty)
                         _CardMetric(
@@ -238,8 +242,8 @@ class SaltCatalogCard extends StatelessWidget {
                       if (wordCount.isEmpty && rawWordCount.isNotEmpty)
                         _CardMetric(
                           icon: Icons.subject_rounded,
-                          label: '$rawWordCount 字',
-                          semanticLabel: '$rawWordCount 字',
+                          label: l10n.saltWordCount(rawWordCount),
+                          semanticLabel: l10n.saltWordCount(rawWordCount),
                         ),
                       if (statusText.isNotEmpty)
                         _CardMetric(
@@ -257,13 +261,15 @@ class SaltCatalogCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.visibility_outlined,
                           label: viewCountText,
-                          semanticLabel: '阅读 $viewCountText',
+                          semanticLabel: l10n.saltReadCount(viewCountText),
                         ),
                       if (favoriteCountText.isNotEmpty)
                         _CardMetric(
                           icon: Icons.bookmark_border_rounded,
                           label: favoriteCountText,
-                          semanticLabel: '收藏 $favoriteCountText',
+                          semanticLabel: l10n.saltFavoriteCount(
+                            favoriteCountText,
+                          ),
                         ),
                       if (downloadText.isNotEmpty)
                         _CardMetric(
@@ -296,10 +302,10 @@ class SaltCatalogCard extends StatelessWidget {
                           semanticLabel: progress,
                         ),
                       if (hasTts)
-                        const _CardMetric(
+                        _CardMetric(
                           icon: Icons.headphones_outlined,
-                          label: '可听',
-                          semanticLabel: '支持听书',
+                          label: l10n.saltPlayable,
+                          semanticLabel: l10n.saltSupportsAudio,
                         ),
                     ],
                   ),
@@ -382,6 +388,7 @@ class SaltSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final object = unwrapObject(value);
     final chapter = _cardMap(object['chapter']);
     final index = _cardMap(object['index']);
@@ -412,7 +419,7 @@ class SaltSectionCard extends StatelessWidget {
     final directProgressText = plainText(object['progress_text']);
     final progressText = directProgressText.isNotEmpty
         ? directProgressText
-        : _sectionProgressText(progress);
+        : _sectionProgressText(progress, l10n);
     final likeCount = _sectionInt(reaction?['like_count']);
     final commentCount = _sectionInt(comment?['count']);
     final likeText = plainText(object['like_text']);
@@ -422,7 +429,7 @@ class SaltSectionCard extends StatelessWidget {
         ? directWordCount
         : wordCountValue == null || wordCountValue <= 0
         ? ''
-        : '${compactCount(wordCountValue)} 字';
+        : l10n.saltWordCount(compactCount(wordCountValue));
     final isLimitFree = object['is_limit_free'] == true;
     final hasTts = object['has_tts'] == true;
     final lastRead = object['last_read'] == true;
@@ -469,14 +476,21 @@ class SaltSectionCard extends StatelessWidget {
                     if (chapterTitle.isNotEmpty)
                       ZhPill(label: chapterTitle, compact: true),
                     if (ownership == 'free')
-                      const ZhPill(label: '免费', compact: true),
+                      ZhPill(label: l10n.saltFree, compact: true),
                     if (ownership == 'try')
-                      const ZhPill(label: '试读', compact: true),
-                    if (isLimitFree) const ZhPill(label: '限时免费', compact: true),
-                    if (vip) const ZhPill(label: '盐选会员', compact: true),
-                    if (locked) const ZhPill(label: '需权益', compact: true),
-                    if (lastRead) const ZhPill(label: '上次读到', compact: true),
-                    if (readFinished) const ZhPill(label: '已读完', compact: true),
+                      ZhPill(label: l10n.saltTrial, compact: true),
+                    if (isLimitFree)
+                      ZhPill(label: l10n.saltLimitedFree, compact: true),
+                    if (vip) ZhPill(label: l10n.saltMember, compact: true),
+                    if (locked)
+                      ZhPill(
+                        label: l10n.saltEntitlementRequired,
+                        compact: true,
+                      ),
+                    if (lastRead)
+                      ZhPill(label: l10n.saltLastRead, compact: true),
+                    if (readFinished)
+                      ZhPill(label: l10n.saltReadFinished, compact: true),
                   ],
                 ),
                 if (chapterTitle.isNotEmpty ||
@@ -488,7 +502,7 @@ class SaltSectionCard extends StatelessWidget {
                     readFinished)
                   const SizedBox(height: 7),
                 Text(
-                  title.isEmpty ? '未命名章节' : title,
+                  title.isEmpty ? l10n.saltUntitledChapter : title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                     height: 1.35,
@@ -541,7 +555,9 @@ class SaltSectionCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.change_history_outlined,
                           label: compactCount(likeCount),
-                          semanticLabel: '点赞 ${compactCount(likeCount)}',
+                          semanticLabel: l10n.saltLikeCount(
+                            compactCount(likeCount),
+                          ),
                         ),
                       if (likeCount == null && likeText.isNotEmpty)
                         _CardMetric(
@@ -553,7 +569,9 @@ class SaltSectionCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.chat_bubble_outline_rounded,
                           label: compactCount(commentCount),
-                          semanticLabel: '评论 ${compactCount(commentCount)}',
+                          semanticLabel: l10n.saltCommentCount(
+                            compactCount(commentCount),
+                          ),
                         ),
                       if (wordCountText.isNotEmpty)
                         _CardMetric(
@@ -562,18 +580,18 @@ class SaltSectionCard extends StatelessWidget {
                           semanticLabel: wordCountText,
                         ),
                       if (hasTts)
-                        const _CardMetric(
+                        _CardMetric(
                           icon: Icons.headphones_outlined,
-                          label: '可听',
-                          semanticLabel: '支持听书',
+                          label: l10n.saltPlayable,
+                          semanticLabel: l10n.saltSupportsAudio,
                         ),
                       if (type.isNotEmpty)
                         _CardMetric(
                           icon: type.toLowerCase().contains('audio')
                               ? Icons.headphones_outlined
                               : Icons.menu_book_outlined,
-                          label: _saltResourceLabel(type),
-                          semanticLabel: _saltResourceLabel(type),
+                          label: _saltResourceLabel(type, l10n),
+                          semanticLabel: _saltResourceLabel(type, l10n),
                         ),
                     ],
                   ),
@@ -594,12 +612,12 @@ class SaltSectionCard extends StatelessWidget {
     );
   }
 
-  static String _saltResourceLabel(String type) {
+  static String _saltResourceLabel(String type, AppLocalizations l10n) {
     final normalized = type.toLowerCase();
-    if (normalized.contains('audio')) return '音频';
-    if (normalized.contains('video')) return '视频';
-    if (normalized.contains('slide')) return '课件';
-    return '图文';
+    if (normalized.contains('audio')) return l10n.saltResourceAudio;
+    if (normalized.contains('video')) return l10n.saltResourceVideo;
+    if (normalized.contains('slide')) return l10n.saltResourceSlide;
+    return l10n.saltResourceText;
   }
 }
 
@@ -665,14 +683,17 @@ String _sectionCountText(Object? value) {
   return parsed == null ? raw : compactCount(parsed);
 }
 
-String _sectionProgressText(Map<String, dynamic>? progress) {
+String _sectionProgressText(
+  Map<String, dynamic>? progress,
+  AppLocalizations l10n,
+) {
   if (progress == null) return '';
-  if (progress['is_finished'] == true) return '已读完';
+  if (progress['is_finished'] == true) return l10n.saltReadFinished;
   final current = progress['progress'];
   final maximum = progress['max_progress'];
   if (current is num && maximum is num && maximum > 0 && current > 0) {
     final percent = (current / maximum * 100).clamp(0, 100).round();
-    return '已读 $percent%';
+    return l10n.saltReadPercent(percent);
   }
   return '';
 }

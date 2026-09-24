@@ -638,7 +638,12 @@ class _SearchFilterPanel extends StatelessWidget {
                     child: Semantics(
                       button: true,
                       selected: active,
-                      label: active ? '${option.title}，已选择' : option.title,
+                      label: active
+                          ? '${localizedSearchFilterOptionLabel(context.zhL10n, option)}${context.zhL10n.commonSelected}'
+                          : localizedSearchFilterOptionLabel(
+                              context.zhL10n,
+                              option,
+                            ),
                       child: Material(
                         color: active ? ZhPalette.canvas : Colors.transparent,
                         borderRadius: BorderRadius.circular(9),
@@ -654,7 +659,10 @@ class _SearchFilterPanel extends StatelessWidget {
                               vertical: 7,
                             ),
                             child: Text(
-                              option.title,
+                              localizedSearchFilterOptionLabel(
+                                context.zhL10n,
+                                option,
+                              ),
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(
                                     color: active
@@ -742,7 +750,13 @@ class _SearchDesktopRail extends StatelessWidget {
                   runSpacing: 6,
                   children: [
                     for (final entry in selectedFilters.entries)
-                      ZhPill(label: _filterLabel(entry.key, entry.value)),
+                      ZhPill(
+                        label: _filterLabel(
+                          context.zhL10n,
+                          entry.key,
+                          entry.value,
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -760,7 +774,7 @@ class _SearchDesktopRail extends StatelessWidget {
               const SizedBox(width: ZhSpace.sm),
               Expanded(
                 child: Text(
-                  '滚动结果列表加载更多，点击卡片查看详情。',
+                  context.zhL10n.searchDesktopHint,
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -771,10 +785,19 @@ class _SearchDesktopRail extends StatelessWidget {
     ),
   );
 
-  String _filterLabel(String group, String value) => switch (group) {
-    'vertical' => '类型：$value',
-    'sort' => '排序：$value',
-    'time_interval' => '时间：$value',
-    _ => value,
-  };
+  String _filterLabel(AppLocalizations l10n, String group, String value) {
+    final option = SearchFilterOption(
+      group: group,
+      title: value,
+      linkName: value,
+    );
+    final optionLabel = localizedSearchFilterOptionLabel(l10n, option);
+    final groupLabel = switch (group) {
+      'vertical' => l10n.searchFilterType,
+      'sort' => l10n.searchFilterSort,
+      'time_interval' => l10n.searchFilterTime,
+      _ => l10n.searchFilter,
+    };
+    return '$groupLabel: $optionLabel';
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/zh_localization.dart';
 import '../core/json_tools.dart';
 import '../core/salt_text_chapter.dart';
 
@@ -460,7 +461,7 @@ class _ParagraphCommentBadge extends StatelessWidget {
     return Semantics(
       key: ValueKey('salt-paragraph-comment-${annotation.paragraphIndex}'),
       button: interactive,
-      label: '查看 ${annotation.commentCount} 条弹评',
+      label: context.zhL10n.saltCommentBadge(annotation.commentCount),
       child: SizedBox(
         width: targetWidth,
         height: 44,

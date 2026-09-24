@@ -93,14 +93,14 @@ class _ZhihuSelectionToolbarState extends State<_ZhihuSelectionToolbar> {
         : <ContextMenuButtonItem>[
             ContextMenuButtonItem(
               type: ContextMenuButtonType.custom,
-              label: '复制',
+              label: context.zhL10n.commonCopy,
               onPressed: () =>
                   state.copySelection(SelectionChangedCause.toolbar),
             ),
             if (widget.onCommentSelection != null)
               ContextMenuButtonItem(
                 type: ContextMenuButtonType.custom,
-                label: '评论这段话',
+                label: context.zhL10n.detailCommentSelection,
                 onPressed: () {
                   final context = widget.selectionContext.withSegmentIds(
                     widget.segmentIdsForRange?.call(
@@ -122,12 +122,12 @@ class _ZhihuSelectionToolbarState extends State<_ZhihuSelectionToolbar> {
               ),
             ContextMenuButtonItem(
               type: ContextMenuButtonType.custom,
-              label: '全选',
+              label: context.zhL10n.commonSelectAll,
               onPressed: () => state.selectAll(SelectionChangedCause.toolbar),
             ),
             ContextMenuButtonItem(
               type: ContextMenuButtonType.custom,
-              label: '更多',
+              label: context.zhL10n.commonMore,
               onPressed: () => setState(() => _showPlatformActions = true),
             ),
           ];
@@ -406,19 +406,23 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
     setState(() => _showMoreActions = !_showMoreActions);
   }
 
-  List<ZhLiquidGlassActionItem> _engagementItems() => [
+  List<ZhLiquidGlassActionItem> _engagementItems(BuildContext context) => [
     ZhLiquidGlassActionItem(
       icon: Icon(
         Icons.change_history_outlined,
         color: widget.relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
       ),
       label: widget.metrics.voteupCount == null
-          ? '赞同'
+          ? context.zhL10n.commonLike
           : compactCount(widget.metrics.voteupCount!),
       semanticLabel: widget.metrics.voteupCount == null
-          ? '赞同'
-          : '赞同 ${compactCount(widget.metrics.voteupCount!)}',
-      onPressed: widget.busyAction.isEmpty ? () => widget.onAction('赞同') : null,
+          ? context.zhL10n.commonLike
+          : context.zhL10n.metricVoteup(
+              compactCount(widget.metrics.voteupCount!),
+            ),
+      onPressed: widget.busyAction.isEmpty
+          ? () => widget.onAction('vote')
+          : null,
     ),
     ZhLiquidGlassActionItem(
       icon: RotatedBox(
@@ -430,18 +434,24 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
               : ZhPalette.ink,
         ),
       ),
-      label: '反对',
-      semanticLabel: widget.relationship.isDownvoted ? '已反对' : '反对',
-      onPressed: widget.busyAction.isEmpty ? () => widget.onAction('反对') : null,
+      label: context.zhL10n.detailDownvote,
+      semanticLabel: widget.relationship.isDownvoted
+          ? context.zhL10n.detailDownvoted
+          : context.zhL10n.detailDownvote,
+      onPressed: widget.busyAction.isEmpty
+          ? () => widget.onAction('downvote')
+          : null,
     ),
     ZhLiquidGlassActionItem(
       icon: const Icon(Icons.chat_bubble_outline_rounded),
       label: widget.metrics.commentCount == null
-          ? '评论'
+          ? context.zhL10n.detailCommentAction
           : compactCount(widget.metrics.commentCount!),
       semanticLabel: widget.metrics.commentCount == null
-          ? '查看评论'
-          : '查看 ${compactCount(widget.metrics.commentCount!)} 条评论',
+          ? context.zhL10n.detailViewComments
+          : context.zhL10n.detailViewCommentsCount(
+              compactCount(widget.metrics.commentCount!),
+            ),
       onPressed: widget.onComments,
     ),
     ZhLiquidGlassActionItem(
@@ -452,18 +462,22 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
             : ZhPalette.ink,
       ),
       label: widget.metrics.favoriteCount == null
-          ? '收藏'
+          ? context.zhL10n.detailFavorite
           : compactCount(widget.metrics.favoriteCount!),
       semanticLabel: widget.metrics.favoriteCount == null
-          ? '收藏'
-          : '收藏 ${compactCount(widget.metrics.favoriteCount!)}',
-      onPressed: widget.busyAction.isEmpty ? () => widget.onAction('收藏') : null,
+          ? context.zhL10n.detailFavorite
+          : context.zhL10n.detailFavoriteCount(
+              compactCount(widget.metrics.favoriteCount!),
+            ),
+      onPressed: widget.busyAction.isEmpty
+          ? () => widget.onAction('favorite')
+          : null,
     ),
   ];
 
-  List<ZhLiquidGlassActionItem> _moreItems() {
+  List<ZhLiquidGlassActionItem> _moreItems(BuildContext context) {
     final displayName = widget.authorName.trim().isEmpty
-        ? '知乎用户'
+        ? context.zhL10n.commonZhihuUser
         : widget.authorName.trim();
     final fallback = displayName.characters.first;
     return [
@@ -473,30 +487,34 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
           fallback: fallback,
           size: 22,
         ),
-        label: '作者',
-        semanticLabel: '查看$displayName的个人主页',
+        label: context.zhL10n.detailAuthor,
+        semanticLabel: context.zhL10n.commonAuthorProfile,
         onPressed: widget.onAuthor,
       ),
       ZhLiquidGlassActionItem(
         icon: Icon(
           widget.authorFollowing ? Icons.check_rounded : Icons.add_rounded,
         ),
-        label: widget.authorFollowing ? '已关注' : '关注',
-        semanticLabel: widget.authorFollowing ? '取消关注作者' : '关注作者',
+        label: widget.authorFollowing
+            ? context.zhL10n.detailFollowed
+            : context.zhL10n.detailFollow,
+        semanticLabel: widget.authorFollowing
+            ? context.zhL10n.detailUnfollowAuthor
+            : context.zhL10n.detailFollowAuthor,
         onPressed: widget.authorFollowBusy
             ? null
             : widget.onToggleAuthorFollowing,
       ),
       ZhLiquidGlassActionItem(
         icon: const Icon(Icons.vertical_align_top_rounded),
-        label: '顶部',
-        semanticLabel: '回到帖子顶部',
+        label: context.zhL10n.detailTop,
+        semanticLabel: context.zhL10n.detailBackToTop,
         onPressed: widget.onJumpToTop,
       ),
       ZhLiquidGlassActionItem(
         icon: const Icon(Icons.vertical_align_bottom_rounded),
-        label: '底部',
-        semanticLabel: '跳到帖子底部',
+        label: context.zhL10n.detailBottom,
+        semanticLabel: context.zhL10n.detailJumpToBottom,
         onPressed: widget.onJumpToBottom,
       ),
     ];
@@ -505,7 +523,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
   @override
   Widget build(BuildContext context) => ZhLiquidGlassFloatingActionBar(
     key: widget.key,
-    items: _showMoreActions ? _moreItems() : _engagementItems(),
+    items: _showMoreActions ? _moreItems(context) : _engagementItems(context),
     transitionKey: _showMoreActions ? 'more' : 'engagement',
     trailing: ZhLiquidGlassIconButton(
       key: const ValueKey('content-detail-more-toggle'),
@@ -513,7 +531,9 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
         _showMoreActions ? Icons.close_rounded : Icons.more_vert_rounded,
       ),
       onPressed: _toggleMoreActions,
-      semanticLabel: _showMoreActions ? '收起更多功能' : '更多功能',
+      semanticLabel: _showMoreActions
+          ? context.zhL10n.detailCollapseMore
+          : context.zhL10n.detailMoreActions,
       size: 64,
       iconSize: 26,
     ),
@@ -533,8 +553,8 @@ void _showWriteSessionRequired(BuildContext context) {
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
-      const SnackBar(
-        content: Text('请先在“我”中登录。'),
+      SnackBar(
+        content: Text(context.zhL10n.detailSignInFromMe),
         behavior: SnackBarBehavior.floating,
       ),
     );

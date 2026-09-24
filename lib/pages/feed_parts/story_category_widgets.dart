@@ -21,8 +21,11 @@ class _SaltStoryCategoryTabs extends StatefulWidget {
 
 class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
   static const _tabTypes = ['story', 'book', 'assessment'];
-  static const _tabTitles = ['故事', '电子书', '测评'];
-  static const _defaultHotTags = ['言情', '虐恋', '娱乐圈', '追妻火葬场', '惊悚', '家庭'];
+  List<String> _tabTitles(AppLocalizations l10n) => [
+    l10n.storyTabStories,
+    l10n.storyTabBooks,
+    l10n.storyTabAssessments,
+  ];
   int _tabIndex = 0;
   String _storyLength = 'long';
   String _sort = 'hottest';
@@ -39,7 +42,7 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
             plainText(item['_salt_condition_role']) != 'quick',
       )
       .toList(growable: false);
-  List<Map<String, dynamic>> get _hotTags {
+  List<Map<String, dynamic>> _hotTags(AppLocalizations l10n) {
     final output = <Map<String, dynamic>>[];
     final seen = <String>{};
     for (final item in _categoryItems) {
@@ -52,7 +55,14 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
     }
     if (output.isNotEmpty) return output;
     return [
-      for (final label in _defaultHotTags)
+      for (final label in [
+        l10n.storySectionGenre,
+        l10n.storySectionMood,
+        l10n.storySectionCharacters,
+        l10n.storySectionPlot,
+        l10n.storySectionSetting,
+        l10n.storySectionHotTags,
+      ])
         <String, dynamic>{'title': label, '_salt_tag_type': _tagType},
     ];
   }
@@ -76,8 +86,10 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    final tabTitles = _tabTitles(l10n);
     return DefaultTabController(
-      length: _tabTitles.length,
+      length: tabTitles.length,
       initialIndex: _tabIndex,
       child: Column(
         children: [
@@ -87,7 +99,7 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
               indicatorColor: ZhPalette.ink,
               labelColor: ZhPalette.ink,
               unselectedLabelColor: ZhPalette.mutedInk,
-              tabs: [for (final title in _tabTitles) Tab(text: title)],
+              tabs: [for (final title in tabTitles) Tab(text: title)],
               onTap: (index) {
                 if (_tabIndex == index) return;
                 setState(() {
@@ -116,14 +128,14 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
             child: Row(
               children: [
                 _SaltStoryTypeButton(
-                  label: '长篇',
+                  label: context.zhL10n.storyLong,
                   icon: Icons.description_outlined,
                   selected: _storyLength == 'long',
                   onTap: () => _setLength('long'),
                 ),
                 const SizedBox(width: 24),
                 _SaltStoryTypeButton(
-                  label: '短篇',
+                  label: context.zhL10n.storyShort,
                   icon: Icons.insert_drive_file_outlined,
                   selected: _storyLength == 'short',
                   onTap: () => _setLength('short'),
@@ -132,7 +144,7 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
                 TextButton.icon(
                   onPressed: _showSortSheet,
                   icon: const Icon(Icons.swap_vert_rounded, size: 18),
-                  label: Text(_sortLabel),
+                  label: Text(_sortLabel(context.zhL10n)),
                   style: TextButton.styleFrom(
                     foregroundColor: ZhPalette.mutedInk,
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -141,7 +153,7 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
                 TextButton.icon(
                   onPressed: _showFilterSheet,
                   icon: const Icon(Icons.tune_rounded, size: 18),
-                  label: const Text('筛选'),
+                  label: Text(context.zhL10n.storyFilter),
                   style: TextButton.styleFrom(
                     foregroundColor: ZhPalette.ink,
                     padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -158,13 +170,13 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
                 TextButton.icon(
                   onPressed: _showSortSheet,
                   icon: const Icon(Icons.swap_vert_rounded, size: 18),
-                  label: Text(_sortLabel),
+                  label: Text(_sortLabel(context.zhL10n)),
                 ),
                 const Spacer(),
                 TextButton.icon(
                   onPressed: _showFilterSheet,
                   icon: const Icon(Icons.tune_rounded, size: 18),
-                  label: const Text('筛选'),
+                  label: Text(context.zhL10n.storyFilter),
                 ),
               ],
             ),
@@ -175,7 +187,7 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
             padding: const EdgeInsets.fromLTRB(16, 4, 16, 10),
             scrollDirection: Axis.horizontal,
             children: [
-              for (final item in _hotTags)
+              for (final item in _hotTags(context.zhL10n))
                 Padding(
                   padding: const EdgeInsets.only(right: 10),
                   child: _SaltCategoryChip(
@@ -199,10 +211,10 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
       ],
     ),
   );
-  String get _sortLabel => switch (_sort) {
-    'score' => '好评',
-    'newest' => '上新',
-    _ => '热度',
+  String _sortLabel(AppLocalizations l10n) => switch (_sort) {
+    'score' => l10n.storySortGood,
+    'newest' => l10n.storySortNew,
+    _ => l10n.storySortHot,
   };
   String _categoryLabel(Map<String, dynamic> item) {
     final parent = plainText(item['_salt_parent_title']);
@@ -258,7 +270,7 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
         );
       },
       onObjectTap: (context, value) => widget.onOpen(value),
-      emptyMessage: '暂时没有符合条件的内容',
+      emptyMessage: context.zhL10n.storyEmptyCondition,
     );
   }
 
@@ -291,16 +303,17 @@ class _SaltStoryCategoryTabsState extends State<_SaltStoryCategoryTabs> {
   }
 
   Future<void> _showSortSheet() async {
+    final l10n = context.zhL10n;
     final value = await showModalBottomSheet<String>(
       context: context,
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            for (final option in const [
-              ('hottest', '热度'),
-              ('score', '好评'),
-              ('newest', '上新'),
+            for (final option in [
+              ('hottest', l10n.storySortHot),
+              ('score', l10n.storySortGood),
+              ('newest', l10n.storySortNew),
             ])
               ListTile(
                 title: Text(option.$2),
@@ -472,7 +485,7 @@ class _SaltShortStoryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title.isEmpty ? '未命名故事' : title,
+                  title.isEmpty ? context.zhL10n.storyCategoryFallback : title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -506,7 +519,7 @@ class _SaltShortStoryCard extends StatelessWidget {
                         ),
                       if (like.isNotEmpty)
                         Text(
-                          '$like 赞',
+                          context.zhL10n.storyLikeCount(like),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: ZhPalette.subtleInk),
                         ),

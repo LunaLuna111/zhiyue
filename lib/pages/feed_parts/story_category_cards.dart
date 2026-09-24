@@ -60,7 +60,9 @@ class _SaltStoryCategoryCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            title.isEmpty ? '故事分类' : title,
+                            title.isEmpty
+                                ? context.zhL10n.storyCategoryFallback
+                                : title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleLarge
@@ -144,7 +146,7 @@ class _SaltBookCitySectionPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PagedListPage(
-    title: title.isEmpty ? '故事分类' : title,
+    title: title.isEmpty ? context.zhL10n.storyCategoryFallback : title,
     api: api,
     loadInitial: () async {
       final initial = await api.getSaltUri(
@@ -169,7 +171,7 @@ class _SaltBookCitySectionPage extends StatelessWidget {
       coverHeight: 112,
     ),
     onObjectTap: _open,
-    emptyMessage: '该分类暂时没有故事',
+    emptyMessage: context.zhL10n.storyEmptyCategory,
   );
 }
 
@@ -278,7 +280,7 @@ class SaltStoryLongFormPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PagedListPage(
-    title: '长篇故事',
+    title: context.zhL10n.storyLongTitle,
     api: api,
     loadInitial: _load,
     rowsExtractor: extractSaltLongStoryRows,
@@ -289,7 +291,7 @@ class SaltStoryLongFormPage extends StatelessWidget {
       coverHeight: 112,
     ),
     onObjectTap: _open,
-    emptyMessage: '暂时没有长篇故事',
+    emptyMessage: context.zhL10n.storyEmptyLong,
   );
 }
 

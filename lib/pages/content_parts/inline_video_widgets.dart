@@ -145,7 +145,7 @@ Widget _buildInlineActivePlayer(
                   ),
                 ),
                 IconButton(
-                  tooltip: '全屏',
+                  tooltip: state.context.zhL10n.inlineVideoFullscreen,
                   onPressed: state._openFullscreen,
                   color: Colors.white,
                   icon: const Icon(Icons.fullscreen_rounded),
@@ -205,9 +205,9 @@ class _InlineVideoFullscreenPage extends StatelessWidget {
                   ),
                 )
               else
-                const Center(
+                Center(
                   child: Text(
-                    '视频已停止或正在切换线路',
+                    context.zhL10n.inlineVideoStopped,
                     style: TextStyle(color: Colors.white70),
                   ),
                 ),
@@ -218,7 +218,7 @@ class _InlineVideoFullscreenPage extends StatelessWidget {
                 child: Row(
                   children: [
                     IconButton(
-                      tooltip: '返回',
+                      tooltip: context.zhL10n.inlineVideoBack,
                       onPressed: () => Navigator.of(context).pop(),
                       color: Colors.white,
                       icon: const Icon(Icons.close_rounded),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
+import '../../l10n/zh_localization.dart';
 import '../zh_glass.dart';
 import '../zh_theme.dart';
 
@@ -690,7 +691,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
                     if (value.text.isNotEmpty)
                       IconButton(
                         key: const ValueKey('search-clear'),
-                        tooltip: '清除',
+                        tooltip: context.zhL10n.commonClear,
                         onPressed: () {
                           controller.clear();
                           onChanged?.call('');
@@ -700,7 +701,7 @@ class ZhLiquidGlassSearchField extends StatelessWidget {
                       ),
                     IconButton(
                       key: const ValueKey('search-submit'),
-                      tooltip: '搜索',
+                      tooltip: context.zhL10n.commonSearch,
                       onPressed: () => onSubmitted(controller.text),
                       icon: const Icon(Icons.arrow_forward_rounded, size: 21),
                     ),
@@ -1554,7 +1555,7 @@ class ZhTopBar extends StatelessWidget implements PreferredSizeWidget {
                 key: const ValueKey('zh-top-bar-back'),
                 icon: const Icon(Icons.arrow_back_rounded),
                 onPressed: () => Navigator.of(context).maybePop(),
-                semanticLabel: '返回',
+                semanticLabel: context.zhL10n.commonBack,
                 size: 46,
                 iconSize: 24,
               )
@@ -1635,12 +1636,12 @@ class ZhLiquidGlassTopNavigation extends StatelessWidget
                     if (onMenuPressed != null) ...[
                       Semantics(
                         button: true,
-                        label: '打开侧边栏',
+                        label: context.zhL10n.drawerOpen,
                         child: ZhLiquidGlassIconButton(
                           key: const ValueKey('home-drawer-button'),
                           icon: const Icon(Icons.menu_rounded),
                           onPressed: onMenuPressed,
-                          semanticLabel: '打开侧边栏',
+                          semanticLabel: context.zhL10n.drawerOpen,
                           size: 48,
                           iconSize: 23,
                         ),

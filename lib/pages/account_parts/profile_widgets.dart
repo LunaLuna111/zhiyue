@@ -141,7 +141,9 @@ class _ProfileStat extends StatelessWidget {
       child: Column(
         children: [
           Text(
-            value == null ? '--' : formatAccountProfileMetric(value!),
+            value == null
+                ? '--'
+                : formatAccountProfileMetric(value!, context.zhL10n),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               color: light ? Colors.white : null,
               fontSize: 16,
@@ -173,24 +175,32 @@ class _ProfileStatDivider extends StatelessWidget {
   );
 }
 
-String _metricSummary(Map<String, dynamic> profile, List<String> keys) {
+String _metricSummary(
+  Map<String, dynamic> profile,
+  List<String> keys,
+  AppLocalizations l10n,
+) {
   final value = accountProfileMetric(profile, keys);
-  return value == null ? '' : '${formatAccountProfileMetric(value)} 条';
+  return value == null
+      ? ''
+      : l10n.profileMetricItems(formatAccountProfileMetric(value, l10n));
 }
 
-String _profileIp(Map<String, dynamic> profile) {
+String _profileIp(Map<String, dynamic> profile, AppLocalizations l10n) {
   final value = profile['ip_info'];
   if (value is Map) {
     final location = plainText(
       value['location'] ?? value['province'] ?? value['ip_location'],
     );
-    return location.isEmpty ? '' : 'IP $location';
+    return location.isEmpty ? '' : l10n.userProfileIpLocation(location);
   }
   final text = plainText(value);
-  return text.isEmpty ? '' : (text.startsWith('IP') ? text : 'IP $text');
+  return text.isEmpty
+      ? ''
+      : (text.startsWith('IP') ? text : l10n.userProfileIpLocation(text));
 }
 
-String _profileVipLabel(Map<String, dynamic> profile) {
+String _profileVipLabel(Map<String, dynamic> profile, AppLocalizations l10n) {
   bool active(Object? value) {
     if (value is! Map) return false;
     if (value['is_vip'] == true || value['is_annual'] == true) return true;
@@ -198,8 +208,8 @@ String _profileVipLabel(Map<String, dynamic> profile) {
     return type is num && type > 0;
   }
 
-  if (active(profile['kvip_info'])) return '盐选会员';
-  if (active(profile['vip_info'])) return '知乎会员';
+  if (active(profile['kvip_info'])) return l10n.profileVipSalt;
+  if (active(profile['vip_info'])) return l10n.profileVipZhihu;
   return '';
 }
 

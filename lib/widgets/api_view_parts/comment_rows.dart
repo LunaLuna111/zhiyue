@@ -13,12 +13,18 @@ class CommentIdentityContext {
   final Set<String> questionAuthorIds;
   final Set<String> rootCommentAuthorIds;
 
-  List<String> authorLabelsOf(Map<String, dynamic> value) {
+  List<String> authorLabelsOf(
+    Map<String, dynamic> value,
+    AppLocalizations l10n,
+  ) {
     final object = unwrapObject(value);
-    return _labelsFor(personIdentityKeys(object['author']));
+    return _labelsFor(personIdentityKeys(object['author']), l10n);
   }
 
-  List<String> replyAuthorLabelsOf(Map<String, dynamic> value) {
+  List<String> replyAuthorLabelsOf(
+    Map<String, dynamic> value,
+    AppLocalizations l10n,
+  ) {
     final object = unwrapObject(value);
     return _labelsFor(
       personIdentityKeys(
@@ -26,14 +32,19 @@ class CommentIdentityContext {
             object['reply_author'] ??
             object['replyToAuthor'],
       ),
+      l10n,
     );
   }
 
-  List<String> _labelsFor(Set<String> identities) {
+  List<String> _labelsFor(Set<String> identities, AppLocalizations l10n) {
     if (identities.isEmpty) return const <String>[];
     final labels = <String>[];
-    if (_overlaps(identities, contentAuthorIds)) labels.add('作者');
-    if (_overlaps(identities, questionAuthorIds)) labels.add('题主');
+    if (_overlaps(identities, contentAuthorIds)) {
+      labels.add(l10n.commentAuthorBadge);
+    }
+    if (_overlaps(identities, questionAuthorIds)) {
+      labels.add(l10n.commentQuestionAuthor);
+    }
     return List.unmodifiable(labels);
   }
 
@@ -121,9 +132,9 @@ class _CommentCardState extends State<CommentCard> {
       _likeCount = math.max(0, _likeCount + (target ? 1 : -1));
     });
     if (!success) {
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(const SnackBar(content: Text('评论操作失败，请稍后重试')));
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(context.zhL10n.commonCommentActionFailed)),
+      );
     }
   }
 
@@ -141,23 +152,24 @@ class _CommentCardState extends State<CommentCard> {
     final linkTags = commentLinkTagsOf(widget.value);
     final metrics = _metrics;
     final dateLabel = contentDateLabel(metrics);
+    final l10n = context.zhL10n;
     final object = unwrapObject(widget.value);
     final authorLabels = _mergeCommentIdentityLabels(
       _commentIdentityLabels(object['author_tag'] ?? object['authorTag']),
-      widget.identityContext.authorLabelsOf(widget.value),
+      widget.identityContext.authorLabelsOf(widget.value, l10n),
     );
     final replyAuthorLabels = _mergeCommentIdentityLabels(
       _commentIdentityLabels(
         object['reply_author_tag'] ?? object['replyAuthorTag'],
       ),
-      widget.identityContext.replyAuthorLabelsOf(widget.value),
+      widget.identityContext.replyAuthorLabelsOf(widget.value, l10n),
     );
     final commentTags = _commentFooterLabels(
       object['comment_tag'] ?? object['commentTag'],
     );
     final disliked = object['disliked'] == true;
     final avatarFallback = authorName.isEmpty
-        ? '知'
+        ? context.zhL10n.commonZhihuUser.characters.first
         : authorName.characters.first;
     final canOpenReplies =
         widget.onTap != null && (metrics.replyCount ?? 0) > 0;
@@ -281,16 +293,20 @@ class _CommentCardState extends State<CommentCard> {
                             icon: Icons.change_history_outlined,
                             label: compactCount(_likeCount),
                             semanticLabel: _liked
-                                ? '取消赞同 ${compactCount(_likeCount)}'
-                                : '赞同 ${compactCount(_likeCount)}',
+                                ? context.zhL10n.commonUnlike
+                                : context.zhL10n.commonLike,
                             selected: _liked,
                             onTap: _likeBusy ? null : _toggleLike,
                           ),
                         if ((metrics.replyCount ?? 0) > 0)
                           _CardMetric(
                             icon: Icons.chat_bubble_outline_rounded,
-                            label: '${metrics.replyCount} 条回复',
-                            semanticLabel: '${metrics.replyCount} 条回复',
+                            label: context.zhL10n.commonReplyCount(
+                              '${metrics.replyCount}',
+                            ),
+                            semanticLabel: context.zhL10n.commonReplyCount(
+                              '${metrics.replyCount}',
+                            ),
                           ),
                         if (dateLabel.isNotEmpty)
                           _CardMetric(
@@ -310,7 +326,7 @@ class _CommentCardState extends State<CommentCard> {
                           TextButton.icon(
                             onPressed: widget.onReply,
                             icon: const Icon(Icons.reply_rounded, size: 17),
-                            label: const Text('回复'),
+                            label: Text(context.zhL10n.commonReply),
                           ),
                         if (widget.onDelete != null)
                           TextButton.icon(
@@ -319,7 +335,7 @@ class _CommentCardState extends State<CommentCard> {
                               Icons.delete_outline_rounded,
                               size: 17,
                             ),
-                            label: const Text('删除'),
+                            label: Text(context.zhL10n.commonDelete),
                           ),
                       ],
                     ),
@@ -480,8 +496,8 @@ class _CompactCommentRow extends StatelessWidget {
                                 : Icons.favorite_border_rounded,
                             label: likeCount > 0 ? compactCount(likeCount) : '',
                             semanticLabel: liked
-                                ? '取消点赞 ${compactCount(likeCount)}'
-                                : '点赞 ${compactCount(likeCount)}',
+                                ? context.zhL10n.commonUnlike
+                                : context.zhL10n.commonLike,
                             selected: liked,
                             onTap: likeBusy ? null : onLike,
                           ),
@@ -491,7 +507,7 @@ class _CompactCommentRow extends StatelessWidget {
                           icon: disliked
                               ? Icons.heart_broken_rounded
                               : Icons.heart_broken_outlined,
-                          semanticLabel: '踩',
+                          semanticLabel: context.zhL10n.commonDislike,
                           selected: disliked,
                         ),
                       ],
@@ -505,7 +521,9 @@ class _CompactCommentRow extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.symmetric(vertical: 3),
                         child: Text(
-                          '查看全部 ${compactCount(metrics.replyCount!)} 条回复',
+                          context.zhL10n.commonViewAllReplies(
+                            compactCount(metrics.replyCount!),
+                          ),
                           style: TextStyle(
                             color: ZhPalette.link,
                             fontSize: 13,
@@ -560,7 +578,7 @@ Widget _commentBodyText(
   required CommentLinkTapCallback? onLink,
   required TextStyle? style,
 }) {
-  final fallback = content.isEmpty ? '该评论没有可显示的文字内容' : content;
+  final fallback = content.isEmpty ? context.zhL10n.commentNoText : content;
   final rich =
       rawContent.contains('<a') ||
       extractCommentLinkUrls(rawContent).isNotEmpty;
@@ -683,7 +701,9 @@ class CommentLinkTagList extends StatelessWidget {
                     ],
                     Flexible(
                       child: Text(
-                        tag.displayText.isEmpty ? '打开链接' : tag.displayText,
+                        tag.displayText.isEmpty
+                            ? context.zhL10n.commonOpenLink
+                            : tag.displayText,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
@@ -735,7 +755,7 @@ class _InlineReplyButton extends StatelessWidget {
       visualDensity: VisualDensity.compact,
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
     ),
-    child: const Text('回复'),
+    child: Text(context.zhL10n.commonReply),
   );
 }
 
@@ -756,7 +776,9 @@ class _CommentAvatarTapTarget extends StatelessWidget {
     if (callback == null) return child;
     return Semantics(
       button: true,
-      label: '查看${authorName.isEmpty ? '知乎用户' : authorName}的主页',
+      label: authorName.isEmpty
+          ? context.zhL10n.commonAuthorProfile
+          : '${context.zhL10n.commonAuthorProfile}: $authorName',
       child: InkResponse(
         onTap: callback,
         radius: 20,

@@ -47,13 +47,15 @@ class AnswerDetailAppBarTitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metadata = [
-      '知乎',
-      if (metrics.answerCount case final count?) '${compactCount(count)} 个回答',
-      if (metrics.followerCount case final count?) '${compactCount(count)} 人关注',
+      context.zhL10n.brandZhihu,
+      if (metrics.answerCount case final count?)
+        context.zhL10n.detailQuestionAnswerCount(compactCount(count)),
+      if (metrics.followerCount case final count?)
+        context.zhL10n.detailQuestionFollowerCount(compactCount(count)),
     ].join(' · ');
     return Semantics(
       button: true,
-      label: '查看该问题的全部回答',
+      label: context.zhL10n.detailQuestionAnswersSemantic,
       child: InkWell(
         key: const ValueKey('answer-detail-question-title'),
         onTap: onTap,
@@ -64,7 +66,9 @@ class AnswerDetailAppBarTitle extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title.isEmpty ? '问题 #$questionId' : title,
+                title.isEmpty
+                    ? context.zhL10n.detailQuestionFallback(questionId)
+                    : title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -159,13 +163,13 @@ class _QuestionInvitePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PagedListPage(
-    title: '邀请回答',
+    title: context.zhL10n.questionInviteTitle,
     api: api,
     loadInitial: () =>
         api.getUri(api.questionInviteCandidatesInitialUri(questionId)),
     rowBuilder: (context, value, _) =>
         _QuestionInviteeRow(api: api, questionId: questionId, value: value),
-    emptyMessage: '暂时没有推荐邀请人',
+    emptyMessage: context.zhL10n.questionInviteEmpty,
   );
 }
 
@@ -342,7 +346,7 @@ class _QuestionInviteeRowState extends State<_QuestionInviteeRow> {
     final nameValue = plainText(
       person['name'] ?? person['nickname'] ?? person['display_name'],
     );
-    final name = nameValue.isEmpty ? '知乎用户' : nameValue;
+    final name = nameValue.isEmpty ? context.zhL10n.commonZhihuUser : nameValue;
     final avatar = _avatarUrl(person);
     final reason = plainText(widget.value['reason']);
     final headline = reason.isNotEmpty ? reason : plainText(person['headline']);
@@ -434,7 +438,11 @@ class _QuestionInviteeRowState extends State<_QuestionInviteeRow> {
                           dimension: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : Text(invited ? '已邀请' : '邀请'),
+                      : Text(
+                          invited
+                              ? context.zhL10n.questionInviteInvited
+                              : context.zhL10n.questionInviteAction,
+                        ),
                 ),
               ),
             ],

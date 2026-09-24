@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/follow_item_group.dart';
 import '../core/json_tools.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_theme.dart';
 import 'api_views.dart';
 
@@ -126,7 +127,9 @@ class FollowItemGroupCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         groupText.isEmpty
-                            ? 'TA 还赞同了 ${children.length - initialSize} 个回答'
+                            ? context.zhL10n.followMoreAnswers(
+                                children.length - initialSize,
+                              )
                             : groupText,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.mutedInk,
@@ -158,7 +161,9 @@ class _ActorAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final url = plainText(actor?['avatar_url']);
-    final fallback = name.isEmpty ? '知' : name.characters.first;
+    final fallback = name.isEmpty
+        ? context.zhL10n.commonZhihuUser.characters.first
+        : name.characters.first;
     final placeholder = _AvatarPlaceholder(text: fallback);
     if (Uri.tryParse(url)?.scheme != 'https') return placeholder;
     return ClipOval(

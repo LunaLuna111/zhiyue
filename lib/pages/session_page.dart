@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import 'native_login_page.dart';
@@ -85,7 +86,7 @@ class _SessionPageState extends State<SessionPage> {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('登录信息已保存')));
+        ).showSnackBar(SnackBar(content: Text(context.zhL10n.sessionSaved)));
       }
     } catch (error) {
       if (mounted) {
@@ -113,7 +114,7 @@ class _SessionPageState extends State<SessionPage> {
       _extra.clear();
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('登录信息已清除')));
+      ).showSnackBar(SnackBar(content: Text(context.zhL10n.sessionCleared)));
     } finally {
       if (mounted) setState(() => _clearing = false);
     }
@@ -121,14 +122,15 @@ class _SessionPageState extends State<SessionPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final supportsApiSession = widget.session.supportsPersistentApiSession;
     return Scaffold(
-      appBar: ZhTopBar(title: const Text('账号')),
+      appBar: ZhTopBar(title: Text(l10n.sessionTitle)),
       body: ZhPageWidth(
         child: ListView(
           padding: const EdgeInsets.all(ZhSpace.md),
           children: [
-            Text('登录知乎', style: Theme.of(context).textTheme.headlineSmall),
+            Text(l10n.sessionSignInZhihu, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: ZhSpace.md),
             Row(
               children: [
@@ -136,7 +138,7 @@ class _SessionPageState extends State<SessionPage> {
                   child: ZhPrimaryButton(
                     onPressed: _openNativeLogin,
                     icon: Icons.login,
-                    label: '手机号登录',
+                    label: l10n.sessionPhoneLogin,
                     expand: true,
                   ),
                 ),
@@ -144,9 +146,9 @@ class _SessionPageState extends State<SessionPage> {
                 Expanded(
                   child: ZhOutlineButton(
                     onPressed: () =>
-                        _open('网页登录', 'https://www.zhihu.com/signin'),
+                        _open(l10n.sessionWebLogin, 'https://www.zhihu.com/signin'),
                     icon: Icons.open_in_browser_outlined,
-                    label: '网页登录',
+                    label: l10n.sessionWebLogin,
                     expand: true,
                   ),
                 ),
@@ -223,7 +225,9 @@ class _SessionEditor extends StatelessWidget {
   final VoidCallback? onClear;
 
   @override
-  Widget build(BuildContext context) => ZhSurface(
+  Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    return ZhSurface(
     padding: EdgeInsets.zero,
     child: Column(
       children: [
@@ -256,7 +260,7 @@ class _SessionEditor extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        hasContext ? '登录信息已保存' : '导入登录信息',
+                        hasContext ? l10n.sessionSaved : l10n.sessionImport,
                         style: Theme.of(context).textTheme.titleMedium,
                       ),
                     ],
@@ -302,13 +306,15 @@ class _SessionEditor extends StatelessWidget {
                               icon: obscure
                                   ? Icons.visibility_outlined
                                   : Icons.visibility_off_outlined,
-                              title: obscure ? '临时显示敏感值' : '重新隐藏敏感值',
+                              title: obscure
+                                  ? l10n.sessionShowSensitive
+                                  : l10n.sessionHideSensitive,
                               onTap: onToggleObscure,
                             ),
                             const SizedBox(height: ZhSpace.xs),
                             _EditorActionRow(
                               icon: Icons.tune_rounded,
-                              title: '高级设置',
+                              title: l10n.sessionAdvanced,
                               trailing: AnimatedRotation(
                                 turns: advancedExpanded ? .5 : 0,
                                 duration: const Duration(milliseconds: 180),
@@ -325,35 +331,35 @@ class _SessionEditor extends StatelessWidget {
                                 child: Column(
                                   children: [
                                     _SessionField(
-                                      label: 'Cookie（可选）',
+                                      label: l10n.sessionOptionalCookie,
                                       controller: cookie,
                                       obscure: obscure,
                                       icon: Icons.cookie_outlined,
                                     ),
                                     const SizedBox(height: ZhSpace.md),
                                     _SessionField(
-                                      label: 'X-MS-ID（可选）',
+                                      label: l10n.sessionOptionalMsId,
                                       controller: msId,
                                       obscure: obscure,
                                       icon: Icons.fingerprint_rounded,
                                     ),
                                     const SizedBox(height: ZhSpace.md),
                                     _SessionField(
-                                      label: '手工 X-Zse-96',
+                                      label: l10n.sessionManualZse,
                                       controller: zse96,
                                       obscure: obscure,
                                       icon: Icons.lock_outline_rounded,
                                     ),
                                     const SizedBox(height: ZhSpace.md),
                                     _SessionField(
-                                      label: '签名目标',
+                                      label: l10n.sessionSignTarget,
                                       controller: zse96Target,
                                       obscure: obscure,
                                       icon: Icons.route_outlined,
                                     ),
                                     const SizedBox(height: ZhSpace.md),
                                     _SessionField(
-                                      label: '其他 Header',
+                                      label: l10n.sessionOtherHeaders,
                                       controller: extra,
                                       obscure: false,
                                       icon: Icons.data_object_rounded,
@@ -372,14 +378,14 @@ class _SessionEditor extends StatelessWidget {
                             ZhPrimaryButton(
                               onPressed: onSave,
                               icon: Icons.shield_outlined,
-                              label: saving ? '保存中…' : '保存',
+                              label: saving ? l10n.sessionSaving : l10n.sessionSave,
                               expand: true,
                             ),
                             const SizedBox(height: ZhSpace.xs),
                             ZhOutlineButton(
                               onPressed: onClear,
                               icon: Icons.delete_outline,
-                              label: '清除登录信息',
+                              label: l10n.sessionClear,
                               expand: true,
                             ),
                           ],
@@ -392,7 +398,8 @@ class _SessionEditor extends StatelessWidget {
         ),
       ],
     ),
-  );
+    );
+  }
 }
 
 class _SessionField extends StatelessWidget {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../core/api_client.dart';
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import 'content_pages.dart';
@@ -18,20 +19,21 @@ class BrowsingHistoryPage extends StatelessWidget {
 
   Future<void> _clear(BuildContext context) async {
     if (session.browsingHistory.isEmpty) return;
+    final l10n = context.zhL10n;
     final confirmed =
         await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('清空历史记录？'),
-            content: const Text('这只会删除知阅保存在本机的浏览记录。'),
+            title: Text(l10n.browsingHistoryClearTitle),
+            content: Text(l10n.browsingHistoryClearMessage),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: const Text('取消'),
+                child: Text(l10n.commonCancel),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(context).pop(true),
-                child: const Text('清空'),
+                child: Text(l10n.commonClear),
               ),
             ],
           ),
@@ -45,11 +47,11 @@ class BrowsingHistoryPage extends StatelessWidget {
     animation: session.browsingHistoryChanges,
     builder: (context, _) => Scaffold(
       appBar: ZhTopBar(
-        title: const Text('历史记录'),
+        title: Text(context.zhL10n.browsingHistoryTitle),
         actions: [
           ZhLiquidGlassIconButton(
             key: const ValueKey('clear-browsing-history'),
-            semanticLabel: '清空历史记录',
+            semanticLabel: context.zhL10n.browsingHistoryClear,
             onPressed: session.browsingHistory.isEmpty
                 ? null
                 : () => _clear(context),
@@ -159,8 +161,8 @@ class _HistoryRow extends StatelessWidget {
               Text(
                 [
                   if (entry.author.isNotEmpty) entry.author,
-                  _historyTypeLabel(entry.type),
-                  _historyTime(entry.visitedAt),
+                  _historyTypeLabel(entry.type, context.zhL10n),
+                  _historyTime(entry.visitedAt, context.zhL10n),
                 ].join(' · '),
                 style: Theme.of(
                   context,
@@ -199,10 +201,13 @@ class _EmptyHistory extends StatelessWidget {
             circle: true,
           ),
           const SizedBox(height: 16),
-          Text('还没有浏览记录', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.zhL10n.browsingHistoryEmptyTitle,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 5),
           Text(
-            '打开回答、文章、问题或话题后会显示在这里',
+            context.zhL10n.browsingHistoryEmptyMessage,
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
@@ -226,17 +231,19 @@ IconData _historyIcon(String type) {
   return Icons.description_outlined;
 }
 
-String _historyTypeLabel(String type) {
-  if (type.contains('answer')) return '回答';
-  if (type.contains('article')) return '文章';
-  if (type.contains('question')) return '问题';
-  if (type.contains('topic')) return '话题';
-  if (type.contains('column')) return '专栏';
-  if (type.contains('people') || type.contains('member')) return '用户';
-  return '内容';
+String _historyTypeLabel(String type, AppLocalizations l10n) {
+  if (type.contains('answer')) return l10n.contentTypeAnswer;
+  if (type.contains('article')) return l10n.contentTypeArticle;
+  if (type.contains('question')) return l10n.contentTypeQuestion;
+  if (type.contains('topic')) return l10n.contentTypeTopic;
+  if (type.contains('column')) return l10n.contentTypeColumn;
+  if (type.contains('people') || type.contains('member')) {
+    return l10n.contentTypePeople;
+  }
+  return l10n.contentTypeContent;
 }
 
-String _historyTime(DateTime value) {
+String _historyTime(DateTime value, AppLocalizations l10n) {
   final local = value.toLocal();
   final now = DateTime.now();
   final sameDay =
@@ -245,6 +252,7 @@ String _historyTime(DateTime value) {
       local.day == now.day;
   final hour = local.hour.toString().padLeft(2, '0');
   final minute = local.minute.toString().padLeft(2, '0');
-  if (sameDay) return '今天 $hour:$minute';
-  return '${local.month}月${local.day}日 $hour:$minute';
+  final time = '$hour:$minute';
+  if (sameDay) return l10n.browsingHistoryToday(time);
+  return l10n.browsingHistoryDate(local.month, local.day, time);
 }

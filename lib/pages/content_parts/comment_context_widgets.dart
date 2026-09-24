@@ -54,6 +54,7 @@ class CommentContextHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final author = commentContentAuthorOf(response);
     final authorName = author == null ? '' : titleOf(author);
     final avatar = plainText(author?['avatar_url']);
@@ -87,7 +88,7 @@ class CommentContextHeader extends StatelessWidget {
                       child: _AuthorAvatar(
                         imageUrl: avatar,
                         fallback: authorName.isEmpty
-                            ? '知'
+                            ? l10n.commonZhihuUser.characters.first
                             : authorName.characters.first,
                         size: 30,
                       ),
@@ -103,7 +104,9 @@ class CommentContextHeader extends StatelessWidget {
                             children: [
                               Flexible(
                                 child: Text(
-                                  authorName.isEmpty ? '知乎用户' : authorName,
+                                  authorName.isEmpty
+                                      ? l10n.commonZhihuUser
+                                      : authorName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
@@ -213,9 +216,9 @@ class _OfficialFollowButton extends StatelessWidget {
               dimension: 13,
               child: CircularProgressIndicator(strokeWidth: 1.5),
             )
-          : const Text(
-              '+ 关注',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          : Text(
+              context.zhL10n.userFollow,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
             ),
     ),
   );

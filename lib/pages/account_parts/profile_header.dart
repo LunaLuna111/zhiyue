@@ -29,11 +29,12 @@ class _ProfileHeader extends StatelessWidget {
   void _openList(
     BuildContext context,
     String title,
-    Future<ApiResponse> Function() loader,
-  ) {
+    Future<ApiResponse> Function() loader, {
+    bool relationship = false,
+  }) {
     _open(
       context,
-      title == '关注我的人' || title == '我关注的人'
+      relationship
           ? UserRelationshipListPage(
               title: title,
               api: api,
@@ -51,8 +52,9 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final name = plainText(profile['name']).isEmpty
-        ? '知乎用户'
+        ? l10n.profileUserFallback
         : plainText(profile['name']);
     final avatar = plainText(
       profile['avatar_url'] ?? profile['avatar_url_template'],
@@ -60,9 +62,9 @@ class _ProfileHeader extends StatelessWidget {
     final headline = plainText(profile['headline']);
     final description = plainText(profile['description']);
     final location = accountProfileLocation(profile);
-    final gender = accountProfileGender(profile);
-    final ip = _profileIp(profile);
-    final vip = _profileVipLabel(profile);
+    final gender = profileGenderLabel(accountProfileGender(profile), l10n);
+    final ip = _profileIp(profile, l10n);
+    final vip = _profileVipLabel(profile, l10n);
     final voteups = accountProfileMetric(profile, const [
       'voteup_count',
       'get_praise_count',
@@ -95,7 +97,7 @@ class _ProfileHeader extends StatelessWidget {
                       Expanded(
                         child: _ProfileStat(
                           value: voteups,
-                          label: '获赞',
+                          label: l10n.profileUpvotes,
                           light: true,
                         ),
                       ),
@@ -103,16 +105,17 @@ class _ProfileHeader extends StatelessWidget {
                       Expanded(
                         child: _ProfileStat(
                           value: followers,
-                          label: '被关注',
+                          label: l10n.profileFollowers,
                           light: true,
                           onTap: memberId.isEmpty
                               ? null
                               : () => _openList(
                                   context,
-                                  '关注我的人',
+                                  l10n.userProfileFollowersList,
                                   () => api.getUri(
                                     api.userFollowersInitialUri(memberId),
                                   ),
+                                  relationship: true,
                                 ),
                         ),
                       ),
@@ -120,16 +123,17 @@ class _ProfileHeader extends StatelessWidget {
                       Expanded(
                         child: _ProfileStat(
                           value: following,
-                          label: '关注',
+                          label: l10n.profileFollowing,
                           light: true,
                           onTap: memberId.isEmpty
                               ? null
                               : () => _openList(
                                   context,
-                                  '我关注的人',
+                                  l10n.userProfileFollowingList,
                                   () => api.getUri(
                                     api.userFolloweesInitialUri(memberId),
                                   ),
+                                  relationship: true,
                                 ),
                         ),
                       ),
@@ -179,7 +183,10 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                   onPressed: () => _editProfile(context),
                   icon: const Icon(Icons.edit_outlined, size: 17),
-                  label: const Text('编辑资料', style: TextStyle(fontSize: 14)),
+                  label: Text(
+                    l10n.profileEdit,
+                    style: const TextStyle(fontSize: 14),
+                  ),
                 ),
               ],
             ),
@@ -240,7 +247,7 @@ class _ProfileHeader extends StatelessWidget {
                     AccountProfileDetailsPage(profile: profile),
                   ),
                   icon: const Icon(Icons.person_search_outlined, size: 17),
-                  label: const Text('全部资料'),
+                  label: Text(l10n.profileAllDetails),
                 ),
               ],
             ),
@@ -282,44 +289,48 @@ class _ProfileOverview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final rows = <(String, String, IconData, VoidCallback)>[
       (
-        '回答',
-        _metricSummary(profile, const ['answer_count']),
+        l10n.profileAnswers,
+        _metricSummary(profile, const ['answer_count'], l10n),
         Icons.question_answer_outlined,
         () => _openList(
           context,
-          '我的回答',
+          l10n.profileMyAnswers,
           () => api.getUri(api.userCreatedAnswersInitialUri(memberId)),
         ),
       ),
       (
-        '文章',
-        _metricSummary(profile, const ['articles_count', 'article_count']),
+        l10n.profileArticles,
+        _metricSummary(profile, const [
+          'articles_count',
+          'article_count',
+        ], l10n),
         Icons.article_outlined,
         () => _openList(
           context,
-          '我的文章',
+          l10n.profileMyArticles,
           () => api.getUri(api.userCreatedArticlesInitialUri(memberId)),
         ),
       ),
       (
-        '想法',
-        _metricSummary(profile, const ['pins_count', 'pin_count']),
+        l10n.profileIdeas,
+        _metricSummary(profile, const ['pins_count', 'pin_count'], l10n),
         Icons.lightbulb_outline_rounded,
         () => _openList(
           context,
-          '我的想法',
+          l10n.profileMyIdeas,
           () => api.getUri(api.userCreatedPinsInitialUri(memberId)),
         ),
       ),
       (
-        '收藏',
-        _metricSummary(profile, const ['favorite_count']),
+        l10n.profileCollections,
+        _metricSummary(profile, const ['favorite_count'], l10n),
         Icons.star_border_rounded,
         () => _openList(
           context,
-          '我的收藏',
+          l10n.profileMyCollections,
           () => api.getUri(
             api.userCollectionsInitialUri(memberId),
             headers: const {'x-api-version': '3.0.94'},
@@ -339,7 +350,7 @@ class _ProfileOverview extends StatelessWidget {
             return Padding(
               padding: const EdgeInsets.fromLTRB(4, 4, 4, 11),
               child: Text(
-                '我的内容',
+                l10n.profileMyContent,
                 style: Theme.of(context).textTheme.titleMedium,
               ),
             );

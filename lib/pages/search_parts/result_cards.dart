@@ -383,7 +383,9 @@ class _SearchResultTabState extends State<_SearchResultTab> {
             api: widget.api,
             businessId: navigation.businessId,
             businessType: _novelBusinessType(object),
-            title: titleOf(value).isEmpty ? '小说' : titleOf(value),
+            title: titleOf(value).isEmpty
+                ? context.zhL10n.searchStories
+                : titleOf(value),
             initialMetadata: object,
           ),
         ),
@@ -504,13 +506,13 @@ class _SearchResultTabState extends State<_SearchResultTab> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text('没有找到相关内容'),
+                    Text(context.zhL10n.searchNoResults),
                     if (_next != null) ...[
                       const SizedBox(height: 8),
                       TextButton(
                         key: const ValueKey('search-empty-load-more'),
                         onPressed: _loading ? null : () => _load(reset: false),
-                        child: const Text('继续查找'),
+                        child: Text(context.zhL10n.searchContinue),
                       ),
                     ],
                   ],
@@ -523,7 +525,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
           }
           return Padding(
             padding: const EdgeInsets.all(24),
-            child: const Center(child: Text('已经到底了')),
+            child: Center(child: Text(context.zhL10n.commonNoMore)),
           );
         },
       ),

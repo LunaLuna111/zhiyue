@@ -34,7 +34,7 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
     _filters = {...widget.filters};
   }
 
-  List<_SaltStoryFilterChoice> _choices(String group) {
+  List<_SaltStoryFilterChoice> _choices(String group, AppLocalizations l10n) {
     final output = <_SaltStoryFilterChoice>[];
     for (final item in widget.conditionItems) {
       if (plainText(item['_salt_filter_group']) != group) continue;
@@ -49,27 +49,31 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
     }
     if (output.isNotEmpty) return output;
     return switch (group) {
-      'content_status' => const [
+      'content_status' => [
         _SaltStoryFilterChoice(
-          title: '连载中',
+          title: l10n.storyOngoing,
           key: 'content_status',
           value: 'update',
         ),
         _SaltStoryFilterChoice(
-          title: '完结',
+          title: l10n.storyFinished,
           key: 'content_status',
           value: 'finished',
         ),
       ],
-      'right_types' => const [
-        _SaltStoryFilterChoice(title: '免费', key: 'right_type', value: 'free'),
+      'right_types' => [
         _SaltStoryFilterChoice(
-          title: 'VIP',
+          title: l10n.storyFree,
+          key: 'right_type',
+          value: 'free',
+        ),
+        _SaltStoryFilterChoice(
+          title: l10n.storyVip,
           key: 'right_type',
           value: 'svip_free',
         ),
         _SaltStoryFilterChoice(
-          title: 'VIP 折扣',
+          title: l10n.storyVipDiscount,
           key: 'right_type',
           value: 'svip_discount',
         ),
@@ -80,6 +84,7 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     return Container(
       height: (MediaQuery.sizeOf(context).height * .76).clamp(460.0, 720.0),
@@ -94,14 +99,14 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
           Row(
             children: [
               Text(
-                '筛选',
+                l10n.storyFilter,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               IconButton(
-                tooltip: '关闭',
+                tooltip: l10n.commonClose,
                 onPressed: () => Navigator.pop(context),
                 icon: const Icon(Icons.close_rounded),
               ),
@@ -112,20 +117,20 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
               padding: const EdgeInsets.only(bottom: 8),
               children: [
                 _filterSection(
-                  '类型',
+                  l10n.storyType,
                   [
-                    const _SaltStoryFilterChoice(
-                      title: '长篇',
+                    _SaltStoryFilterChoice(
+                      title: l10n.storyLong,
                       key: '__length',
                       value: 'long',
                     ),
-                    const _SaltStoryFilterChoice(
-                      title: '短篇',
+                    _SaltStoryFilterChoice(
+                      title: l10n.storyShort,
                       key: '__length',
                       value: 'short',
                     ),
-                    const _SaltStoryFilterChoice(
-                      title: '有声书',
+                    _SaltStoryFilterChoice(
+                      title: l10n.storyAudioBook,
                       key: '__length',
                       value: 'audio',
                     ),
@@ -133,8 +138,11 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
                   selected: _length,
                   selectedKey: '__length',
                 ),
-                _filterSection('状态', _choices('content_status')),
-                _filterSection('权益', _choices('right_types')),
+                _filterSection(
+                  l10n.storyStatus,
+                  _choices('content_status', l10n),
+                ),
+                _filterSection(l10n.storyRights, _choices('right_types', l10n)),
               ],
             ),
           ),
@@ -149,7 +157,7 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
                   style: OutlinedButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                   ),
-                  child: const Text('重置'),
+                  child: Text(l10n.storyReset),
                 ),
               ),
               const SizedBox(width: 12),
@@ -162,7 +170,7 @@ class _SaltStoryFilterSheetState extends State<_SaltStoryFilterSheet> {
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
                   ),
-                  child: const Text('确认'),
+                  child: Text(l10n.storyConfirm),
                 ),
               ),
             ],
@@ -260,7 +268,14 @@ class _SaltAllCategorySheet extends StatefulWidget {
 }
 
 class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
-  static const _sections = ['热门标签', '题材', '角色', '情节', '情绪', '时空'];
+  List<String> _sections(AppLocalizations l10n) => [
+    l10n.storySectionHotTags,
+    l10n.storySectionGenre,
+    l10n.storySectionCharacters,
+    l10n.storySectionPlot,
+    l10n.storySectionMood,
+    l10n.storySectionSetting,
+  ];
   int _sectionIndex = 0;
   late final List<Map<String, dynamic>> _allItems;
   late final Set<String> _selected;
@@ -315,6 +330,8 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    final sections = _sections(l10n);
     final height = (MediaQuery.sizeOf(context).height * .82).clamp(
       560.0,
       820.0,
@@ -335,13 +352,13 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '全部分类',
+                      l10n.storyAllCategories,
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
                     ),
                     Text(
-                      '最多支持选择 5 个标签',
+                      l10n.storyMaxTags,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: ZhPalette.mutedInk,
                       ),
@@ -350,7 +367,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                 ),
                 const Spacer(),
                 IconButton(
-                  tooltip: '关闭',
+                  tooltip: l10n.commonClose,
                   onPressed: () => Navigator.pop(context),
                   icon: const Icon(Icons.close_rounded),
                 ),
@@ -364,7 +381,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                 SizedBox(
                   width: 106,
                   child: ListView.builder(
-                    itemCount: _sections.length,
+                    itemCount: sections.length,
                     itemBuilder: (context, index) => InkWell(
                       onTap: () => setState(() => _sectionIndex = index),
                       child: Container(
@@ -376,7 +393,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                             ? ZhPalette.accentSurface
                             : Colors.transparent,
                         child: Text(
-                          _sections[index],
+                          sections[index],
                           style: TextStyle(
                             color: _sectionIndex == index
                                 ? ZhPalette.link
@@ -396,7 +413,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                     child: _visibleItems.isEmpty
                         ? Center(
                             child: Text(
-                              '暂无分类',
+                              l10n.storyNoCategories,
                               style: Theme.of(context).textTheme.bodyMedium
                                   ?.copyWith(color: ZhPalette.mutedInk),
                             ),
@@ -404,7 +421,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                         : ListView(
                             children: [
                               Text(
-                                _sections[_sectionIndex],
+                                sections[_sectionIndex],
                                 style: Theme.of(context).textTheme.titleMedium
                                     ?.copyWith(fontWeight: FontWeight.w600),
                               ),
@@ -442,7 +459,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                       style: OutlinedButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                       ),
-                      child: const Text('重置'),
+                      child: Text(l10n.storyReset),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -455,7 +472,7 @@ class _SaltAllCategorySheetState extends State<_SaltAllCategorySheet> {
                       style: FilledButton.styleFrom(
                         minimumSize: const Size.fromHeight(52),
                       ),
-                      child: const Text('确认'),
+                      child: Text(l10n.storyConfirm),
                     ),
                   ),
                 ],
@@ -495,7 +512,8 @@ class _SaltStoryConditionGroup extends StatelessWidget {
     if (items.isEmpty) return const SizedBox.shrink();
     final tagType = plainText(items.first['_salt_tag_type']);
     final all = <String, dynamic>{
-      'title': '全部${title == '全部' ? '' : title}',
+      'title':
+          '${context.zhL10n.storyAll}${title == context.zhL10n.storyAll ? '' : title}',
       'subtitle': tagTitle,
       '_salt_tag_type': tagType,
     };
@@ -518,7 +536,7 @@ class _SaltStoryConditionGroup extends StatelessWidget {
               ),
               TextButton(
                 onPressed: tagType.isEmpty ? null : () => onTap(all),
-                child: const Text('查看全部'),
+                child: Text(context.zhL10n.storyViewAll),
               ),
             ],
           ),

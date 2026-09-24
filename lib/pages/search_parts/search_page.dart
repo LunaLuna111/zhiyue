@@ -69,6 +69,75 @@ String localizedSearchFilterGroupLabel(
   _ => l10n.searchTitle,
 };
 
+String localizedSearchFilterOptionLabel(
+  AppLocalizations l10n,
+  SearchFilterOption option,
+) => switch ((option.group, option.linkName)) {
+  ('vertical', '') => l10n.searchFilterAnyType,
+  ('vertical', 'answer') => l10n.searchFilterAnswers,
+  ('vertical', 'article') => l10n.searchFilterArticles,
+  ('vertical', 'zvideo') => l10n.searchFilterVideos,
+  ('sort', '') => l10n.searchSortRelevance,
+  ('sort', 'upvoted_count') => l10n.searchSortMostUpvoted,
+  ('sort', 'created_time') => l10n.searchSortNewest,
+  ('time_interval', '') => l10n.searchTimeAny,
+  ('time_interval', 'a_day') => l10n.searchTimeDay,
+  ('time_interval', 'a_week') => l10n.searchTimeWeek,
+  ('time_interval', 'a_month') => l10n.searchTimeMonth,
+  ('time_interval', 'three_months') => l10n.searchTimeThreeMonths,
+  ('time_interval', 'half_a_year') => l10n.searchTimeHalfYear,
+  ('time_interval', 'a_year') => l10n.searchTimeYear,
+  _ => option.title,
+};
+
+String localizedSearchContentKindLabel(
+  AppLocalizations l10n,
+  Map<String, dynamic> value,
+) {
+  final type = typeOf(value).replaceAll('search_', '').toLowerCase();
+  return switch (type) {
+    'answer' || 'videoanswer' || 'video_answer' => l10n.contentTypeAnswer,
+    'article' => l10n.contentTypeArticle,
+    'question' => l10n.contentTypeQuestion,
+    'people' || 'member' => l10n.contentTypePeople,
+    'topic' => l10n.contentTypeTopic,
+    'column' => l10n.contentTypeColumn,
+    'pin' => l10n.contentTypeIdea,
+    'zvideo' || 'video' => l10n.searchVideos,
+    'publication' ||
+    'ebook' ||
+    'km_ebook' ||
+    'km_general' => l10n.searchKnowledge,
+    'relevant_query' || 'search_query_correction' => l10n.searchRelated,
+    'hot' || 'hot_timing' => l10n.feedHot,
+    'search_content' => l10n.contentTypeContent,
+    _ => contentKindLabelOf(value),
+  };
+}
+
+String localizedSearchMetric(AppLocalizations l10n, int count, String label) {
+  final compact = compactCount(count);
+  return switch (label) {
+    '赞同' || '点赞' => l10n.metricVoteup(compact),
+    '收藏' => l10n.metricFavorite(compact),
+    '评论' => l10n.metricComment(compact),
+    '感谢' => l10n.metricThanks(compact),
+    '浏览' => l10n.metricViews(compact),
+    '关注者' => l10n.metricFollowers(compact),
+    '回答' => l10n.metricAnswers(compact),
+    '文章' => l10n.metricArticles(compact),
+    '内容' => l10n.metricItems(compact),
+    '关注' => l10n.searchMetricFollows(compact),
+    '问题' => l10n.searchMetricQuestions(compact),
+    '成员' => l10n.searchMetricMembers(compact),
+    '讨论' => l10n.searchMetricDiscussions(compact),
+    '人参与' => l10n.searchMetricParticipants(compact),
+    '场内容' => l10n.searchMetricLiveContent(compact),
+    '次播放' => l10n.searchMetricPlayCount(compact),
+    _ => '$compact $label',
+  };
+}
+
 class _SearchHotCacheEntry {
   List<SearchHotItem> items = const [];
   DateTime expiresAt = DateTime.fromMillisecondsSinceEpoch(0);

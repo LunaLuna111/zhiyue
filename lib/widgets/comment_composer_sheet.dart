@@ -228,17 +228,15 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
 
   String _composerTitle(BuildContext context) {
     final l10n = context.zhL10n;
-    if (widget.replyTarget?.isReply == true || widget.title.startsWith('回复')) {
+    if (widget.replyTarget?.isReply == true) {
       return l10n.commentPublishReply;
     }
-    if (widget.title == '写评论' || widget.title == '评论这段话') {
-      return l10n.commentPublishComment;
-    }
+    if (_compactComposer) return l10n.commentPublishComment;
     return widget.title;
   }
 
   String _submitLabel(BuildContext context) =>
-      widget.replyTarget?.isReply == true || widget.title.startsWith('回复')
+      widget.replyTarget?.isReply == true
       ? context.zhL10n.commonReply
       : context.zhL10n.commonPublish;
 
@@ -257,7 +255,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
           },
         ),
       );
-      _showTip('请先登录后再发布');
+      _showTip(context.zhL10n.commentSignInRequired);
       return;
     }
     if (_image != null && _image!.url.isEmpty) {
@@ -494,10 +492,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     final targetName = widget.replyTarget?.targetUserName.trim() ?? '';
     if (targetName.isEmpty) {
       _insertText('@');
-      _showTip('请输入用户名完成提及');
+      _showTip(context.zhL10n.commentUsernameRequired);
     } else {
       _insertText('@$targetName ');
-      _showTip('已提及 $targetName');
+      _showTip(context.zhL10n.commentMentioned(targetName));
     }
     _focusNode.requestFocus();
   }
@@ -520,7 +518,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       if (_loadingCatalog) {
         if (_giftPanelPending) return;
         _giftPanelPending = true;
-        _showTip('正在加载礼物');
+        _showTip(context.zhL10n.commentLoadingGift);
         unawaited(
           _loadCatalog().whenComplete(() {
             if (!mounted || !_giftPanelPending) return;
@@ -529,7 +527,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
           }),
         );
       } else {
-        _showTip('暂无可用礼物');
+        _showTip(context.zhL10n.commentNoGifts);
       }
       return;
     }
@@ -561,7 +559,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       if (widget.api.canWrite) {
         await _ensureImageUploaded();
       } else {
-        _showTip('图片已添加，登录后可发布');
+        _showTip(context.zhL10n.commentImageAddedPending);
       }
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -588,9 +586,10 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
 
   Future<void> _uploadImage(CommentImageAttachment attachment) async {
     if (!widget.api.canWrite) {
-      throw const ApiTransportException('请先登录后再发布图片');
+      throw ApiTransportException(context.zhL10n.commentUploadSignInRequired);
     }
     if (mounted) setState(() => _imageUploading = true);
+    final imageUploadNoUrl = context.zhL10n.commentImageUploadNoUrl;
     try {
       final response = await widget.api.uploadCommentImage(
         bytes: attachment.bytes,
@@ -600,7 +599,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       if (!response.isSuccess) throw response;
       final url = _uploadedImageUrl(response.json);
       if (url.isEmpty) {
-        throw const ApiTransportException('图片上传未返回地址');
+        throw ApiTransportException(imageUploadNoUrl);
       }
       if (mounted && identical(_image, attachment)) {
         setState(() => _image = attachment.copyWith(url: url));

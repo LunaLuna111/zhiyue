@@ -156,7 +156,10 @@ class _ProfileImageEditRow extends StatelessWidget {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           else ...[
-            Text('更换', style: TextStyle(color: ZhPalette.subtleInk)),
+            Text(
+              context.zhL10n.profileChange,
+              style: TextStyle(color: ZhPalette.subtleInk),
+            ),
             const SizedBox(width: 4),
             Icon(Icons.chevron_right_rounded, color: ZhPalette.subtleInk),
           ],
@@ -222,7 +225,7 @@ class _ProfileListEditor extends StatelessWidget {
             trailing: onRemove == null
                 ? null
                 : IconButton(
-                    tooltip: '删除',
+                    tooltip: context.zhL10n.commonDelete,
                     onPressed: () => onRemove!(index),
                     icon: const Icon(Icons.close_rounded),
                   ),
@@ -294,7 +297,7 @@ class _ProfileTextEditorSheetState extends State<_ProfileTextEditorSheet> {
               TextButton(
                 onPressed: () =>
                     Navigator.of(context).pop(_controller.text.trim()),
-                child: const Text('完成'),
+                child: Text(context.zhL10n.commonDone),
               ),
             ],
           ),
@@ -374,7 +377,7 @@ class _ProfilePairEditorSheetState extends State<_ProfilePairEditorSheet> {
                   Navigator.of(context).pop([first, second]);
                 }
               },
-              child: const Text('完成'),
+              child: Text(context.zhL10n.commonDone),
             ),
           ),
         ],

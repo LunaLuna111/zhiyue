@@ -11,7 +11,7 @@ class _CommentMediaGallery extends StatelessWidget {
     final single = visible.length == 1;
     return Semantics(
       container: true,
-      label: '${visible.length} 张评论图片',
+      label: context.zhL10n.commentImagesCount(visible.length),
       child: Wrap(
         spacing: 7,
         runSpacing: 7,
@@ -36,7 +36,7 @@ class _CommentMediaTile extends StatelessWidget {
     final height = single ? 142.0 : 92.0;
     return Semantics(
       button: true,
-      label: '查看评论图片',
+      label: context.zhL10n.commentViewImage,
       child: InkWell(
         key: ValueKey('comment-image-$url'),
         onTap: () => _showCommentImagePreview(context, url),
@@ -111,7 +111,7 @@ Future<void> _showCommentImagePreview(BuildContext context, String url) {
               left: 10,
               child: IconButton.filled(
                 key: const Key('comment-image-preview-close'),
-                tooltip: '关闭图片',
+                tooltip: context.zhL10n.commentCloseImage,
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close_rounded),
               ),
@@ -121,7 +121,7 @@ Future<void> _showCommentImagePreview(BuildContext context, String url) {
               right: 10,
               child: IconButton.filled(
                 key: const Key('comment-image-preview-save'),
-                tooltip: '保存到相册',
+                tooltip: context.zhL10n.commentSaveImage,
                 onPressed: () => _saveCommentImage(context, url),
                 icon: const Icon(Icons.download_rounded),
               ),
@@ -141,13 +141,17 @@ Future<void> _saveCommentImage(BuildContext context, String url) async {
       filePrefix: 'zhiyue',
     );
     if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('已保存到${location ?? '相册'}')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.zhL10n.commentSavedTo(location ?? context.zhL10n.commonSave),
+        ),
+      ),
+    );
   } catch (_) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('图片保存失败，请稍后重试')));
+    ).showSnackBar(SnackBar(content: Text(context.zhL10n.commentSaveFailed)));
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/app_update_service.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -50,11 +51,7 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
       if (mounted) setState(() => _check = result);
     } catch (error) {
       if (mounted) {
-        setState(
-          () => _error = error is AppUpdateException
-              ? error.message
-              : '检查更新失败，请稍后重试',
-        );
+        setState(() => _error = context.zhL10n.updateCheckFailed);
       }
     } finally {
       if (mounted) setState(() => _checking = false);
@@ -66,19 +63,20 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
     if (check == null || !check.updateAvailable || _installing) return;
     if (!await _service.canInstallPackages()) {
       if (!mounted) return;
+      final l10n = context.zhL10n;
       final open = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('允许安装应用'),
-          content: const Text('Android 需要你允许知阅安装下载的更新。开启后返回此页，再点一次下载并安装。'),
+          title: Text(l10n.updateAllowInstallTitle),
+          content: Text(l10n.updateAllowInstallMessage),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('前往设置'),
+              child: Text(l10n.updateOpenSettings),
             ),
           ],
         ),
@@ -118,19 +116,15 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
           SnackBar(
             content: Text(
               reusedCachedPackage
-                  ? '已使用下载好的更新包，正在打开 Android 安装器'
-                  : '更新已验证，正在打开 Android 安装器',
+                  ? context.zhL10n.updateCachedInstalling
+                  : context.zhL10n.updateVerifiedInstalling,
             ),
           ),
         );
       }
     } catch (error) {
       if (mounted) {
-        setState(
-          () => _error = error is AppUpdateException
-              ? error.message
-              : '更新安装失败，请重试',
-        );
+        setState(() => _error = context.zhL10n.updateInstallFailed);
       }
     } finally {
       if (mounted) setState(() => _installing = false);
@@ -139,11 +133,12 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final check = _check;
     final release = check?.release;
     final progress = _total <= 0 ? 0.0 : (_received / _total).clamp(0.0, 1.0);
     return Scaffold(
-      appBar: ZhTopBar(title: const Text('软件更新')),
+      appBar: ZhTopBar(title: Text(l10n.updateTitle)),
       body: ZhPageWidth(
         maxWidth: 680,
         child: ListView(
@@ -176,14 +171,17 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '知阅',
+                          l10n.updateAppName,
                           style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 3),
                         Text(
                           check == null
-                              ? '正在读取版本信息'
-                              : '当前版本 ${check.installed.versionName} (${check.installed.versionCode})',
+                              ? l10n.updateReadingVersion
+                              : l10n.updateCurrentVersion(
+                                  check.installed.versionName,
+                                  check.installed.versionCode.toString(),
+                                ),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                       ],
@@ -195,16 +193,16 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
             ),
             const SizedBox(height: ZhSpace.md),
             if (!_service.isSupported)
-              const _StatusCard(
+              _StatusCard(
                 icon: Icons.devices_other_rounded,
-                title: '当前平台不支持应用内安装',
-                message: '安全下载、校验和系统安装器目前仅在 Android 客户端启用。',
+                title: l10n.updateUnsupportedTitle,
+                message: l10n.updateUnsupportedMessage,
               )
             else if (_checking && check == null)
-              const _StatusCard(
+              _StatusCard(
                 icon: Icons.sync_rounded,
-                title: '正在检查更新',
-                message: '正在从 GitHub Releases 读取稳定版本。',
+                title: l10n.updateCheckingTitle,
+                message: l10n.updateCheckingMessage,
                 loading: true,
               )
             else if (check != null && check.updateAvailable && release != null)
@@ -220,10 +218,13 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
             else if (check != null)
               _StatusCard(
                 icon: Icons.verified_rounded,
-                title: '已是最新版本',
+                title: l10n.updateLatestTitle,
                 message: release == null
-                    ? '稳定通道目前没有已发布版本。'
-                    : '稳定通道最新版本为 ${release.versionName} (${release.versionCode})。',
+                    ? l10n.updateNoRelease
+                    : l10n.updateLatestVersion(
+                        release.versionName,
+                        release.versionCode.toString(),
+                      ),
               ),
             if (_error != null) ...[
               const SizedBox(height: ZhSpace.md),
@@ -235,32 +236,37 @@ class _AppUpdatePageState extends State<AppUpdatePage> {
               child: OutlinedButton.icon(
                 onPressed: _checking || _installing ? null : _checkNow,
                 icon: const Icon(Icons.refresh_rounded),
-                label: Text(_checking ? '正在检查' : '重新检查'),
+                label: Text(
+                  _checking ? l10n.updateChecking : l10n.updateRecheck,
+                ),
               ),
             ),
             const SizedBox(height: ZhSpace.lg),
-            Text('更新安全', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              l10n.updateSecurity,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: ZhSpace.sm),
-            const ZhSurface(
+            ZhSurface(
               radius: 22,
               child: Column(
                 children: [
                   _SecurityRow(
                     icon: Icons.cloud_download_outlined,
-                    title: 'GitHub Releases',
-                    detail: '只接受指定 GitHub 仓库中规范命名的稳定版 arm64 APK。',
+                    title: l10n.updateSecuritySourceTitle,
+                    detail: l10n.updateSecuritySourceDetail,
                   ),
                   Divider(height: 28),
                   _SecurityRow(
                     icon: Icons.fingerprint_rounded,
-                    title: '完整性校验',
-                    detail: '下载后校验 GitHub 提供的 SHA-256 摘要和文件大小。',
+                    title: l10n.updateSecurityIntegrityTitle,
+                    detail: l10n.updateSecurityIntegrityDetail,
                   ),
                   Divider(height: 28),
                   _SecurityRow(
                     icon: Icons.android_rounded,
-                    title: '交给系统安装器',
-                    detail: '还会校验包名、版本及证书连续性，再打开 Android 安装器。',
+                    title: l10n.updateSecurityInstallerTitle,
+                    detail: l10n.updateSecurityInstallerDetail,
                   ),
                 ],
               ),
@@ -313,16 +319,20 @@ class _AppUpdatePromptGateState extends State<AppUpdatePromptGate> {
                 : Icons.system_update_rounded,
           ),
           title: Text(
-            check.mandatory ? '发现重要更新' : '发现新版本 ${release.versionName}',
+            check.mandatory
+                ? context.zhL10n.updateImportantFound
+                : context.zhL10n.updateNewVersion(release.versionName),
           ),
           content: Text(
-            release.notes.isEmpty ? '新版本已发布到 GitHub Releases。' : release.notes,
+            release.notes.isEmpty
+                ? context.zhL10n.updatePublishedToReleases
+                : release.notes,
           ),
           actions: [
             if (!check.mandatory)
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('稍后'),
+                child: Text(context.zhL10n.updateLater),
               ),
             FilledButton(
               onPressed: () {
@@ -331,7 +341,7 @@ class _AppUpdatePromptGateState extends State<AppUpdatePromptGate> {
                   MaterialPageRoute(builder: (_) => const AppUpdatePage()),
                 );
               },
-              child: const Text('查看更新'),
+              child: Text(context.zhL10n.updateView),
             ),
           ],
         ),
@@ -378,20 +388,23 @@ class _ReleaseCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '版本 ${release.versionName}',
+                  context.zhL10n.updateVersion(release.versionName),
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
               if (check.mandatory)
-                const Chip(
-                  avatar: Icon(Icons.priority_high_rounded, size: 17),
-                  label: Text('重要更新'),
+                Chip(
+                  avatar: const Icon(Icons.priority_high_rounded, size: 17),
+                  label: Text(context.zhL10n.updateImportant),
                 ),
             ],
           ),
           const SizedBox(height: 5),
           Text(
-            '${_formatBytes(release.packageSize)} APK · stable 通道 · 构建 ${release.versionCode}',
+            context.zhL10n.updateReleaseMeta(
+              _formatBytes(release.packageSize),
+              release.versionCode.toString(),
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
           if (release.notes.isNotEmpty) ...[
@@ -402,25 +415,40 @@ class _ReleaseCard extends StatelessWidget {
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
             childrenPadding: const EdgeInsets.only(bottom: ZhSpace.sm),
-            title: const Text('查看更新接口详情'),
+            title: Text(context.zhL10n.updateViewDetails),
             subtitle: Text(
               release.packageFileName.isEmpty
-                  ? '已验证清单、包大小和 SHA-256'
+                  ? context.zhL10n.updateVerifiedManifest
                   : release.packageFileName,
             ),
             children: [
-              _UpdateDetailRow('发布编号', release.releaseId),
-              _UpdateDetailRow('发布时间', _formatPublishedAt(release.publishedAt)),
-              _UpdateDetailRow('Release 标签', release.tagName),
-              _UpdateDetailRow('包类型', release.packageContentType),
               _UpdateDetailRow(
-                'APK SHA-256',
+                context.zhL10n.updateReleaseId,
+                release.releaseId,
+              ),
+              _UpdateDetailRow(
+                context.zhL10n.updatePublishedAt,
+                _formatPublishedAt(release.publishedAt),
+              ),
+              _UpdateDetailRow(
+                context.zhL10n.updateReleaseTag,
+                release.tagName,
+              ),
+              _UpdateDetailRow(
+                context.zhL10n.updatePackageType,
+                release.packageContentType,
+              ),
+              _UpdateDetailRow(
+                context.zhL10n.updatePackageSha256,
                 _shortHash(release.packageSha256),
               ),
               if (check.manifestMetadata != null)
                 _UpdateDetailRow(
-                  '清单响应',
-                  _manifestResponseSummary(check.manifestMetadata!),
+                  context.zhL10n.updateManifestResponse,
+                  _manifestResponseSummary(
+                    check.manifestMetadata!,
+                    context.zhL10n,
+                  ),
                 ),
             ],
           ),
@@ -433,12 +461,18 @@ class _ReleaseCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     received < total
-                        ? '下载 APK ${_formatBytes(received)} / ${_formatBytes(total)}'
-                        : '正在校验安装包',
+                        ? context.zhL10n.updateDownloadProgress(
+                            _formatBytes(received),
+                            _formatBytes(total),
+                          )
+                        : context.zhL10n.updateVerifyingPackage,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ),
-                TextButton(onPressed: onCancel, child: const Text('取消')),
+                TextButton(
+                  onPressed: onCancel,
+                  child: Text(context.zhL10n.commonCancel),
+                ),
               ],
             ),
           ] else
@@ -452,7 +486,11 @@ class _ReleaseCard extends StatelessWidget {
                       ? Icons.install_mobile_rounded
                       : Icons.download_rounded,
                 ),
-                label: Text(check.cachedPackageAvailable ? '继续安装' : '下载并安装'),
+                label: Text(
+                  check.cachedPackageAvailable
+                      ? context.zhL10n.updateContinueInstall
+                      : context.zhL10n.updateDownloadInstall,
+                ),
               ),
             ),
         ],
@@ -569,12 +607,12 @@ class _SecureBadge extends StatelessWidget {
       color: ZhPalette.canvas,
       borderRadius: BorderRadius.circular(20),
     ),
-    child: const Row(
+    child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(Icons.lock_rounded, size: 14),
-        SizedBox(width: 4),
-        Text('校验'),
+        const Icon(Icons.lock_rounded, size: 14),
+        const SizedBox(width: 4),
+        Text(context.zhL10n.updateValidation),
       ],
     ),
   );
@@ -630,8 +668,13 @@ String _formatPublishedAt(DateTime value) {
       '${two(utc.hour)}:${two(utc.minute)} UTC';
 }
 
-String _manifestResponseSummary(AppUpdateManifestMetadata metadata) {
-  final response = '${_formatBytes(metadata.responseBytes)} 清单';
+String _manifestResponseSummary(
+  AppUpdateManifestMetadata metadata,
+  AppLocalizations l10n,
+) {
+  final response = l10n.updateManifestSummary(
+    _formatBytes(metadata.responseBytes),
+  );
   final etag = metadata.etag;
   return etag == null || etag.isEmpty
       ? response

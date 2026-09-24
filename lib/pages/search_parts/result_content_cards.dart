@@ -28,7 +28,7 @@ class _SearchResultCardStaticData {
       statistics: searchStatisticsOf(value),
       metrics: metrics,
       date: contentDateLabel(metrics),
-      typeLabel: contentKindLabelOf(value),
+      typeLabel: '',
     );
   }
 
@@ -80,7 +80,7 @@ class _SearchResultCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        contentKindLabelOf(value),
+                        localizedSearchContentKindLabel(context.zhL10n, value),
                         style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(color: ZhPalette.subtleInk),
                       ),
@@ -154,7 +154,9 @@ class _SearchResultCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      title.isEmpty ? '未命名内容' : title,
+                      title.isEmpty
+                          ? context.zhL10n.commonUntitledContent
+                          : title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -168,7 +170,9 @@ class _SearchResultCard extends StatelessWidget {
                   SizedBox(
                     width: 54,
                     child: Text(
-                      typeLabel.isNotEmpty ? typeLabel : _typeLabel(type),
+                      typeLabel.isNotEmpty
+                          ? typeLabel
+                          : _typeLabel(context.zhL10n, type),
                       textAlign: TextAlign.right,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -186,7 +190,9 @@ class _SearchResultCard extends StatelessWidget {
                     if (Uri.tryParse(avatar)?.scheme == 'https') ...[
                       Semantics(
                         button: onAuthorTap != null,
-                        label: onAuthorTap == null ? null : '查看$author的个人主页',
+                        label: onAuthorTap == null
+                            ? null
+                            : context.zhL10n.commonAuthorProfile,
                         child: InkResponse(
                           key: onAuthorTap == null
                               ? null
@@ -257,21 +263,29 @@ class _SearchResultCard extends StatelessWidget {
                   children: [
                     for (final statistic in statistics)
                       Text(
-                        '${compactCount(statistic.$2)} ${statistic.$1}',
+                        localizedSearchMetric(
+                          context.zhL10n,
+                          statistic.$2,
+                          statistic.$1,
+                        ),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),
                       ),
                     if (statistics.isEmpty && metrics.voteupCount != null)
                       Text(
-                        '${compactCount(metrics.voteupCount!)} 赞同',
+                        context.zhL10n.metricVoteup(
+                          compactCount(metrics.voteupCount!),
+                        ),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),
                       ),
                     if (statistics.isEmpty && metrics.commentCount != null)
                       Text(
-                        '${compactCount(metrics.commentCount!)} 评论',
+                        context.zhL10n.metricComment(
+                          compactCount(metrics.commentCount!),
+                        ),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),
@@ -293,16 +307,16 @@ class _SearchResultCard extends StatelessWidget {
     );
   }
 
-  String _typeLabel(String type) => switch (type) {
-    'answer' => '回答',
-    'article' => '文章',
-    'question' => '问题',
-    'people' || 'member' => '用户',
-    'topic' => '话题',
-    'column' => '专栏',
-    'pin' => '想法',
-    'zvideo' || 'video' || 'videoanswer' => '视频',
-    'search_content' => '内容',
+  String _typeLabel(AppLocalizations l10n, String type) => switch (type) {
+    'answer' => l10n.contentTypeAnswer,
+    'article' => l10n.contentTypeArticle,
+    'question' => l10n.contentTypeQuestion,
+    'people' || 'member' => l10n.contentTypePeople,
+    'topic' => l10n.contentTypeTopic,
+    'column' => l10n.contentTypeColumn,
+    'pin' => l10n.contentTypeIdea,
+    'zvideo' || 'video' || 'videoanswer' => l10n.searchVideos,
+    'search_content' => l10n.contentTypeContent,
     _ => '',
   };
 }
@@ -321,15 +335,19 @@ class _SearchNovelResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final images = contentImageUrlsOf(value, limit: 1);
     final cover = images.isEmpty ? _searchEntityImageOf(value) : images.first;
-    final title = titleOf(value).isEmpty ? '未命名小说' : titleOf(value);
+    final title = titleOf(value).isEmpty
+        ? context.zhL10n.searchUntitledNovel
+        : titleOf(value);
     final author = authorNameOf(value);
     final excerpt = subtitleOf(value);
     final metrics = ContentMetrics.from(value);
     final date = contentDateLabel(metrics);
     final metadata = <String>[
       if (author.isNotEmpty) author,
-      if (metrics.voteupCount case final count?) '${compactCount(count)} 赞同',
-      if (metrics.commentCount case final count?) '${compactCount(count)} 评论',
+      if (metrics.voteupCount case final count?)
+        context.zhL10n.metricVoteup(compactCount(count)),
+      if (metrics.commentCount case final count?)
+        context.zhL10n.metricComment(compactCount(count)),
       if (date.isNotEmpty) date,
     ];
     return Material(
@@ -383,7 +401,7 @@ class _SearchNovelResultCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          '小说',
+                          context.zhL10n.searchStories,
                           style: TextStyle(color: ZhPalette.subtleInk),
                         ),
                       ],
@@ -474,13 +492,13 @@ class _SearchVideoResultCard extends StatelessWidget {
     final statistics = searchStatisticsOf(value);
     final meta = <String>[
       for (final statistic in statistics.take(3))
-        '${compactCount(statistic.$2)} ${statistic.$1}',
+        localizedSearchMetric(context.zhL10n, statistic.$2, statistic.$1),
       if (statistics.isEmpty && metrics.viewCount != null)
-        '${compactCount(metrics.viewCount!)} 次播放',
+        context.zhL10n.searchMetricPlayCount(compactCount(metrics.viewCount!)),
       if (statistics.isEmpty && metrics.voteupCount != null)
-        '${compactCount(metrics.voteupCount!)} 赞同',
+        context.zhL10n.metricVoteup(compactCount(metrics.voteupCount!)),
       if (statistics.isEmpty && metrics.commentCount != null)
-        '${compactCount(metrics.commentCount!)} 评论',
+        context.zhL10n.metricComment(compactCount(metrics.commentCount!)),
       if (date.isNotEmpty) date,
     ];
     return Material(
@@ -499,7 +517,7 @@ class _SearchVideoResultCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title.isEmpty ? '未命名视频' : title,
+                title.isEmpty ? context.zhL10n.searchUntitledVideo : title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -593,7 +611,9 @@ class _SearchVideoResultCard extends StatelessWidget {
                     if (Uri.tryParse(avatar)?.scheme == 'https') ...[
                       Semantics(
                         button: onAuthorTap != null,
-                        label: onAuthorTap == null ? null : '查看$author的个人主页',
+                        label: onAuthorTap == null
+                            ? null
+                            : context.zhL10n.commonAuthorProfile,
                         child: InkResponse(
                           key: onAuthorTap == null
                               ? null

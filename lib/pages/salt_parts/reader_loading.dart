@@ -15,6 +15,7 @@ extension _SaltReaderLoading on _SaltReaderPageState {
   }
 
   Future<void> _read({bool bypassCache = false}) async {
+    final l10n = context.zhL10n;
     const width = PrivacyDeviceProfile.logicalScreenWidth;
     _updateState(() {
       _loading = true;
@@ -283,8 +284,8 @@ extension _SaltReaderLoading on _SaltReaderPageState {
               index: manuscript.sectionIndex,
             );
             decodedContent = directHtml;
-          } on SaltTextChapterException catch (error) {
-            decodeError = error.message;
+          } on SaltTextChapterException catch (_) {
+            decodeError = l10n.saltDecodeFailed;
           }
         } else if (manuscript.canDecodeTransport &&
             articleCode.isNotEmpty &&
@@ -333,7 +334,7 @@ extension _SaltReaderLoading on _SaltReaderPageState {
               paragraphs: decodedChapter.paragraphs,
             );
           } on SaltTransportDecodeException catch (error) {
-            decodeError = error.message;
+            decodeError = l10n.saltDecodeFailed;
             await exportDebugSaltText(
               decodeStatus: 'failed',
               decodeError: '${error.code}: ${error.message}',
@@ -370,7 +371,7 @@ extension _SaltReaderLoading on _SaltReaderPageState {
               debugPrint('[zhihu-salt] strategyBranches=$branchOutcomes');
             }
           } on SaltTextChapterException catch (error) {
-            decodeError = error.message;
+            decodeError = l10n.saltDecodeFailed;
             await exportDebugSaltText(
               decodeStatus: 'failed',
               decodeError: error.toString(),
@@ -392,7 +393,7 @@ extension _SaltReaderLoading on _SaltReaderPageState {
               return true;
             }());
           } catch (error, stackTrace) {
-            decodeError = '章节解码失败，请重试。';
+            decodeError = l10n.saltDecodeFailed;
             await exportDebugSaltText(
               decodeStatus: 'failed',
               decodeError: '$error\n$stackTrace',
@@ -416,7 +417,7 @@ extension _SaltReaderLoading on _SaltReaderPageState {
             }());
           }
         } else if (manuscript.canDecodeTransport) {
-          decodeError = '章节响应缺少完整解码参数，请重试。';
+          decodeError = l10n.saltDecodeParamsMissing;
         }
       }
       if (mounted) {

@@ -100,6 +100,7 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
 
   Future<void> _toggleQuestionFollowing() async {
     if (_followBusy) return;
+    final l10n = context.zhL10n;
     if (!widget.api.canWrite) {
       _showWriteSessionRequired(context);
       return;
@@ -107,7 +108,7 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
     final question = _resolvedQuestion;
     final questionId = _effectiveQuestionId;
     if (!RegExp(r'^\d+$').hasMatch(questionId)) {
-      _showActionMessage(context, '暂时无法识别问题 ID，请刷新后重试');
+      _showActionMessage(context, l10n.questionIdUnavailable);
       return;
     }
     final wasFollowing =
@@ -136,7 +137,9 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
       setState(() => _followingQuestionOverride = !wasFollowing);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(!wasFollowing ? '已关注问题' : '已取消关注问题'),
+          content: Text(
+            !wasFollowing ? l10n.questionFollowed : l10n.questionUnfollowed,
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -260,6 +263,7 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   }
 
   Future<void> _writeAnswer() async {
+    final l10n = context.zhL10n;
     if (!widget.api.canWrite) {
       _showWriteSessionRequired(context);
       return;
@@ -274,12 +278,12 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
       backgroundColor: Colors.transparent,
       builder: (_) => CommentComposerSheet(
         api: widget.api,
-        title: '写回答',
+        title: l10n.detailWriteAnswer,
         maxLength: 100000,
         enableImage: false,
         enableGift: false,
         onSubmit: (value) async {
-          if (value.text.trim().isEmpty) return '回答内容不能为空';
+          if (value.text.trim().isEmpty) return l10n.detailAnswerRequired;
           final resolvedQuestion = _resolvedQuestion;
           final resolvedTitle = resolvedQuestion == null
               ? ''
@@ -298,8 +302,8 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
     if (!mounted || published != true) return;
     setState(() => _revision++);
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('回答已发布，列表正在刷新。'),
+      SnackBar(
+        content: Text(l10n.questionAnswerPublishedRefreshing),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -308,19 +312,20 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   Future<void> _deleteAnswer(Map<String, dynamic> value) async {
     final answerId = idOf(value);
     if (answerId.isEmpty || !widget.api.canWrite) return;
+    final l10n = context.zhL10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除回答？'),
-        content: const Text('删除后不可恢复。'),
+        title: Text(l10n.questionDeleteTitle),
+        content: Text(l10n.questionDeleteMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -338,7 +343,7 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
       setState(() => _revision++);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('回答已删除。')));
+      ).showSnackBar(SnackBar(content: Text(l10n.questionDeleted)));
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -351,9 +356,10 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
   @override
   Widget build(BuildContext context) {
     final question = _resolvedQuestion;
+    final l10n = context.zhL10n;
     return PagedListPage(
       key: ValueKey('question-answers-${widget.questionId}'),
-      title: '全部回答',
+      title: l10n.questionAnswersTitle,
       api: widget.api,
       extendBodyBehindAppBar: true,
       reloadToken: _revision,
@@ -365,31 +371,39 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
               key: Key('question-answer-search-action'),
               child: Icon(Icons.search_rounded),
             ),
-            semanticLabel: '搜索回答',
+            semanticLabel: l10n.questionSearchAnswers,
             onPressed: _openQuestionSearch,
           ),
           menuIcon: const KeyedSubtree(
             key: Key('question-answer-more-action'),
             child: Icon(Icons.more_vert_rounded),
           ),
-          menuSemanticLabel: '更多',
+          menuSemanticLabel: l10n.questionMore,
           onSelected: _showQuestionMenu,
           menuItems: [
             ZhLiquidGlassMenuItem(
               value: 'write',
-              label: widget.api.canWrite ? '写回答' : '登录后写回答',
+              label: widget.api.canWrite
+                  ? l10n.detailWriteAnswer
+                  : l10n.questionLoginToWrite,
             ),
-            ZhLiquidGlassMenuItem(value: 'invite', label: '邀请回答'),
+            ZhLiquidGlassMenuItem(
+              value: 'invite',
+              label: l10n.detailInviteAnswer,
+            ),
             ZhLiquidGlassMenuItem(
               value: 'follow',
               label:
                   (_followingQuestionOverride ??
                           _questionFollowing(question)) ==
                       true
-                  ? '取消关注问题'
-                  : '关注问题',
+                  ? l10n.questionUnfollow
+                  : l10n.questionFollow,
             ),
-            ZhLiquidGlassMenuItem(value: 'refresh', label: '刷新回答'),
+            ZhLiquidGlassMenuItem(
+              value: 'refresh',
+              label: l10n.questionAnswerRefresh,
+            ),
           ],
         ),
       ],
@@ -448,10 +462,10 @@ Widget? _questionAnswersHeader(
   final resolvedTitle = title.isNotEmpty ? title : fallbackTitle;
   final metricLabels = <String>[];
   if (metrics.followerCount case final count?) {
-    metricLabels.add('${compactCount(count)} 关注');
+    metricLabels.add(context.zhL10n.metricFollowers(compactCount(count)));
   }
   if (metrics.commentCount case final count?) {
-    metricLabels.add('${compactCount(count)} 评论');
+    metricLabels.add(context.zhL10n.metricComment(compactCount(count)));
   }
   if (resolvedTitle.isEmpty &&
       !metrics.hasObjectSummary &&

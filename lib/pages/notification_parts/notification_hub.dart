@@ -86,9 +86,9 @@ class _NotificationsPageState extends State<NotificationsPage> {
       if (!response.isSuccess) throw response;
       await _load(reset: true);
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('已将消息标为已读')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.zhL10n.notificationMarkedRead)),
+        );
       }
     } catch (error) {
       if (mounted) {
@@ -141,11 +141,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
     return Scaffold(
       appBar: ZhTopBar(
         centerTitle: true,
-        title: const Text('消息'),
+        title: Text(context.zhL10n.notificationTitle),
         actions: [
           ZhLiquidGlassIconButton(
             key: const ValueKey('notification-settings'),
-            semanticLabel: '通知设置',
+            semanticLabel: context.zhL10n.notificationSettings,
             onPressed: _hasAccountContext(widget.api)
                 ? () => Navigator.of(context).push(
                     MaterialPageRoute(
@@ -159,7 +159,7 @@ class _NotificationsPageState extends State<NotificationsPage> {
           ),
           ZhLiquidGlassIconButton(
             key: const ValueKey('notification-read-all'),
-            semanticLabel: '全部已读',
+            semanticLabel: context.zhL10n.notificationMarkAllRead,
             onPressed: _markingRead || !_hasAccountContext(widget.api)
                 ? null
                 : _markAllRead,
@@ -193,11 +193,11 @@ class _NotificationsPageState extends State<NotificationsPage> {
       return ApiErrorView(
         error: _error!,
         onRetry: () => _load(reset: true),
-        titleOverride: '消息加载失败',
+        titleOverride: context.zhL10n.notificationLoadFailed,
       );
     }
-    final header = notificationHeaderEntries(_root);
-    final invite = notificationInviteEntry(_root);
+    final header = notificationHeaderEntries(_root, context.zhL10n);
+    final invite = notificationInviteEntry(_root, context.zhL10n);
     return RefreshIndicator(
       onRefresh: () => _load(reset: true),
       child: ListView.builder(
@@ -220,7 +220,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
                 ? const SizedBox(height: 8)
                 : _InviteEntry(
                     value: invite,
-                    onTap: () => _openCategory('invite', '邀请回答'),
+                    onTap: () => _openCategory(
+                      'invite',
+                      context.zhL10n.notificationInvite,
+                    ),
                   );
           }
           final rowIndex = index - 2;
@@ -372,7 +375,11 @@ class _InviteEntry extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    unread > 0 ? '$unread 条待处理邀请' : '查看邀请你回答的问题',
+                    unread > 0
+                        ? context.zhL10n.notificationInvitePending(
+                            unread.toString(),
+                          )
+                        : context.zhL10n.notificationInviteView,
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],

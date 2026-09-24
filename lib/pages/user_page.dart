@@ -6,6 +6,7 @@ import '../core/api_client.dart';
 import '../core/api_response.dart';
 import '../core/follow_item_group.dart';
 import '../core/json_tools.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';
@@ -80,15 +81,17 @@ class UserRelationshipListPage extends StatelessWidget {
   final Future<ApiResponse> Function() loadInitial;
 
   @override
-  Widget build(BuildContext context) => PagedListPage(
-    title: title,
-    api: api,
-    loadInitial: loadInitial,
-    rowBuilder: (context, value, onTap) =>
-        UserRelationshipRow(api: api, value: value, onTap: onTap),
-    onObjectTap: (context, value) => openDetectedObject(context, api, value),
-    emptyMessage: '这里还没有用户',
-  );
+  Widget build(BuildContext context) {
+    return PagedListPage(
+      title: title,
+      api: api,
+      loadInitial: loadInitial,
+      rowBuilder: (context, value, onTap) =>
+          UserRelationshipRow(api: api, value: value, onTap: onTap),
+      onObjectTap: (context, value) => openDetectedObject(context, api, value),
+      emptyMessage: context.zhL10n.userEmpty,
+    );
+  }
 }
 
 class UserRelationshipRow extends StatefulWidget {
@@ -114,9 +117,9 @@ class _UserRelationshipRowState extends State<UserRelationshipRow> {
   Future<void> _toggle() async {
     if (_busy) return;
     if (!widget.api.canWrite) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('登录后可关注用户')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.userSignInToFollow)),
+      );
       return;
     }
     final person = unwrapObject(widget.value);
@@ -148,8 +151,11 @@ class _UserRelationshipRowState extends State<UserRelationshipRow> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final person = unwrapObject(widget.value);
-    final name = titleOf(person).isEmpty ? '知乎用户' : titleOf(person);
+    final name = titleOf(person).isEmpty
+        ? l10n.commonZhihuUser
+        : titleOf(person);
     final headline = plainText(person['headline'] ?? person['description']);
     final avatar = plainText(
       person['avatar_url'] ?? person['avatar_url_template'],
@@ -239,7 +245,7 @@ class _UserRelationshipRowState extends State<UserRelationshipRow> {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : Text(
-                            following ? '已关注' : '＋ 关注',
+                            following ? l10n.userFollowed : l10n.userFollow,
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
@@ -316,74 +322,77 @@ class _ProfileContentSearchPageState extends State<_ProfileContentSearchPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    resizeToAvoidBottomInset: false,
-    appBar: ZhTopBar(
-      title: Container(
-        height: 42,
-        margin: const EdgeInsets.only(right: 12),
-        decoration: BoxDecoration(
-          color: ZhPalette.canvas,
-          borderRadius: BorderRadius.circular(22),
-        ),
-        child: TextField(
-          key: const ValueKey('profile-content-search-field'),
-          controller: _query,
-          autofocus: true,
-          textInputAction: TextInputAction.search,
-          onSubmitted: _search,
-          onChanged: (_) => setState(() {}),
-          decoration: InputDecoration(
-            hintText: '搜索 ${widget.memberName} 发布的内容',
-            prefixIcon: const Icon(Icons.search_rounded, size: 21),
-            suffixIcon: _query.text.isEmpty
-                ? null
-                : IconButton(
-                    tooltip: '清空',
-                    onPressed: () {
-                      _query.clear();
-                      setState(() => _submitted = '');
-                    },
-                    icon: const Icon(Icons.close_rounded, size: 19),
-                  ),
-            border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 10),
+  Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      appBar: ZhTopBar(
+        title: Container(
+          height: 42,
+          margin: const EdgeInsets.only(right: 12),
+          decoration: BoxDecoration(
+            color: ZhPalette.canvas,
+            borderRadius: BorderRadius.circular(22),
+          ),
+          child: TextField(
+            key: const ValueKey('profile-content-search-field'),
+            controller: _query,
+            autofocus: true,
+            textInputAction: TextInputAction.search,
+            onSubmitted: _search,
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              hintText: l10n.userSearchHint(widget.memberName),
+              prefixIcon: const Icon(Icons.search_rounded, size: 21),
+              suffixIcon: _query.text.isEmpty
+                  ? null
+                  : IconButton(
+                      tooltip: l10n.commonClear,
+                      onPressed: () {
+                        _query.clear();
+                        setState(() => _submitted = '');
+                      },
+                      icon: const Icon(Icons.close_rounded, size: 19),
+                    ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(vertical: 10),
+            ),
           ),
         ),
       ),
-    ),
-    body: _submitted.isEmpty
-        ? Center(
-            child: Text(
-              '搜索 TA 发布过的回答、文章和想法',
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: ZhPalette.subtleInk),
-            ),
-          )
-        : PagedListPage(
-            key: ValueKey('profile-content-search:$_submitted'),
-            title: '',
-            api: widget.api,
-            embedded: true,
-            loadInitial: () => widget.api.getUri(
-              widget.api.profileContentSearchInitialUri(
-                keyword: _submitted,
-                memberHashId: widget.memberId,
+      body: _submitted.isEmpty
+          ? Center(
+              child: Text(
+                l10n.userSearchPrompt(widget.memberName),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: ZhPalette.subtleInk),
               ),
-              headers: const {'x-api-version': '3.0.65'},
-            ),
-            rowBuilder: (context, value, onTap) => _UserProfileFeedRow(
+            )
+          : PagedListPage(
+              key: ValueKey('profile-content-search:$_submitted'),
+              title: '',
               api: widget.api,
-              value: value,
-              kind: _UserProfileTabKind.creations,
-              onTap: onTap,
+              embedded: true,
+              loadInitial: () => widget.api.getUri(
+                widget.api.profileContentSearchInitialUri(
+                  keyword: _submitted,
+                  memberHashId: widget.memberId,
+                ),
+                headers: const {'x-api-version': '3.0.65'},
+              ),
+              rowBuilder: (context, value, onTap) => _UserProfileFeedRow(
+                api: widget.api,
+                value: value,
+                kind: _UserProfileTabKind.creations,
+                onTap: onTap,
+              ),
+              onObjectTap: (context, value) =>
+                  openDetectedObject(context, widget.api, value),
+              emptyMessage: l10n.userNoResults,
             ),
-            onObjectTap: (context, value) =>
-                openDetectedObject(context, widget.api, value),
-            emptyMessage: '没有找到相关内容',
-          ),
-  );
+    );
+  }
 }
 
 class _ResolvedUserListPageState extends State<ResolvedUserListPage> {
@@ -415,7 +424,9 @@ class _ResolvedUserListPageState extends State<ResolvedUserListPage> {
           ? userUrlTokenOfProfile(profile, widget.inputIdentifier)
           : userMemberIdOfProfile(profile, widget.inputIdentifier);
       if (resolved.isEmpty) {
-        setState(() => _state = const ApiTransportException('暂时无法打开用户资料'));
+        setState(
+          () => _state = ApiTransportException(context.zhL10n.userLoadFailed),
+        );
         return;
       }
       setState(() => _resolvedId = resolved);
@@ -426,9 +437,12 @@ class _ResolvedUserListPageState extends State<ResolvedUserListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final resolvedId = _resolvedId;
     if (resolvedId != null) {
-      final relationshipList = widget.title == '关注者' || widget.title == '关注的人';
+      final relationshipList =
+          widget.title == l10n.userFollowers ||
+          widget.title == l10n.userFollowingPeople;
       return PagedListPage(
         key: ValueKey('${widget.title}:$resolvedId'),
         title: widget.title,
@@ -482,7 +496,7 @@ class _UserPageState extends State<UserPage> {
     if (value.isEmpty || value.length > 256) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('请输入用户 ID')));
+      ).showSnackBar(SnackBar(content: Text(context.zhL10n.userIdRequired)));
       return null;
     }
     return value;
@@ -511,109 +525,110 @@ class _UserPageState extends State<UserPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final actions = <_UserAction>[
       _UserAction(
-        '用户信息',
+        l10n.userInfo,
         Icons.badge_outlined,
         (id) => UserProfileDetailPage(api: widget.api, memberId: id),
       ),
       _UserAction(
-        '关注者',
+        l10n.userFollowers,
         Icons.groups_outlined,
         (id) => _list(
-          title: '关注者',
+          title: l10n.userFollowers,
           id: id,
           initialUri: widget.api.userFollowersInitialUri,
         ),
       ),
       _UserAction(
-        '关注的人',
+        l10n.userFollowingPeople,
         Icons.person_search_outlined,
         (id) => _list(
-          title: '关注的人',
+          title: l10n.userFollowingPeople,
           id: id,
           initialUri: widget.api.userFolloweesInitialUri,
         ),
       ),
       _UserAction(
-        '回答',
+        l10n.userAnswers,
         Icons.question_answer_outlined,
         (id) => _list(
-          title: '用户回答',
+          title: l10n.userAnswers,
           id: id,
           initialUri: widget.api.userAnswersInitialUri,
         ),
       ),
       _UserAction(
-        '文章',
+        l10n.userArticles,
         Icons.article_outlined,
         (id) => _list(
-          title: '用户文章',
+          title: l10n.userArticles,
           id: id,
           initialUri: widget.api.userArticlesInitialUri,
         ),
       ),
       _UserAction(
-        '创作文章 Feed',
+        l10n.userCreatedArticles,
         Icons.dynamic_feed_outlined,
         (id) => _list(
-          title: '用户创作文章',
+          title: l10n.userCreatedArticles,
           id: id,
           initialUri: widget.api.userCreatedArticleFeedInitialUri,
           useUrlToken: true,
         ),
       ),
       _UserAction(
-        '贡献文章',
+        l10n.userContributedArticles,
         Icons.library_add_check_outlined,
         (id) => _list(
-          title: '用户贡献文章',
+          title: l10n.userContributedArticles,
           id: id,
           initialUri: widget.api.userIncludedArticlesInitialUri,
         ),
       ),
       _UserAction(
-        '创建的专栏',
+        l10n.userColumns,
         Icons.view_column_outlined,
         (id) => _list(
-          title: '用户专栏',
+          title: l10n.userColumns,
           id: id,
           initialUri: widget.api.userColumnsInitialUri,
         ),
       ),
       _UserAction(
-        '关注专栏',
+        l10n.userFollowingColumns,
         Icons.bookmarks_outlined,
         (id) => _list(
-          title: '关注专栏',
+          title: l10n.userFollowingColumns,
           id: id,
           initialUri: widget.api.userFollowingColumnsInitialUri,
         ),
       ),
       _UserAction(
-        '关注问题',
+        l10n.userFollowingQuestions,
         Icons.help_center_outlined,
         (id) => _list(
-          title: '关注问题',
+          title: l10n.userFollowingQuestions,
           id: id,
           initialUri: widget.api.userFollowingQuestionsInitialUri,
         ),
       ),
       _UserAction(
-        '关注收藏集',
+        l10n.userFollowingCollections,
         Icons.collections_bookmark_outlined,
         (id) => _list(
-          title: '关注收藏集',
+          title: l10n.userFollowingCollections,
           id: id,
           initialUri: widget.api.userFollowingCollectionsInitialUri,
           headers: const {'x-api-version': '3.0.94'},
         ),
       ),
       _UserAction(
-        '关注话题',
+        l10n.userFollowingTopics,
         Icons.tag_outlined,
         (id) => _list(
-          title: '关注话题',
+          title: l10n.userFollowingTopics,
           id: id,
           initialUri: widget.api.userFollowingTopicsInitialUri,
         ),
@@ -621,8 +636,8 @@ class _UserPageState extends State<UserPage> {
     ];
     return Scaffold(
       appBar: widget.initialMemberId.isEmpty
-          ? ZhTopBar(title: const Text('用户'))
-          : ZhTopBar(title: const Text('用户资料')),
+          ? ZhTopBar(title: Text(l10n.userTitle))
+          : ZhTopBar(title: Text(l10n.userProfileTitle)),
       body: ZhResponsiveFrame(
         maxWidth: 1040,
         desktopGutter: 24,
@@ -634,10 +649,13 @@ class _UserPageState extends State<UserPage> {
             ZhSpace.xl,
           ),
           children: [
-            Text('查找用户', style: Theme.of(context).textTheme.headlineMedium),
+            Text(
+              l10n.userFindTitle,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
             const SizedBox(height: ZhSpace.xs),
             Text(
-              '输入资料链接中的用户 token，查看公开资料与内容列表',
+              l10n.userFindSubtitle,
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
@@ -646,14 +664,14 @@ class _UserPageState extends State<UserPage> {
             ShadInput(
               controller: _member,
               autocorrect: false,
-              placeholder: const Text('用户 ID'),
+              placeholder: Text(l10n.userIdHint),
               constraints: const BoxConstraints(minHeight: 58),
               leading: const Padding(
                 padding: EdgeInsets.only(right: 10),
                 child: Icon(Icons.alternate_email_rounded, size: 21),
               ),
               trailing: IconButton(
-                tooltip: '查看资料',
+                tooltip: l10n.userViewProfile,
                 onPressed: () => _openPage(actions.first.builder),
                 icon: const Icon(Icons.arrow_forward_rounded),
               ),
@@ -663,11 +681,11 @@ class _UserPageState extends State<UserPage> {
             ZhPrimaryButton(
               onPressed: () => _openPage(actions.first.builder),
               icon: Icons.person_search_rounded,
-              label: '查看用户资料',
+              label: l10n.userViewProfile,
               expand: true,
             ),
             const SizedBox(height: ZhSpace.lg),
-            const ZhSectionHeader(title: '内容与关系'),
+            ZhSectionHeader(title: l10n.userContentRelations),
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),

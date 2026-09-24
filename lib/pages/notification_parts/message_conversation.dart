@@ -179,7 +179,11 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
         children: [
           _NotificationAvatar(url: widget.avatarUrl, size: 36),
           const SizedBox(width: 10),
-          Expanded(child: Text(widget.title.isEmpty ? '私信' : widget.title)),
+          Expanded(
+            child: Text(
+              widget.title.isEmpty ? context.zhL10n.messageTitle : widget.title,
+            ),
+          ),
         ],
       ),
     ),
@@ -195,7 +199,7 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
                 ? ApiErrorView(
                     error: _error!,
                     onRetry: () => _load(reset: true),
-                    titleOverride: '私信加载失败',
+                    titleOverride: context.zhL10n.messageLoadFailed,
                   )
                 : ListView.builder(
                     key: const ValueKey('message-conversation'),
@@ -239,8 +243,8 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
                         minLines: 1,
                         maxLines: 5,
                         textInputAction: TextInputAction.newline,
-                        decoration: const InputDecoration(
-                          hintText: '发私信',
+                        decoration: InputDecoration(
+                          hintText: context.zhL10n.messageComposeHint,
                           isDense: true,
                         ),
                         onChanged: (_) => setState(() {}),
@@ -249,7 +253,7 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
                     const SizedBox(width: 8),
                     IconButton.filled(
                       key: const ValueKey('send-message'),
-                      tooltip: '发送',
+                      tooltip: context.zhL10n.messageSend,
                       onPressed: _sending || _composer.text.trim().isEmpty
                           ? null
                           : _send,

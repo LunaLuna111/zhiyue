@@ -264,7 +264,10 @@ class ObjectCard extends StatelessWidget {
                 Row(
                   children: [
                     if (type.isNotEmpty)
-                      ZhPill(label: _typeLabel(type), compact: true),
+                      ZhPill(
+                        label: _typeLabel(context.zhL10n, type),
+                        compact: true,
+                      ),
                     if (authorName.isNotEmpty) ...[
                       const SizedBox(width: 8),
                       Expanded(
@@ -315,7 +318,9 @@ class ObjectCard extends StatelessWidget {
                 ],
                 const SizedBox(height: 6),
                 Text(
-                  primaryText.isEmpty ? '未命名对象' : primaryText,
+                  primaryText.isEmpty
+                      ? context.zhL10n.commonUntitledObject
+                      : primaryText,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontSize: answerListMode ? 14.5 : 16,
                     height: answerListMode ? 1.38 : 1.28,
@@ -356,7 +361,9 @@ class ObjectCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.change_history_outlined,
                           label: compactCount(count),
-                          semanticLabel: '赞同 ${compactCount(count)}',
+                          semanticLabel: context.zhL10n.metricVoteup(
+                            compactCount(count),
+                          ),
                           selected: relationship.isUpvoted,
                           onTap: interactive && onAction != null
                               ? () => onAction!(ContentCardAction.vote)
@@ -366,7 +373,9 @@ class ObjectCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.star_border_rounded,
                           label: compactCount(count),
-                          semanticLabel: '收藏 ${compactCount(count)}',
+                          semanticLabel: context.zhL10n.metricFavorite(
+                            compactCount(count),
+                          ),
                           selected: relationship.isFavorited == true,
                           onTap: interactive && onAction != null
                               ? () => onAction!(ContentCardAction.favorite)
@@ -376,7 +385,9 @@ class ObjectCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.chat_bubble_outline_rounded,
                           label: compactCount(count),
-                          semanticLabel: '评论 ${compactCount(count)}',
+                          semanticLabel: context.zhL10n.metricComment(
+                            compactCount(count),
+                          ),
                           onTap: onAction == null
                               ? null
                               : () => onAction!(ContentCardAction.comments),
@@ -385,27 +396,29 @@ class ObjectCard extends StatelessWidget {
                         _CardMetric(
                           icon: Icons.volunteer_activism_outlined,
                           label: compactCount(metrics.thanksCount!),
-                          semanticLabel:
-                              '感谢 ${compactCount(metrics.thanksCount!)}',
+                          semanticLabel: context.zhL10n.metricThanks(
+                            compactCount(metrics.thanksCount!),
+                          ),
                         ),
                       if (type == 'answer' && metrics.viewCount != null)
                         _CardMetric(
                           icon: Icons.visibility_outlined,
                           label: compactCount(metrics.viewCount!),
-                          semanticLabel:
-                              '浏览 ${compactCount(metrics.viewCount!)}',
+                          semanticLabel: context.zhL10n.metricViews(
+                            compactCount(metrics.viewCount!),
+                          ),
                         ),
                       if (type == 'answer' && relationship.isThanked == true)
-                        const _CardMetric(
+                        _CardMetric(
                           icon: Icons.volunteer_activism_rounded,
-                          label: '已感谢',
-                          semanticLabel: '已感谢该回答',
+                          label: context.zhL10n.metricThanked,
+                          semanticLabel: context.zhL10n.metricThanked,
                         ),
                       if (type == 'answer' && relationship.isFavorited == true)
-                        const _CardMetric(
+                        _CardMetric(
                           icon: Icons.star_rounded,
-                          label: '已收藏',
-                          semanticLabel: '已收藏该回答',
+                          label: context.zhL10n.metricFavorited,
+                          semanticLabel: context.zhL10n.metricFavorited,
                         ),
                       if ((type == 'people' ||
                               type == 'member' ||
@@ -415,9 +428,12 @@ class ObjectCard extends StatelessWidget {
                           metrics.followerCount != null)
                         _CardMetric(
                           icon: Icons.groups_outlined,
-                          label: '${compactCount(metrics.followerCount!)} 关注者',
-                          semanticLabel:
-                              '${compactCount(metrics.followerCount!)} 位关注者',
+                          label: context.zhL10n.metricFollowers(
+                            compactCount(metrics.followerCount!),
+                          ),
+                          semanticLabel: context.zhL10n.metricFollowers(
+                            compactCount(metrics.followerCount!),
+                          ),
                         ),
                       if ((type == 'people' ||
                               type == 'member' ||
@@ -425,9 +441,12 @@ class ObjectCard extends StatelessWidget {
                           metrics.answerCount != null)
                         _CardMetric(
                           icon: Icons.question_answer_outlined,
-                          label: '${compactCount(metrics.answerCount!)} 回答',
-                          semanticLabel:
-                              '${compactCount(metrics.answerCount!)} 个回答',
+                          label: context.zhL10n.metricAnswers(
+                            compactCount(metrics.answerCount!),
+                          ),
+                          semanticLabel: context.zhL10n.metricAnswers(
+                            compactCount(metrics.answerCount!),
+                          ),
                         ),
                       if ((type == 'people' ||
                               type == 'member' ||
@@ -435,17 +454,23 @@ class ObjectCard extends StatelessWidget {
                           metrics.articleCount != null)
                         _CardMetric(
                           icon: Icons.article_outlined,
-                          label: '${compactCount(metrics.articleCount!)} 文章',
-                          semanticLabel:
-                              '${compactCount(metrics.articleCount!)} 篇文章',
+                          label: context.zhL10n.metricArticles(
+                            compactCount(metrics.articleCount!),
+                          ),
+                          semanticLabel: context.zhL10n.metricArticles(
+                            compactCount(metrics.articleCount!),
+                          ),
                         ),
                       if ((type == 'collection' || type == 'favlist') &&
                           metrics.itemCount != null)
                         _CardMetric(
                           icon: Icons.collections_bookmark_outlined,
-                          label: '${compactCount(metrics.itemCount!)} 条内容',
-                          semanticLabel:
-                              '${compactCount(metrics.itemCount!)} 条内容',
+                          label: context.zhL10n.metricItems(
+                            compactCount(metrics.itemCount!),
+                          ),
+                          semanticLabel: context.zhL10n.metricItems(
+                            compactCount(metrics.itemCount!),
+                          ),
                         ),
                       if (dateLabel.isNotEmpty)
                         _CardMetric(
@@ -476,7 +501,7 @@ class ObjectCard extends StatelessWidget {
                 if (onDelete != null) ...[
                   const SizedBox(height: 4),
                   IconButton(
-                    tooltip: '删除',
+                    tooltip: context.zhL10n.commonDelete,
                     visualDensity: VisualDensity.compact,
                     onPressed: onDelete,
                     icon: const Icon(Icons.delete_outline_rounded, size: 19),
@@ -490,15 +515,15 @@ class ObjectCard extends StatelessWidget {
     );
   }
 
-  String _typeLabel(String type) => switch (type) {
-    'answer' => '回答',
-    'article' => '文章',
-    'people' || 'member' => '用户',
-    'question' => '问题',
-    'column' => '专栏',
-    'topic' => '话题',
-    'pin' => '想法',
-    'comment' => '评论',
+  String _typeLabel(AppLocalizations l10n, String type) => switch (type) {
+    'answer' => l10n.contentTypeAnswer,
+    'article' => l10n.contentTypeArticle,
+    'people' || 'member' => l10n.contentTypePeople,
+    'question' => l10n.contentTypeQuestion,
+    'column' => l10n.contentTypeColumn,
+    'topic' => l10n.contentTypeTopic,
+    'pin' => l10n.contentTypeIdea,
+    'comment' => l10n.contentTypeComment,
     _ => type.toUpperCase(),
   };
 

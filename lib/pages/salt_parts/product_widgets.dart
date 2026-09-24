@@ -35,7 +35,9 @@ class _SaltProductCatalogControls extends StatelessWidget {
                 icon: continueReading
                     ? Icons.menu_book_rounded
                     : Icons.play_arrow_rounded,
-                label: continueReading ? '继续阅读' : '开始阅读',
+                label: continueReading
+                    ? context.zhL10n.saltContinueReading
+                    : context.zhL10n.saltStartReading,
                 prominent: true,
               ),
             ),
@@ -56,7 +58,9 @@ class _SaltProductCatalogControls extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : null,
-                label: addedToBookshelf ? '已加入' : '加入书架',
+                label: addedToBookshelf
+                    ? context.zhL10n.saltAdded
+                    : context.zhL10n.saltAddToBookshelf,
               ),
             ),
           ],
@@ -65,7 +69,7 @@ class _SaltProductCatalogControls extends StatelessWidget {
         Row(
           children: [
             Text(
-              '章节顺序',
+              context.zhL10n.saltChapterOrder,
               style: Theme.of(
                 context,
               ).textTheme.labelLarge?.copyWith(color: ZhPalette.mutedInk),
@@ -74,7 +78,10 @@ class _SaltProductCatalogControls extends StatelessWidget {
             SizedBox(
               width: 148,
               child: ZhLiquidGlassSegmentedTabs(
-                labels: const ['正序', '倒序'],
+                labels: [
+                  context.zhL10n.saltAscending,
+                  context.zhL10n.saltDescending,
+                ],
                 selectedIndex: descending ? 1 : 0,
                 onSelected: (index) => onOrderChanged(index == 1),
                 height: 40,
@@ -104,6 +111,7 @@ class _SaltProductSectionRow extends StatelessWidget {
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final object = unwrapObject(value);
     final title = plainText(object['title']);
     final serial = plainText(object['serial_number_text']);
@@ -111,8 +119,8 @@ class _SaltProductSectionRow extends StatelessWidget {
     final lastRead = object['last_read'] == true;
     final finished = object['read_finished'] == true;
     final secondary = [
-      if (lastRead) '上次读到',
-      if (finished) '已读',
+      if (lastRead) l10n.saltLastRead,
+      if (finished) l10n.saltReadFinished,
       if (progress.isNotEmpty) progress,
     ].join(' · ');
     return Material(
@@ -132,7 +140,7 @@ class _SaltProductSectionRow extends StatelessWidget {
               SizedBox(
                 width: 58,
                 child: Text(
-                  serial.isEmpty ? '章节' : serial,
+                  serial.isEmpty ? l10n.saltChapter : serial,
                   maxLines: 2,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: ZhPalette.mutedInk,
@@ -146,7 +154,7 @@ class _SaltProductSectionRow extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      title.isEmpty ? '未命名章节' : title,
+                      title.isEmpty ? l10n.saltUntitledChapter : title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(

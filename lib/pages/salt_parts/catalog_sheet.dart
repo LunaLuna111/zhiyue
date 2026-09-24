@@ -34,6 +34,7 @@ String saltCatalogProgressText(
   required bool selected,
   int? currentSectionIndex,
   int? sectionCount,
+  AppLocalizations? l10n,
 }) {
   final object = unwrapObject(value);
   final progressText = plainText(object['progress_text']);
@@ -41,13 +42,13 @@ String saltCatalogProgressText(
   final progress = _saltMap(object['cli_progress']);
   final unitProgress = _saltMap(progress?['unit_progress']);
   if (object['read_finished'] == true || unitProgress?['is_finished'] == true) {
-    return '已读 100%';
+    return l10n?.saltReadPercent(100) ?? '已读 100%';
   }
   final current = unitProgress?['progress'];
   final maximum = unitProgress?['max_progress'];
   if (current is num && maximum is num && maximum > 0) {
     final percent = (current / maximum * 100).clamp(0, 100).round();
-    if (percent > 0) return '已读 $percent%';
+    if (percent > 0) return l10n?.saltReadPercent(percent) ?? '已读 $percent%';
   }
   if (selected &&
       currentSectionIndex != null &&
@@ -55,7 +56,8 @@ String saltCatalogProgressText(
       sectionCount != null &&
       sectionCount > 0) {
     final completed = (currentSectionIndex / sectionCount * 100).floor();
-    return '已读 ${completed.clamp(1, 99)}%';
+    final percent = completed.clamp(1, 99);
+    return l10n?.saltReadPercent(percent) ?? '已读 $percent%';
   }
   return '';
 }
@@ -193,6 +195,7 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
   Future<void> _exportSelected() async {
     final format = widget.exportFormat;
     if (format == null || _selectedIds.isEmpty || _exporting) return;
+    final l10n = context.zhL10n;
     setState(() {
       _exporting = true;
       _error = null;
@@ -209,12 +212,15 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
         final row = selectedRows[index];
         final sectionId = _sectionId(row);
         final rowTitle = titleOf(row).isEmpty
-            ? '第 ${index + 1} 节'
+            ? l10n.saltSectionLabel(index + 1)
             : titleOf(row);
         if (mounted) {
           setState(
-            () => _exportProgress =
-                '正在处理 ${index + 1}/${selectedRows.length} · $rowTitle',
+            () => _exportProgress = l10n.saltProcessing(
+              index + 1,
+              selectedRows.length,
+              rowTitle,
+            ),
           );
         }
         SaltCachedChapter? cached;
@@ -267,6 +273,7 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final total = _serverTotal ?? widget.sectionCount ?? _rows.length;
     final rows = sortSaltCatalogSections(
       _rows,
@@ -284,7 +291,7 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
       child: Column(
         children: [
           _SaltSheetHeader(
-            title: '目录',
+            title: l10n.saltCatalogTitle,
             subtitle: widget.title.isEmpty ? null : widget.title,
             onClose: _exporting ? null : () => Navigator.of(context).pop(),
           ),
@@ -293,7 +300,9 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
             child: Row(
               children: [
                 Text(
-                  total > 0 ? '共 $total 节' : '章节目录',
+                  total > 0
+                      ? l10n.saltChapterCount(total)
+                      : l10n.saltChapterDirectory,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: ZhPalette.mutedInk,
                     letterSpacing: 0,
@@ -303,14 +312,14 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
                 SizedBox(
                   height: 38,
                   child: SegmentedButton<_SaltCatalogOrder>(
-                    segments: const [
+                    segments: [
                       ButtonSegment(
                         value: _SaltCatalogOrder.ascending,
-                        label: Text('正序'),
+                        label: Text(l10n.saltAscending),
                       ),
                       ButtonSegment(
                         value: _SaltCatalogOrder.descending,
-                        label: Text('倒序'),
+                        label: Text(l10n.saltDescending),
                       ),
                     ],
                     selected: {_order},
@@ -342,13 +351,17 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
                   ),
                   TextButton(
                     onPressed: _exporting ? null : _toggleAll,
-                    child: Text(allSelected ? '取消全选' : '全选'),
+                    child: Text(
+                      allSelected
+                          ? l10n.saltCancelSelectAll
+                          : l10n.saltSelectAll,
+                    ),
                   ),
                   const Spacer(),
                   Padding(
                     padding: const EdgeInsets.only(right: 20),
                     child: Text(
-                      '已选 ${_selectedIds.length}/$total',
+                      l10n.saltSelectedCount(_selectedIds.length, total),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: ZhPalette.mutedInk,
                         letterSpacing: 0,
@@ -360,7 +373,7 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
             ),
             const Divider(height: 1),
           ],
-          Expanded(child: _body(rows, total)),
+          Expanded(child: _body(rows, total, l10n)),
           if (_isExportMode && _exportProgress.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
@@ -391,8 +404,11 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
                       : const Icon(Icons.download_rounded),
                   label: Text(
                     _exporting
-                        ? '正在下载章节'
-                        : '导出 $formatLabel · ${_selectedIds.length} 章',
+                        ? l10n.saltDownloadingChapters
+                        : l10n.saltExportChapters(
+                            formatLabel,
+                            _selectedIds.length,
+                          ),
                   ),
                 ),
               ),
@@ -402,7 +418,11 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
     );
   }
 
-  Widget _body(List<Map<String, dynamic>> rows, int total) {
+  Widget _body(
+    List<Map<String, dynamic>> rows,
+    int total,
+    AppLocalizations l10n,
+  ) {
     if (_loading && rows.isEmpty) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -410,12 +430,12 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
       return ApiErrorView(
         error: _error!,
         onRetry: () => _loadCatalog(forceRefresh: true),
-        titleOverride: '目录载入失败',
-        detailOverride: '请检查网络后重试',
+        titleOverride: l10n.saltDirectoryLoadFailed,
+        detailOverride: l10n.saltNetworkRetry,
       );
     }
     if (rows.isEmpty) {
-      return const Center(child: Text('目录中暂时没有章节'));
+      return Center(child: Text(l10n.saltDirectoryEmpty));
     }
     return RefreshIndicator(
       onRefresh: () => _loadCatalog(forceRefresh: true),
@@ -438,6 +458,7 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
               selected: selected,
               currentSectionIndex: widget.currentSectionIndex,
               sectionCount: total,
+              l10n: l10n,
             ),
             onTap: sectionId == null
                 ? null
@@ -474,6 +495,7 @@ class _SaltCatalogRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final object = unwrapObject(value);
     final index = _saltMap(object['index']);
     final chapter = _saltMap(object['chapter']);
@@ -513,7 +535,7 @@ class _SaltCatalogRow extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                label.isEmpty ? '未命名章节' : label,
+                label.isEmpty ? l10n.saltUntitledChapter : label,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
@@ -536,7 +558,7 @@ class _SaltCatalogRow extends StatelessWidget {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  '上次读到',
+                  l10n.saltLastRead,
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                     letterSpacing: 0,
@@ -565,7 +587,7 @@ class _SaltCatalogRow extends StatelessWidget {
               const Icon(Icons.lock_outline_rounded, size: 20)
             else if (cached)
               Tooltip(
-                message: '已缓存',
+                message: l10n.saltCached,
                 child: Icon(
                   Icons.download_done_rounded,
                   size: 20,

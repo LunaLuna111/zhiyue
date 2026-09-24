@@ -125,8 +125,11 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
       builder: (_) => CommentComposerSheet(
         api: widget.api,
         replyTarget: resolvedTarget,
-        title:
-            '回复${resolvedTarget.targetUserName.isEmpty ? '这条评论' : ' @${resolvedTarget.targetUserName}'}',
+        title: context.zhL10n.commentReplyTitle(
+          resolvedTarget.targetUserName.isEmpty
+              ? context.zhL10n.commentReplyTargetComment
+              : '@${resolvedTarget.targetUserName}',
+        ),
         initialShowEmoticons: showEmoticons,
         onSubmit: (value) async {
           final response = widget.submitComment == null
@@ -146,9 +149,9 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
     if (!mounted || created != true) return;
     widget.onCommentCountChanged?.call(1);
     setState(() => _revision++);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('回复已发布。')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.zhL10n.commentReplyPublished)),
+    );
   }
 
   Future<void> _delete(Map<String, dynamic> value) async {
@@ -157,16 +160,16 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除回复？'),
-        content: const Text('删除后不可恢复。'),
+        title: Text(context.zhL10n.commentDeleteReplyTitle),
+        content: Text(context.zhL10n.commentDeleteReplyMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(context.zhL10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text(context.zhL10n.commonDelete),
           ),
         ],
       ),
@@ -183,9 +186,9 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
       }
       widget.onCommentCountChanged?.call(-1);
       setState(() => _revision++);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('回复已删除。')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.commentReplyDeleted)),
+      );
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -201,9 +204,9 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
     final rootName = root == null ? widget.rootAuthorName : authorNameOf(root);
     return PagedListPage(
       key: ValueKey('comment-replies-${widget.commentId}-$_revision'),
-      title: '评论回复',
+      title: context.zhL10n.commentRepliesTitle,
       titleWidget: Text(
-        '评论回复',
+        context.zhL10n.commentRepliesTitle,
         style: TextStyle(
           color: ZhPalette.ink,
           fontSize: 17,
@@ -254,6 +257,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
               ),
             ),
       responseHeaderBuilder: (context, response) => commentReplySummaryHeader(
+        context,
         response,
         fallbackTotal: root == null
             ? null
@@ -262,7 +266,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
       pinResponseHeader: true,
       bottomNavigationBar: _OfficialCommentEditorBar(
         enabled: true,
-        title: '发布你的回复',
+        title: context.zhL10n.commentPublishReply,
         onTap: () => _reply(
           widget.commentId,
           rootName,
@@ -306,7 +310,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
       loadInitial: _loadInitial,
       rowsExtractor: _replyRows,
       commentListMode: true,
-      emptyMessage: '还没有回复',
+      emptyMessage: context.zhL10n.commentNoReplies,
       rowBuilder: (context, value, onTap) => CommentCard(
         value: value,
         api: widget.api,
@@ -349,6 +353,7 @@ class _CommentRepliesPageState extends State<CommentRepliesPage> {
 }
 
 Widget commentReplySummaryHeader(
+  BuildContext context,
   Map<String, dynamic> response, {
   int? fallbackTotal,
 }) {
@@ -360,7 +365,9 @@ Widget commentReplySummaryHeader(
     color: ZhPalette.background,
     padding: const EdgeInsets.symmetric(horizontal: 16),
     child: Text(
-      total == null ? '回复' : '回复 ${compactCount(total)}',
+      total == null
+          ? context.zhL10n.commonReply
+          : context.zhL10n.commentReplyCount(compactCount(total)),
       style: TextStyle(
         color: ZhPalette.ink,
         fontSize: 15,
@@ -376,11 +383,11 @@ class _OfficialCommentEditorBar extends StatelessWidget {
     required this.enabled,
     required this.onTap,
     required this.onEmoticon,
-    this.title = '理性发言，友善互动',
+    this.title,
   });
 
   final bool enabled;
-  final String title;
+  final String? title;
   final VoidCallback onTap;
   final VoidCallback onEmoticon;
 
@@ -416,7 +423,9 @@ class _OfficialCommentEditorBar extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      enabled ? title : '暂时无法发表评论',
+                      enabled
+                          ? (title ?? context.zhL10n.commentInputPlaceholder)
+                          : context.zhL10n.commentEditorUnavailable,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -427,17 +436,17 @@ class _OfficialCommentEditorBar extends StatelessWidget {
                     ),
                   ),
                   _EditorBarAction(
-                    label: '图片',
+                    label: context.zhL10n.commentImage,
                     icon: Icons.image_outlined,
                     onTap: enabled ? onTap : null,
                   ),
                   _EditorBarAction(
-                    label: 'GIF',
+                    label: context.zhL10n.commentGif,
                     gif: true,
                     onTap: enabled ? onEmoticon : null,
                   ),
                   _EditorBarAction(
-                    label: '展开编辑器',
+                    label: context.zhL10n.commentExpandEditor,
                     icon: Icons.open_in_full_rounded,
                     onTap: enabled ? onTap : null,
                   ),

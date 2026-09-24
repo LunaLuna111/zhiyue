@@ -2,6 +2,7 @@ part of '../salt_page.dart';
 
 extension _SaltReaderActions on _SaltReaderPageState {
   Future<void> _addToBookshelf(SaltManuscriptEnvelope manuscript) async {
+    final l10n = context.zhL10n;
     _updateState(() => _bookshelfSaving = true);
     try {
       final propertyType = manuscript.propertyType.isNotEmpty
@@ -11,6 +12,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
         _localBookshelfEntry(
           businessId: widget.businessId,
           propertyType: propertyType,
+          fallbackTitle: l10n.saltWorkFallback,
           title: manuscript.parentTitle.isNotEmpty
               ? manuscript.parentTitle
               : manuscript.title,
@@ -41,10 +43,10 @@ extension _SaltReaderActions on _SaltReaderPageState {
         SnackBar(
           content: Text(
             synced
-                ? '已加入书架'
+                ? l10n.saltAddToBookshelf
                 : syncFailed
-                ? '已加入本地书架，账号同步失败'
-                : '已加入本地书架',
+                ? '${l10n.saltAdded} · ${l10n.saltAccountSyncFailed}'
+                : l10n.saltAdded,
           ),
         ),
       );
@@ -63,6 +65,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
     SaltManuscriptEnvelope? manuscript,
     SaltTextChapter? chapter,
   ) async {
+    final l10n = context.zhL10n;
     final isLong =
         manuscript != null &&
         (manuscript.isLong == true ||
@@ -84,13 +87,13 @@ extension _SaltReaderActions on _SaltReaderPageState {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
                   child: Text(
-                    '更多操作',
+                    l10n.saltMoreActions,
                     style: Theme.of(sheetContext).textTheme.titleLarge,
                   ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.refresh_rounded),
-                  title: const Text('刷新'),
+                  title: Text(l10n.commonRefresh),
                   onTap: () => Navigator.of(
                     sheetContext,
                   ).pop(_SaltReaderChapterMoreAction.refresh),
@@ -103,8 +106,12 @@ extension _SaltReaderActions on _SaltReaderPageState {
                         ? Icons.stop_circle_outlined
                         : Icons.volume_up_outlined,
                   ),
-                  title: Text(TtsService.instance.isPlaying ? '停止朗读' : '朗读本节'),
-                  subtitle: const Text('使用系统中文语音朗读当前章节'),
+                  title: Text(
+                    TtsService.instance.isPlaying
+                        ? l10n.saltStopReading
+                        : l10n.saltReadAloud,
+                  ),
+                  subtitle: Text(l10n.saltReadAloudSubtitle),
                   onTap: chapter == null
                       ? null
                       : () => Navigator.of(
@@ -120,7 +127,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
                       ContentExportFormat.html => Icons.language_rounded,
                       ContentExportFormat.pdf => Icons.picture_as_pdf_outlined,
                     }),
-                    title: Text('导出当前章节为 ${format.label}'),
+                    title: Text(l10n.saltExportChapter(format.label)),
                     onTap: chapter == null
                         ? null
                         : () => Navigator.of(sheetContext).pop(switch (format) {
@@ -135,7 +142,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
                 ListTile(
                   enabled: chapter != null,
                   leading: const Icon(Icons.text_snippet_outlined),
-                  title: Text(isLong ? '下载 / 导出 TXT' : '导出 TXT 文件'),
+                  title: Text(l10n.saltExportTxt),
                   onTap: chapter == null
                       ? null
                       : () => Navigator.of(
@@ -145,7 +152,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
                 ListTile(
                   enabled: chapter != null,
                   leading: const Icon(Icons.description_outlined),
-                  title: Text(isLong ? '下载 / 导出 DOCX' : '导出 DOCX 文件'),
+                  title: Text(l10n.saltExportDocx),
                   onTap: chapter == null
                       ? null
                       : () => Navigator.of(
@@ -222,28 +229,29 @@ extension _SaltReaderActions on _SaltReaderPageState {
     SaltManuscriptEnvelope? manuscript,
     SaltTextChapter? chapter,
   ) async {
+    final l10n = context.zhL10n;
     final tts = TtsService.instance;
     if (tts.isPlaying) {
       await tts.stop();
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('已停止朗读')));
+        ).showSnackBar(SnackBar(content: Text(l10n.saltStopReading)));
       }
       return;
     }
     if (chapter == null) return;
     final title = manuscript == null
-        ? '盐选章节'
-        : _readerSectionLabel(manuscript, '盐选章节');
+        ? l10n.saltUntitledChapter
+        : _readerSectionLabel(manuscript, l10n.saltUntitledChapter);
     final started = await tts.speak(chapter.plainText, title: title);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           started
-              ? '正在朗读${title.isEmpty ? '' : '：$title'}'
-              : '系统语音不可用，请安装中文语音包',
+              ? l10n.saltReadingStarted(title.isEmpty ? '' : '：$title')
+              : l10n.saltSpeechUnavailable,
         ),
       ),
     );
@@ -254,13 +262,14 @@ extension _SaltReaderActions on _SaltReaderPageState {
     SaltTextChapter chapter,
     ContentExportFormat format,
   ) async {
+    final l10n = context.zhL10n;
     _updateState(() => _exporting = true);
     try {
       final title = manuscript.parentTitle.isNotEmpty
           ? manuscript.parentTitle
           : manuscript.title;
       final location = await ContentExportService.saveSections(
-        title: title.isEmpty ? '盐选章节' : title,
+        title: title.isEmpty ? l10n.saltUntitledChapter : title,
         sectionId: widget.sectionId,
         sections: [
           SaltChapterExportSection(
@@ -271,9 +280,9 @@ extension _SaltReaderActions on _SaltReaderPageState {
         format: format,
       );
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('已导出为 ${format.label}：$location')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.saltExportedAs(format.label, location))),
+      );
     } catch (error) {
       assert(() {
         debugPrint('[zhihu-salt] contentExportFailure=$error');
@@ -282,7 +291,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('导出失败，请重试')));
+        ).showSnackBar(SnackBar(content: Text(l10n.saltExportFailed)));
       }
     } finally {
       if (mounted) _updateState(() => _exporting = false);
@@ -294,6 +303,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
     SaltTextChapter chapter,
     SaltChapterExportFormat format,
   ) async {
+    final l10n = context.zhL10n;
     _updateState(() => _exporting = true);
     try {
       final workTitle = manuscript.parentTitle.isNotEmpty
@@ -318,7 +328,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('已导出到 $location')));
+      ).showSnackBar(SnackBar(content: Text(l10n.saltExportedTo(location))));
     } catch (error) {
       assert(() {
         debugPrint('[zhihu-salt] chapterExportFailure=$error');
@@ -327,7 +337,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('导出失败，请重试')));
+      ).showSnackBar(SnackBar(content: Text(l10n.saltExportFailed)));
     } finally {
       if (mounted) _updateState(() => _exporting = false);
     }
@@ -337,6 +347,7 @@ extension _SaltReaderActions on _SaltReaderPageState {
     SaltManuscriptEnvelope manuscript,
     SaltChapterExportFormat format,
   ) async {
+    final l10n = context.zhL10n;
     final location = await showSaltLongExportSheet(
       context: context,
       api: widget.api,
@@ -351,6 +362,6 @@ extension _SaltReaderActions on _SaltReaderPageState {
     if (!mounted || location == null) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('已导出到 $location')));
+    ).showSnackBar(SnackBar(content: Text(l10n.saltExportedTo(location))));
   }
 }

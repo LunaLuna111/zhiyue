@@ -236,9 +236,11 @@ class _DrawerAccounts extends StatelessWidget {
             icon: account.isQr
                 ? Icons.qr_code_2_rounded
                 : Icons.account_circle_outlined,
-            label: account.displayName,
+            label: localizedAccountDisplayName(l10n, account),
             selected: account.id == store.activeId,
-            badge: account.isExpired && !account.isQr ? '过期' : null,
+            badge: account.isExpired && !account.isQr
+                ? context.zhL10n.drawerExpired
+                : null,
             onTap: () => onAccountSelected(account.id),
           ),
         _DrawerTile(

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/api_response.dart';
 import '../core/negative_feedback.dart';
+import '../l10n/zh_localization.dart';
 import '../pages/blocked_keywords_page.dart';
 import '../pages/native_login_page.dart';
 import '../pages/web_page.dart';
@@ -54,14 +55,19 @@ class NegativeFeedbackSheet extends StatefulWidget {
 }
 
 class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
-  static const _immediateUninterestItem = NegativeFeedbackMenuItem(
-    label: '不喜欢该内容',
-    toastText: '将减少推荐',
-    action: NegativeFeedbackAction(intentUrl: 'zhihu://uninterest_feed'),
-    hasRightIcon: false,
-    attachedInfo: '',
-    isRawButton: true,
+  static const _immediateUninterestAction = NegativeFeedbackAction(
+    intentUrl: 'zhihu://uninterest_feed',
   );
+
+  NegativeFeedbackMenuItem _immediateUninterestItem(BuildContext context) =>
+      NegativeFeedbackMenuItem(
+        label: context.zhL10n.feedbackNotInterested,
+        toastText: context.zhL10n.feedbackReduceRecommendation,
+        action: _immediateUninterestAction,
+        hasRightIcon: false,
+        attachedInfo: '',
+        isRawButton: true,
+      );
 
   NegativeFeedbackMenu? _menu;
   Object? _error;
@@ -117,9 +123,9 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
     return brief.isNotEmpty && brief.length <= 20000;
   }
 
-  List<NegativeFeedbackMenuItem> get _visibleItems {
+  List<NegativeFeedbackMenuItem> _visibleItems(BuildContext context) {
     final items = <NegativeFeedbackMenuItem>[
-      if (_canImmediatelyUninterest) _immediateUninterestItem,
+      if (_canImmediatelyUninterest) _immediateUninterestItem(context),
     ];
     for (final item in _menu?.items ?? const <NegativeFeedbackMenuItem>[]) {
       final duplicateIndex = items.indexWhere(
@@ -172,10 +178,12 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
         final response = await widget.api.executeNegativeFeedbackAction(action);
         if (!response.isSuccess) throw response;
       } else if (item.toastText.isEmpty) {
-        throw const ApiTransportException('该反馈项缺少可执行动作');
+        throw ApiTransportException(context.zhL10n.feedbackMissingAction);
       }
       if (!mounted) return;
-      final message = item.toastText.isEmpty ? '已减少此类内容' : item.toastText;
+      final message = item.toastText.isEmpty
+          ? context.zhL10n.feedbackReduced
+          : item.toastText;
       final messenger = ScaffoldMessenger.of(context);
       widget.onAction?.call(item);
       Navigator.of(context).pop(item.removesFeedItem);
@@ -206,16 +214,16 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
     var url = value.trim();
     if (url.startsWith('www.zhihu.com/')) url = 'https://$url';
     if (!isAllowedOfficialNavigation(url)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('举报地址无效')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.feedbackInvalidReport)),
+      );
       return;
     }
     navigator.pop(false);
     await navigator.push(
       MaterialPageRoute(
         builder: (_) => OfficialWebPage(
-          title: '举报',
+          title: context.zhL10n.commonReport,
           url: url,
           cookieHeader: widget.api.session.cookie,
           requiresSessionCookie: true,
@@ -278,14 +286,14 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
                       child: Semantics(
                         header: true,
                         child: Text(
-                          '减少此类内容',
+                          context.zhL10n.feedbackTitle,
                           style: Theme.of(context).textTheme.titleMedium
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
                     IconButton(
-                      tooltip: '关闭',
+                      tooltip: context.zhL10n.commonClose,
                       onPressed: () => Navigator.of(context).pop(false),
                       icon: const Icon(Icons.close_rounded),
                     ),
@@ -301,7 +309,7 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
   }
 
   Widget _content() {
-    final items = _visibleItems;
+    final items = _visibleItems(context);
     final children = <Widget>[];
     for (var index = 0; index < items.length; index++) {
       if (children.isNotEmpty) children.add(const Divider(height: 1));
@@ -346,17 +354,17 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
     );
   }
 
-  Widget _loadingChoices() => const Padding(
+  Widget _loadingChoices() => Padding(
     key: Key('negative-feedback-loading'),
     padding: EdgeInsets.symmetric(horizontal: 4, vertical: 20),
     child: Row(
       children: [
-        SizedBox.square(
+        const SizedBox.square(
           dimension: 20,
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
-        SizedBox(width: 16),
-        Expanded(child: Text('正在加载更多反馈选项…')),
+        const SizedBox(width: 16),
+        Expanded(child: Text(context.zhL10n.feedbackLoading)),
       ],
     ),
   );
@@ -380,7 +388,7 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
           child: TextButton.icon(
             onPressed: _load,
             icon: const Icon(Icons.refresh_rounded),
-            label: const Text('重新加载'),
+            label: Text(context.zhL10n.feedbackReload),
           ),
         ),
       ],

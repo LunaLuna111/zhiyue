@@ -34,17 +34,30 @@ String accountProfileLocation(Map<String, dynamic> profile) {
 
 String accountProfileGender(Map<String, dynamic> profile) {
   final value = profile['gender'];
-  if (value == 0 || plainText(value).toLowerCase() == 'female') return '女';
-  if (value == 1 || plainText(value).toLowerCase() == 'male') return '男';
+  if (value == 0 || plainText(value).toLowerCase() == 'female') {
+    return 'female';
+  }
+  if (value == 1 || plainText(value).toLowerCase() == 'male') {
+    return 'male';
+  }
   return '';
 }
 
-String formatAccountProfileMetric(int value) {
+String localizeAccountProfileGender(String value, AppLocalizations l10n) =>
+    switch (value) {
+      'female' => l10n.profileGenderFemale,
+      'male' => l10n.profileGenderMale,
+      _ => l10n.profileGenderUnspecified,
+    };
+
+String formatAccountProfileMetric(int value, [AppLocalizations? l10n]) {
+  final tenThousand = l10n?.profileMetricWan ?? '万';
+  final hundredMillion = l10n?.profileMetricYi ?? '亿';
   if (value >= 100000000) {
-    return '${(value / 100000000).toStringAsFixed(value >= 1000000000 ? 0 : 1)}亿';
+    return '${(value / 100000000).toStringAsFixed(value >= 1000000000 ? 0 : 1)}$hundredMillion';
   }
   if (value >= 10000) {
-    return '${(value / 10000).toStringAsFixed(value >= 100000 ? 0 : 1)}万';
+    return '${(value / 10000).toStringAsFixed(value >= 100000 ? 0 : 1)}$tenThousand';
   }
   return '$value';
 }

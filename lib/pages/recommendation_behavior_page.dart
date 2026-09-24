@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/recommendation_behavior.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -24,19 +25,20 @@ class _RecommendationBehaviorPageState
 
   Future<void> _clear() async {
     if (_store.profile.isEmpty) return;
+    final l10n = context.zhL10n;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清空本地推荐画像？'),
-        content: const Text('只会删除本机记录，不会影响知乎账号和服务器推荐。'),
+        title: Text(l10n.recommendationClearTitle),
+        content: Text(l10n.recommendationClearMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('清空'),
+            child: Text(l10n.commonClear),
           ),
         ],
       ),
@@ -46,18 +48,18 @@ class _RecommendationBehaviorPageState
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('本地推荐画像已清空')));
+      ).showSnackBar(SnackBar(content: Text(l10n.recommendationCleared)));
     }
   }
 
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: ZhTopBar(
-      title: const Text('本地推荐行为'),
+      title: Text(context.zhL10n.recommendationTitle),
       actions: [
         ZhLiquidGlassIconButton(
           key: const ValueKey('recommendation-behavior-clear'),
-          semanticLabel: '清空本地画像',
+          semanticLabel: context.zhL10n.recommendationClearSemantic,
           onPressed: _clear,
           icon: const Icon(Icons.delete_outline_rounded),
           size: 44,
@@ -86,14 +88,20 @@ class _RecommendationBehaviorPageState
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      profile.isEmpty ? '暂时还没有本地行为' : '本地推荐画像',
+                      profile.isEmpty
+                          ? context.zhL10n.recommendationEmptyTitle
+                          : context.zhL10n.recommendationProfileTitle,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),
                     Text(
                       profile.isEmpty
-                          ? '打开推荐内容或使用“不感兴趣”后，知阅会在本机记录有限的兴趣信号。'
-                          : '已记录 ${profile.totalEvents} 条信号 · 打开 ${profile.openedCount} · 反馈 ${profile.feedbackCount}',
+                          ? context.zhL10n.recommendationEmptyMessage
+                          : context.zhL10n.recommendationSummary(
+                              profile.totalEvents,
+                              profile.openedCount,
+                              profile.feedbackCount,
+                            ),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: ZhPalette.mutedInk,
                         height: 1.45,
@@ -104,8 +112,8 @@ class _RecommendationBehaviorPageState
               ),
               if (profile.topTopics.isNotEmpty) ...[
                 const SizedBox(height: ZhSpace.md),
-                const Text(
-                  '常见兴趣词',
+                Text(
+                  context.zhL10n.recommendationTopics,
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
@@ -120,8 +128,8 @@ class _RecommendationBehaviorPageState
               ],
               if (profile.topAuthors.isNotEmpty) ...[
                 const SizedBox(height: ZhSpace.lg),
-                const Text(
-                  '常见作者',
+                Text(
+                  context.zhL10n.recommendationAuthors,
                   style: TextStyle(fontWeight: FontWeight.w700),
                 ),
                 const SizedBox(height: 8),
@@ -136,7 +144,7 @@ class _RecommendationBehaviorPageState
               ],
               const SizedBox(height: ZhSpace.lg),
               Text(
-                '数据仅保存在本机，用于本地或混合推荐排序；不会上传行为明细。',
+                context.zhL10n.recommendationPrivacy,
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: ZhPalette.mutedInk),

@@ -72,7 +72,9 @@ class _SearchHotTimingCard extends StatelessWidget {
                     const SizedBox(width: 7),
                     Expanded(
                       child: Text(
-                        title.isEmpty ? '近期内容' : title,
+                        title.isEmpty
+                            ? context.zhL10n.searchRecentContent
+                            : title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -89,7 +91,7 @@ class _SearchHotTimingCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 6),
                           minimumSize: const Size(48, 34),
                         ),
-                        child: const Text('更多'),
+                        child: Text(context.zhL10n.commonMore),
                       ),
                   ],
                 ),
@@ -152,10 +154,10 @@ class _SearchSectionCard extends StatelessWidget {
                           minimumSize: const Size(56, 34),
                           padding: const EdgeInsets.symmetric(horizontal: 7),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text('更多'),
+                            Text(context.zhL10n.commonMore),
                             SizedBox(width: 1),
                             Icon(Icons.chevron_right_rounded, size: 18),
                           ],
@@ -212,7 +214,9 @@ class _SearchHotTimingItem extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title.isEmpty ? '未命名内容' : title,
+                    title.isEmpty
+                        ? context.zhL10n.commonUntitledContent
+                        : title,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -241,11 +245,15 @@ class _SearchHotTimingItem extends StatelessWidget {
                           [
                                 if (metrics.voteupCount != null)
                                   Text(
-                                    '${compactCount(metrics.voteupCount!)} 赞同',
+                                    context.zhL10n.metricVoteup(
+                                      compactCount(metrics.voteupCount!),
+                                    ),
                                   ),
                                 if (metrics.commentCount != null)
                                   Text(
-                                    '${compactCount(metrics.commentCount!)} 评论',
+                                    context.zhL10n.metricComment(
+                                      compactCount(metrics.commentCount!),
+                                    ),
                                   ),
                                 if (date.isNotEmpty) Text(date),
                               ]

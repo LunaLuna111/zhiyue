@@ -81,9 +81,9 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   Future<void> _toggleSearchHistory(bool enabled) async {
     if (!enabled && session.searchHistory.isNotEmpty) {
       final confirmed = await _confirm(
-        title: '关闭搜索记录？',
-        message: '关闭后会同时清空本机已有的搜索记录。',
-        action: '关闭并清空',
+        title: context.zhL10n.settingsDisableSearchHistoryTitle,
+        message: context.zhL10n.settingsDisableSearchHistoryMessage,
+        action: context.zhL10n.settingsDisableAndClear,
       );
       if (!confirmed) return;
     }
@@ -92,25 +92,25 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
 
   Future<void> _clearSearchHistory() async {
     if (session.searchHistory.isEmpty) {
-      _showMessage('目前没有搜索记录');
+      _showMessage(context.zhL10n.settingsNoSearchHistoryMessage);
       return;
     }
     final confirmed = await _confirm(
-      title: '清空搜索记录？',
-      message: '这只会删除保存在本机的搜索关键词。',
-      action: '清空',
+      title: context.zhL10n.settingsClearSearchHistoryTitle,
+      message: context.zhL10n.settingsClearSearchHistoryMessage,
+      action: context.zhL10n.commonClear,
     );
     if (!confirmed) return;
     await session.clearSearchHistory();
-    if (mounted) _showMessage('搜索记录已清空');
+    if (mounted) _showMessage(context.zhL10n.settingsSearchHistoryCleared);
   }
 
   Future<void> _toggleBrowsingHistory(bool enabled) async {
     if (!enabled && session.browsingHistory.isNotEmpty) {
       final confirmed = await _confirm(
-        title: '关闭浏览记录？',
-        message: '关闭后会同时清空知阅保存在本机的浏览记录。',
-        action: '关闭并清空',
+        title: context.zhL10n.settingsDisableBrowsingHistoryTitle,
+        message: context.zhL10n.settingsDisableBrowsingHistoryMessage,
+        action: context.zhL10n.settingsDisableAndClear,
       );
       if (!confirmed) return;
     }
@@ -119,17 +119,17 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
 
   Future<void> _clearBrowsingHistory() async {
     if (session.browsingHistory.isEmpty) {
-      _showMessage('目前没有浏览记录');
+      _showMessage(context.zhL10n.settingsNoBrowsingHistoryMessage);
       return;
     }
     final confirmed = await _confirm(
-      title: '清空浏览记录？',
-      message: '这只会删除知阅保存在本机的浏览内容索引。',
-      action: '清空',
+      title: context.zhL10n.settingsClearBrowsingHistoryTitle,
+      message: context.zhL10n.settingsClearBrowsingHistoryMessage,
+      action: context.zhL10n.commonClear,
     );
     if (!confirmed) return;
     await session.clearBrowsingHistory();
-    if (mounted) _showMessage('浏览记录已清空');
+    if (mounted) _showMessage(context.zhL10n.settingsBrowsingHistoryCleared);
   }
 
   void _clearImageCache() {
@@ -148,16 +148,18 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
 
   Future<void> _clearSaltChapterCache() async {
     final confirmed = await _confirm(
-      title: '清理离线章节？',
-      message: '已缓存的盐选正文将被删除，之后阅读或导出时需要重新下载。',
-      action: '清理',
+      title: context.zhL10n.settingsClearOfflineTitle,
+      message: context.zhL10n.settingsClearOfflineMessage,
+      action: context.zhL10n.settingsClearOfflineAction,
     );
     if (!confirmed) return;
     try {
       final count = await SaltChapterCache.instance.clear();
-      if (mounted) _showMessage('已清理 $count 个离线章节');
+      if (mounted) {
+        _showMessage(context.zhL10n.settingsOfflineCleared(count));
+      }
     } catch (_) {
-      if (mounted) _showMessage('离线章节清理失败，请重试');
+      if (mounted) _showMessage(context.zhL10n.settingsOfflineClearFailed);
     }
   }
 
@@ -293,8 +295,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   String _cacheSummary() {
     final cache = PaintingBinding.instance.imageCache;
     final megabytes = cache.currentSizeBytes / (1024 * 1024);
-    if (cache.currentSize == 0) return '当前没有缓存图片';
-    return '${cache.currentSize} 张 · ${megabytes.toStringAsFixed(megabytes < 10 ? 1 : 0)} MB';
+    if (cache.currentSize == 0) return context.zhL10n.settingsNoCacheImages;
+    return context.zhL10n.settingsCacheSummary(
+      cache.currentSize,
+      megabytes.toStringAsFixed(megabytes < 10 ? 1 : 0),
+    );
   }
 
   @override
@@ -433,8 +438,10 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         key: const ValueKey('content-filter-stats-setting'),
                         icon: Icons.filter_alt_outlined,
                         title: l10n.settingsFilterStats,
-                        subtitle:
-                            ContentFilterStatsStore.instance.stats.summaryLabel,
+                        subtitle: localizedContentFilterSummary(
+                          l10n,
+                          ContentFilterStatsStore.instance.stats,
+                        ),
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                             builder: (_) => const ContentFilterStatsPage(),
@@ -647,7 +654,10 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         subtitle: _webDav.settings?.isConfigured == true
                             ? (_webDav.status.message.isEmpty
                                   ? l10n.settingsWebDavConfigured
-                                  : _webDav.status.message)
+                                  : localizedWebDavStatusMessage(
+                                      l10n,
+                                      _webDav.status.message,
+                                    ))
                             : l10n.settingsWebDavSubtitle,
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(

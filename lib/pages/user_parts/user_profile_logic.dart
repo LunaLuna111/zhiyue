@@ -68,9 +68,15 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
     return Uri.parse('https://${ZhihuApiClient.apiHost}$text');
   }
 
-  List<_UserProfileTabSpec> _tabs(Map<String, dynamic> profile) {
+  List<_UserProfileTabSpec> _tabs(
+    Map<String, dynamic> profile,
+    AppLocalizations l10n,
+  ) {
     final tabs = <_UserProfileTabSpec>[
-      const _UserProfileTabSpec.local('主页', _UserProfileTabKind.overview),
+      _UserProfileTabSpec.local(
+        l10n.userProfileHomeTab,
+        _UserProfileTabKind.overview,
+      ),
     ];
     for (final tab in _serverTabs) {
       final normalized = tab.label.replaceAll(RegExp(r'\s+[0-9.万]+$'), '');
@@ -82,10 +88,19 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
     // append the missing local contracts instead of leaving a visibly
     // incomplete tab bar.
     final present = tabs.map((tab) => tab.kind).toSet();
-    for (final fallback in const [
-      _UserProfileTabSpec.local('创作', _UserProfileTabKind.creations),
-      _UserProfileTabSpec.local('动态', _UserProfileTabKind.activities),
-      _UserProfileTabSpec.local('赞同', _UserProfileTabKind.voteups),
+    for (final fallback in [
+      _UserProfileTabSpec.local(
+        l10n.userProfileCreationsTab,
+        _UserProfileTabKind.creations,
+      ),
+      _UserProfileTabSpec.local(
+        l10n.userProfileActivitiesTab,
+        _UserProfileTabKind.activities,
+      ),
+      _UserProfileTabSpec.local(
+        l10n.userProfileVoteupsTab,
+        _UserProfileTabKind.voteups,
+      ),
     ]) {
       if (present.add(fallback.kind)) tabs.add(fallback);
     }
@@ -95,7 +110,9 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
   void _openList(String title, Future<ApiResponse> Function() loader) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => title == '关注他的人' || title == '他关注的人'
+        builder: (_) =>
+            title == context.zhL10n.userProfileFollowersList ||
+                title == context.zhL10n.userProfileFollowingList
             ? UserRelationshipListPage(
                 title: title,
                 api: widget.api,
@@ -113,9 +130,9 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
   }
 
   void _showLoginRequired() {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('登录后可使用此功能')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.zhL10n.userProfileLoginRequired)),
+    );
   }
 
   Future<void> _toggleFollowing(Map<String, dynamic> profile) async {
@@ -130,16 +147,18 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('取消关注？'),
-          content: Text('将不再关注 ${titleOf(profile)}'),
+          title: Text(context.zhL10n.userProfileUnfollowTitle),
+          content: Text(
+            context.zhL10n.userProfileUnfollowMessage(titleOf(profile)),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(context.zhL10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('取消关注'),
+              child: Text(context.zhL10n.userProfileUnfollowAction),
             ),
           ],
         ),
@@ -195,9 +214,9 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
       ClipboardData(text: 'https://www.zhihu.com/people/$token'),
     );
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('主页链接已复制')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.userProfileLinkCopied)),
+      );
     }
   }
 
@@ -251,17 +270,17 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
     return parts.take(3).join(' · ');
   }
 
-  String _profileIp(Map<String, dynamic> profile) {
+  String _profileIp(Map<String, dynamic> profile, AppLocalizations l10n) {
     final value = profile['ip_info'];
     if (value is Map) {
       final location = plainText(
         value['location'] ?? value['province'] ?? value['ip_location'],
       );
-      return location.isEmpty ? '' : 'IP 属地 $location';
+      return location.isEmpty ? '' : l10n.userProfileIpLocation(location);
     }
     final text = plainText(value);
     if (text.isEmpty) return '';
-    return text.startsWith('IP') ? text : 'IP 属地 $text';
+    return text.startsWith('IP') ? text : l10n.userProfileIpLocation(text);
   }
 
   bool _isVerified(Map<String, dynamic> profile) {
@@ -274,93 +293,96 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
         plainText(badge['title']).isNotEmpty;
   }
 
-  List<_ProfileShortcut> _shortcuts(Map<String, dynamic> profile) {
+  List<_ProfileShortcut> _shortcuts(
+    Map<String, dynamic> profile,
+    AppLocalizations l10n,
+  ) {
     final id = userMemberIdOfProfile(profile, widget.memberId);
     final urlToken = userUrlTokenOfProfile(profile, widget.memberId);
     return [
       _ProfileShortcut(
-        '关注者',
+        l10n.userProfileFollowers,
         Icons.groups_outlined,
         () => _openList(
-          '关注他的人',
+          l10n.userProfileFollowersList,
           () => widget.api.getUri(widget.api.userFollowersInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '关注的人',
+        l10n.userProfileFollowing,
         Icons.person_search_outlined,
         () => _openList(
-          '他关注的人',
+          l10n.userProfileFollowingList,
           () => widget.api.getUri(widget.api.userFolloweesInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '回答',
+        l10n.contentTypeAnswer,
         Icons.question_answer_outlined,
         () => _openList(
-          '用户回答',
+          l10n.userProfileUserAnswers,
           () => widget.api.getUri(widget.api.userAnswersInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '文章',
+        l10n.contentTypeArticle,
         Icons.article_outlined,
         () => _openList(
-          '用户文章',
+          l10n.userProfileUserArticles,
           () => widget.api.getUri(widget.api.userArticlesInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '创作文章',
+        l10n.userProfileCreatedArticles,
         Icons.dynamic_feed_outlined,
         () => _openList(
-          '用户创作文章',
+          l10n.userProfileUserCreatedArticles,
           () => widget.api.getUri(
             widget.api.userCreatedArticleFeedInitialUri(urlToken),
           ),
         ),
       ),
       _ProfileShortcut(
-        '贡献文章',
+        l10n.userProfileContributedArticles,
         Icons.library_add_check_outlined,
         () => _openList(
-          '用户贡献文章',
+          l10n.userProfileUserContributedArticles,
           () =>
               widget.api.getUri(widget.api.userIncludedArticlesInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '创建的专栏',
+        l10n.userProfileCreatedColumns,
         Icons.view_column_outlined,
         () => _openList(
-          '用户专栏',
+          l10n.userProfileUserColumns,
           () => widget.api.getUri(widget.api.userColumnsInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '关注专栏',
+        l10n.userProfileFollowingColumns,
         Icons.bookmarks_outlined,
         () => _openList(
-          '关注专栏',
+          l10n.userProfileFollowingColumns,
           () =>
               widget.api.getUri(widget.api.userFollowingColumnsInitialUri(id)),
         ),
       ),
       _ProfileShortcut(
-        '关注问题',
+        l10n.userProfileFollowingQuestions,
         Icons.help_center_outlined,
         () => _openList(
-          '关注问题',
+          l10n.userProfileFollowingQuestions,
           () => widget.api.getUri(
             widget.api.userFollowingQuestionsInitialUri(id),
           ),
         ),
       ),
       _ProfileShortcut(
-        '关注收藏集',
+        l10n.userProfileFollowingCollections,
         Icons.collections_bookmark_outlined,
         () => _openList(
-          '关注收藏集',
+          l10n.userProfileFollowingCollections,
           () => widget.api.getUri(
             widget.api.userFollowingCollectionsInitialUri(id),
             headers: const {'x-api-version': '3.0.94'},
@@ -368,10 +390,10 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
         ),
       ),
       _ProfileShortcut(
-        '关注话题',
+        l10n.userProfileFollowingTopics,
         Icons.tag_outlined,
         () => _openList(
-          '关注话题',
+          l10n.userProfileFollowingTopics,
           () => widget.api.getUri(widget.api.userFollowingTopicsInitialUri(id)),
         ),
       ),
@@ -381,22 +403,40 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
   Widget _profileBody(Map<String, dynamic> profile) {
     final description = plainText(profile['description']);
     final detail = _profileDetail(profile);
-    final ip = _profileIp(profile);
+    final ip = _profileIp(profile, context.zhL10n);
     final achievements = <(String, int?)>[
-      ('获赞', _count(profile, const ['voteup_count', 'get_praise_count'])),
-      ('获感谢', _count(profile, const ['thanked_count'])),
-      ('获收藏', _count(profile, const ['favorited_count'])),
+      (
+        context.zhL10n.userProfileReceivedUpvotes,
+        _count(profile, const ['voteup_count', 'get_praise_count']),
+      ),
+      (
+        context.zhL10n.userProfileReceivedThanks,
+        _count(profile, const ['thanked_count']),
+      ),
+      (
+        context.zhL10n.userProfileReceivedFavorites,
+        _count(profile, const ['favorited_count']),
+      ),
     ].where((entry) => entry.$2 != null).toList();
-    final shortcuts = _shortcuts(profile);
+    final shortcuts = _shortcuts(profile, context.zhL10n);
     final creationShortcuts = shortcuts
         .where(
-          (item) => const {'回答', '文章', '创作文章', '创建的专栏'}.contains(item.label),
+          (item) => {
+            context.zhL10n.contentTypeAnswer,
+            context.zhL10n.contentTypeArticle,
+            context.zhL10n.userProfileCreatedArticles,
+            context.zhL10n.userProfileCreatedColumns,
+          }.contains(item.label),
         )
         .toList(growable: false);
     final relationshipShortcuts = shortcuts
         .where(
-          (item) =>
-              const {'关注专栏', '关注问题', '关注收藏集', '关注话题'}.contains(item.label),
+          (item) => {
+            context.zhL10n.userProfileFollowingColumns,
+            context.zhL10n.userProfileFollowingQuestions,
+            context.zhL10n.userProfileFollowingCollections,
+            context.zhL10n.userProfileFollowingTopics,
+          }.contains(item.label),
         )
         .toList(growable: false);
     return ListView(
@@ -404,7 +444,10 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
       children: [
         if (description.isNotEmpty || detail.isNotEmpty || ip.isNotEmpty) ...[
-          Text('个人资料', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.zhL10n.userProfilePersonalInfo,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 9),
           ZhSurface(
             radius: ZhRadius.card,
@@ -434,7 +477,10 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
           const SizedBox(height: 17),
         ],
         if (achievements.isNotEmpty) ...[
-          Text('个人成就', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.zhL10n.userProfileAchievements,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 9),
           ZhSurface(
             radius: ZhRadius.card,
@@ -459,7 +505,10 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
           ),
           const SizedBox(height: 17),
         ],
-        Text('公开创作', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          context.zhL10n.userProfilePublicCreations,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 4),
         for (final shortcut in creationShortcuts)
           ListTile(
@@ -472,7 +521,10 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
           ),
         if (relationshipShortcuts.isNotEmpty) ...[
           const SizedBox(height: 14),
-          Text('关注与收藏', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            context.zhL10n.userProfileFollowingAndCollections,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 4),
           for (final shortcut in relationshipShortcuts)
             ListTile(
@@ -489,7 +541,9 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
   }
 
   Widget _profileHeader(Map<String, dynamic> profile) {
-    final name = titleOf(profile).isEmpty ? '知乎用户' : titleOf(profile);
+    final name = titleOf(profile).isEmpty
+        ? context.zhL10n.commonZhihuUser
+        : titleOf(profile);
     final id = userMemberIdOfProfile(profile, widget.memberId);
     final avatar = plainText(
       profile['avatar_url'] ?? profile['avatar_url_template'],
@@ -498,7 +552,7 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
         ? plainText(profile['headline'])
         : plainText(profile['headline_render']);
     final detail = _profileDetail(profile);
-    final ip = _profileIp(profile);
+    final ip = _profileIp(profile, context.zhL10n);
     final isSelf = {
       widget.api.session.accountUid,
       widget.api.session.accountUserId,
@@ -527,7 +581,7 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
                             'voteup_count',
                             'get_praise_count',
                           ]),
-                          label: '获赞',
+                          label: context.zhL10n.userProfileReceivedUpvotes,
                           light: true,
                         ),
                       ),
@@ -538,10 +592,10 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
                             'follower_count',
                             'followers_count',
                           ]),
-                          label: '关注者',
+                          label: context.zhL10n.userProfileFollowers,
                           light: true,
                           onTap: () => _openList(
-                            '关注他的人',
+                            context.zhL10n.userProfileFollowersList,
                             () => widget.api.getUri(
                               widget.api.userFollowersInitialUri(id),
                             ),
@@ -555,18 +609,22 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
                             'following_count',
                             'followees_count',
                           ]),
-                          label: '关注',
+                          label: context.zhL10n.userProfileFollowing,
                           light: true,
                           onTap: () {
                             if (profile['hidden_following_members_by_user'] ==
                                 true) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('对方已隐藏关注列表')),
+                                SnackBar(
+                                  content: Text(
+                                    context.zhL10n.userProfileFollowingHidden,
+                                  ),
+                                ),
                               );
                               return;
                             }
                             _openList(
-                              '他关注的人',
+                              context.zhL10n.userProfileFollowingList,
                               () => widget.api.getUri(
                                 widget.api.userFolloweesInitialUri(id),
                               ),
@@ -605,7 +663,7 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
                 if (followed && !isSelf) ...[
                   const SizedBox(width: 10),
                   Text(
-                    '关注了你',
+                    context.zhL10n.userProfileFollowedYou,
                     style: Theme.of(
                       context,
                     ).textTheme.labelMedium?.copyWith(color: Colors.white70),
@@ -666,7 +724,11 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
                               size: 18,
                             ),
                       label: Text(
-                        following ? (followed ? '互相关注' : '已关注') : '关注',
+                        following
+                            ? (followed
+                                  ? context.zhL10n.userProfileMutualFollow
+                                  : context.zhL10n.detailFollowed)
+                            : context.zhL10n.detailFollow,
                       ),
                     ),
                   ),
@@ -682,7 +744,7 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
                       ),
                       onPressed: () => _openMessages(profile),
                       icon: const Icon(Icons.mail_outline_rounded, size: 18),
-                      label: const Text('私信'),
+                      label: Text(context.zhL10n.userProfileMessage),
                     ),
                   ),
                 ],
@@ -740,7 +802,7 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
         ),
         onObjectTap: (context, value) =>
             openDetectedObject(context, widget.api, value),
-        emptyMessage: '还没有公开内容',
+        emptyMessage: context.zhL10n.userProfileNoPublicContent,
       ),
     );
   }

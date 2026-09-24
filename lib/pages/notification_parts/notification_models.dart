@@ -26,7 +26,11 @@ String notificationEntryNameOf(Map<String, dynamic> row) {
   return ZhihuApiClient.notificationEntryNames.contains(value) ? value : '';
 }
 
-List<Map<String, dynamic>> notificationHeaderEntries(Object? value) {
+List<Map<String, dynamic>> notificationHeaderEntries(
+  Object? value, [
+  AppLocalizations? l10n,
+]) {
+  final strings = l10n ?? AppLocalizationsZh();
   final root = _stringMap(value);
   final byName = <String, Map<String, dynamic>>{};
   final head = root['head'];
@@ -37,11 +41,11 @@ List<Map<String, dynamic>> notificationHeaderEntries(Object? value) {
       if (name.isNotEmpty) byName[name] = row;
     }
   }
-  const labels = {
-    'comment': '评论转发@',
-    'like': '赞同喜欢',
-    'favorite': '收藏了我',
-    'follow': '关注订阅',
+  final labels = {
+    'comment': strings.notificationCommentCategory,
+    'like': strings.notificationLikeCategory,
+    'favorite': strings.notificationFavoriteCategory,
+    'follow': strings.notificationFollowCategory,
   };
   return [
     for (final name in const ['comment', 'like', 'favorite', 'follow'])
@@ -56,11 +60,15 @@ List<Map<String, dynamic>> notificationHeaderEntries(Object? value) {
   ];
 }
 
-Map<String, dynamic>? notificationInviteEntry(Object? value) {
+Map<String, dynamic>? notificationInviteEntry(
+  Object? value, [
+  AppLocalizations? l10n,
+]) {
+  final strings = l10n ?? AppLocalizationsZh();
   final fallback = <String, dynamic>{
     'id': 'entry_invite',
     'noti_subtype': 'entry_invite',
-    'content': {'title': '邀请回答'},
+    'content': {'title': strings.notificationInvite},
     'unread_count': 0,
     'is_read': true,
   };

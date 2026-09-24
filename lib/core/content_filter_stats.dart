@@ -28,11 +28,6 @@ class ContentFilterStats {
 
   int get distinctReasons => reasonCounts.length;
 
-  String get summaryLabel {
-    if (totalActions == 0) return '记录每次减少内容的原因和结果';
-    return '$totalActions 次操作 · 已隐藏 $removedItems 条 · $distinctReasons 类原因';
-  }
-
   List<MapEntry<String, int>> get orderedReasons {
     final entries = reasonCounts.entries.toList(growable: false);
     entries.sort((left, right) {

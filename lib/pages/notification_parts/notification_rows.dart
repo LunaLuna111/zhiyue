@@ -170,22 +170,24 @@ class NotificationTimelinePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PagedListPage(
-    title: title.isEmpty ? '通知' : title,
+    title: title.isEmpty ? context.zhL10n.notificationTitle : title,
     api: api,
     loadInitial: () => api.getUri(api.notificationEntryInitialUri(entryName)),
     rowsExtractor: notificationRows,
-    emptyMessage: '暂时没有这类通知',
+    emptyMessage: context.zhL10n.notificationCategoryEmpty,
     actions: [
       ZhLiquidGlassIconButton(
-        semanticLabel: '全部已读',
+        semanticLabel: context.zhL10n.notificationMarkAllRead,
         onPressed: () async {
           try {
             final response = await api.markNotificationEntryRead(entryName);
             if (!context.mounted) return;
             if (!response.isSuccess) throw response;
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(const SnackBar(content: Text('该分类已全部标为已读')));
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(context.zhL10n.notificationCategoryMarkedRead),
+              ),
+            );
           } catch (error) {
             if (context.mounted) {
               ScaffoldMessenger.of(context).showSnackBar(

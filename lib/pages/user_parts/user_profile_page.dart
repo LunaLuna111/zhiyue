@@ -72,18 +72,20 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
     }
     if (state is! ApiResponse || !state.isSuccess || state.jsonMap == null) {
       return Scaffold(
-        appBar: ZhTopBar(title: const Text('用户主页')),
+        appBar: ZhTopBar(title: Text(context.zhL10n.userProfileTitle)),
         body: ApiErrorView(error: state, onRetry: _load),
       );
     }
     final profile = unwrapObject(state.jsonMap!);
-    final name = titleOf(profile).isEmpty ? '知乎用户' : titleOf(profile);
+    final name = titleOf(profile).isEmpty
+        ? context.zhL10n.commonZhihuUser
+        : titleOf(profile);
     final profileId = userMemberIdOfProfile(profile, widget.memberId);
     final isSelf =
         profile['is_self'] == true ||
         (widget.api.session.accountUid.isNotEmpty &&
             profileId == widget.api.session.accountUid);
-    final tabs = _tabs(profile);
+    final tabs = _tabs(profile, context.zhL10n);
     return DefaultTabController(
       key: ValueKey('user-profile:${widget.memberId}:${tabs.length}'),
       length: tabs.length,
@@ -115,7 +117,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                           color: ZhPalette.ink,
                         ),
                         onPressed: () => Navigator.of(context).maybePop(),
-                        semanticLabel: '返回',
+                        semanticLabel: context.zhL10n.commonBack,
                         size: 48,
                         iconSize: 23,
                       ),
@@ -146,7 +148,8 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                               Icons.search_rounded,
                               color: ZhPalette.ink,
                             ),
-                            semanticLabel: '搜索 TA 的内容',
+                            semanticLabel:
+                                context.zhL10n.userProfileSearchContent,
                             onPressed: () => _openProfileContentSearch(profile),
                           ),
                         ZhLiquidGlassCapsuleAction(
@@ -154,7 +157,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
                             Icons.share_outlined,
                             color: ZhPalette.ink,
                           ),
-                          semanticLabel: '复制主页链接',
+                          semanticLabel: context.zhL10n.userProfileCopyLink,
                           onPressed: () => _copyProfileLink(profile),
                         ),
                       ],

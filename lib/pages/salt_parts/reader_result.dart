@@ -2,6 +2,7 @@ part of '../salt_page.dart';
 
 extension _SaltReaderResult on _SaltReaderPageState {
   Future<void> _showReaderSettings() async {
+    final l10n = context.zhL10n;
     var draft = _readerSettings;
     var draftFlow = _readerFlow;
     final selected = await showModalBottomSheet<Map<String, Object>>(
@@ -21,19 +22,22 @@ extension _SaltReaderResult on _SaltReaderPageState {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text('阅读设置', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  l10n.saltSettingsTitle,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 18),
                 SegmentedButton<SaltReaderFlow>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: SaltReaderFlow.vertical,
                       icon: Icon(Icons.view_day_outlined),
-                      label: Text('上下滑动'),
+                      label: Text(l10n.saltVerticalScroll),
                     ),
                     ButtonSegment(
                       value: SaltReaderFlow.paginated,
                       icon: Icon(Icons.view_carousel_outlined),
-                      label: Text('左右翻页'),
+                      label: Text(l10n.saltHorizontalPage),
                     ),
                   ],
                   selected: {draftFlow},
@@ -44,7 +48,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                 _readerSlider(
                   context,
                   icon: Icons.format_size_rounded,
-                  label: '字体大小',
+                  label: l10n.saltFontSize,
                   valueLabel: '${draft.fontSize.round()}',
                   value: draft.fontSize,
                   min: 14,
@@ -57,7 +61,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                 _readerSlider(
                   context,
                   icon: Icons.format_line_spacing_rounded,
-                  label: '行距',
+                  label: l10n.saltLineSpacing,
                   valueLabel: draft.lineHeight.toStringAsFixed(1),
                   value: draft.lineHeight,
                   min: 1.2,
@@ -70,7 +74,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                 _readerSlider(
                   context,
                   icon: Icons.density_medium_rounded,
-                  label: '段距',
+                  label: l10n.saltParagraphSpacing,
                   valueLabel: draft.paragraphSpacing.toStringAsFixed(1),
                   value: draft.paragraphSpacing,
                   min: 0,
@@ -83,7 +87,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                 _readerSlider(
                   context,
                   icon: Icons.width_normal_rounded,
-                  label: '左右边距',
+                  label: l10n.saltHorizontalMargins,
                   valueLabel: '${draft.horizontalMargin.round()}',
                   value: draft.horizontalMargin,
                   min: 8,
@@ -99,7 +103,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                     sheetContext,
                   ).pop({'settings': draft, 'flow': draftFlow}),
                   icon: const Icon(Icons.check_rounded),
-                  label: const Text('应用'),
+                  label: Text(l10n.saltApply),
                 ),
               ],
             ),
@@ -147,6 +151,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
   );
 
   Widget _result(BuildContext context) {
+    final l10n = context.zhL10n;
     final state = _state;
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (state == null) return const SizedBox.shrink();
@@ -175,7 +180,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  '章节信息',
+                  l10n.saltChapterInfo,
                   style: Theme.of(context).textTheme.labelLarge,
                 ),
               ),
@@ -197,7 +202,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
             if (manuscript.authorName.isNotEmpty) ...[
               const SizedBox(height: 5),
               Text(
-                '作者 · ${manuscript.authorName}',
+                '${l10n.saltAuthor} · ${manuscript.authorName}',
                 style: Theme.of(
                   context,
                 ).textTheme.bodySmall?.copyWith(color: ZhPalette.mutedInk),
@@ -219,23 +224,38 @@ extension _SaltReaderResult on _SaltReaderPageState {
               children: [
                 if (manuscript.authenticationResult != null)
                   ZhPill(
-                    label: manuscript.authenticationResult! ? '可读' : '未解锁',
+                    label: manuscript.authenticationResult!
+                        ? l10n.saltReadable
+                        : l10n.saltLocked,
                     inverted: manuscript.authenticationResult!,
                   ),
                 if (manuscript.isLocked != null)
-                  ZhPill(label: manuscript.isLocked! ? '章节锁定' : '章节可读'),
+                  ZhPill(
+                    label: manuscript.isLocked!
+                        ? l10n.saltChapterLocked
+                        : l10n.saltChapterReadable,
+                  ),
                 if (manuscript.sectionIndex != null)
                   ZhPill(
                     label: manuscript.sectionCount == null
-                        ? '第 ${manuscript.sectionIndex! + 1} 节'
-                        : '第 ${manuscript.sectionIndex! + 1}/${manuscript.sectionCount} 节',
+                        ? l10n.saltSectionLabel(manuscript.sectionIndex! + 1)
+                        : l10n.saltSectionProgress(
+                            manuscript.sectionIndex! + 1,
+                            manuscript.sectionCount!,
+                          ),
                   ),
                 if (manuscript.likeCount != null)
-                  ZhPill(label: '${compactCount(manuscript.likeCount!)} 赞'),
+                  ZhPill(
+                    label: l10n.saltLikes(compactCount(manuscript.likeCount!)),
+                  ),
                 if (manuscript.commentCount != null)
-                  ZhPill(label: '${compactCount(manuscript.commentCount!)} 评论'),
+                  ZhPill(
+                    label: l10n.saltComments(
+                      compactCount(manuscript.commentCount!),
+                    ),
+                  ),
                 if (manuscript.hasTts == true)
-                  const ZhPill(label: '可听', compact: true),
+                  ZhPill(label: l10n.saltAudioAvailable, compact: true),
                 for (final label in manuscript.labels.take(3))
                   ZhPill(label: label, compact: true),
               ],
@@ -265,7 +285,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
           ] else if (manuscript.authenticationResult == false ||
               manuscript.isLocked == true) ...[
             Text(
-              '当前账号暂无阅读权限',
+              l10n.saltNoPermission,
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(height: 1.5),
@@ -281,11 +301,11 @@ extension _SaltReaderResult on _SaltReaderPageState {
             ZhOutlineButton(
               onPressed: _read,
               icon: Icons.refresh_rounded,
-              label: '重新加载',
+              label: l10n.saltReload,
               expand: true,
             ),
           ] else ...[
-            const Text('章节内容暂不可用'),
+            Text(l10n.saltContentUnavailable),
           ],
           if (manuscript.previousSectionId.isNotEmpty ||
               manuscript.nextSectionId.isNotEmpty) ...[
@@ -299,7 +319,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                           _openSection(manuscript.previousSectionId),
                       icon: Icons.arrow_back_rounded,
                       label: manuscript.previousSectionTitle.isEmpty
-                          ? '上一节'
+                          ? l10n.saltPreviousChapter
                           : manuscript.previousSectionTitle,
                     ),
                   ),
@@ -312,7 +332,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                       onPressed: () => _openSection(manuscript.nextSectionId),
                       icon: Icons.arrow_forward_rounded,
                       label: manuscript.nextSectionTitle.isEmpty
-                          ? '下一节'
+                          ? l10n.saltNextChapter
                           : manuscript.nextSectionTitle,
                     ),
                   ),
@@ -341,23 +361,29 @@ extension _SaltReaderResult on _SaltReaderPageState {
     final iconColor = status.isLocked || status.hasDecodeError
         ? ZhPalette.danger
         : ZhPalette.ink;
+    final l10n = context.zhL10n;
     final chips = <Widget>[
-      const ZhPill(label: '资料已获取', compact: true),
-      if (status.isAuthorized) const ZhPill(label: '权益通过', compact: true),
-      if (status.hasBoundPayload) const ZhPill(label: '载荷已获取', compact: true),
+      ZhPill(label: l10n.saltMetadataReady, compact: true),
+      if (status.isAuthorized)
+        ZhPill(label: l10n.saltEntitlementPassed, compact: true),
+      if (status.hasBoundPayload)
+        ZhPill(label: l10n.saltPayloadReady, compact: true),
       if (status.hasReadableContent || bodyDisplayed)
-        const ZhPill(label: '正文已显示', compact: true),
+        ZhPill(label: l10n.saltBodyShown, compact: true),
       if (status.requiresNativeRenderer && !bodyDisplayed)
-        const ZhPill(label: '等待正文解析', compact: true),
+        ZhPill(label: l10n.saltWaitingBody, compact: true),
       if (status.scriptType != null)
         ZhPill(label: 'type ${status.scriptType}', compact: true),
       if (status.scriptChars > 0)
         ZhPill(
-          label: '${compactCount(status.scriptChars)} 字符载荷',
+          label: '${compactCount(status.scriptChars)} ${l10n.saltPayloadChars}',
           compact: true,
         ),
       if (status.articleCodeChars > 0)
-        ZhPill(label: '${status.articleCodeChars} 位 code', compact: true),
+        ZhPill(
+          label: '${status.articleCodeChars} ${l10n.saltCodeChars}',
+          compact: true,
+        ),
     ];
     return Container(
       padding: const EdgeInsets.all(14),
@@ -379,7 +405,9 @@ extension _SaltReaderResult on _SaltReaderPageState {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      bodyDisplayed ? '章节正文已显示' : status.primaryLabel,
+                      bodyDisplayed
+                          ? l10n.saltChapterBodyShown
+                          : status.primaryLabel,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                       ),
@@ -387,7 +415,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
                     const SizedBox(height: 4),
                     Text(
                       bodyDisplayed
-                          ? '章节资料、绑定载荷和完整正文均已就绪。'
+                          ? l10n.saltReadyDetail
                           : status.secondaryLabel,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: status.isLocked || status.hasDecodeError

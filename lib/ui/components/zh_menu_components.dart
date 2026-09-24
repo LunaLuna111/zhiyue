@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/zh_localization.dart';
 import '../zh_theme.dart';
 
 /// A value and the text shown by a shared choice field.
@@ -230,7 +231,7 @@ class ZhChoiceField<T> extends StatefulWidget {
     required this.onChanged,
     this.enabled = true,
     this.helperText,
-    this.hintText = '请选择',
+    this.hintText,
   });
 
   final String label;
@@ -239,7 +240,7 @@ class ZhChoiceField<T> extends StatefulWidget {
   final ValueChanged<T>? onChanged;
   final bool enabled;
   final String? helperText;
-  final String hintText;
+  final String? hintText;
 
   @override
   State<ZhChoiceField<T>> createState() => _ZhChoiceFieldState<T>();
@@ -260,7 +261,8 @@ class _ZhChoiceFieldState<T> extends State<ZhChoiceField<T>> {
   @override
   Widget build(BuildContext context) {
     final selected = _selectedItem;
-    final label = selected?.label ?? widget.hintText;
+    final label =
+        selected?.label ?? widget.hintText ?? context.zhL10n.commonSelect;
     return Semantics(
       button: true,
       enabled: _enabled,

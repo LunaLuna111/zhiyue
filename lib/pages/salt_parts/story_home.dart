@@ -213,6 +213,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
       return _SaltStoryLoading(topInset: widget.topInset);
     }
     if (_error != null && _modules.isEmpty) {
+      final l10n = context.zhL10n;
       return RefreshIndicator(
         key: _refreshIndicatorKey,
         edgeOffset: widget.topInset,
@@ -227,7 +228,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
               child: ApiErrorView(
                 error: _error!,
                 onRetry: () => _load(reset: true),
-                titleOverride: '盐选首页暂时无法加载',
+                titleOverride: l10n.saltStoryHomeLoadFailed,
                 onOpenNetworkVerification: _openNetworkVerification,
               ),
             ),
@@ -235,6 +236,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
         ),
       );
     }
+    final l10n = context.zhL10n;
     final blocks = _blockCache ??= _saltStoryBlocks(_modules);
     return RefreshIndicator(
       key: _refreshIndicatorKey,
@@ -274,7 +276,7 @@ class _SaltStoryHomeState extends State<SaltStoryHome>
               final title = _saltModuleTitle(block.module, data);
               final subtitle = plainText(data['sub_title']);
               return ZhSectionHeader(
-                title: title.isEmpty ? _saltFallbackTitle(type) : title,
+                title: title.isEmpty ? _saltFallbackTitle(type, l10n) : title,
                 description: subtitle.isEmpty ? null : subtitle,
               );
             }

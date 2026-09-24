@@ -51,10 +51,6 @@ List<Map<String, dynamic>> followItemGroupChildren(Map<String, dynamic> row) {
               }
             }
           }
-          if (plainText(child['name']).isEmpty &&
-              plainText(child['title']).isEmpty) {
-            child['name'] = '知乎用户';
-          }
         }
         final author = child['author'];
         if (author is String && plainText(author).isNotEmpty) {

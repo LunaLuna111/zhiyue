@@ -171,6 +171,7 @@ class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     return Container(
       height: 122,
       decoration: BoxDecoration(
@@ -187,7 +188,9 @@ class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
             return _FollowingQuickAction(onTap: widget.onDiscoverTap);
           }
           final person = _people[index - 1];
-          final name = titleOf(person).isEmpty ? '知乎用户' : titleOf(person);
+          final name = titleOf(person).isEmpty
+              ? l10n.profileUserFallback
+              : titleOf(person);
           final avatar = _avatarOf(person);
           final validAvatar = Uri.tryParse(avatar)?.scheme == 'https';
           final unread =
@@ -195,7 +198,7 @@ class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
               person['_following_unread_count'] == null;
           return Semantics(
             button: true,
-            label: '查看$name最近发布的内容',
+            label: l10n.feedViewPersonRecent(name),
             child: InkWell(
               borderRadius: BorderRadius.circular(32),
               onTap: () => widget.onPersonTap(person),
@@ -235,7 +238,7 @@ class _FollowingQuickAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '发现好友',
+    label: context.zhL10n.feedDiscoverFriends,
     child: InkWell(
       borderRadius: BorderRadius.circular(32),
       onTap: onTap,
@@ -265,7 +268,7 @@ class _FollowingQuickAction extends StatelessWidget {
             ),
             const SizedBox(height: 5),
             Text(
-              '发现好友',
+              context.zhL10n.feedDiscoverFriends,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
@@ -349,7 +352,16 @@ class _FollowingFilterBar extends StatelessWidget {
   final ValueChanged<String> onSelected;
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final selectedIndex = filters.indexOf(selected);
+    final labels = [
+      for (final filter in filters)
+        switch (filter) {
+          _followingChoice => l10n.feedFollowingChoice,
+          _followingLatest => l10n.feedFollowingLatest,
+          _ => l10n.feedFollowingIdeas,
+        },
+    ];
     return ColoredBox(
       color: ZhPalette.softSurface,
       child: SizedBox(
@@ -358,9 +370,9 @@ class _FollowingFilterBar extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(18, 11, 18, 11),
           child: ZhLiquidGlassSegmentedTabs(
             key: const ValueKey('following-filter-glass-tabs'),
-            labels: filters,
+            labels: labels,
             selectedIndex: selectedIndex < 0 ? 0 : selectedIndex,
-            semanticPrefix: '关注页',
+            semanticPrefix: l10n.feedFollowingSemantic,
             onSelected: (index) => onSelected(filters[index]),
             height: 46,
           ),
@@ -381,7 +393,9 @@ class _FollowingPersonFallback extends StatelessWidget {
     alignment: Alignment.center,
     decoration: BoxDecoration(color: ZhPalette.canvas, shape: BoxShape.circle),
     child: Text(
-      name.isEmpty ? '知' : name.characters.first,
+      name.isEmpty
+          ? context.zhL10n.profileUserFallback.characters.first
+          : name.characters.first,
       style: Theme.of(
         context,
       ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -402,9 +416,10 @@ class _FollowingServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final object = unwrapObject(value);
     final title = _text(object, const ['title', 'name', 'text']).isEmpty
-        ? '知乎盐选会员 为你严选好内容'
+        ? l10n.feedSaltServiceFallback
         : _text(object, const ['title', 'name', 'text']);
     final subtitle = _text(object, const [
       'subtitle',
@@ -493,7 +508,7 @@ class FollowingPersonRecentPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PagedListPage(
-    title: '$name的最近动态',
+    title: context.zhL10n.feedPersonRecentTitle(name),
     api: api,
     loadInitial: _load,
     rowBuilder: (context, value, onTap) => ObjectCard(
@@ -509,6 +524,6 @@ class FollowingPersonRecentPage extends StatelessWidget {
           : () => openContentAuthor(context, api, value),
     ),
     onObjectTap: (context, value) => openDetectedObject(context, api, value),
-    emptyMessage: '还没有公开的最近内容',
+    emptyMessage: context.zhL10n.feedPersonRecentEmpty,
   );
 }

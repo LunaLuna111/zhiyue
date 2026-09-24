@@ -253,7 +253,7 @@ class _InlineAnswerVideoState extends State<InlineAnswerVideo>
     }
     if (!_supportsPlayer) {
       if (!zhIsFlutterTest && mounted) {
-        setState(() => _error = '当前平台暂不支持内联视频播放');
+        setState(() => _error = context.zhL10n.inlineVideoPlatformUnsupported);
       }
       return;
     }
@@ -334,7 +334,7 @@ class _InlineAnswerVideoState extends State<InlineAnswerVideo>
         if (identical(_activePlayback, this) && _controller == null) {
           _activePlayback = null;
         }
-        setState(() => _error = '视频暂时无法播放，请稍后重试');
+        setState(() => _error = context.zhL10n.inlineVideoLoadFailed);
       }
     } finally {
       if (mounted && generation == _loadGeneration) {
@@ -527,12 +527,12 @@ class _InlineAnswerVideoState extends State<InlineAnswerVideo>
     }
     if (_automaticRecoveryCount >= 2) {
       _handlingRuntimeError = false;
-      setState(() => _error = '视频播放已中断，请点按重试');
+      setState(() => _error = context.zhL10n.inlineVideoInterruptedRetry);
       return;
     }
     _automaticRecoveryCount += 1;
     _lensRefreshAttempted = false;
-    setState(() => _error = '播放中断，正在切换线路…');
+    setState(() => _error = context.zhL10n.inlineVideoSwitchingLine);
     unawaited(_recoverAfterPlaybackFailure());
   }
 
@@ -604,6 +604,7 @@ class _InlineAnswerVideoState extends State<InlineAnswerVideo>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final controller = _controller;
     final title = _title;
     final duration = _durationLabel(_durationSeconds);
@@ -611,14 +612,20 @@ class _InlineAnswerVideoState extends State<InlineAnswerVideo>
         (widget.video.isPaid && !widget.video.isTrial) ||
         (_refreshedVideo?.isPaid == true && _refreshedVideo?.isTrial == false);
     final status = _isLocked
-        ? (paidContent ? '付费视频 · 当前账号无观看权限' : '视频暂不可播放')
+        ? (paidContent
+              ? l10n.inlineVideoPaidNoAccess
+              : l10n.inlineVideoUnavailable)
         : _platformUnavailable
-        ? '当前平台暂不支持隐私受限的视频播放'
+        ? l10n.inlineVideoPrivacyUnavailable
         : _error;
     final canTap = !_isLocked && !_platformUnavailable;
     final media = Semantics(
       button: canTap,
-      label: !canTap ? status : '播放视频${title.isEmpty ? '' : '：$title'}',
+      label: !canTap
+          ? status
+          : title.isEmpty
+          ? l10n.inlineVideoPlay
+          : l10n.inlineVideoPlayTitle(title),
       child: _videoViewport(
         Material(
           color: Colors.black,

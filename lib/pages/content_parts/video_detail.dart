@@ -106,7 +106,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
 
   Future<void> _openComments() async {
     if (widget.videoId.isEmpty) {
-      _showUnavailable('评论');
+      _showUnavailable(context.zhL10n.zvideoCommentsUnavailable);
       return;
     }
     final document = _document;
@@ -136,7 +136,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('$action功能暂不可用'),
+          content: Text(context.zhL10n.zvideoActionUnavailable(action)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -163,8 +163,8 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
         surfaceTintColor: Colors.black,
-        title: const Text(
-          '视频',
+        title: Text(
+          context.zhL10n.zvideoTitle,
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
         ),
       ),
@@ -208,8 +208,12 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
       return const Center(child: CircularProgressIndicator());
     }
     if (document == null) {
-      return ApiErrorView(error: _error ?? '视频暂时无法加载', onRetry: _load);
+      return ApiErrorView(
+        error: _error ?? context.zhL10n.zvideoLoadFailed,
+        onRetry: _load,
+      );
     }
+    final l10n = context.zhL10n;
     final title = titleOf(document);
     final description = plainText(
       document['description'] ?? document['excerpt'] ?? document['brief'],
@@ -227,7 +231,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
         padding: const EdgeInsets.fromLTRB(18, 17, 18, 28),
         children: [
           Text(
-            title.isEmpty ? '视频 #${widget.videoId}' : title,
+            title.isEmpty ? l10n.zvideoFallbackTitle(widget.videoId) : title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontSize: 21,
               height: 1.35,
@@ -255,7 +259,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
                     _AuthorAvatar(
                       imageUrl: authorAvatar,
                       fallback: authorName.isEmpty
-                          ? '知'
+                          ? l10n.commonZhihuUser.characters.first
                           : authorName.characters.first,
                       size: 42,
                     ),
@@ -265,7 +269,9 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            authorName.isEmpty ? '知乎用户' : authorName,
+                            authorName.isEmpty
+                                ? l10n.commonZhihuUser
+                                : authorName,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleSmall
@@ -317,8 +323,10 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
             onPressed: _openComments,
             icon: Icons.chat_bubble_outline_rounded,
             label: resolvedMetrics.commentCount == null
-                ? '查看评论'
-                : '查看 ${compactCount(resolvedMetrics.commentCount!)} 条评论',
+                ? l10n.zvideoViewComments
+                : l10n.zvideoViewCommentsCount(
+                    compactCount(resolvedMetrics.commentCount!),
+                  ),
             expand: true,
           ),
         ],
@@ -356,7 +364,7 @@ class _ZVideoMissingPlayer extends StatelessWidget {
       color: Colors.black,
       child: Center(
         child: Text(
-          '没有取得可播放的视频信息',
+          context.zhL10n.zvideoMissing,
           style: Theme.of(
             context,
           ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
@@ -374,10 +382,14 @@ class _ZVideoMetadata extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final labels = <String>[
-      if (metrics.viewCount case final value?) '${compactCount(value)} 次播放',
-      if (metrics.voteupCount case final value?) '${compactCount(value)} 赞同',
-      if (metrics.commentCount case final value?) '${compactCount(value)} 评论',
+      if (metrics.viewCount case final value?)
+        '${compactCount(value)} ${l10n.searchMetricPlayCount}',
+      if (metrics.voteupCount case final value?)
+        '${compactCount(value)} ${l10n.metricVoteup}',
+      if (metrics.commentCount case final value?)
+        '${compactCount(value)} ${l10n.metricComment}',
       if (dateLabel.isNotEmpty) dateLabel,
     ];
     return Wrap(
@@ -410,46 +422,49 @@ class _ZVideoEngagementBar extends StatelessWidget {
   final ValueChanged<String> onUnavailable;
 
   @override
-  Widget build(BuildContext context) => ZhLiquidGlassFloatingActionBar(
-    items: [
-      ZhLiquidGlassActionItem(
-        icon: Icon(
-          Icons.thumb_up_alt_outlined,
-          color: relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
+  Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    return ZhLiquidGlassFloatingActionBar(
+      items: [
+        ZhLiquidGlassActionItem(
+          icon: Icon(
+            Icons.thumb_up_alt_outlined,
+            color: relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
+          ),
+          label: metrics.voteupCount == null
+              ? l10n.zvideoVoteup
+              : compactCount(metrics.voteupCount!),
+          semanticLabel: l10n.zvideoVoteupSemantic,
+          onPressed: () => onUnavailable(l10n.zvideoVoteup),
         ),
-        label: metrics.voteupCount == null
-            ? '赞同'
-            : compactCount(metrics.voteupCount!),
-        semanticLabel: '赞同视频',
-        onPressed: () => onUnavailable('赞同'),
-      ),
-      ZhLiquidGlassActionItem(
-        icon: const Icon(Icons.chat_bubble_outline_rounded),
-        label: metrics.commentCount == null
-            ? '评论'
-            : compactCount(metrics.commentCount!),
-        semanticLabel: '查看视频评论',
-        onPressed: onComments,
-      ),
-      ZhLiquidGlassActionItem(
-        icon: Icon(
-          Icons.star_border_rounded,
-          color: relationship.isFavorited == true
-              ? ZhPalette.accent
-              : ZhPalette.ink,
+        ZhLiquidGlassActionItem(
+          icon: const Icon(Icons.chat_bubble_outline_rounded),
+          label: metrics.commentCount == null
+              ? l10n.zvideoComment
+              : compactCount(metrics.commentCount!),
+          semanticLabel: l10n.zvideoCommentsSemantic,
+          onPressed: onComments,
         ),
-        label: metrics.favoriteCount == null
-            ? '收藏'
-            : compactCount(metrics.favoriteCount!),
-        semanticLabel: '收藏视频',
-        onPressed: () => onUnavailable('收藏'),
-      ),
-      ZhLiquidGlassActionItem(
-        icon: const Icon(Icons.ios_share_rounded),
-        label: '分享',
-        semanticLabel: '分享视频',
-        onPressed: () => onUnavailable('分享'),
-      ),
-    ],
-  );
+        ZhLiquidGlassActionItem(
+          icon: Icon(
+            Icons.star_border_rounded,
+            color: relationship.isFavorited == true
+                ? ZhPalette.accent
+                : ZhPalette.ink,
+          ),
+          label: metrics.favoriteCount == null
+              ? l10n.zvideoFavorite
+              : compactCount(metrics.favoriteCount!),
+          semanticLabel: l10n.zvideoFavoriteSemantic,
+          onPressed: () => onUnavailable(l10n.zvideoFavorite),
+        ),
+        ZhLiquidGlassActionItem(
+          icon: const Icon(Icons.ios_share_rounded),
+          label: l10n.zvideoShare,
+          semanticLabel: l10n.zvideoShareSemantic,
+          onPressed: () => onUnavailable(l10n.zvideoShare),
+        ),
+      ],
+    );
+  }
 }

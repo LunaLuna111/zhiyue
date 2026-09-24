@@ -243,7 +243,7 @@ class _LoginHeader extends StatelessWidget {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        '登录知乎',
+        context.zhL10n.loginHeader,
         style: Theme.of(context).textTheme.headlineLarge?.copyWith(
           fontSize: 30,
           height: 1.12,
@@ -253,10 +253,10 @@ class _LoginHeader extends StatelessWidget {
       const SizedBox(height: 3),
       Text(
         qrMode
-            ? '知乎 App 扫码登录'
+            ? context.zhL10n.loginQrSubtitle
             : passwordMode
-            ? '使用账号密码安全登录'
-            : '手机号快捷登录',
+            ? context.zhL10n.loginPasswordSubtitle
+            : context.zhL10n.loginPhoneSubtitle,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: ZhPalette.mutedInk,
           fontSize: 16,
@@ -280,12 +280,14 @@ class _LoginProgress extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = passwordMode ? 0 : (codeSent ? 1 : 0);
-    final labels = passwordMode ? const ['账号', '密码'] : const ['手机号', '验证码'];
+    final labels = passwordMode
+        ? [context.zhL10n.loginAccount, context.zhL10n.loginPassword]
+        : [context.zhL10n.loginPhone, context.zhL10n.loginCode];
     final semanticLabel = passwordMode
-        ? '登录进度：账号密码'
+        ? context.zhL10n.loginProgressPassword
         : codeSent
-        ? '登录进度：验证码'
-        : '登录进度：手机号';
+        ? context.zhL10n.loginProgressCode
+        : context.zhL10n.loginProgressPhone;
     if (!ZhGlassScope.enabledOf(context)) {
       return Semantics(
         label: semanticLabel,
@@ -304,12 +306,20 @@ class _LoginProgress extends StatelessWidget {
         key: const ValueKey('login-progress-tabs'),
         tabs: [
           GlassTab(
-            label: passwordMode ? '账号' : '手机号',
-            semanticLabel: passwordMode ? '账号' : '手机号',
+            label: passwordMode
+                ? context.zhL10n.loginAccount
+                : context.zhL10n.loginPhone,
+            semanticLabel: passwordMode
+                ? context.zhL10n.loginAccount
+                : context.zhL10n.loginPhone,
           ),
           GlassTab(
-            label: passwordMode ? '密码' : '验证码',
-            semanticLabel: passwordMode ? '密码' : '验证码',
+            label: passwordMode
+                ? context.zhL10n.loginPassword
+                : context.zhL10n.loginCode,
+            semanticLabel: passwordMode
+                ? context.zhL10n.loginPassword
+                : context.zhL10n.loginCode,
           ),
         ],
         selectedIndex: selectedIndex,
@@ -488,10 +498,13 @@ class _AgreementConsentDialog extends StatelessWidget {
             child: const Icon(Icons.verified_user_outlined, size: 23),
           ),
           const SizedBox(height: 18),
-          Text('登录前请确认', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            context.zhL10n.loginAgreementTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 10),
           Text(
-            '请阅读并同意《知乎用户协议》与隐私政策后继续登录。',
+            context.zhL10n.loginAgreementMessage,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
@@ -511,7 +524,7 @@ class _AgreementConsentDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text('暂不同意'),
+                  child: Text(context.zhL10n.loginCancel),
                 ),
               ),
               const SizedBox(width: 12),
@@ -525,7 +538,7 @@ class _AgreementConsentDialog extends StatelessWidget {
                       borderRadius: BorderRadius.circular(25),
                     ),
                   ),
-                  child: const Text('同意并继续'),
+                  child: Text(context.zhL10n.loginContinue),
                 ),
               ),
             ],
@@ -596,10 +609,11 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
   Uint8List? _image;
   String _token = '';
   String _cookie = '';
-  String _status = '正在获取二维码';
+  String _status = '';
   DateTime _deadline = DateTime.now();
   bool _loading = true;
   bool _polling = false;
+  bool _scanConfirmed = false;
 
   @override
   void initState() {
@@ -620,16 +634,18 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
         _image = null;
         _token = '';
         _cookie = '';
-        _status = '正在获取二维码';
+        _status = context.zhL10n.loginQrLoading;
+        _scanConfirmed = false;
         _loading = true;
       });
     }
     try {
       final code = await widget.api.requestQrLoginCode();
+      if (!mounted) return;
       if (!code.isUsable) {
         throw StateError(
           code.response.failure.userMessage.isEmpty
-              ? '知乎没有返回有效二维码'
+              ? context.zhL10n.loginQrInvalid
               : code.response.failure.userMessage,
         );
       }
@@ -643,7 +659,7 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
         _token = code.token;
         _cookie = code.cookie;
         _deadline = _normalizeDeadline(code.expiresAt);
-        _status = '请打开知乎 App 扫一扫';
+        _status = context.zhL10n.loginQrScanHint;
         _loading = false;
       });
       _pollTimer = Timer.periodic(
@@ -654,7 +670,7 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
       if (!mounted) return;
       setState(() {
         _loading = false;
-        _status = '二维码获取失败：$error';
+        _status = context.zhL10n.loginQrFetchFailed(error.toString());
       });
     }
   }
@@ -663,7 +679,9 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
     if (_polling || _token.isEmpty || DateTime.now().isAfter(_deadline)) {
       if (_token.isNotEmpty && DateTime.now().isAfter(_deadline)) {
         _pollTimer?.cancel();
-        if (mounted) setState(() => _status = '二维码已过期，请点击刷新');
+        if (mounted) {
+          setState(() => _status = context.zhL10n.loginQrExpired);
+        }
       }
       return;
     }
@@ -674,22 +692,23 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
       if (poll.cookie.isNotEmpty) _cookie = poll.cookie;
       if (poll.needsRiskControl) {
         _pollTimer?.cancel();
-        setState(() => _status = '需要先在知乎网页完成安全验证，请稍后刷新二维码');
+        setState(() => _status = context.zhL10n.loginQrRiskControl);
         return;
       }
-      if (poll.scanned && _status != '请在知乎 App 上确认登录') {
-        setState(() => _status = '请在知乎 App 上确认登录');
+      if (poll.scanned && !_scanConfirmed) {
+        _scanConfirmed = true;
+        setState(() => _status = context.zhL10n.loginQrConfirm);
       }
       if (poll.expired) {
         _pollTimer?.cancel();
-        setState(() => _status = '二维码已过期，请点击刷新');
+        setState(() => _status = context.zhL10n.loginQrExpired);
       } else if (poll.succeeded) {
         _pollTimer?.cancel();
-        setState(() => _status = '正在验证登录');
+        setState(() => _status = context.zhL10n.loginVerifying);
         final result = await widget.api.completeQrLogin(poll);
         if (!mounted) return;
         if (result.signedIn) {
-          setState(() => _status = '登录成功');
+          setState(() => _status = context.zhL10n.loginSuccess);
           await widget.onLoginSuccess();
         } else {
           setState(() => _status = result.message);
@@ -726,7 +745,7 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
     children: [
       if (_image != null)
         Semantics(
-          label: '知乎登录二维码',
+          label: context.zhL10n.loginQrLabel,
           child: Image.memory(
             _image!,
             key: const ValueKey('qr-login-image'),
@@ -745,7 +764,7 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
         const SizedBox(height: 250),
       const SizedBox(height: 16),
       Text(
-        _status,
+        _status.isEmpty ? context.zhL10n.loginQrLoading : _status,
         key: const ValueKey('qr-login-status'),
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -758,11 +777,11 @@ class _QrLoginPaneState extends State<_QrLoginPane> {
         key: const ValueKey('qr-login-retry'),
         onPressed: _loading ? null : _refresh,
         icon: const Icon(Icons.refresh_rounded),
-        label: const Text('刷新二维码'),
+        label: Text(context.zhL10n.loginRefreshQr),
       ),
       const SizedBox(height: 10),
       Text(
-        '二维码有效期内可在其他设备确认登录；登录成功后会保留当前账号槽位。',
+        context.zhL10n.loginQrHint,
         textAlign: TextAlign.center,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
           color: ZhPalette.subtleInk,

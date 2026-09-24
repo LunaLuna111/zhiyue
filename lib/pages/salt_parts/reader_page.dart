@@ -76,6 +76,7 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     if (_useOfficialWebReader) {
       final response = _state;
       final manuscript = response is ApiResponse && response.isSuccess
@@ -85,7 +86,7 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
           ? manuscript!.title
           : manuscript?.parentTitle.isNotEmpty == true
           ? manuscript!.parentTitle
-          : '盐选阅读';
+          : l10n.saltReadingTitle;
       final previousId = manuscript?.previousSectionId ?? '';
       final nextId = manuscript?.nextSectionId ?? '';
       return OfficialWebPage(
@@ -124,7 +125,7 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
         ? manuscript!.parentTitle
         : manuscript?.title.isNotEmpty == true
         ? manuscript!.title
-        : '盐选阅读';
+        : l10n.saltReadingTitle;
     final textChapter = _textChapter;
     final hasCatalog =
         manuscript != null &&
@@ -153,7 +154,7 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
         actions: [
           ZhLiquidGlassIconButton(
             onPressed: () => _showReaderMoreMenu(manuscript, textChapter),
-            semanticLabel: '更多',
+            semanticLabel: l10n.saltMore,
             icon: const Icon(Icons.more_vert_rounded),
             size: 44,
             iconSize: 22,

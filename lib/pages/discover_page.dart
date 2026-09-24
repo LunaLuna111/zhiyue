@@ -4,48 +4,68 @@ import 'package:shadcn_ui/shadcn_ui.dart';
 import '../core/api_client.dart';
 import '../core/input_validation.dart';
 import '../core/json_tools.dart';
+import '../l10n/generated/app_localizations_zh.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import 'content_pages.dart';
 import 'paged_list_page.dart';
 
-Widget discoverColumnsPage(ZhihuApiClient api) => PagedListPage(
-  title: '专栏推荐',
-  api: api,
-  loadInitial: () => api.get('/column/column_tab/feed'),
-  onObjectTap: (context, value) => openDetectedObject(context, api, value),
-);
+Widget discoverColumnsPage(
+  ZhihuApiClient api, [
+  AppLocalizations? localization,
+]) {
+  final l10n = localization ?? AppLocalizationsZh();
+  return PagedListPage(
+    title: l10n.discoverColumns,
+    api: api,
+    loadInitial: () => api.get('/column/column_tab/feed'),
+    onObjectTap: (context, value) => openDetectedObject(context, api, value),
+  );
+}
 
-Widget discoverTopicCategoriesPage(ZhihuApiClient api) => PagedListPage(
-  title: '话题分类',
-  api: api,
-  loadInitial: () => api.get('/topic_square/categories'),
-  onObjectTap: (context, value) {
-    final id = idOf(value);
-    if (id.isEmpty) return;
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => PagedListPage(
-          title: titleOf(value),
-          api: api,
-          loadInitial: () => api.get(
-            '/topic_square/categories/${Uri.encodeComponent(id)}/topics',
+Widget discoverTopicCategoriesPage(
+  ZhihuApiClient api, [
+  AppLocalizations? localization,
+]) {
+  final l10n = localization ?? AppLocalizationsZh();
+  return PagedListPage(
+    title: l10n.discoverTopics,
+    api: api,
+    loadInitial: () => api.get('/topic_square/categories'),
+    onObjectTap: (context, value) {
+      final id = idOf(value);
+      if (id.isEmpty) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => PagedListPage(
+            title: titleOf(value),
+            api: api,
+            loadInitial: () => api.get(
+              '/topic_square/categories/${Uri.encodeComponent(id)}/topics',
+            ),
+            onObjectTap: (context, topic) =>
+                openDetectedObject(context, api, topic),
           ),
-          onObjectTap: (context, topic) =>
-              openDetectedObject(context, api, topic),
         ),
-      ),
-    );
-  },
-);
+      );
+    },
+  );
+}
 
-Widget discoverHotTopicsPage(ZhihuApiClient api) => PagedListPage(
-  title: '热门话题',
-  api: api,
-  emptyMessage: '暂时没有热门话题',
-  loadInitial: () => api.get('/hot/topics'),
-  onObjectTap: (context, value) => openDetectedObject(context, api, value),
-);
+Widget discoverHotTopicsPage(
+  ZhihuApiClient api, [
+  AppLocalizations? localization,
+]) {
+  final l10n = localization ?? AppLocalizationsZh();
+  return PagedListPage(
+    title: l10n.discoverHotTopics,
+    api: api,
+    emptyMessage: l10n.discoverHotTopicsEmpty,
+    loadInitial: () => api.get('/hot/topics'),
+    onObjectTap: (context, value) => openDetectedObject(context, api, value),
+  );
+}
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({super.key, required this.api});
@@ -77,9 +97,9 @@ class _DiscoverPageState extends State<DiscoverPage>
   void _openContentById() {
     final id = _contentId.text.trim();
     if (!isDecimalContentId(id)) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('内容 ID 必须是 1–32 位数字')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.discoverContentIdInvalid)),
+      );
       return;
     }
     _open(
@@ -94,32 +114,33 @@ class _DiscoverPageState extends State<DiscoverPage>
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final l10n = context.zhL10n;
     return Scaffold(
-      appBar: ZhTopBar(title: const Text('发现')),
+      appBar: ZhTopBar(title: Text(l10n.discoverTitle)),
       body: ZhResponsiveFrame(
         maxWidth: 1040,
         desktopGutter: 24,
         child: ListView(
           padding: const EdgeInsets.only(bottom: ZhSpace.xl),
           children: [
-            const ZhSectionHeader(title: '专栏与话题'),
+            ZhSectionHeader(title: l10n.discoverColumnsAndTopics),
             _ActionCard(
               icon: Icons.view_column_outlined,
-              title: '专栏推荐',
-              subtitle: '编辑精选与热门专栏文章',
-              onTap: () => _open(discoverColumnsPage(widget.api)),
+              title: l10n.discoverColumns,
+              subtitle: l10n.discoverColumnsSubtitle,
+              onTap: () => _open(discoverColumnsPage(widget.api, l10n)),
             ),
             _ActionCard(
               icon: Icons.category_outlined,
-              title: '话题分类',
-              subtitle: '按分类浏览话题',
-              onTap: () => _open(discoverTopicCategoriesPage(widget.api)),
+              title: l10n.discoverTopics,
+              subtitle: l10n.discoverTopicsSubtitle,
+              onTap: () => _open(discoverTopicCategoriesPage(widget.api, l10n)),
             ),
             _ActionCard(
               icon: Icons.local_fire_department_outlined,
-              title: '热门话题',
-              subtitle: '当前热门讨论',
-              onTap: () => _open(discoverHotTopicsPage(widget.api)),
+              title: l10n.discoverHotTopics,
+              subtitle: l10n.discoverHotTopicsSubtitle,
+              onTap: () => _open(discoverHotTopicsPage(widget.api, l10n)),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(
@@ -140,7 +161,7 @@ class _DiscoverPageState extends State<DiscoverPage>
                     const SizedBox(width: ZhSpace.sm),
                     Expanded(
                       child: Text(
-                        '通过 ID 打开内容',
+                        l10n.discoverOpenById,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                     ),
@@ -170,17 +191,17 @@ class _DiscoverPageState extends State<DiscoverPage>
                       runSpacing: ZhSpace.xs,
                       children: [
                         _DiscoverTypeChip(
-                          label: '回答',
+                          label: l10n.discoverTypeAnswer,
                           selected: _contentType == 'answer',
                           onTap: () => setState(() => _contentType = 'answer'),
                         ),
                         _DiscoverTypeChip(
-                          label: '文章',
+                          label: l10n.discoverTypeArticle,
                           selected: _contentType == 'article',
                           onTap: () => setState(() => _contentType = 'article'),
                         ),
                         _DiscoverTypeChip(
-                          label: '想法',
+                          label: l10n.discoverTypeIdea,
                           selected: _contentType == 'pin',
                           onTap: () => setState(() => _contentType = 'pin'),
                         ),
@@ -190,14 +211,14 @@ class _DiscoverPageState extends State<DiscoverPage>
                     ShadInput(
                       controller: _contentId,
                       keyboardType: TextInputType.number,
-                      placeholder: const Text('输入内容 ID'),
+                      placeholder: Text(l10n.discoverIdHint),
                       constraints: const BoxConstraints(minHeight: 56),
                       leading: const Padding(
                         padding: EdgeInsets.only(right: 10),
                         child: Icon(Icons.numbers_rounded, size: 20),
                       ),
                       trailing: IconButton(
-                        tooltip: '打开详情',
+                        tooltip: l10n.discoverOpenDetails,
                         onPressed: _openContentById,
                         icon: const Icon(Icons.arrow_forward_rounded),
                       ),

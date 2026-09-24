@@ -279,7 +279,7 @@ class _SearchSuggestionList extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Semantics(
     container: true,
-    label: '搜索补全',
+    label: context.zhL10n.searchSuggestion,
     child: Container(
       key: const ValueKey('search-suggestion-panel'),
       margin: const EdgeInsets.only(top: 8),
@@ -316,7 +316,7 @@ class _SearchSuggestionList extends StatelessWidget {
                   final item = items[index];
                   return Semantics(
                     button: true,
-                    label: '搜索建议 ${item.query}',
+                    label: context.zhL10n.searchSuggestionFor(item.query),
                     child: InkWell(
                       key: ValueKey('search-suggestion:${item.query}'),
                       onTap: () => onSelected(item.query),
@@ -363,7 +363,7 @@ class _SearchSuggestionList extends StatelessWidget {
               child: Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '正在查找“$query”',
+                  context.zhL10n.searchSearching(query),
                   style: Theme.of(
                     context,
                   ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),

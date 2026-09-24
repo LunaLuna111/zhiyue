@@ -71,7 +71,9 @@ void openCommentLink(
             api: api,
             businessId: story.businessId,
             businessType: 'long_story',
-            title: title.trim().isEmpty ? '盐选故事' : title.trim(),
+            title: title.trim().isEmpty
+                ? context.zhL10n.saltStory
+                : title.trim(),
           )
         : SaltReaderPage(
             api: api,
@@ -97,7 +99,9 @@ void openCommentLink(
         builder: (_) => ColumnArticlesPage(
           api: api,
           columnToken: columnToken,
-          title: title.trim().isEmpty ? '专栏' : title.trim(),
+          title: title.trim().isEmpty
+              ? context.zhL10n.columnTitle
+              : title.trim(),
         ),
       ),
     );
@@ -118,7 +122,9 @@ void openCommentLink(
       MaterialPageRoute(
         builder: (_) => isZhihuOfficialLink(url)
             ? OfficialWebPage(
-                title: title.trim().isEmpty ? '知乎' : title.trim(),
+                title: title.trim().isEmpty
+                    ? context.zhL10n.brandZhihu
+                    : title.trim(),
                 url: url,
               )
             : _ExternalLinkSafetyPage(url: url, title: title),
@@ -140,7 +146,10 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
     return Scaffold(
       key: const Key('external-link-safety-page'),
       backgroundColor: ZhPalette.canvas,
-      appBar: ZhTopBar(title: const Text('安全提示'), centerTitle: true),
+      appBar: ZhTopBar(
+        title: Text(context.zhL10n.routingSafetyTitle),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(24, 56, 24, 24),
@@ -150,7 +159,7 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
               Icon(Icons.shield_outlined, size: 52, color: ZhPalette.accent),
               const SizedBox(height: 22),
               Text(
-                '即将离开知乎',
+                context.zhL10n.routingLeaveZhihu,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: ZhPalette.ink,
@@ -160,7 +169,7 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '该链接并非知乎官方页面，请注意保护账号、隐私和财产安全。',
+                context.zhL10n.routingExternalWarning,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: ZhPalette.quoteText,
@@ -220,12 +229,12 @@ class _ExternalLinkSafetyPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('确认访问'),
+                child: Text(context.zhL10n.routingConfirmVisit),
               ),
               const SizedBox(height: 10),
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('取消'),
+                child: Text(context.zhL10n.commonCancel),
               ),
             ],
           ),
@@ -538,17 +547,18 @@ Future<bool> performContentCardAction(
   Map<String, dynamic> source,
   ContentCardAction action,
 ) async {
+  final l10n = context.zhL10n;
   final object = unwrapObject(source);
   final identity = interactiveContentIdentityOf(source);
   final type = identity.type;
   final id = identity.id;
   if (id.isEmpty) {
-    _showActionMessage(context, '暂时无法打开。');
+    _showActionMessage(context, l10n.routingCannotOpen);
     return false;
   }
   if (action == ContentCardAction.comments) {
     if (type.isEmpty) {
-      _showActionMessage(context, '暂时无法查看评论。');
+      _showActionMessage(context, l10n.routingCannotViewComments);
       return false;
     }
     var commentDelta = 0;
@@ -574,7 +584,7 @@ Future<bool> performContentCardAction(
     return true;
   }
   if (type.isEmpty) {
-    _showActionMessage(context, '当前内容暂不支持此操作。');
+    _showActionMessage(context, l10n.routingUnsupportedAction);
     return false;
   }
   if (!api.canWrite) {
@@ -593,7 +603,7 @@ Future<bool> performContentCardAction(
       final wasDown = relationship.isDownvoted;
       if (type == 'pin') {
         if (downvote) {
-          _showActionMessage(context, '想法暂不提供反对操作。');
+          _showActionMessage(context, l10n.routingPinDownvoteUnavailable);
           return false;
         }
         response = await api.setPinLiked(id, liked: !wasUp);
@@ -606,8 +616,8 @@ Future<bool> performContentCardAction(
         );
       }
       successMessage = downvote
-          ? (wasDown ? '已取消反对。' : '已反对该内容。')
-          : (wasUp ? '已取消赞同。' : '已赞同该内容。');
+          ? (wasDown ? l10n.routingDownvoteCancelled : l10n.routingDownvoted)
+          : (wasUp ? l10n.routingVoteCancelled : l10n.routingVoted);
       if (response.isSuccess) {
         final voting = downvote ? (wasDown ? '' : 'down') : (wasUp ? '' : 'up');
         _writeVotingState(object, voting);
@@ -623,7 +633,9 @@ Future<bool> performContentCardAction(
       response = wasFavorited
           ? await api.unfavoriteContent(contentType: type, contentId: id)
           : await api.favoriteContent(contentType: type, contentId: id);
-      successMessage = wasFavorited ? '已取消收藏。' : '已加入默认收藏夹。';
+      successMessage = wasFavorited
+          ? l10n.routingFavoriteRemoved
+          : l10n.routingFavorited;
       if (response.isSuccess) {
         object['is_favorited'] = !wasFavorited;
         final relationshipObject = object['relationship'];

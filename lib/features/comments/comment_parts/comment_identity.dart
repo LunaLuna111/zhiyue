@@ -35,6 +35,18 @@ List<String> _mergeCommentIdentityLabels(
   return List.unmodifiable(contextualLabels.take(3));
 }
 
+List<String> _localizedCommentIdentityLabels(
+  BuildContext context,
+  List<String> labels,
+) => [
+  for (final label in labels)
+    switch (label) {
+      '作者' => context.zhL10n.commentAuthorBadge,
+      '题主' => context.zhL10n.commentQuestionAuthor,
+      _ => label,
+    },
+];
+
 List<String> _commentFooterLabels(Object? value) =>
     _commentIdentityLabels(value);
 
@@ -64,7 +76,10 @@ class _CommentAuthorIdentityLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = authorName.isEmpty ? '知乎用户' : authorName;
+    final name = authorName.isEmpty
+        ? context.zhL10n.commonZhihuUser
+        : authorName;
+    final localizedLabels = _localizedCommentIdentityLabels(context, labels);
     final nameText = Text(
       name,
       maxLines: 1,
@@ -79,7 +94,7 @@ class _CommentAuthorIdentityLine extends StatelessWidget {
         : Semantics(
             key: semanticKey,
             button: true,
-            label: '评论作者 $name',
+            label: context.zhL10n.commentAuthorSemantics(name),
             child: InkWell(
               onTap: callback,
               borderRadius: BorderRadius.circular(4),
@@ -95,7 +110,7 @@ class _CommentAuthorIdentityLine extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         author,
-        for (final label in labels)
+        for (final label in localizedLabels)
           _CommentIdentityBadge(scope: 'author', label: label),
       ],
     );
@@ -118,12 +133,12 @@ class _CommentReplyIdentityLine extends StatelessWidget {
     crossAxisAlignment: WrapCrossAlignment.center,
     children: [
       Text(
-        '回复 @$replyTarget',
+        context.zhL10n.commentReplyTo(replyTarget),
         style: Theme.of(
           context,
         ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),
       ),
-      for (final label in labels)
+      for (final label in _localizedCommentIdentityLabels(context, labels))
         _CommentIdentityBadge(scope: 'reply', label: label),
     ],
   );
@@ -148,7 +163,9 @@ class _CompactCommentIdentityLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = authorName.isEmpty ? '知乎用户' : authorName;
+    final name = authorName.isEmpty
+        ? context.zhL10n.commonZhihuUser
+        : authorName;
     final nameText = Text(
       name,
       maxLines: 1,
@@ -166,7 +183,7 @@ class _CompactCommentIdentityLine extends StatelessWidget {
         : Semantics(
             key: semanticKey,
             button: true,
-            label: '评论作者 $name',
+            label: context.zhL10n.commentAuthorSemantics(name),
             child: InkWell(
               onTap: callback,
               borderRadius: BorderRadius.circular(4),
@@ -182,7 +199,10 @@ class _CompactCommentIdentityLine extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         author,
-        for (final label in authorLabels)
+        for (final label in _localizedCommentIdentityLabels(
+          context,
+          authorLabels,
+        ))
           _CommentIdentityBadge(scope: 'author', label: label),
         if (replyTarget.isNotEmpty) ...[
           Icon(Icons.arrow_right_rounded, size: 14, color: ZhPalette.subtleInk),
@@ -197,7 +217,10 @@ class _CompactCommentIdentityLine extends StatelessWidget {
               height: 1.25,
             ),
           ),
-          for (final label in replyAuthorLabels)
+          for (final label in _localizedCommentIdentityLabels(
+            context,
+            replyAuthorLabels,
+          ))
             _CommentIdentityBadge(scope: 'reply', label: label),
         ],
       ],
@@ -242,7 +265,7 @@ class _CompactCommentMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       ZhPopupMenuButton<_CompactCommentMenuAction>(
-        tooltip: '更多操作',
+        tooltip: context.zhL10n.commonMore,
         padding: EdgeInsets.zero,
         iconSize: 20,
         style: IconButton.styleFrom(
@@ -262,18 +285,29 @@ class _CompactCommentMenu extends StatelessWidget {
               onDelete?.call();
               break;
             case _CompactCommentMenuAction.report:
-              ScaffoldMessenger.maybeOf(
-                context,
-              )?.showSnackBar(const SnackBar(content: Text('举报功能暂未开放')));
+              ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+                SnackBar(
+                  content: Text(context.zhL10n.commentReportUnavailable),
+                ),
+              );
               break;
           }
         },
         itemBuilder: (context) => [
           if (onReply != null)
-            ZhMenuItem(value: _CompactCommentMenuAction.reply, label: '回复'),
+            ZhMenuItem(
+              value: _CompactCommentMenuAction.reply,
+              label: context.zhL10n.commonReply,
+            ),
           if (onDelete != null)
-            ZhMenuItem(value: _CompactCommentMenuAction.delete, label: '删除'),
-          ZhMenuItem(value: _CompactCommentMenuAction.report, label: '举报'),
+            ZhMenuItem(
+              value: _CompactCommentMenuAction.delete,
+              label: context.zhL10n.commonDelete,
+            ),
+          ZhMenuItem(
+            value: _CompactCommentMenuAction.report,
+            label: context.zhL10n.commonReport,
+          ),
         ],
       );
 }
@@ -312,14 +346,14 @@ class _CompactCommentMetadata extends StatelessWidget {
         if (onReply != null)
           Semantics(
             button: true,
-            label: '回复评论',
+            label: context.zhL10n.commentReply,
             child: InkWell(
               borderRadius: BorderRadius.circular(3),
               onTap: onReply,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 1, vertical: 3),
                 child: Text(
-                  '回复',
+                  context.zhL10n.commonReply,
                   style: TextStyle(
                     color: ZhPalette.subtleInk,
                     fontSize: 12,

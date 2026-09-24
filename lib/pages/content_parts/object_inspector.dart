@@ -22,26 +22,38 @@ class ObjectInspectorPage extends StatelessWidget {
         : structured.isNotEmpty
         ? structured
         : subtitleOf(value);
+    final l10n = context.zhL10n;
     final images = contentImageUrlsOf(value);
     final metricItems = <(IconData, String)>[
       if (metrics.voteupCount case final count?)
-        (Icons.change_history_outlined, '${compactCount(count)} 赞同'),
+        (Icons.change_history_outlined, l10n.metricVoteup(compactCount(count))),
       if (metrics.favoriteCount case final count?)
-        (Icons.star_border_rounded, '${compactCount(count)} 收藏'),
+        (Icons.star_border_rounded, l10n.metricFavorite(compactCount(count))),
       if (metrics.commentCount case final count?)
-        (Icons.chat_bubble_outline_rounded, '${compactCount(count)} 评论'),
+        (
+          Icons.chat_bubble_outline_rounded,
+          l10n.metricComment(compactCount(count)),
+        ),
       if (metrics.followerCount case final count?)
-        (Icons.groups_outlined, '${compactCount(count)} 关注者'),
+        (Icons.groups_outlined, l10n.metricFollowers(compactCount(count))),
       if (metrics.answerCount case final count?)
-        (Icons.question_answer_outlined, '${compactCount(count)} 回答'),
+        (
+          Icons.question_answer_outlined,
+          l10n.metricAnswers(compactCount(count)),
+        ),
       if (metrics.articleCount case final count?)
-        (Icons.article_outlined, '${compactCount(count)} 文章'),
+        (Icons.article_outlined, l10n.metricArticles(compactCount(count))),
       if (metrics.itemCount case final count?)
-        (Icons.collections_bookmark_outlined, '${compactCount(count)} 条内容'),
+        (
+          Icons.collections_bookmark_outlined,
+          l10n.metricItems(compactCount(count)),
+        ),
       if (date.isNotEmpty) (Icons.schedule_rounded, date),
     ];
     return Scaffold(
-      appBar: ZhTopBar(title: Text(title.isEmpty ? '内容详情' : title)),
+      appBar: ZhTopBar(
+        title: Text(title.isEmpty ? l10n.objectDetailTitle : title),
+      ),
       body: ZhResponsiveFrame(
         maxWidth: 1120,
         desktopGutter: 24,
@@ -64,12 +76,15 @@ class ObjectInspectorPage extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       if (type.isNotEmpty)
-                        ZhPill(label: _genericTypeLabel(type), compact: true),
+                        ZhPill(
+                          label: _genericTypeLabel(type, l10n),
+                          compact: true,
+                        ),
                     ],
                   ),
                   if (type.isNotEmpty) const SizedBox(height: 10),
                   Text(
-                    title.isEmpty ? '未命名内容' : title,
+                    title.isEmpty ? l10n.commonUntitledContent : title,
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   if (authorName.isNotEmpty || authorHeadline.isNotEmpty) ...[
@@ -79,7 +94,7 @@ class ObjectInspectorPage extends StatelessWidget {
                         _AuthorAvatar(
                           imageUrl: avatar,
                           fallback: authorName.isEmpty
-                              ? '知'
+                              ? l10n.commonZhihuUser.characters.first
                               : authorName.characters.first,
                           size: 38,
                         ),
@@ -89,7 +104,9 @@ class ObjectInspectorPage extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                authorName.isEmpty ? '知乎用户' : authorName,
+                                authorName.isEmpty
+                                    ? l10n.commonZhihuUser
+                                    : authorName,
                                 style: Theme.of(context).textTheme.titleSmall,
                               ),
                               if (authorHeadline.isNotEmpty)
@@ -120,11 +137,11 @@ class ObjectInspectorPage extends StatelessWidget {
               ),
             ),
             if (images.isNotEmpty) ...[
-              const ZhSectionHeader(title: '图片'),
+              ZhSectionHeader(title: l10n.objectImages),
               SizedBox(height: 126, child: _GenericImageGallery(urls: images)),
             ],
             if (summary.isNotEmpty) ...[
-              const ZhSectionHeader(title: '内容'),
+              ZhSectionHeader(title: l10n.objectContent),
               ZhSurface(
                 child: SelectableText(
                   summary,
@@ -138,17 +155,17 @@ class ObjectInspectorPage extends StatelessWidget {
     );
   }
 
-  static String _genericTypeLabel(String type) =>
+  static String _genericTypeLabel(String type, AppLocalizations l10n) =>
       switch (type.replaceAll('search_', '').toLowerCase()) {
-        'answer' => '回答',
-        'article' => '文章',
-        'question' => '问题',
-        'people' || 'member' => '用户',
-        'topic' => '话题',
-        'column' => '专栏',
-        'collection' || 'favlist' => '收藏集',
-        'pin' => '想法',
-        'comment' => '评论',
+        'answer' => l10n.contentTypeAnswer,
+        'article' => l10n.contentTypeArticle,
+        'question' => l10n.contentTypeQuestion,
+        'people' || 'member' => l10n.contentTypePeople,
+        'topic' => l10n.contentTypeTopic,
+        'column' => l10n.contentTypeColumn,
+        'collection' || 'favlist' => l10n.contentTypeCollection,
+        'pin' => l10n.contentTypeIdea,
+        'comment' => l10n.contentTypeComment,
         final value => value.toUpperCase(),
       };
 }

@@ -16,32 +16,6 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   bool _loading = false;
   bool _saving = false;
 
-  static const _labels = <String, String>{
-    'comment_me': '评论了我',
-    'mention_me': '提及了我',
-    'answer_voteup2': '赞同了我的回答',
-    'content_voteup': '赞同了我的内容',
-    'answer_thanks': '感谢了我的回答',
-    'repin_me': '收藏了我的内容',
-    'reaction_me': '回应了我的内容',
-    'member_follow': '关注了我',
-    'member_follow_favlist': '关注了我的收藏夹',
-    'column_follow': '关注了我的专栏',
-    'question_answered': '我关注的问题有新回答',
-    'answer_my_question': '回答了我的问题',
-    'question_invite': '邀请我回答',
-    'column_update': '关注的专栏有更新',
-    'following_member_new_activity': '关注的人有新动态',
-    'special_update': '关注的专题有更新',
-    'message_recv': '收到私信',
-    'inbox_stranger': '陌生人私信',
-    'coupon_notify': '优惠与权益提醒',
-    'bought_content': '已购内容更新',
-    'ebook_publish': '电子书上新',
-    'article_invite': '邀请我创作文章',
-    'article_tipjar_success': '文章赞赏到账',
-  };
-
   @override
   void initState() {
     super.initState();
@@ -92,7 +66,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: ZhTopBar(title: const Text('通知设置')),
+    appBar: ZhTopBar(title: Text(context.zhL10n.notificationSettingsTitle)),
     body: ZhResponsiveFrame(
       maxWidth: 760,
       desktopGutter: 24,
@@ -105,14 +79,15 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
   );
 
   Widget _settingsList() {
+    final l10n = context.zhL10n;
     final settings = _settings ?? const <String, dynamic>{};
     final keys =
         settings.keys.where((key) {
           final value = _stringMap(settings[key]);
           return value['switch'] is bool;
         }).toList()..sort((a, b) {
-          final ai = _labels.keys.toList().indexOf(a);
-          final bi = _labels.keys.toList().indexOf(b);
+          final ai = _notificationSettingKeys.indexOf(a);
+          final bi = _notificationSettingKeys.indexOf(b);
           return (ai < 0 ? 999 : ai).compareTo(bi < 0 ? 999 : bi);
         });
     return ListView.separated(
@@ -124,7 +99,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           return Padding(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 13),
             child: Text(
-              '互动与内容通知',
+              l10n.notificationSettingsSection,
               style: Theme.of(context).textTheme.titleLarge,
             ),
           );
@@ -134,11 +109,11 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         return ZhLiquidGlassSwitchTile(
           key: ValueKey('notification-setting-$key'),
           contentPadding: const EdgeInsets.symmetric(horizontal: 20),
-          title: _labels[key] ?? key.replaceAll('_', ' '),
+          title: _notificationSettingLabel(key, l10n),
           subtitle: plainText(setting['scope']).isEmpty
               ? null
               : plainText(setting['scope']) == 'all'
-              ? '全部'
+              ? l10n.notificationAll
               : plainText(setting['scope']),
           value: setting['switch'] == true,
           onChanged: _saving ? null : (value) => _toggle(key, value),
@@ -147,6 +122,60 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
     );
   }
 }
+
+const _notificationSettingKeys = [
+  'comment_me',
+  'mention_me',
+  'answer_voteup2',
+  'content_voteup',
+  'answer_thanks',
+  'repin_me',
+  'reaction_me',
+  'member_follow',
+  'member_follow_favlist',
+  'column_follow',
+  'question_answered',
+  'answer_my_question',
+  'question_invite',
+  'column_update',
+  'following_member_new_activity',
+  'special_update',
+  'message_recv',
+  'inbox_stranger',
+  'coupon_notify',
+  'bought_content',
+  'ebook_publish',
+  'article_invite',
+  'article_tipjar_success',
+];
+
+String _notificationSettingLabel(String key, AppLocalizations l10n) =>
+    switch (key) {
+      'comment_me' => l10n.notificationSettingCommentMe,
+      'mention_me' => l10n.notificationSettingMentionMe,
+      'answer_voteup2' => l10n.notificationSettingAnswerVoteup,
+      'content_voteup' => l10n.notificationSettingContentVoteup,
+      'answer_thanks' => l10n.notificationSettingAnswerThanks,
+      'repin_me' => l10n.notificationSettingRepin,
+      'reaction_me' => l10n.notificationSettingReaction,
+      'member_follow' => l10n.notificationSettingMemberFollow,
+      'member_follow_favlist' => l10n.notificationSettingFavlistFollow,
+      'column_follow' => l10n.notificationSettingColumnFollow,
+      'question_answered' => l10n.notificationSettingQuestionAnswered,
+      'answer_my_question' => l10n.notificationSettingAnswerQuestion,
+      'question_invite' => l10n.notificationSettingQuestionInvite,
+      'column_update' => l10n.notificationSettingColumnUpdate,
+      'following_member_new_activity' => l10n.notificationSettingMemberActivity,
+      'special_update' => l10n.notificationSettingSpecialUpdate,
+      'message_recv' => l10n.notificationSettingMessage,
+      'inbox_stranger' => l10n.notificationSettingStrangerMessage,
+      'coupon_notify' => l10n.notificationSettingCoupon,
+      'bought_content' => l10n.notificationSettingBoughtContent,
+      'ebook_publish' => l10n.notificationSettingEbook,
+      'article_invite' => l10n.notificationSettingArticleInvite,
+      'article_tipjar_success' => l10n.notificationSettingTipjar,
+      _ => key.replaceAll('_', ' '),
+    };
 
 class _LoginRequired extends StatelessWidget {
   const _LoginRequired({required this.onBack});
@@ -162,17 +191,20 @@ class _LoginRequired extends StatelessWidget {
         children: [
           const Icon(Icons.notifications_none_rounded, size: 58),
           const SizedBox(height: 18),
-          Text('登录后查看消息', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            context.zhL10n.notificationLoginTitle,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 8),
           Text(
-            '消息通知属于知乎账号数据',
+            context.zhL10n.notificationLoginMessage,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
           ),
           const SizedBox(height: 22),
           ZhPrimaryButton(
-            label: '返回并登录',
+            label: context.zhL10n.notificationBackLogin,
             icon: Icons.login_rounded,
             onPressed: onBack,
           ),

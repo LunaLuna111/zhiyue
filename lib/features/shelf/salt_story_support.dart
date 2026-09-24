@@ -112,11 +112,12 @@ SaltBookshelfEntry _localBookshelfEntry({
   required String businessId,
   required String propertyType,
   required String title,
+  required String fallbackTitle,
   String artwork = '',
   String sectionId = '',
   Map<String, dynamic> rawJson = const <String, dynamic>{},
 }) {
-  final normalizedTitle = title.trim().isEmpty ? '盐选作品' : title.trim();
+  final normalizedTitle = title.trim().isEmpty ? fallbackTitle : title.trim();
   final url = sectionId.isNotEmpty
       ? officialSaltSectionUrl(businessId: businessId, sectionId: sectionId)
       : Uri.https('www.zhihu.com', '/market/manuscript', {

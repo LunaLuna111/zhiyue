@@ -163,11 +163,11 @@ class _SaltProductPageState extends State<SaltProductPage> {
     return _metadataParentCache ?? _fallbackParent;
   }
 
-  String get _displayTitle {
+  String _displayTitle([AppLocalizations? l10n]) {
     final catalogTitle = _workMetadata.title.trim();
     if (catalogTitle.isNotEmpty) return catalogTitle;
     return isSaltBookshelfPlaceholderTitle(widget.title)
-        ? '盐选作品'
+        ? (l10n?.saltWorkFallback ?? widget.title.trim())
         : widget.title.trim();
   }
 
@@ -294,6 +294,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
     SaltCatalogSnapshot catalog,
     String businessId,
   ) async {
+    final l10n = context.zhL10n;
     try {
       final currentCatalog = _catalog?.businessId == businessId
           ? _catalog
@@ -355,7 +356,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
       putText('update_text', manuscript.updateText.trim());
       if (manuscript.isLong == true ||
           manuscript.propertyType == 'long_story') {
-        putText('brand_label', '长篇');
+        putText('brand_label', l10n.storyLong);
       }
       void putBool(String field, bool? value) {
         if (value == null ||
@@ -504,6 +505,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
   }
 
   Future<void> _addToBookshelf() async {
+    final l10n = context.zhL10n;
     setState(() => _bookshelfSaving = true);
     try {
       await _bookshelf.add(
@@ -512,7 +514,8 @@ class _SaltProductPageState extends State<SaltProductPage> {
           propertyType: _workMetadata.propertyType.isEmpty
               ? 'long_story'
               : _normalizedSaltBusinessType(_workMetadata.propertyType),
-          title: _displayTitle,
+          fallbackTitle: l10n.saltWorkFallback,
+          title: _displayTitle(l10n),
           artwork: _workMetadata.artwork,
           rawJson: _workMetadataRoot,
         ),
@@ -538,10 +541,10 @@ class _SaltProductPageState extends State<SaltProductPage> {
         SnackBar(
           content: Text(
             synced
-                ? '已加入书架'
+                ? l10n.saltAddToBookshelf
                 : syncFailed
-                ? '已加入本地书架，账号同步失败'
-                : '已加入本地书架',
+                ? '${l10n.saltAdded} · ${l10n.saltCloudShelfUnavailable}'
+                : l10n.saltAdded,
           ),
         ),
       );
@@ -557,6 +560,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
   }
 
   Future<void> _showMoreMenu() async {
+    final l10n = context.zhL10n;
     final action = await showModalBottomSheet<_SaltReaderMoreAction>(
       context: context,
       showDragHandle: true,
@@ -570,27 +574,27 @@ class _SaltProductPageState extends State<SaltProductPage> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 2, 16, 8),
                 child: Text(
-                  '更多操作',
+                  l10n.saltMoreActions,
                   style: Theme.of(sheetContext).textTheme.titleLarge,
                 ),
               ),
               ListTile(
                 leading: const Icon(Icons.refresh_rounded),
-                title: const Text('刷新'),
+                title: Text(l10n.commonRefresh),
                 onTap: () => Navigator.of(
                   sheetContext,
                 ).pop(_SaltReaderMoreAction.refresh),
               ),
               ListTile(
                 leading: const Icon(Icons.text_snippet_outlined),
-                title: const Text('下载 / 导出 TXT'),
+                title: Text(l10n.saltExportTxt),
                 onTap: () => Navigator.of(
                   sheetContext,
                 ).pop(_SaltReaderMoreAction.exportTxt),
               ),
               ListTile(
                 leading: const Icon(Icons.description_outlined),
-                title: const Text('下载 / 导出 DOCX'),
+                title: Text(l10n.saltExportDocx),
                 onTap: () => Navigator.of(
                   sheetContext,
                 ).pop(_SaltReaderMoreAction.exportDocx),
@@ -615,21 +619,23 @@ class _SaltProductPageState extends State<SaltProductPage> {
   }
 
   Future<void> _openLongExport(SaltChapterExportFormat format) async {
+    final l10n = context.zhL10n;
     final location = await showSaltLongExportSheet(
       context: context,
       api: widget.api,
       businessId: widget.businessId,
-      workTitle: _displayTitle,
+      workTitle: _displayTitle(l10n),
       format: format,
     );
     if (!mounted || location == null) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(SnackBar(content: Text('已导出到 $location')));
+    ).showSnackBar(SnackBar(content: Text(l10n.saltExportedTo(location))));
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final topInset = ZhTopBar.bodyTopInset(context, toolbarHeight: 72);
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -639,12 +645,12 @@ class _SaltProductPageState extends State<SaltProductPage> {
           key: const ValueKey('salt-product-back'),
           icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Navigator.of(context).maybePop(),
-          semanticLabel: '返回',
+          semanticLabel: l10n.commonBack,
           size: 48,
           iconSize: 24,
         ),
         title: Text(
-          _displayTitle,
+          _displayTitle(l10n),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
@@ -652,7 +658,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
           ZhLiquidGlassIconButton(
             key: const ValueKey('salt-product-more'),
             onPressed: _showMoreMenu,
-            semanticLabel: '更多',
+            semanticLabel: l10n.saltMore,
             icon: const Icon(Icons.more_vert_rounded),
             size: 48,
             iconSize: 24,
@@ -672,6 +678,7 @@ class _SaltProductPageState extends State<SaltProductPage> {
   }
 
   Widget _catalogBody({double topInset = 0}) {
+    final l10n = context.zhL10n;
     final catalog = _catalog;
     final fallbackHeader = _saltProductHeader(context, <String, dynamic>{
       'parent': _fallbackParent,
@@ -700,8 +707,8 @@ class _SaltProductPageState extends State<SaltProductPage> {
             child: ApiErrorView(
               error: _catalogError!,
               onRetry: () => _loadCatalog(forceRefresh: true),
-              titleOverride: '目录载入失败',
-              detailOverride: '请检查网络后重试',
+              titleOverride: l10n.saltDirectoryLoadFailed,
+              detailOverride: l10n.saltNetworkRetry,
             ),
           ),
         ],
@@ -765,9 +772,9 @@ class _SaltProductPageState extends State<SaltProductPage> {
           );
         }
         if (rows.isEmpty) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.all(40),
-            child: Center(child: Text('目录中暂时没有章节')),
+            child: Center(child: Text(l10n.saltDirectoryEmpty)),
           );
         }
         return const SizedBox(height: 24);

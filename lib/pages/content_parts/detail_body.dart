@@ -56,6 +56,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
   }
 
   Widget _body({double topInset = 0, Widget? answerQuestionHeader}) {
+    final l10n = context.zhL10n;
     if (_loading && _document == null) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -114,7 +115,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
       if (sourceNeedsWarning)
         Padding(
           padding: const EdgeInsets.only(bottom: 10),
-          child: const ZhPill(label: '内容可能不完整', compact: true),
+          child: ZhPill(label: l10n.detailContentIncomplete, compact: true),
         ),
       _DetailMetadata(
         metrics: metrics,
@@ -124,9 +125,9 @@ extension _ContentDetailBody on _ContentDetailPageState {
         // the natural end of the answer below.
         dateLabel: '',
         contentLabel: switch (widget.contentType) {
-          'article' => '文章',
-          'pin' => '想法',
-          _ => '回答',
+          'article' => l10n.contentTypeArticle,
+          'pin' => l10n.contentTypeIdea,
+          _ => l10n.contentTypeAnswer,
         },
       ),
       if (paidContent)
@@ -151,8 +152,8 @@ extension _ContentDetailBody on _ContentDetailPageState {
                 Expanded(
                   child: Text(
                     paidContentUnlocked
-                        ? '盐选会员内容已解锁，以下为当前账号可读的完整正文。'
-                        : '这是盐选会员内容，当前账号返回的正文仍处于未解锁状态。',
+                        ? l10n.detailPaidUnlocked
+                        : l10n.detailPaidLocked,
                     style: Theme.of(
                       context,
                     ).textTheme.bodySmall?.copyWith(color: ZhPalette.mutedInk),
@@ -234,7 +235,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
         Center(
           child: TextButton(
             onPressed: _loadRelatedAnswers,
-            child: const Text('加载其它回答失败，点击重试'),
+            child: Text(l10n.detailRelatedLoadFailed),
           ),
         ),
       const SizedBox(height: ZhSpace.sm),
@@ -343,7 +344,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
     child: ZhOutlineButton(
       onPressed: _openComments,
       icon: Icons.forum_outlined,
-      label: '查看评论',
+      label: context.zhL10n.detailViewCommentsButton,
       expand: true,
     ),
   );

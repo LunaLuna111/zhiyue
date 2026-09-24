@@ -285,6 +285,7 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
       recognizer.dispose();
     }
     _recognizers.clear();
+    final l10n = context.zhL10n;
     final isHeading = widget.kind == 'heading';
     final isQuote = const {'blockquote', 'quote'}.contains(widget.kind);
     final isCode = const {'pre', 'code', 'code_block'}.contains(widget.kind);
@@ -384,7 +385,9 @@ class _StructuredTextBlockState extends State<_StructuredTextBlock> {
               decorationColor: ZhPalette.accent,
             ),
           );
-          semantics = count > 0 ? '$count 条句子评论' : '查看句子评论';
+          semantics = count > 0
+              ? l10n.commentSentenceCount(count.toString())
+              : l10n.commentSentence;
           if (ids.isNotEmpty && widget.onSentenceComments != null) {
             final markStart = _index(mark['start_index'] ?? mark['start'], 0);
             final markEnd = _index(

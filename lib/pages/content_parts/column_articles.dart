@@ -14,7 +14,9 @@ class ColumnArticlesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => PagedListPage(
-    title: title.isEmpty ? '专栏 $columnToken' : title,
+    title: title.isEmpty
+        ? context.zhL10n.columnFallbackTitle(columnToken)
+        : title,
     api: api,
     loadInitial: () => api.get(
       '/columns/${Uri.encodeComponent(columnToken)}/articles',
@@ -78,7 +80,7 @@ class _ColumnMetadataHeaderState extends State<ColumnMetadataHeader> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PagedListPage(
-          title: '专栏关注者',
+          title: context.zhL10n.columnFollowersTitle,
           api: widget.api,
           loadInitial: () => widget.api.get(
             '/columns/${Uri.encodeComponent(widget.columnToken)}/followers',
@@ -136,12 +138,12 @@ class _ColumnMetadataHeaderState extends State<ColumnMetadataHeader> {
           const SizedBox(width: 9),
           Expanded(
             child: Text(
-              '专栏信息暂未加载。',
+              context.zhL10n.columnLoadFailed,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
           IconButton(
-            tooltip: '重试专栏资料',
+            tooltip: context.zhL10n.columnRetry,
             onPressed: _load,
             icon: const Icon(Icons.refresh_rounded),
           ),
@@ -175,20 +177,21 @@ class ColumnHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = titleOf(column).isEmpty ? '专栏' : titleOf(column);
+    final l10n = context.zhL10n;
+    final name = titleOf(column).isEmpty ? l10n.columnTitle : titleOf(column);
     final avatar = plainText(column['avatar_url'] ?? column['image_url']);
     final description = plainText(column['intro'] ?? column['description']);
     final author = _contentMap(column['author']);
     final authorName = author == null ? '' : titleOf(author);
     final metrics = <String>[
       if (_count(const ['articles_count', 'items_count']) case final value?)
-        '${compactCount(value)} 篇文章',
+        l10n.columnArticleCount(compactCount(value)),
       if (_count(const ['followers', 'followers_count']) case final value?)
-        '${compactCount(value)} 关注者',
+        l10n.columnFollowerCount(compactCount(value)),
       if (_count(const ['contributions_count']) case final value?)
-        '${compactCount(value)} 篇投稿',
+        l10n.columnContributionCount(compactCount(value)),
       if (_count(const ['voteup_count']) case final value?)
-        '${compactCount(value)} 获赞',
+        l10n.columnVoteupCount(compactCount(value)),
     ];
     final validAvatar = Uri.tryParse(avatar)?.scheme == 'https';
     final placeholder = Container(
@@ -243,7 +246,7 @@ class ColumnHeaderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const ZhPill(label: '专栏', compact: true),
+                    ZhPill(label: l10n.contentTypeColumn, compact: true),
                     const SizedBox(height: 7),
                     Text(
                       name,
@@ -267,7 +270,7 @@ class ColumnHeaderCard extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               [
-                if (authorName.isNotEmpty) '作者 $authorName',
+                if (authorName.isNotEmpty) l10n.columnAuthorPrefix(authorName),
                 ...metrics,
               ].join(' · '),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -283,7 +286,7 @@ class ColumnHeaderCard extends StatelessWidget {
                 child: ZhOutlineButton(
                   onPressed: onFollowers,
                   icon: Icons.groups_outlined,
-                  label: '关注者',
+                  label: l10n.columnFollowers,
                   expand: true,
                 ),
               ),
@@ -293,7 +296,7 @@ class ColumnHeaderCard extends StatelessWidget {
                   child: ZhOutlineButton(
                     onPressed: onAuthor,
                     icon: Icons.person_outline_rounded,
-                    label: '作者资料',
+                    label: l10n.columnAuthorProfile,
                     expand: true,
                   ),
                 ),

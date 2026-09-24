@@ -6,6 +6,7 @@ extension _SaltReaderControls on _SaltReaderPageState {
     required bool hasCatalog,
     required SaltManuscriptEnvelope? commentMetadata,
   }) {
+    final l10n = context.zhL10n;
     final sectionCount = _effectiveSectionCount(manuscript);
     final sectionIndex = _effectiveSectionIndex(manuscript);
     final previous = _previousCatalogSection(manuscript);
@@ -31,7 +32,7 @@ extension _SaltReaderControls on _SaltReaderPageState {
             child: Semantics(
               key: const ValueKey('salt-reader-bottom-toolbar'),
               container: true,
-              label: '阅读底部栏',
+              label: l10n.saltReaderBottomBar,
               child: Material(
                 color: Theme.of(context).colorScheme.surface,
                 elevation: 4,
@@ -48,7 +49,7 @@ extension _SaltReaderControls on _SaltReaderPageState {
                               onPressed: previous == null
                                   ? null
                                   : () => _openSection(previous.id),
-                              child: const Text('上一节'),
+                              child: Text(l10n.saltPreviousChapter),
                             ),
                             Expanded(
                               child: Padding(
@@ -69,7 +70,7 @@ extension _SaltReaderControls on _SaltReaderPageState {
                               onPressed: next == null
                                   ? null
                                   : () => _openSection(next.id),
-                              child: const Text('下一节'),
+                              child: Text(l10n.saltNextChapter),
                             ),
                           ],
                         ),
@@ -82,20 +83,20 @@ extension _SaltReaderControls on _SaltReaderPageState {
                           children: [
                             _SaltReaderToolbarAction(
                               icon: Icons.format_list_numbered_rounded,
-                              label: '目录',
+                              label: l10n.saltCatalogTitle,
                               onTap: hasCatalog
                                   ? () => _showCatalog(manuscript)
                                   : null,
                             ),
                             _SaltReaderToolbarAction(
                               icon: Icons.text_fields_rounded,
-                              label: '设置',
+                              label: l10n.settingsTitle,
                               onTap: _showReaderSettings,
                             ),
                             _SaltReaderToolbarAction(
                               icon: Icons.chat_bubble_outline_rounded,
                               label: commentCount == null
-                                  ? '评论'
+                                  ? l10n.commentAll
                                   : compactCount(commentCount),
                               onTap: () =>
                                   _showChapterComments(commentMetadata),
@@ -105,8 +106,8 @@ extension _SaltReaderControls on _SaltReaderPageState {
                                   ? Icons.view_carousel_outlined
                                   : Icons.view_day_outlined,
                               label: _readerFlow == SaltReaderFlow.vertical
-                                  ? '左右'
-                                  : '上下',
+                                  ? l10n.saltHorizontalPage
+                                  : l10n.saltVerticalScroll,
                               onTap: () => _updateState(() {
                                 _readerFlow =
                                     _readerFlow == SaltReaderFlow.vertical
@@ -136,8 +137,8 @@ extension _SaltReaderControls on _SaltReaderPageState {
         .trim();
     if (index == null) return chapterTitle;
     return count == null
-        ? '第 ${index + 1} 节  $chapterTitle'
-        : '第 ${index + 1}/$count 节  $chapterTitle';
+        ? '${context.zhL10n.saltSectionLabel(index + 1)}  $chapterTitle'
+        : '${context.zhL10n.saltSectionProgress(index + 1, count)}  $chapterTitle';
   }
 
   String _readerToolbarSubtitle(SaltManuscriptEnvelope manuscript) {
@@ -145,21 +146,27 @@ extension _SaltReaderControls on _SaltReaderPageState {
     final index = _effectiveSectionIndex(manuscript);
     final count = _effectiveSectionCount(manuscript);
     if (index != null) {
-      parts.add(count == null ? '第 ${index + 1} 节' : '${index + 1}/$count');
+      parts.add(
+        count == null
+            ? context.zhL10n.saltSectionLabel(index + 1)
+            : context.zhL10n.saltSectionProgress(index + 1, count),
+      );
     }
     if (_catalogLoading) {
-      parts.add('正在同步目录');
+      parts.add(context.zhL10n.commonLoading);
     } else if (_catalogError != null) {
-      parts.add('目录导航待重试');
+      parts.add(context.zhL10n.saltDirectoryLoadFailed);
     }
     if (_annotationsLoading) {
-      parts.add('正在载入弹评');
+      parts.add(context.zhL10n.commonLoading);
     } else if (_annotationsError != null) {
-      parts.add('弹评载入失败');
+      parts.add(context.zhL10n.saltBulletCommentsEmpty);
     } else if (_paragraphAnnotations.isNotEmpty) {
-      parts.add('${_paragraphAnnotations.length} 处弹评');
+      parts.add(
+        context.zhL10n.saltComments(_paragraphAnnotations.length.toString()),
+      );
     }
-    return parts.isEmpty ? '盐选阅读' : parts.join(' · ');
+    return parts.isEmpty ? context.zhL10n.saltReadingTitle : parts.join(' · ');
   }
 
   Future<void> _showCatalog(SaltManuscriptEnvelope manuscript) async {
@@ -199,9 +206,10 @@ extension _SaltReaderControls on _SaltReaderPageState {
     await _showCommentSheet(
       objectType: ZhihuApiClient.saltParagraphCommentObjectType,
       objectId: annotation.commentId,
-      title: '${annotation.commentCount} 条弹评',
+      title: context.zhL10n.saltComments(annotation.commentCount.toString()),
       count: annotation.commentCount,
       showSort: false,
+      bulletComments: true,
     );
   }
 
@@ -213,9 +221,10 @@ extension _SaltReaderControls on _SaltReaderPageState {
     await _showCommentSheet(
       objectType: target.$1,
       objectId: target.$2,
-      title: '全部评论',
+      title: context.zhL10n.commentAll,
       count: metadata?.commentCount,
       showSort: true,
+      bulletComments: false,
     );
   }
 
@@ -225,6 +234,7 @@ extension _SaltReaderControls on _SaltReaderPageState {
     required String title,
     required int? count,
     required bool showSort,
+    required bool bulletComments,
   }) => showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -242,6 +252,7 @@ extension _SaltReaderControls on _SaltReaderPageState {
           title: title,
           count: count,
           showSort: showSort,
+          bulletComments: bulletComments,
         ),
       ),
     ),

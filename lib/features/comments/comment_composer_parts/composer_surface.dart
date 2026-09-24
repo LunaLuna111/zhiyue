@@ -62,7 +62,7 @@ class _ComposerToolbar extends StatelessWidget {
         ),
         _ComposerToolbarIcon(
           key: const Key('comment-composer-emoticons'),
-          semanticLabel: '表情',
+          semanticLabel: context.zhL10n.commentEmoji,
           onPointerDown: onEmoticons,
           icon: const _ComposerEmojiCircle(),
         ),
@@ -281,7 +281,7 @@ class _SelectedSticker extends StatelessWidget {
           ),
         ),
         IconButton(
-          tooltip: '移除贴纸',
+          tooltip: context.zhL10n.commentRemoveSticker,
           onPressed: onRemove,
           visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.close_rounded, size: 18),
@@ -315,13 +315,15 @@ class _SelectedImage extends StatelessWidget {
             height: 44,
             fit: BoxFit.cover,
             gaplessPlayback: true,
-            semanticLabel: '已选择的评论图片',
+            semanticLabel: context.zhL10n.commentSelectedImage,
           ),
         ),
         const SizedBox(width: ZhSpace.xs),
         Expanded(
           child: Text(
-            uploading ? '正在上传图片…' : '图片已添加',
+            uploading
+                ? context.zhL10n.commentUploadingImage
+                : context.zhL10n.commentImageAdded,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall,
@@ -335,7 +337,7 @@ class _SelectedImage extends StatelessWidget {
         else
           IconButton(
             key: const Key('comment-composer-image-remove'),
-            tooltip: '移除图片',
+            tooltip: context.zhL10n.commentRemoveImage,
             onPressed: onRemove,
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.close_rounded, size: 18),
@@ -387,7 +389,7 @@ class _EmoticonPanel extends StatelessWidget {
               if (itemIndex == group.emoticons.length) {
                 return IconButton(
                   key: const Key('comment-emoticon-backspace'),
-                  tooltip: '删除',
+                  tooltip: context.zhL10n.commonDelete,
                   onPressed: onBackspace,
                   icon: const Icon(Icons.backspace_outlined, size: 23),
                 );
@@ -420,7 +422,9 @@ class _EmoticonPanel extends StatelessWidget {
                   ),
                   child: IconButton(
                     key: ValueKey('comment-emoticon-group-${value.id}'),
-                    tooltip: value.title.isEmpty ? '表情' : value.title,
+                    tooltip: value.title.isEmpty
+                        ? context.zhL10n.commentEmoji
+                        : value.title,
                     onPressed: () => onGroup(groupIndex),
                     style: IconButton.styleFrom(
                       minimumSize: const Size(40, 40),

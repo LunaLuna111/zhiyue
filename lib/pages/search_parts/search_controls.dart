@@ -215,7 +215,10 @@ class _SearchHotSection extends StatelessWidget {
                         Text(
                           items[index].hotShow.isNotEmpty
                               ? items[index].hotShow
-                              : _formatHotScore(items[index].heatScore),
+                              : _formatHotScore(
+                                  context.zhL10n,
+                                  items[index].heatScore,
+                                ),
                           style: Theme.of(context).textTheme.bodySmall
                               ?.copyWith(color: ZhPalette.subtleInk),
                         ),
@@ -229,13 +232,13 @@ class _SearchHotSection extends StatelessWidget {
     );
   }
 
-  static String _formatHotScore(int score) {
+  static String _formatHotScore(AppLocalizations l10n, int score) {
     if (score < 10000) return '$score';
     final value = score / 10000;
     final text = value >= 100
         ? value.toStringAsFixed(0)
         : value.toStringAsFixed(value >= 10 ? 1 : 2);
-    return '${text.replaceFirst(RegExp(r'\.0+$'), '')} 万';
+    return l10n.searchHotScoreWan(text.replaceFirst(RegExp(r'\.0+$'), ''));
   }
 }
 
@@ -246,7 +249,7 @@ class _EmptySearchPrompt extends StatelessWidget {
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     child: Text(
-      '请输入搜索内容',
+      context.zhL10n.searchStartHint,
       style: Theme.of(
         context,
       ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),

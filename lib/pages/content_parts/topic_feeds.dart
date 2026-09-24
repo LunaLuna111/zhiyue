@@ -49,7 +49,7 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PagedListPage(
-          title: '话题关注者',
+          title: context.zhL10n.topicFollowersTitle,
           api: widget.api,
           loadInitial: () => widget.api.get(
             '/topics/${Uri.encodeComponent(widget.topicId)}/followers',
@@ -66,7 +66,7 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PagedListPage(
-          title: '话题待回答问题',
+          title: context.zhL10n.topicUnansweredTitle,
           api: widget.api,
           loadInitial: () => widget.api.get(
             '/topics/${Uri.encodeComponent(widget.topicId)}/unanswered_questions',
@@ -81,18 +81,19 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final topic = _topic;
     final resolvedTitle = topic == null ? '' : titleOf(topic);
     return PagedListPage(
       title: resolvedTitle.isNotEmpty
           ? resolvedTitle
           : widget.title.isEmpty
-          ? '话题 ${widget.topicId}'
+          ? l10n.topicFallbackTitle(widget.topicId)
           : widget.title,
       api: widget.api,
       actions: [
         ZhLiquidGlassIconButton(
-          semanticLabel: '刷新话题资料',
+          semanticLabel: l10n.topicRefresh,
           onPressed: _loadBasic,
           icon: const Icon(Icons.refresh_rounded),
           size: 44,
@@ -146,7 +147,8 @@ class TopicHeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = titleOf(topic).isEmpty ? '话题' : titleOf(topic);
+    final l10n = context.zhL10n;
+    final name = titleOf(topic).isEmpty ? l10n.topicLabel : titleOf(topic);
     final avatar = plainText(
       topic['avatar_url'] ?? topic['icon'] ?? topic['meta_avatar_url'],
     );
@@ -156,13 +158,13 @@ class TopicHeaderCard extends StatelessWidget {
     );
     final metrics = <String>[
       if (_count(const ['followers_count', 'follower_count']) case final value?)
-        '${compactCount(value)} 关注者',
+        l10n.topicFollowers(compactCount(value)),
       if (_count(const ['questions_count', 'question_count']) case final value?)
-        '${compactCount(value)} 问题',
+        l10n.topicQuestions(compactCount(value)),
       if (_count(const ['answer_count']) case final value?)
-        '${compactCount(value)} 回答',
+        l10n.topicAnswers(compactCount(value)),
       if (_count(const ['discussion_totals']) case final value?)
-        '${compactCount(value)} 讨论',
+        l10n.topicDiscussions(compactCount(value)),
     ];
     return ZhSurface(
       margin: const EdgeInsets.fromLTRB(
@@ -202,7 +204,7 @@ class TopicHeaderCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const ZhPill(label: '话题', compact: true),
+                    ZhPill(label: l10n.topicLabel, compact: true),
                     const SizedBox(height: 7),
                     Text(
                       name,
@@ -238,7 +240,7 @@ class TopicHeaderCard extends StatelessWidget {
           ] else if (basicError != null) ...[
             const SizedBox(height: 10),
             Text(
-              '基础资料暂未加载，精华列表仍可独立浏览。',
+              l10n.topicBasicUnavailable,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -249,7 +251,7 @@ class TopicHeaderCard extends StatelessWidget {
                 child: ZhOutlineButton(
                   onPressed: onFollowers,
                   icon: Icons.groups_outlined,
-                  label: '关注者',
+                  label: l10n.topicFollowersButton,
                   expand: true,
                 ),
               ),
@@ -258,7 +260,7 @@ class TopicHeaderCard extends StatelessWidget {
                 child: ZhOutlineButton(
                   onPressed: onUnanswered,
                   icon: Icons.help_outline_rounded,
-                  label: '待回答',
+                  label: l10n.topicUnansweredButton,
                   expand: true,
                 ),
               ),

@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 import '../core/api_client.dart';
 import '../core/api_response.dart';
 import '../core/json_tools.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../widgets/api_views.dart';
 
@@ -47,7 +48,7 @@ class PagedListPage extends StatefulWidget {
     this.responseHeaderBuilder,
     this.pinResponseHeader = false,
     this.bottomNavigationBar,
-    this.emptyMessage = '还没有内容',
+    this.emptyMessage = '',
   });
 
   final String title;
@@ -385,7 +386,12 @@ class _PagedListPageState extends State<PagedListPage> {
             return Padding(
               padding: const EdgeInsets.all(40),
               child: Center(
-                child: Text(widget.emptyMessage, textAlign: TextAlign.center),
+                child: Text(
+                  widget.emptyMessage.isEmpty
+                      ? context.zhL10n.pagedEmpty
+                      : widget.emptyMessage,
+                  textAlign: TextAlign.center,
+                ),
               ),
             );
           }
@@ -401,9 +407,9 @@ class _PagedListPageState extends State<PagedListPage> {
           if (_next != null) {
             return ZhPagingIndicator(loading: _loading);
           }
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.all(24),
-            child: Center(child: Text('已经到底了')),
+            child: Center(child: Text(context.zhL10n.pagedEnd)),
           );
         }
         return const SizedBox(height: 24);
@@ -450,7 +456,12 @@ class _PagedListPageState extends State<PagedListPage> {
         return Padding(
           padding: const EdgeInsets.all(40),
           child: Center(
-            child: Text(widget.emptyMessage, textAlign: TextAlign.center),
+            child: Text(
+              widget.emptyMessage.isEmpty
+                  ? context.zhL10n.pagedEmpty
+                  : widget.emptyMessage,
+              textAlign: TextAlign.center,
+            ),
           ),
         );
       }
@@ -466,9 +477,9 @@ class _PagedListPageState extends State<PagedListPage> {
       if (_next != null) {
         return ZhPagingIndicator(loading: _loading);
       }
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(24),
-        child: Center(child: Text('已经到底了')),
+        child: Center(child: Text(context.zhL10n.pagedEnd)),
       );
     }
     return const SizedBox(height: 24);

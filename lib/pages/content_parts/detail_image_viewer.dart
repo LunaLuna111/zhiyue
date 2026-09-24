@@ -15,41 +15,42 @@ class _DetailMetadata extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final items = <Widget>[
       if (metrics.voteupCount != null)
         _DetailMetaItem(
           icon: Icons.change_history_outlined,
-          label: '${compactCount(metrics.voteupCount!)} 人赞同该$contentLabel',
+          label: '${l10n.metricVoteup(compactCount(metrics.voteupCount!))} $contentLabel',
         ),
       if (metrics.favoriteCount != null)
         _DetailMetaItem(
           icon: Icons.star_border_rounded,
-          label: '${compactCount(metrics.favoriteCount!)} 收藏',
+          label: l10n.metricFavorite(compactCount(metrics.favoriteCount!)),
         ),
       if (metrics.commentCount != null)
         _DetailMetaItem(
           icon: Icons.chat_bubble_outline_rounded,
-          label: '${compactCount(metrics.commentCount!)} 评论',
+          label: l10n.metricComment(compactCount(metrics.commentCount!)),
         ),
       if (metrics.thanksCount != null)
         _DetailMetaItem(
           icon: Icons.volunteer_activism_outlined,
-          label: '${compactCount(metrics.thanksCount!)} 感谢',
+          label: l10n.metricThanks(compactCount(metrics.thanksCount!)),
         ),
       if (metrics.viewCount != null)
         _DetailMetaItem(
           icon: Icons.visibility_outlined,
-          label: '${compactCount(metrics.viewCount!)} 浏览',
+          label: l10n.metricViews(compactCount(metrics.viewCount!)),
         ),
       if (relationship.isThanked == true)
-        const _DetailMetaItem(
+        _DetailMetaItem(
           icon: Icons.volunteer_activism_rounded,
-          label: '已感谢',
+          label: l10n.metricThanked,
         ),
       if (relationship.isFavorited == true)
-        const _DetailMetaItem(icon: Icons.star_rounded, label: '已收藏'),
+        _DetailMetaItem(icon: Icons.star_rounded, label: l10n.metricFavorited),
       if (relationship.isAuthor == true)
-        const _DetailMetaItem(icon: Icons.person_outline, label: '我的回答'),
+        _DetailMetaItem(icon: Icons.person_outline, label: l10n.detailMyAnswer),
     ];
     if (items.isEmpty && dateLabel.isEmpty) return const SizedBox.shrink();
     return Padding(
@@ -388,7 +389,7 @@ class _DetailImageGallery extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       container: true,
-      label: '${sources.length} 张正文图片',
+      label: context.zhL10n.detailImageCount(sources.length),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -486,7 +487,7 @@ class _DetailImageTileState extends State<_DetailImageTile> {
   @override
   Widget build(BuildContext context) => Semantics(
     button: true,
-    label: '查看正文图片原图',
+    label: context.zhL10n.detailViewImage,
     child: InkWell(
       key: ValueKey('answer-image-${widget.source.url}'),
       onTap: () => _showDetailImagePreview(context, widget.source.url),
@@ -570,7 +571,7 @@ Future<void> _showDetailImagePreview(BuildContext context, String url) {
               left: 10,
               child: IconButton.filled(
                 key: const Key('answer-image-preview-close'),
-                tooltip: '关闭图片',
+                tooltip: context.zhL10n.detailCloseImage,
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close_rounded),
               ),
@@ -580,7 +581,7 @@ Future<void> _showDetailImagePreview(BuildContext context, String url) {
               right: 10,
               child: IconButton.filled(
                 key: const Key('answer-image-preview-save'),
-                tooltip: '保存到相册',
+                tooltip: context.zhL10n.detailSaveImage,
                 onPressed: () => _saveDetailImage(context, url),
                 icon: const Icon(Icons.download_rounded),
               ),
@@ -601,13 +602,21 @@ Future<void> _saveDetailImage(BuildContext context, String url) async {
     );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(location == null ? '图片已保存' : '已保存到相册')),
+      SnackBar(
+        content: Text(
+          location == null
+              ? context.zhL10n.detailImageSaved
+              : context.zhL10n.detailImageSavedTo,
+        ),
+      ),
     );
   } catch (error) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('图片保存失败，请稍后重试')));
+    ).showSnackBar(
+      SnackBar(content: Text(context.zhL10n.detailImageSaveFailed)),
+    );
     AppLogStore.instance.record(
       category: AppLogCategory.app,
       level: AppLogLevel.warning,

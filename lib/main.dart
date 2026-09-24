@@ -397,8 +397,12 @@ class _HomeShellState extends State<HomeShell> {
         SnackBar(
           content: Text(
             switched
-                ? '已切换到 ${account?.displayName ?? '所选账号'}'
-                : '账号会话验证失败，已恢复之前的登录状态',
+                ? context.zhL10n.accountSwitchedTo(
+                    account == null
+                        ? context.zhL10n.drawerAccount
+                        : localizedAccountDisplayName(context.zhL10n, account),
+                  )
+                : context.zhL10n.accountSessionRestoreFailed,
           ),
         ),
       );
@@ -458,15 +462,16 @@ class _HomeShellState extends State<HomeShell> {
     if (!mounted) return;
     if (memberId == null) {
       setState(() => _index = 3);
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('登录知乎后可以查看自己的收藏')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.collectionsLoginRequired)),
+      );
       return;
     }
+    final l10n = context.zhL10n;
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PagedListPage(
-          title: '我的收藏',
+          title: l10n.collectionsTitle,
           api: widget.api,
           loadInitial: () => widget.api.getUri(
             widget.api.userCollectionsInitialUri(memberId),
@@ -481,19 +486,21 @@ class _HomeShellState extends State<HomeShell> {
             Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => PagedListPage(
-                  title: titleOf(value).isEmpty ? '收藏集' : titleOf(value),
+                  title: titleOf(value).isEmpty
+                      ? l10n.collectionTitle
+                      : titleOf(value),
                   api: widget.api,
                   loadInitial: () => widget.api.getUri(
                     widget.api.collectionContentsInitialUri(collectionId),
                   ),
                   onObjectTap: (context, item) =>
                       openDetectedObject(context, widget.api, item),
-                  emptyMessage: '这个收藏集暂时没有内容',
+                  emptyMessage: l10n.collectionEmpty,
                 ),
               ),
             );
           },
-          emptyMessage: '还没有创建或收藏内容',
+          emptyMessage: l10n.collectionsEmpty,
         ),
       ),
     );

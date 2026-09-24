@@ -739,7 +739,9 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     final author =
         stringMap(semanticObject['author']) ?? const <String, dynamic>{};
     final authorName = authorNameOf(semantic).trim();
-    final authorDisplayName = authorName.isEmpty ? '知乎用户' : authorName;
+    final authorDisplayName = authorName.isEmpty
+        ? context.zhL10n.commonZhihuUser
+        : authorName;
     final authorAvatar = authorAvatarOf(semantic);
     final authorMemberId = personMemberIdOf(author);
     final authorPageId = [
@@ -770,42 +772,46 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             onTap: () => _openQuestionAnswers(questionId, questionTitle),
           )
         : null;
-    final contentLabel = answerToolbar ? '回答' : '内容';
+    final contentLabel = answerToolbar
+        ? context.zhL10n.contentTypeAnswer
+        : context.zhL10n.contentTypeContent;
     final detailMenuItems = <ZhLiquidGlassMenuItem<_DetailMoreAction>>[
       if (answerToolbar && questionId.isNotEmpty)
-        const ZhLiquidGlassMenuItem(
+        ZhLiquidGlassMenuItem(
           value: _DetailMoreAction.write,
-          label: '写回答',
-          icon: Icon(Icons.edit_outlined),
-          subtitle: '创建对这个问题的新回答',
+          label: context.zhL10n.detailWriteAnswer,
+          icon: const Icon(Icons.edit_outlined),
+          subtitle: context.zhL10n.detailWriteAnswerSubtitle,
         ),
       ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.refresh,
-        label: '刷新$contentLabel',
+        label: context.zhL10n.detailRefreshContent(contentLabel),
         icon: const Icon(Icons.refresh_rounded),
-        subtitle: '忽略缓存并重新获取最新内容',
+        subtitle: context.zhL10n.detailRefreshSubtitle,
       ),
       ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.search,
-        label: '搜索正文',
+        label: context.zhL10n.detailSearchBodyTitle,
         icon: const Icon(Icons.search_rounded),
-        subtitle: '输入关键词快速定位到正文内容',
+        subtitle: context.zhL10n.detailSearchSubtitle,
       ),
       ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.readAloud,
-        label: TtsService.instance.isPlaying ? '停止朗读' : '朗读正文',
+        label: TtsService.instance.isPlaying
+            ? context.zhL10n.detailStoppedReading
+            : context.zhL10n.detailReadAloud,
         icon: Icon(
           TtsService.instance.isPlaying
               ? Icons.stop_circle_outlined
               : Icons.volume_up_outlined,
         ),
-        subtitle: '使用系统中文语音朗读当前$contentLabel',
+        subtitle: context.zhL10n.detailReadAloudSubtitle(contentLabel),
       ),
       ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.exportTxt,
-        label: '导出为 TXT',
+        label: context.zhL10n.detailExportTxt,
         icon: const Icon(Icons.text_snippet_outlined),
-        subtitle: '保存当前标题、作者和正文',
+        subtitle: context.zhL10n.detailExportTextSubtitle,
       ),
       for (final format in ContentExportFormat.values)
         ZhLiquidGlassMenuItem(
@@ -814,27 +820,27 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             ContentExportFormat.html => _DetailMoreAction.exportHtml,
             ContentExportFormat.pdf => _DetailMoreAction.exportPdf,
           },
-          label: '导出为 ${format.label}',
+          label: context.zhL10n.detailExportDocument(format.label),
           icon: Icon(switch (format) {
             ContentExportFormat.markdown => Icons.code_rounded,
             ContentExportFormat.html => Icons.language_rounded,
             ContentExportFormat.pdf => Icons.picture_as_pdf_outlined,
           }),
           subtitle: format == ContentExportFormat.pdf
-              ? '生成适合分享和打印的文档'
-              : '保留标题、作者、段落和正文图片链接',
+              ? context.zhL10n.detailExportPdfSubtitle
+              : context.zhL10n.detailExportDocumentSubtitle,
         ),
       if (!answerToolbar)
-        const ZhLiquidGlassMenuItem(
+        ZhLiquidGlassMenuItem(
           value: _DetailMoreAction.copy,
-          label: '复制全文',
-          icon: Icon(Icons.copy_all_outlined),
-          subtitle: '复制当前标题、作者和正文',
+          label: context.zhL10n.detailCopyAll,
+          icon: const Icon(Icons.copy_all_outlined),
+          subtitle: context.zhL10n.detailCopySubtitle,
         ),
-      const ZhLiquidGlassMenuItem(
+      ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.clearCache,
-        label: '清除本条缓存',
-        icon: Icon(Icons.delete_sweep_outlined),
+        label: context.zhL10n.detailClearCache,
+        icon: const Icon(Icons.delete_sweep_outlined),
       ),
     ];
     final detailActionGroup =
@@ -843,7 +849,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           primaryAction: answerToolbar
               ? ZhLiquidGlassCapsuleAction(
                   icon: const Icon(Icons.person_add_alt_1_rounded),
-                  semanticLabel: '邀请回答',
+                  semanticLabel: context.zhL10n.detailInviteAnswer,
                   onPressed: questionId.isEmpty
                       ? null
                       : () => _openInviteAnswer(questionId),
@@ -854,7 +860,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                     fallback: authorDisplayName.characters.first,
                     size: 22,
                   ),
-                  semanticLabel: '查看$authorDisplayName的个人主页',
+                  semanticLabel: context.zhL10n.commonAuthorProfile,
                   onPressed: authorPageId.isEmpty
                       ? null
                       : () => _openAuthorPage(authorPageId),
@@ -863,14 +869,16 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             answerToolbar
                 ? ZhLiquidGlassCapsuleAction(
                     icon: const Icon(Icons.copy_rounded),
-                    semanticLabel: '复制回答内容',
+                    semanticLabel: context.zhL10n.detailCopyAnswer,
                     onPressed: () => unawaited(_copyCurrentText()),
                   )
                 : ZhLiquidGlassCapsuleAction(
                     icon: Icon(
                       authorFollowing ? Icons.check_rounded : Icons.add_rounded,
                     ),
-                    semanticLabel: authorFollowing ? '取消关注作者' : '关注作者',
+                    semanticLabel: authorFollowing
+                        ? context.zhL10n.detailUnfollowAuthor
+                        : context.zhL10n.detailFollowAuthor,
                     onPressed:
                         authorActionId.isEmpty ||
                             documentRelationship?.isAuthor == true ||
@@ -883,7 +891,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                   ),
           ],
           menuIcon: const Icon(Icons.more_horiz_rounded),
-          menuSemanticLabel: '更多操作',
+          menuSemanticLabel: context.zhL10n.detailMoreActions,
           menuWidth: 280,
           onSelected: (action) => unawaited(
             _handleDetailMoreAction(
@@ -911,7 +919,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             onPressed: () {
               Navigator.of(context).maybePop();
             },
-            semanticLabel: '返回',
+            semanticLabel: context.zhL10n.commonBack,
             size: 46,
             iconSize: 24,
           ),

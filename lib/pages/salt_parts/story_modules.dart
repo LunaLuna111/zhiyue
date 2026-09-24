@@ -76,9 +76,9 @@ Map<String, dynamic> _saltFallbackStoryShortcutModule() => {
   'module_data': {
     'data': {
       'items': [
-        {'card_type': 'bookshelf', 'title': '书架'},
-        {'card_type': 'well', 'title': '长篇'},
-        {'card_type': 'category', 'title': '分类'},
+        {'card_type': 'bookshelf'},
+        {'card_type': 'well'},
+        {'card_type': 'category'},
       ],
     },
   },
@@ -87,6 +87,7 @@ Map<String, dynamic> _saltFallbackStoryShortcutModule() => {
 List<Map<String, dynamic>> _saltStoryShortcutItems(
   Object? value, {
   bool includeFallback = true,
+  AppLocalizations? l10n,
 }) {
   final source = _saltMapList(value);
   final items = <Map<String, dynamic>>[];
@@ -106,9 +107,9 @@ List<Map<String, dynamic>> _saltStoryShortcutItems(
     }
     if (seen.add(type)) {
       final fallbackTitle = switch (type) {
-        'bookshelf' => '书架',
-        'well' => '长篇',
-        _ => '分类',
+        'bookshelf' => l10n?.saltShelfTitle ?? '书架',
+        'well' => l10n?.storyLong ?? '长篇',
+        _ => l10n?.saltCategory ?? '分类',
       };
       items.add({
         ...item,
@@ -118,25 +119,32 @@ List<Map<String, dynamic>> _saltStoryShortcutItems(
     }
   }
   const fallback = <Map<String, dynamic>>[
-    {'card_type': 'bookshelf', 'title': '书架'},
-    {'card_type': 'well', 'title': '长篇'},
-    {'card_type': 'category', 'title': '分类'},
+    {'card_type': 'bookshelf'},
+    {'card_type': 'well'},
+    {'card_type': 'category'},
   ];
   if (includeFallback) {
     for (final item in fallback) {
       final type = item['card_type']! as String;
-      if (seen.add(type)) items.add(item);
+      if (seen.add(type)) {
+        final title = switch (type) {
+          'bookshelf' => l10n?.saltShelfTitle ?? '书架',
+          'well' => l10n?.storyLong ?? '长篇',
+          _ => l10n?.saltCategory ?? '分类',
+        };
+        items.add({...item, 'title': title});
+      }
     }
   }
   return items;
 }
 
-String _saltFallbackTitle(String type) => switch (type) {
-  'must_see' => '进站必看',
-  'today_read' => '今日阅读',
-  'story_everyone_watch' => '大家都在看',
-  'feed_card' => '为你推荐',
-  _ => '盐选故事',
+String _saltFallbackTitle(String type, AppLocalizations l10n) => switch (type) {
+  'must_see' => l10n.saltStoryModuleMustSee,
+  'today_read' => l10n.saltStoryModuleTodayRead,
+  'story_everyone_watch' => l10n.saltStoryModuleEveryoneWatch,
+  'feed_card' => l10n.saltStoryModuleRecommended,
+  _ => l10n.saltStoryBoard,
 };
 
 class _SaltModuleView extends StatelessWidget {
@@ -152,12 +160,13 @@ class _SaltModuleView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final type = plainText(
       module['module_type'] ?? module['card_type'],
     ).toLowerCase();
     final data = _saltModuleData(module);
     if (data == null) return const SizedBox.shrink();
-    final shortcutItems = _saltStoryShortcutItems(data['items']);
+    final shortcutItems = _saltStoryShortcutItems(data['items'], l10n: l10n);
     if (type == 'tab_nav' || _saltMapList(data['items']).isNotEmpty) {
       return _SaltShortcutRow(items: shortcutItems, onTap: onOpenShortcut);
     }
@@ -206,6 +215,7 @@ class _SaltMembershipCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final title = plainText(data['title']);
     final subtitle = plainText(data['sub_title']);
     final button = plainText(data['button_text']);
@@ -264,7 +274,7 @@ class _SaltMembershipCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title.isEmpty ? '盐选会员' : title,
+                  title.isEmpty ? l10n.saltMember : title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
@@ -344,6 +354,7 @@ class _SaltShortcutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final type = plainText(value['card_type']).toLowerCase();
     final title = titleOf(value);
     final artwork = plainText(value['artwork']);
@@ -396,7 +407,7 @@ class _SaltShortcutButton extends StatelessWidget {
                 Icon(icon, size: 28, color: iconColor),
               const SizedBox(height: 9),
               Text(
-                title.isEmpty ? '入口' : title,
+                title.isEmpty ? l10n.saltStoryEntry : title,
                 maxLines: 1,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontSize: 18,
@@ -460,22 +471,27 @@ class _SaltBillboardModuleState extends State<_SaltBillboardModule> {
     return hot >= 0 ? hot : 0;
   }
 
-  String _groupLabel(Map<String, dynamic> group, int index) {
+  String _groupLabel(
+    Map<String, dynamic> group,
+    int index,
+    AppLocalizations l10n,
+  ) {
     final head = _saltMap(group['head']);
     final type = plainText(head?['type']).trim().toLowerCase();
     final title = plainText(head?['title']);
     if (title.isNotEmpty && type.isEmpty) return title;
     return switch (type) {
-      'hot' => '热度榜',
-      'reputation' => '口碑榜',
-      'new_book' => '新书榜',
-      'well' => '长篇榜',
-      _ => title.isEmpty ? '榜单 ${index + 1}' : title,
+      'hot' => l10n.saltStoryHotBoard,
+      'reputation' => l10n.saltStoryReputationBoard,
+      'new_book' => l10n.saltStoryNewBoard,
+      'well' => l10n.saltStoryLongBoard,
+      _ => title.isEmpty ? l10n.saltStoryBoardNumber(index + 1) : title,
     };
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final groups = _visibleGroups();
     if (groups.isEmpty) return const SizedBox.shrink();
     if (!_selectionInitialized || _selected >= groups.length) {
@@ -498,7 +514,7 @@ class _SaltBillboardModuleState extends State<_SaltBillboardModule> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            widget.title.isEmpty ? '故事榜单' : widget.title,
+            widget.title.isEmpty ? l10n.saltStoryBoard : widget.title,
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontSize: 22,
               fontWeight: FontWeight.w800,
@@ -509,7 +525,7 @@ class _SaltBillboardModuleState extends State<_SaltBillboardModule> {
           ZhLiquidGlassSegmentedTabs(
             labels: [
               for (var index = 0; index < groups.length; index++)
-                _groupLabel(groups[index], index),
+                _groupLabel(groups[index], index, l10n),
             ],
             selectedIndex: selected,
             onSelected: (index) => setState(() => _selected = index),
@@ -662,13 +678,14 @@ class _SaltContentModule extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     if (cards.isEmpty) return const SizedBox.shrink();
     final horizontal = type == 'today_read' || type == 'story_everyone_watch';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ZhSectionHeader(
-          title: title.isEmpty ? _fallbackTitle(type) : title,
+          title: title.isEmpty ? _fallbackTitle(type, l10n) : title,
           description: subtitle.isEmpty ? null : subtitle,
         ),
         if (horizontal)
@@ -697,11 +714,11 @@ class _SaltContentModule extends StatelessWidget {
     );
   }
 
-  String _fallbackTitle(String type) => switch (type) {
-    'must_see' => '进站必看',
-    'today_read' => '今日阅读',
-    'story_everyone_watch' => '大家都在看',
-    'feed_card' => '为你推荐',
-    _ => '盐选故事',
+  String _fallbackTitle(String type, AppLocalizations l10n) => switch (type) {
+    'must_see' => l10n.saltStoryModuleMustSee,
+    'today_read' => l10n.saltStoryModuleTodayRead,
+    'story_everyone_watch' => l10n.saltStoryModuleEveryoneWatch,
+    'feed_card' => l10n.saltStoryModuleRecommended,
+    _ => l10n.saltStoryBoard,
   };
 }

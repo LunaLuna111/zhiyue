@@ -52,32 +52,46 @@ class _CreationTabState extends State<_CreationTab> {
     _CreationKind.more => throw StateError('更多分类不加载内容流'),
   };
 
-  String _count(List<String> keys) {
+  String _count(List<String> keys, AppLocalizations l10n) {
     final value = accountProfileMetric(widget.profile, keys) ?? 0;
-    return formatAccountProfileMetric(value);
+    return formatAccountProfileMetric(value, l10n);
   }
 
-  List<(_CreationKind, String)> get _categories => [
-    (_CreationKind.all, '全部'),
-    (_CreationKind.answers, '回答 ${_count(const ['answer_count'])}'),
-    (_CreationKind.pins, '想法 ${_count(const ['pins_count', 'pin_count'])}'),
+  List<(_CreationKind, String)> _categories(AppLocalizations l10n) => [
+    (_CreationKind.all, l10n.creationAll),
+    (
+      _CreationKind.answers,
+      l10n.creationAnswers(_count(const ['answer_count'], l10n)),
+    ),
+    (
+      _CreationKind.pins,
+      l10n.creationIdeas(_count(const ['pins_count', 'pin_count'], l10n)),
+    ),
     (
       _CreationKind.articles,
-      '文章 ${_count(const ['articles_count', 'article_count'])}',
+      l10n.creationArticles(
+        _count(const ['articles_count', 'article_count'], l10n),
+      ),
     ),
     (
       _CreationKind.columns,
-      '专栏 ${_count(const ['columns_count', 'column_count'])}',
+      l10n.creationColumns(
+        _count(const ['columns_count', 'column_count'], l10n),
+      ),
     ),
     (
       _CreationKind.questions,
-      '提问 ${_count(const ['question_count', 'questions_count'])}',
+      l10n.creationQuestions(
+        _count(const ['question_count', 'questions_count'], l10n),
+      ),
     ),
     (
       _CreationKind.videos,
-      '视频 ${_count(const ['zvideo_count', 'video_count', 'videos_count'])}',
+      l10n.creationVideos(
+        _count(const ['zvideo_count', 'video_count', 'videos_count'], l10n),
+      ),
     ),
-    (_CreationKind.more, '更多'),
+    (_CreationKind.more, l10n.creationMore),
   ];
 
   @override
@@ -89,10 +103,10 @@ class _CreationTabState extends State<_CreationTab> {
           key: const ValueKey('profile-creation-categories'),
           padding: const EdgeInsets.fromLTRB(18, 12, 18, 10),
           scrollDirection: Axis.horizontal,
-          itemCount: _categories.length,
+          itemCount: _categories(context.zhL10n).length,
           separatorBuilder: (_, _) => const SizedBox(width: 10),
           itemBuilder: (context, index) {
-            final category = _categories[index];
+            final category = _categories(context.zhL10n)[index];
             final selected = _selected == category.$1;
             return ChoiceChip(
               key: ValueKey('profile-creation-${category.$1.name}'),
@@ -131,7 +145,7 @@ class _CreationTabState extends State<_CreationTab> {
                   loadInitial: () => widget.api.getUri(_initialUri()),
                   onObjectTap: (context, value) =>
                       openDetectedObject(context, widget.api, value),
-                  emptyMessage: '还没有发布内容',
+                  emptyMessage: context.zhL10n.creationEmpty,
                 ),
         ),
       ),
@@ -173,50 +187,57 @@ class _CreationMoreList extends StatelessWidget {
     );
   }
 
-  String _count(List<String> keys) {
+  String _count(List<String> keys, AppLocalizations l10n) {
     final value = accountProfileMetric(profile, keys) ?? 0;
-    return formatAccountProfileMetric(value);
+    return formatAccountProfileMetric(value, l10n);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final rows = <(String, String, Uri, Map<String, String>?)>[
       (
-        '我的收藏',
-        _count(const ['favorite_count', 'collection_count']),
+        l10n.creationFavorites,
+        _count(const ['favorite_count', 'collection_count'], l10n),
         api.userCollectionsInitialUri(memberId),
         const {'x-api-version': '3.0.94'},
       ),
       (
-        '我的划线',
-        _count(const ['marked_answer_count', 'marked_answers_count']),
+        l10n.creationHighlights,
+        _count(const ['marked_answer_count', 'marked_answers_count'], l10n),
         api.userMarkedAnswersInitialUri(urlToken),
         null,
       ),
       (
-        '订阅的专栏',
-        _count(const ['following_column_count', 'following_columns_count']),
+        l10n.creationFollowingColumns,
+        _count(const [
+          'following_column_count',
+          'following_columns_count',
+        ], l10n),
         api.userFollowingColumnsInitialUri(memberId),
         null,
       ),
       (
-        '关注的话题',
-        _count(const ['following_topic_count', 'following_topics_count']),
+        l10n.creationFollowingTopics,
+        _count(const ['following_topic_count', 'following_topics_count'], l10n),
         api.userFollowingTopicsInitialUri(memberId),
         null,
       ),
       (
-        '关注的收藏夹',
+        l10n.creationFollowingCollections,
         _count(const [
           'following_collection_count',
           'following_collections_count',
-        ]),
+        ], l10n),
         api.userFollowingCollectionsInitialUri(memberId),
         const {'x-api-version': '3.0.94'},
       ),
       (
-        '关注的问题',
-        _count(const ['following_question_count', 'following_questions_count']),
+        l10n.creationFollowingQuestions,
+        _count(const [
+          'following_question_count',
+          'following_questions_count',
+        ], l10n),
         api.userFollowingQuestionsInitialUri(memberId),
         null,
       ),
@@ -265,6 +286,7 @@ class _ProfileFeedTab extends StatelessWidget {
     BuildContext context,
     Map<String, dynamic> value,
   ) async {
+    final l10n = context.zhL10n;
     final brief = accountActivityBriefOf(value);
     final canDelete =
         api.canWrite && accountActivityCanDelete(value) && brief.isNotEmpty;
@@ -280,7 +302,7 @@ class _ProfileFeedTab extends StatelessWidget {
             ListTile(
               minTileHeight: 58,
               leading: const Icon(Icons.share_outlined),
-              title: const Text('分享'),
+              title: Text(l10n.activityShare),
               onTap: () => Navigator.of(context).pop(_ActivityMenuAction.share),
             ),
             if (canDelete) ...[
@@ -288,7 +310,7 @@ class _ProfileFeedTab extends StatelessWidget {
               ListTile(
                 minTileHeight: 58,
                 leading: const Icon(Icons.delete_outline_rounded),
-                title: const Text('删除此条动态'),
+                title: Text(l10n.activityDelete),
                 onTap: () =>
                     Navigator.of(context).pop(_ActivityMenuAction.delete),
               ),
@@ -305,23 +327,23 @@ class _ProfileFeedTab extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('链接已复制')));
+        ).showSnackBar(SnackBar(content: Text(l10n.activityLinkCopied)));
       }
       return false;
     }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('删除此条动态？'),
-        content: const Text('删除后无法恢复。'),
+        title: Text(l10n.activityDeleteTitle),
+        content: Text(l10n.activityDeleteMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('删除'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -338,7 +360,7 @@ class _ProfileFeedTab extends StatelessWidget {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('动态已删除')));
+      ).showSnackBar(SnackBar(content: Text(l10n.activityDeleted)));
       return true;
     } catch (error) {
       if (context.mounted) {

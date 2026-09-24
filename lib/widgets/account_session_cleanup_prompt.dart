@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_theme.dart';
 
 /// Presents server-side logout signals without allowing a failed request to
@@ -124,9 +125,9 @@ class _CleanupSheet extends StatelessWidget {
                 children: [
                   Icon(Icons.shield_outlined, color: colors.primary, size: 28),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      '确认登录状态',
+                      context.zhL10n.accountSessionCheckTitle,
                       key: ValueKey('account-session-cleanup-title'),
                       style: TextStyle(
                         fontSize: 20,
@@ -138,7 +139,7 @@ class _CleanupSheet extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '知乎返回了账号会话异常信号。当前登录信息仍保留在本机，是否清理？',
+                context.zhL10n.accountSessionCheckMessage,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: ZhPalette.mutedInk,
                   height: 1.5,
@@ -146,7 +147,7 @@ class _CleanupSheet extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                '确认清理后仍可在“设置 > 账号与多端登录”中恢复最近一次会话；彻底删除需要再次手动确认。',
+                context.zhL10n.accountSessionCheckDetails,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: ZhPalette.subtleInk,
                   height: 1.45,
@@ -158,7 +159,7 @@ class _CleanupSheet extends StatelessWidget {
                 child: FilledButton(
                   key: const ValueKey('confirm-account-session-cleanup'),
                   onPressed: onClear,
-                  child: const Text('清理并保留恢复副本'),
+                  child: Text(context.zhL10n.accountSessionClearKeepBackup),
                 ),
               ),
               const SizedBox(height: 4),
@@ -167,7 +168,7 @@ class _CleanupSheet extends StatelessWidget {
                 child: TextButton(
                   key: const ValueKey('keep-account-session'),
                   onPressed: onKeep,
-                  child: const Text('保留登录状态'),
+                  child: Text(context.zhL10n.accountSessionKeep),
                 ),
               ),
             ],

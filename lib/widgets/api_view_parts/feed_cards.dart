@@ -42,7 +42,7 @@ class _FeedObjectCard extends StatelessWidget {
         ? AnswerRelationship.from(data.source)
         : null;
     final avatarFallback = data.author.isEmpty
-        ? '知'
+        ? context.zhL10n.commonZhihuUser.characters.first
         : data.author.characters.first;
 
     return Material(
@@ -66,7 +66,9 @@ class _FeedObjectCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                data.title.isEmpty ? '未命名内容' : data.title,
+                data.title.isEmpty
+                    ? context.zhL10n.commonUntitledContent
+                    : data.title,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -81,7 +83,7 @@ class _FeedObjectCard extends StatelessWidget {
                   child: Align(
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '热榜',
+                      context.zhL10n.feedHotBadge,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: ZhPalette.subtleInk,
                         fontWeight: FontWeight.w600,
@@ -217,7 +219,9 @@ class _FeedObjectCard extends StatelessWidget {
                       _CardMetric(
                         icon: Icons.change_history_outlined,
                         label: compactCount(count),
-                        semanticLabel: '赞同 ${compactCount(count)}',
+                        semanticLabel: context.zhL10n.metricVoteup(
+                          compactCount(count),
+                        ),
                         selected: relationship?.isUpvoted == true,
                         onTap: onAction == null
                             ? null
@@ -228,7 +232,9 @@ class _FeedObjectCard extends StatelessWidget {
                       _CardMetric(
                         icon: Icons.star_border_rounded,
                         label: compactCount(count),
-                        semanticLabel: '收藏 ${compactCount(count)}',
+                        semanticLabel: context.zhL10n.metricFavorite(
+                          compactCount(count),
+                        ),
                         selected: relationship?.isFavorited == true,
                         onTap: onAction == null
                             ? null
@@ -240,7 +246,9 @@ class _FeedObjectCard extends StatelessWidget {
                       _CardMetric(
                         icon: Icons.chat_bubble_outline_rounded,
                         label: compactCount(count),
-                        semanticLabel: '评论 ${compactCount(count)}',
+                        semanticLabel: context.zhL10n.metricComment(
+                          compactCount(count),
+                        ),
                         onTap: onAction == null
                             ? null
                             : () => onAction!(ContentCardAction.comments),
@@ -285,7 +293,9 @@ class _ContentAuthorTapTarget extends StatelessWidget {
     final author = authorName ?? authorNameOf(value);
     return Semantics(
       button: true,
-      label: author.isEmpty ? '查看作者个人主页' : '查看$author的个人主页',
+      label: author.isEmpty
+          ? context.zhL10n.commonAuthorProfile
+          : '${context.zhL10n.commonAuthorProfile}: $author',
       child: InkResponse(
         key: ValueKey('content-author-avatar-${idOf(value)}'),
         onTap: onTap,

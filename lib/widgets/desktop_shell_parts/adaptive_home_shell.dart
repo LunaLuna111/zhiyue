@@ -183,8 +183,8 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     messenger
       ?..hideCurrentSnackBar()
       ..showSnackBar(
-        const SnackBar(
-          content: Text('再返回一次退出应用'),
+        SnackBar(
+          content: Text(context.zhL10n.commonExitApp),
           duration: Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
@@ -426,7 +426,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                       offset: Offset(drawerWidth * value, 0),
                       child: Semantics(
                         button: true,
-                        label: '关闭侧边栏',
+                        label: context.zhL10n.drawerClose,
                         child: GestureDetector(
                           key: const ValueKey('push-drawer-dismiss'),
                           behavior: HitTestBehavior.opaque,

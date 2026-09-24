@@ -23,6 +23,7 @@ import '../core/salt_reader_adapter.dart';
 import '../core/salt_text_chapter.dart';
 import '../core/salt_transport_decoder.dart';
 import '../core/tts_service.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';

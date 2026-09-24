@@ -60,18 +60,23 @@ class _DetailDesktopRail extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('内容信息', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.zhL10n.detailContentInfo,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: ZhSpace.sm),
               _DetailMetadata(
                 metrics: metrics,
                 relationship: relationship,
                 dateLabel: dateLabel,
-                contentLabel: contentType == 'article' ? '文章' : '回答',
+                contentLabel: contentType == 'article'
+                    ? context.zhL10n.contentTypeArticle
+                    : context.zhL10n.contentTypeAnswer,
               ),
               ZhOutlineButton(
                 onPressed: onComments,
                 icon: Icons.forum_outlined,
-                label: '查看评论',
+                label: context.zhL10n.detailViewComments,
                 expand: true,
               ),
             ],
@@ -82,7 +87,7 @@ class _DetailDesktopRail extends StatelessWidget {
           padding: const EdgeInsets.all(ZhSpace.md),
           backgroundColor: ZhPalette.canvas,
           child: Text(
-            '主内容栏已限制阅读宽度，滚动时可随时查看互动数据。',
+            context.zhL10n.detailReadingHint,
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/api_client.dart';
 import '../core/api_response.dart';
 import '../core/negative_feedback.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -61,18 +62,21 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
   Future<void> _add() async {
     final config = _config;
     final value = _controller.text.trim();
+    final l10n = context.zhL10n;
     if (config == null || _saving) return;
     if (value.runes.length < config.minLength ||
         value.runes.length > config.maxLength) {
-      _message('关键词需为 ${config.minLength}-${config.maxLength} 个字符');
+      _message(
+        l10n.blockedKeywordsInvalidLength(config.minLength, config.maxLength),
+      );
       return;
     }
     if (config.keywords.contains(value)) {
-      _message('该关键词已经存在');
+      _message(l10n.blockedKeywordsExists);
       return;
     }
     if (config.keywords.length >= config.maxCount) {
-      _message('最多可设置 ${config.maxCount} 个关键词');
+      _message(l10n.blockedKeywordsLimit(config.maxCount));
       return;
     }
     setState(() => _saving = true);
@@ -140,7 +144,7 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: ZhTopBar(title: const Text('屏蔽关键词')),
+    appBar: ZhTopBar(title: Text(context.zhL10n.blockedKeywordsTitle)),
     body: SafeArea(child: _body()),
   );
 
@@ -160,7 +164,7 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
               ZhOutlineButton(
                 onPressed: _load,
                 icon: Icons.refresh_rounded,
-                label: '重试',
+                label: context.zhL10n.commonRetry,
               ),
             ],
           ),
@@ -171,10 +175,16 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 22, 20, 32),
       children: [
-        Text('包含这些关键词的推荐将被减少', style: Theme.of(context).textTheme.titleLarge),
+        Text(
+          context.zhL10n.blockedKeywordsDescription,
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
         const SizedBox(height: 8),
         Text(
-          '已设置 ${config.keywords.length}/${config.maxCount}',
+          context.zhL10n.blockedKeywordsCount(
+            config.keywords.length,
+            config.maxCount,
+          ),
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: ZhPalette.mutedInk),
@@ -188,7 +198,10 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
                 textInputAction: TextInputAction.done,
                 onSubmitted: (_) => _add(),
                 decoration: InputDecoration(
-                  hintText: '${config.minLength}-${config.maxLength} 个字符',
+                  hintText: context.zhL10n.blockedKeywordsHint(
+                    config.minLength,
+                    config.maxLength,
+                  ),
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -196,7 +209,7 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
             const SizedBox(width: 10),
             IconButton.filled(
               onPressed: _saving ? null : _add,
-              tooltip: '添加关键词',
+              tooltip: context.zhL10n.blockedKeywordsAdd,
               icon: _saving
                   ? const SizedBox.square(
                       dimension: 18,
@@ -208,9 +221,9 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
         ),
         const SizedBox(height: 18),
         if (config.keywords.isEmpty)
-          const Padding(
+          Padding(
             padding: EdgeInsets.symmetric(vertical: 48),
-            child: Center(child: Text('暂未设置屏蔽关键词')),
+            child: Center(child: Text(context.zhL10n.blockedKeywordsEmpty)),
           )
         else
           ...config.keywords.map(
@@ -219,7 +232,7 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
               title: Text(keyword),
               trailing: IconButton(
                 onPressed: _saving ? null : () => _delete(keyword),
-                tooltip: '删除 $keyword',
+                tooltip: context.zhL10n.blockedKeywordsDelete(keyword),
                 icon: const Icon(Icons.close_rounded),
               ),
             ),

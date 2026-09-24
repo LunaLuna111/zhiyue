@@ -11,6 +11,7 @@ import '../core/api_response.dart';
 import '../core/account_session_store.dart';
 import '../core/mobile_login_contract.dart';
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_glass.dart';
 import '../ui/zh_theme.dart';
@@ -104,7 +105,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     try {
       MobileLoginContract.normalizePasswordUsername(_phone.text);
       if (_passwordController.text.isEmpty) {
-        throw const FormatException('请输入密码');
+        throw FormatException(context.zhL10n.loginPasswordRequired);
       }
       _setFeedback(null);
       return true;
@@ -188,7 +189,13 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(saved ? '扫码登录成功' : '扫码登录成功，但账号槽位保存失败，请稍后重试')),
+      SnackBar(
+        content: Text(
+          saved
+              ? context.zhL10n.loginScanSuccess
+              : context.zhL10n.loginQrSaveFailed,
+        ),
+      ),
     );
     if (!widget.embedded) Navigator.of(context).pop(true);
   }
@@ -199,7 +206,13 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
     );
     if (!mounted) return saved;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(saved ? '登录成功' : '登录成功，但账号槽位保存失败，请稍后重试')),
+      SnackBar(
+        content: Text(
+          saved
+              ? context.zhL10n.loginSuccess
+              : context.zhL10n.loginQrSaveFailed,
+        ),
+      ),
     );
     return saved;
   }
@@ -232,12 +245,14 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         _setFeedback(result.message, isError: true);
       }
       if (result.requiresCaptcha && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('请先完成人机验证')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.zhL10n.loginHumanVerification)),
+        );
       }
     } catch (_) {
-      _setFeedback('验证码发送失败，请稍后重试', isError: true);
+      if (mounted) {
+        _setFeedback(context.zhL10n.loginCodeSendFailed, isError: true);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -264,7 +279,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         if (!widget.embedded) Navigator.of(context).pop(true);
       }
     } catch (_) {
-      _setFeedback('登录失败，请检查网络后重试', isError: true);
+      if (mounted) {
+        _setFeedback(context.zhL10n.loginFailedNetwork, isError: true);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -291,7 +308,9 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         if (!widget.embedded) Navigator.of(context).pop(true);
       }
     } catch (_) {
-      _setFeedback('登录失败，请检查账号和密码后重试', isError: true);
+      if (mounted) {
+        _setFeedback(context.zhL10n.loginFailedCredentials, isError: true);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -361,11 +380,11 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                     : ZhLiquidGlassIconButton(
                         size: 46,
                         iconSize: 24,
-                        semanticLabel: '打开侧边栏',
+                        semanticLabel: context.zhL10n.drawerOpen,
                         onPressed: widget.onMenuPressed,
                         icon: const Icon(Icons.menu_rounded),
                       ),
-                title: const Text('登录'),
+                title: Text(context.zhL10n.loginTitle),
               )
             : ZhTopBar(
                 toolbarHeight: toolbarHeight,
@@ -440,8 +459,10 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                       _LoginPrimaryButton(
                         busy: _busy,
                         label: _mode == _LoginMode.password
-                            ? '登录'
-                            : (_codeSent ? '继续登录' : '获取验证码'),
+                            ? context.zhL10n.loginTitle
+                            : (_codeSent
+                                  ? context.zhL10n.loginContinueSignIn
+                                  : context.zhL10n.loginGetCode),
                         onPressed: _busy
                             ? null
                             : _mode == _LoginMode.password
@@ -458,15 +479,17 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                         key: const ValueKey('login-mode-toggle'),
                         onPressed: _busy ? null : _switchLoginMode,
                         label: _mode == _LoginMode.password
-                            ? '验证码登录'
-                            : '账号密码登录',
+                            ? context.zhL10n.loginPhoneSignIn
+                            : context.zhL10n.loginPasswordSignIn,
                       ),
                     ],
                     const SizedBox(height: 4),
                     _LoginTextButton(
                       key: const ValueKey('qr-login-mode-toggle'),
                       onPressed: _busy ? null : _switchQrMode,
-                      label: _mode == _LoginMode.qr ? '手机号登录' : '扫码登录',
+                      label: _mode == _LoginMode.qr
+                          ? context.zhL10n.loginPhoneSignIn
+                          : context.zhL10n.loginQrSignIn,
                     ),
                     const SizedBox(height: 28),
                     const Divider(),
@@ -475,10 +498,10 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
                       alignment: Alignment.centerLeft,
                       child: _LoginTextButton(
                         onPressed: () => _openOfficialHelp(
-                          '账号申诉',
+                          context.zhL10n.loginAccountAppeal,
                           'https://www.zhihu.com/account/appeal?utm_source=android',
                         ),
-                        label: '遇到问题？账号申诉',
+                        label: context.zhL10n.loginAccountAppealHint,
                       ),
                     ),
                   ],
@@ -499,7 +522,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         key: const ValueKey('login-phone-input'),
         controller: _phone,
         focusNode: _phoneFocus,
-        placeholder: '国家/地区代码 + 手机号',
+        placeholder: context.zhL10n.loginPhonePlaceholder,
         prefixIcon: Icons.phone_iphone_rounded,
         keyboardType: TextInputType.phone,
         textInputAction: TextInputAction.done,
@@ -519,7 +542,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         key: const ValueKey('login-username-input'),
         controller: _phone,
         focusNode: _phoneFocus,
-        placeholder: '手机号 / 邮箱',
+        placeholder: context.zhL10n.loginAccountPlaceholder,
         prefixIcon: Icons.person_outline_rounded,
         keyboardType: TextInputType.emailAddress,
         textInputAction: TextInputAction.next,
@@ -532,7 +555,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         focusNode: _passwordFocus,
         enabled: !_busy,
         obscureText: _obscurePassword,
-        placeholder: '密码',
+        placeholder: context.zhL10n.loginPasswordPlaceholder,
         prefixIcon: Icons.lock_outline_rounded,
         suffixIcon: Icon(
           _obscurePassword
@@ -557,7 +580,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         children: [
           Expanded(
             child: Text(
-              '验证码已发送至 ${maskLoginPhone(_phone.text)}',
+              context.zhL10n.loginCodeSent(maskLoginPhone(_phone.text)),
               style: Theme.of(
                 context,
               ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
@@ -565,7 +588,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
           ),
           _LoginTextButton(
             onPressed: _busy ? null : _editPhone,
-            label: '更换手机号',
+            label: context.zhL10n.loginChangePhone,
           ),
         ],
       ),
@@ -575,7 +598,7 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         controller: _digitsController,
         focusNode: _firstOtpFocus,
         enabled: !_busy,
-        placeholder: '输入 6 位验证码',
+        placeholder: context.zhL10n.loginCodePlaceholder,
         prefixIcon: Icons.password_rounded,
         keyboardType: TextInputType.number,
         textInputAction: TextInputAction.done,
@@ -611,15 +634,21 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
         child: Wrap(
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Text('同意', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              context.zhL10n.loginAgree,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
             _InlineLink(
-              label: '《知乎用户协议》',
+              label: context.zhL10n.loginUserAgreement,
               onTap: () => _openOfficialHelp(
-                '知乎用户协议',
+                context.zhL10n.loginUserAgreement,
                 'https://www.zhihu.com/term/zhihu-terms',
               ),
             ),
-            Text('与隐私政策', style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              context.zhL10n.loginPrivacyPolicy,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
           ],
         ),
       ),
@@ -629,10 +658,15 @@ class _NativeLoginPageState extends State<NativeLoginPage> {
   Widget _buildCodeActions() => Row(
     mainAxisAlignment: MainAxisAlignment.center,
     children: [
-      Text('没有收到？', style: Theme.of(context).textTheme.bodySmall),
+      Text(
+        context.zhL10n.loginNoCode,
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
       _LoginTextButton(
         onPressed: !_busy && _countdown == 0 ? _requestDigits : null,
-        label: _countdown == 0 ? '重新发送' : '${_countdown}s 后重试',
+        label: _countdown == 0
+            ? context.zhL10n.commonRefresh
+            : context.zhL10n.loginResendAfter(_countdown),
       ),
     ],
   );

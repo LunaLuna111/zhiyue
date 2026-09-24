@@ -37,18 +37,23 @@ class _AnswerSwitchPreview extends StatelessWidget {
     final excerpt = _answerListExcerpt(value);
     final avatar = authorAvatarOf(value);
     final label = triggered
-        ? '松开切换'
+        ? context.zhL10n.answerSwitchRelease
         : previous
-        ? '继续下拉查看上一个回答'
-        : '继续上滑查看下一个回答';
+        ? context.zhL10n.answerSwitchPreviousHint
+        : context.zhL10n.answerSwitchNextHint;
+    final target = author.isEmpty
+        ? previous
+              ? context.zhL10n.answerPrevious
+              : context.zhL10n.answerNext
+        : author;
     return Semantics(
       container: true,
       button: true,
       label: triggered
-          ? '松开切换到${author.isEmpty ? (previous ? '上一个' : '下一个') : author}的回答'
+          ? context.zhL10n.answerSwitchTo(target)
           : previous
-          ? '继续下拉查看上一个回答'
-          : '继续上滑查看下一个回答',
+          ? context.zhL10n.answerSwitchPreviousHint
+          : context.zhL10n.answerSwitchNextHint,
       child: Opacity(
         opacity: progress.clamp(0, 1).toDouble(),
         child: Padding(
@@ -76,7 +81,9 @@ class _AnswerSwitchPreview extends StatelessWidget {
                     const SizedBox(width: 8),
                     _AuthorAvatar(
                       imageUrl: avatar,
-                      fallback: author.isEmpty ? '知' : author.characters.first,
+                      fallback: author.isEmpty
+                          ? context.zhL10n.commonZhihuUser.characters.first
+                          : author.characters.first,
                       size: 30,
                     ),
                     const SizedBox(width: 9),

@@ -77,7 +77,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
     if (selected.runes.length < 5) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('至少选择 5 个字')));
+        ..showSnackBar(
+          SnackBar(content: Text(context.zhL10n.detailSelectionTooShort(5))),
+        );
       return;
     }
     final initialText = '「$selected」\n';
@@ -91,10 +93,12 @@ extension _ContentDetailActions on _ContentDetailPageState {
       backgroundColor: Colors.transparent,
       builder: (_) => CommentComposerSheet(
         api: widget.api,
-        title: '评论这段话',
+        title: context.zhL10n.detailCommentSelection,
         initialText: initialText,
         onSubmit: (value) async {
-          if (value.text.trim() == initialText.trim()) return '请输入你的评论';
+          if (value.text.trim() == initialText.trim()) {
+            return context.zhL10n.detailCommentHint;
+          }
           final response = selection.hasSegmentTarget
               ? await widget.api.createSegmentComment(
                   contentType: widget.contentType,
@@ -123,7 +127,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
     }
     ScaffoldMessenger.of(
       context,
-    ).showSnackBar(const SnackBar(content: Text('评论已发布。')));
+    ).showSnackBar(SnackBar(content: Text(context.zhL10n.commentPublished)));
   }
 
   void _openBodyLink(String url, String title) {
@@ -135,7 +139,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('$action功能暂不可用'),
+          content: Text(context.zhL10n.detailActionUnavailable(action)),
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -157,7 +161,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
     if (!widget.api.canWrite) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('登录后可使用此功能')));
+        ..showSnackBar(
+          SnackBar(content: Text(context.zhL10n.detailSignInRequired)),
+        );
       return;
     }
     final relationship = AnswerRelationship.from(object);
@@ -167,16 +173,18 @@ extension _ContentDetailActions on _ContentDetailPageState {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('取消关注？'),
-          content: Text('将不再关注 ${authorNameOf(object)}'),
+          title: Text(context.zhL10n.detailUnfollowTitle),
+          content: Text(
+            context.zhL10n.detailUnfollowMessage(authorNameOf(object)),
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(context.zhL10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('取消关注'),
+              child: Text(context.zhL10n.detailUnfollowAction),
             ),
           ],
         ),
@@ -224,9 +232,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
     final document = _document;
     if (document == null || _busyAction.isNotEmpty) return;
     final cardAction = switch (action) {
-      '赞同' => ContentCardAction.vote,
-      '反对' => ContentCardAction.downvote,
-      '收藏' => ContentCardAction.favorite,
+      'vote' => ContentCardAction.vote,
+      'downvote' => ContentCardAction.downvote,
+      'favorite' => ContentCardAction.favorite,
       _ => null,
     };
     if (cardAction == null) {
@@ -286,9 +294,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
           contentId: widget.contentId,
         );
         if (mounted) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('已清除本条回答缓存')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.zhL10n.detailCacheCleared)),
+          );
         }
         break;
     }
@@ -304,9 +312,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
       final lines = <String>[];
       for (final block in blocks) {
         if (block.isImage) {
-          lines.add('[图片]');
+          lines.add(context.zhL10n.detailImagePlaceholder);
         } else if (block.isVideo) {
-          lines.add('[视频]');
+          lines.add(context.zhL10n.detailVideoPlaceholder);
         } else if (block.text.trim().isNotEmpty) {
           lines.add(block.text.trim());
         }
@@ -324,7 +332,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
     final body = _currentPlainText().trim();
     final lines = <String>[
       if (title.isNotEmpty) title,
-      if (author.isNotEmpty) '作者：$author',
+      if (author.isNotEmpty) context.zhL10n.detailAuthorPrefix(author),
       if (title.isNotEmpty || author.isNotEmpty) '',
       if (body.isNotEmpty) body,
     ];
@@ -334,7 +342,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
   Future<void> _exportCurrentText() async {
     final text = _exportText();
     if (text.trim().isEmpty) {
-      _showDetailMessage('当前回答没有可导出的正文');
+      _showDetailMessage(context.zhL10n.detailNoExportableBody);
       return;
     }
     try {
@@ -342,7 +350,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
         _document ?? _initialSemantic ?? const <String, dynamic>{},
       );
       final file = buildSaltChapterExport(
-        title: title.isEmpty ? '回答详情' : title,
+        title: title.isEmpty ? context.zhL10n.detailAnswerDetails : title,
         sectionId: widget.contentId,
         sections: [
           SaltChapterExportSection(
@@ -362,9 +370,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
         ),
       );
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('已导出到 $location')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.zhL10n.detailExportedTo(location))),
+        );
       }
     } catch (error, stackTrace) {
       unawaited(
@@ -375,21 +383,21 @@ extension _ContentDetailActions on _ContentDetailPageState {
           category: AppLogCategory.error,
         ),
       );
-      if (mounted) _showDetailMessage('导出失败，请重试');
+      if (mounted) _showDetailMessage(context.zhL10n.detailExportFailed);
     }
   }
 
   Future<void> _exportCurrentDocument(ContentExportFormat format) async {
     final object = _document ?? _initialSemantic ?? const <String, dynamic>{};
     if (_currentPlainText().trim().isEmpty) {
-      _showDetailMessage('当前回答没有可导出的正文');
+      _showDetailMessage(context.zhL10n.detailNoExportableBody);
       return;
     }
     try {
       final location = await ContentExportService.saveObject(
         object: object,
         format: format,
-        fallbackTitle: '回答详情',
+        fallbackTitle: context.zhL10n.detailAnswerDetails,
       );
       unawaited(
         AppLogStore.instance.record(
@@ -401,7 +409,11 @@ extension _ContentDetailActions on _ContentDetailPageState {
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('已导出为 ${format.label}：$location')),
+          SnackBar(
+            content: Text(
+              context.zhL10n.detailDocumentExported(format.label, location),
+            ),
+          ),
         );
       }
     } catch (error, stackTrace) {
@@ -413,7 +425,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
           category: AppLogCategory.error,
         ),
       );
-      if (mounted) _showDetailMessage('导出失败，请重试');
+      if (mounted) _showDetailMessage(context.zhL10n.detailExportFailed);
     }
   }
 
@@ -421,12 +433,12 @@ extension _ContentDetailActions on _ContentDetailPageState {
     final tts = TtsService.instance;
     if (tts.isPlaying) {
       await tts.stop();
-      if (mounted) _showDetailMessage('已停止朗读');
+      if (mounted) _showDetailMessage(context.zhL10n.detailStoppedReading);
       return;
     }
     final text = _currentPlainText();
     if (text.trim().isEmpty) {
-      _showDetailMessage('当前回答没有可朗读的正文');
+      _showDetailMessage(context.zhL10n.detailNoReadableBody);
       return;
     }
     final started = await tts.speak(
@@ -436,21 +448,25 @@ extension _ContentDetailActions on _ContentDetailPageState {
       ),
     );
     if (mounted) {
-      _showDetailMessage(started ? '正在朗读正文' : '系统语音不可用，请安装中文语音包');
+      _showDetailMessage(
+        started
+            ? context.zhL10n.detailReading
+            : context.zhL10n.detailTtsUnavailable,
+      );
     }
   }
 
   Future<void> _copyCurrentText() async {
     final text = _exportText();
     if (text.trim().isEmpty) {
-      _showDetailMessage('当前回答没有可复制的正文');
+      _showDetailMessage(context.zhL10n.detailNoCopyableText);
       return;
     }
     await Clipboard.setData(ClipboardData(text: text));
     if (mounted) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('已复制全文')));
+      ).showSnackBar(SnackBar(content: Text(context.zhL10n.detailCopied)));
     }
   }
 
@@ -459,22 +475,24 @@ extension _ContentDetailActions on _ContentDetailPageState {
     final keyword = await showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('搜索正文'),
+        title: Text(context.zhL10n.detailSearchBodyTitle),
         content: TextField(
           controller: controller,
           autofocus: true,
           textInputAction: TextInputAction.search,
-          decoration: const InputDecoration(hintText: '输入关键词'),
+          decoration: InputDecoration(
+            hintText: context.zhL10n.detailKeywordHint,
+          ),
           onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('取消'),
+            child: Text(context.zhL10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(controller.text),
-            child: const Text('定位'),
+            child: Text(context.zhL10n.detailLocate),
           ),
         ],
       ),
@@ -484,7 +502,7 @@ extension _ContentDetailActions on _ContentDetailPageState {
     final body = _currentPlainText();
     final index = body.toLowerCase().indexOf(keyword.trim().toLowerCase());
     if (index < 0) {
-      _showDetailMessage('正文中没有找到“${keyword.trim()}”');
+      _showDetailMessage(context.zhL10n.detailBodyNotFound(keyword.trim()));
       return;
     }
     if (!_scrollController.hasClients || body.isEmpty) return;
@@ -496,9 +514,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
       curve: Curves.easeOutCubic,
     );
     if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('已定位到“${keyword.trim()}”')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.detailLocated(keyword.trim()))),
+      );
     }
   }
 
@@ -530,12 +548,14 @@ extension _ContentDetailActions on _ContentDetailPageState {
       backgroundColor: Colors.transparent,
       builder: (_) => CommentComposerSheet(
         api: widget.api,
-        title: '写回答',
+        title: context.zhL10n.detailWriteAnswer,
         maxLength: 100000,
         enableImage: false,
         enableGift: false,
         onSubmit: (value) async {
-          if (value.text.trim().isEmpty) return '回答内容不能为空';
+          if (value.text.trim().isEmpty) {
+            return context.zhL10n.detailAnswerRequired;
+          }
           final response = await widget.api.publishAnswer(
             questionId: questionId,
             questionTitle: title,
@@ -546,9 +566,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
       ),
     );
     if (mounted && published == true) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('回答已发布')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(context.zhL10n.detailAnswerPublished)),
+      );
     }
   }
 }

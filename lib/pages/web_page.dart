@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../core/privacy_device_profile.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -58,7 +59,10 @@ Future<void> openZhihuSafetyVerification(BuildContext context) async {
     MaterialPageRoute<void>(
       settings: const RouteSettings(name: 'zhihu-safety-verification'),
       builder: (_) =>
-          const OfficialWebPage(title: '安全验证', url: zhihuSafetyVerificationUrl),
+          OfficialWebPage(
+            title: context.zhL10n.webSafetyTitle,
+            url: zhihuSafetyVerificationUrl,
+          ),
     ),
   );
 }
@@ -182,7 +186,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
               setState(() {
                 _preparing = false;
                 _pageReady = false;
-                _pageError = '页面加载失败，请检查网络后重试';
+                _pageError = context.zhL10n.webPageLoadFailedNetwork;
               });
             }
           },
@@ -196,7 +200,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                 (error.response?.statusCode ?? 0) >= 400) {
               setState(() {
                 _pageReady = false;
-                _pageError = '页面暂时无法打开，请稍后重试';
+                _pageError = context.zhL10n.webPageUnavailable;
               });
             }
           },
@@ -288,8 +292,8 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
           _preparing = false;
           _pageReady = false;
           _pageError = widget.requiresSessionCookie
-              ? '登录状态未能同步，请重新登录后再试'
-              : '页面加载失败，请重试';
+              ? context.zhL10n.webSessionSyncFailed
+              : context.zhL10n.commonFailed;
         });
       }
     }
@@ -359,7 +363,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
       if (title.isNotEmpty) _displayTitle = title;
       if (widget.requiresSessionCookie && isOfficialLoginNavigation(value)) {
         _pageReady = false;
-        _pageError = '网页登录状态已失效，请重新登录后再试';
+        _pageError = context.zhL10n.webLoginExpired;
       }
     });
   }
@@ -444,7 +448,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
       webOnlyWindowName: '_blank',
     );
     if (!opened && mounted) {
-      setState(() => _pageError = '无法调用系统浏览器');
+      setState(() => _pageError = context.zhL10n.webSystemBrowserUnavailable);
     }
   }
 
@@ -465,14 +469,16 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                   const Icon(Icons.open_in_new, size: 44),
                   const SizedBox(height: 16),
                   Text(
-                    kIsWeb ? '请在浏览器中继续' : '当前桌面平台使用系统浏览器',
+                    kIsWeb
+                        ? context.zhL10n.webContinueInBrowser
+                        : context.zhL10n.webDesktopSystemBrowser,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 18),
                   ZhPrimaryButton(
                     onPressed: _openExternal,
                     icon: Icons.open_in_browser,
-                    label: '打开浏览器',
+                    label: context.zhL10n.webOpenBrowser,
                   ),
                   if (_pageError != null) ...[
                     const SizedBox(height: 12),
@@ -496,7 +502,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
           leading: ZhLiquidGlassIconButton(
             size: 46,
             iconSize: 24,
-            semanticLabel: '返回',
+            semanticLabel: context.zhL10n.commonBack,
             onPressed: _handleBack,
             icon: const Icon(Icons.arrow_back_rounded),
           ),
@@ -509,7 +515,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
             ZhLiquidGlassIconButton(
               size: 44,
               iconSize: 22,
-              semanticLabel: '刷新',
+              semanticLabel: context.zhL10n.commonRefresh,
               onPressed: _preparing ? null : _prepareCookiesAndLoad,
               icon: const Icon(Icons.refresh_rounded),
             ),
@@ -535,7 +541,9 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                         const CircularProgressIndicator(),
                         const SizedBox(height: ZhSpace.md),
                         Text(
-                          widget.requiresSessionCookie ? '正在打开章节' : '正在打开页面',
+                          widget.requiresSessionCookie
+                              ? context.zhL10n.webOpeningChapter
+                              : context.zhL10n.webOpeningPage,
                         ),
                       ],
                     ),
@@ -565,14 +573,14 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                             const SizedBox(height: ZhSpace.md),
                             ZhPrimaryButton(
                               onPressed: _prepareCookiesAndLoad,
-                              label: '重试',
+                              label: context.zhL10n.commonRetry,
                               icon: Icons.refresh_rounded,
                               expand: true,
                             ),
                             const SizedBox(height: ZhSpace.xs),
                             ZhGhostButton(
                               onPressed: _openExternal,
-                              label: '在浏览器中打开',
+                              label: context.zhL10n.webOpenInBrowser,
                               icon: Icons.open_in_browser_rounded,
                             ),
                           ],
@@ -603,13 +611,13 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                           onPressed: widget.previousUrl == null
                               ? null
                               : () => _openChapter(widget.previousUrl),
-                          tooltip: '上一节',
+                          tooltip: context.zhL10n.saltPreviousChapter,
                           icon: const Icon(Icons.chevron_left_rounded),
                         ),
                       ),
                       Expanded(
                         child: Text(
-                          '章节阅读',
+                          context.zhL10n.webChapterReading,
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.labelLarge,
                         ),
@@ -620,7 +628,7 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
                           onPressed: widget.nextUrl == null
                               ? null
                               : () => _openChapter(widget.nextUrl),
-                          tooltip: '下一节',
+                          tooltip: context.zhL10n.saltNextChapter,
                           icon: const Icon(Icons.chevron_right_rounded),
                         ),
                       ),

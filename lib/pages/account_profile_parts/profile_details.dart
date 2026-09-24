@@ -42,7 +42,11 @@ DateTime? _profileBirthday(Map<String, dynamic> profile) {
   return DateTime.tryParse(text);
 }
 
-String profileAccountAgeText(Map<String, dynamic> profile, {DateTime? now}) {
+String profileAccountAgeText(
+  Map<String, dynamic> profile, {
+  DateTime? now,
+  AppLocalizations? l10n,
+}) {
   final official = plainText(profile['zhi_age']);
   if (official.isNotEmpty) return official;
   int? timestamp;
@@ -61,20 +65,31 @@ String profileAccountAgeText(Map<String, dynamic> profile, {DateTime? now}) {
     timestamp > 100000000000 ? timestamp : timestamp * 1000,
   );
   final current = now ?? DateTime.now();
-  if (!created.isBefore(current)) return '刚刚加入';
+  if (!created.isBefore(current)) return l10n?.profileJustJoined ?? '刚刚加入';
   final days = current.difference(created).inDays;
-  if (days < 31) return '$days 天';
-  if (days < 365) return '${days ~/ 30} 个月 ${days % 30} 天';
-  return '${days ~/ 365} 年 ${(days % 365) ~/ 30} 个月';
+  if (days < 31) return l10n?.profileAgeDays(days) ?? '$days 天';
+  if (days < 365) {
+    return l10n?.profileAgeMonthsDays(days ~/ 30, days % 30) ??
+        '${days ~/ 30} 个月 ${days % 30} 天';
+  }
+  return l10n?.profileAgeYearsMonths(days ~/ 365, (days % 365) ~/ 30) ??
+      '${days ~/ 365} 年 ${(days % 365) ~/ 30} 个月';
 }
 
 String _profileGender(Map<String, dynamic> profile) {
   final value = profile['gender'];
   final text = plainText(value).toLowerCase();
-  if (value == 0 || text == 'female') return '女';
-  if (value == 1 || text == 'male') return '男';
-  return '未填写';
+  if (value == 0 || text == 'female') return 'female';
+  if (value == 1 || text == 'male') return 'male';
+  return '';
 }
+
+String profileGenderLabel(String value, AppLocalizations l10n) =>
+    switch (value) {
+      'female' => l10n.profileGenderFemale,
+      'male' => l10n.profileGenderMale,
+      _ => l10n.profileGenderUnspecified,
+    };
 
 String _profileLocation(Map<String, dynamic> profile) {
   final values = _profileMaps(profile['locations']);
@@ -129,10 +144,11 @@ class AccountProfileDetailsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final name = plainText(profile['name']).isEmpty
-        ? '知乎用户'
+        ? l10n.profileUserFallback
         : plainText(profile['name']);
-    final age = profileAccountAgeText(profile);
+    final age = profileAccountAgeText(profile, l10n: l10n);
     final identities = _profileIdentityLabels(profile);
     final likes = _profileMetric(profile, const [
       'voteup_count',
@@ -144,11 +160,11 @@ class AccountProfileDetailsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: ZhPalette.canvas,
       appBar: ZhTopBar(
-        title: const Text('个人资料'),
+        title: Text(l10n.profileAllDetails),
         leading: ZhLiquidGlassIconButton(
           size: 46,
           iconSize: 24,
-          semanticLabel: '关闭',
+          semanticLabel: l10n.commonClose,
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close_rounded),
         ),
@@ -157,58 +173,68 @@ class AccountProfileDetailsPage extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
         children: [
           _ProfileSection(
-            title: '基本资料',
+            title: l10n.profileBasicInfo,
             children: [
-              _ProfileValueRow(label: '用户名', value: name),
-              if (age.isNotEmpty) _ProfileValueRow(label: '知龄', value: age),
-              _ProfileValueRow(label: '性别', value: _profileGender(profile)),
+              _ProfileValueRow(label: l10n.profileUsername, value: name),
+              if (age.isNotEmpty)
+                _ProfileValueRow(label: l10n.profileAccountAge, value: age),
+              _ProfileValueRow(
+                label: l10n.profileGender,
+                value: profileGenderLabel(_profileGender(profile), l10n),
+              ),
               if (profileBirthdayText(profile).isNotEmpty)
                 _ProfileValueRow(
-                  label: '生日',
+                  label: l10n.profileBirthday,
                   value: profileBirthdayText(profile),
                 ),
               if (_profileLocation(profile).isNotEmpty)
                 _ProfileValueRow(
-                  label: '居住地',
+                  label: l10n.profileLocation,
                   value: _profileLocation(profile),
                 ),
             ],
           ),
           const SizedBox(height: 12),
           _ProfileSection(
-            title: '认证信息',
+            title: l10n.profileVerification,
             trailing: Text(
-              '管理认证',
+              l10n.profileManageVerification,
               style: TextStyle(color: ZhPalette.subtleInk),
             ),
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 14),
                 child: Text(
-                  identities.isEmpty ? '未认证' : identities.join(' · '),
+                  identities.isEmpty
+                      ? l10n.profileUnverified
+                      : identities.join(' · '),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _ProfileSection(
-            title: '影响力',
+            title: l10n.profileInfluence,
             children: [
               _ProfileImpactRow(
                 icon: Icons.workspace_premium_rounded,
-                label: '我的徽章',
-                value: identities.isEmpty ? '暂无' : '${identities.length} 枚',
+                label: l10n.profileBadges,
+                value: identities.isEmpty
+                    ? l10n.profileNone
+                    : l10n.profileCountPieces(identities.length),
               ),
               _ProfileImpactRow(
                 icon: Icons.change_history_rounded,
-                label: '获得喜欢',
-                value: likes == null ? '暂无' : '$likes 次',
+                label: l10n.profileLikes,
+                value: likes == null
+                    ? l10n.profileNone
+                    : l10n.profileCountTimes(likes),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _ProfileSection(
-            title: '好友印象',
+            title: l10n.profileFriendImpression,
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(0, 18, 0, 8),
@@ -228,12 +254,12 @@ class AccountProfileDetailsPage extends StatelessWidget {
                           : Text(name.characters.first),
                     ),
                     const SizedBox(height: 12),
-                    const Text('完善我的知乎形象，获取更多关注'),
+                    Text(l10n.profileImproveImage),
                     const SizedBox(height: 14),
                     OutlinedButton.icon(
                       onPressed: () {},
                       icon: const Icon(Icons.add_rounded),
-                      label: const Text('添加形象关键词'),
+                      label: Text(l10n.profileAddKeywords),
                     ),
                   ],
                 ),

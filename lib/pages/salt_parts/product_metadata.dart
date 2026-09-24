@@ -210,13 +210,19 @@ String _saltProductProgressText({
   required String completion,
   required int? updatedTo,
   required int? total,
+  AppLocalizations? l10n,
 }) {
   final direct = explicit.trim();
   if (direct.isNotEmpty) return direct;
-  if (completion == '已完结' && total != null) return '已完结，共 $total 节';
-  if (updatedTo != null) return '已更新至第 $updatedTo 节';
+  if ((completion == '已完结' || completion == l10n?.storyFinished) &&
+      total != null) {
+    return l10n?.saltFinishedWithCount(total) ?? '已完结，共 $total 节';
+  }
+  if (updatedTo != null) {
+    return l10n?.saltUpdatedTo(updatedTo) ?? '已更新至第 $updatedTo 节';
+  }
   if (completion.isNotEmpty) return completion;
-  if (total != null) return '共 $total 节';
+  if (total != null) return l10n?.saltChapterCount(total) ?? '共 $total 节';
   return '';
 }
 
@@ -232,7 +238,10 @@ bool? _saltMetadataBool(Map<String, dynamic>? value, List<String> keys) {
   return null;
 }
 
-String _saltCompletionLabel(Map<String, dynamic>? parent) {
+String _saltCompletionLabel(
+  Map<String, dynamic>? parent, [
+  AppLocalizations? l10n,
+]) {
   final explicit = _saltMetadataText(parent, const [
     'completion_text',
     'finish_status_text',
@@ -247,19 +256,19 @@ String _saltCompletionLabel(Map<String, dynamic>? parent) {
     'finished',
     'completed',
   ]);
-  if (finished == true) return '已完结';
-  if (finished == false) return '连载中';
+  if (finished == true) return l10n?.storyFinished ?? '已完结';
+  if (finished == false) return l10n?.storyOngoing ?? '连载中';
   return '';
 }
 
-String _saltTypeLabel(Map<String, dynamic>? parent) {
+String _saltTypeLabel(Map<String, dynamic>? parent, [AppLocalizations? l10n]) {
   final explicit = _saltMetadataText(parent, const [
     'type_name',
     'property_type_name',
   ]);
   if (explicit.isNotEmpty) return explicit;
   if (_saltMetadataBool(parent, const ['is_long', 'is_long_story']) == true) {
-    return '长篇';
+    return l10n?.storyLong ?? '长篇';
   }
   final propertyType = _saltMetadataText(parent, const [
     'property_type',
@@ -268,9 +277,9 @@ String _saltTypeLabel(Map<String, dynamic>? parent) {
     'type_en',
   ]).toLowerCase();
   return switch (propertyType) {
-    'long_story' || 'mid_long' || 'mid_long_story' => '长篇',
-    'short_story' => '短篇',
-    'audio_story' => '有声书',
+    'long_story' || 'mid_long' || 'mid_long_story' => l10n?.storyLong ?? '长篇',
+    'short_story' => l10n?.storyShort ?? '短篇',
+    'audio_story' => l10n?.storyAudioBook ?? '有声书',
     _ => '',
   };
 }

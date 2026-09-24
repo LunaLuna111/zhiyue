@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/webdav_models.dart';
 import '../core/webdav_sync_service.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -63,7 +64,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     } on Object catch (error) {
       if (!mounted) return;
       setState(() => _loading = false);
-      _showMessage('读取 WebDAV 设置失败：$error');
+      _showMessage(context.zhL10n.webdavLoadFailed(error.toString()));
     }
   }
 
@@ -82,7 +83,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     final draft = _draft();
     final error = draft.validate();
     if (error != null) {
-      _showMessage(error);
+      _showMessage(localizedWebDavError(context.zhL10n, error));
       return false;
     }
     setState(() => _saving = true);
@@ -90,7 +91,9 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       await service.saveSettings(draft);
       return true;
     } on Object catch (error) {
-      _showMessage('保存失败：$error');
+      if (mounted) {
+        _showMessage(context.zhL10n.webdavSaveFailed(error.toString()));
+      }
       return false;
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -102,9 +105,11 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     setState(() => _saving = true);
     try {
       await service.testConnection();
-      if (mounted) _showMessage('WebDAV 连接成功');
+      if (mounted) _showMessage(context.zhL10n.webdavConnected);
     } on Object catch (error) {
-      if (mounted) _showMessage('连接失败：$error');
+      if (mounted) {
+        _showMessage(context.zhL10n.webdavConnectionFailed(error.toString()));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -115,9 +120,15 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     setState(() => _saving = true);
     try {
       final result = await service.sync();
-      if (mounted) _showMessage(result.message);
+      if (mounted) {
+        _showMessage(
+          localizedWebDavStatusMessage(context.zhL10n, result.message),
+        );
+      }
     } on Object catch (error) {
-      if (mounted) _showMessage('同步失败：$error');
+      if (mounted) {
+        _showMessage(context.zhL10n.webdavSyncFailed(error.toString()));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -126,25 +137,25 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
   Future<void> _disable() async {
     setState(() => _enabled = false);
     final saved = await _saveDraft();
-    if (saved && mounted) _showMessage('WebDAV 同步已关闭，凭据仍保留在本机私有数据库');
+    if (saved && mounted) _showMessage(context.zhL10n.webdavDisabled);
   }
 
   Future<void> _clearSettings() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('清除 WebDAV 配置？'),
-        content: const Text('这会删除本机保存的 WebDAV 地址、账号和凭据，不会删除远端同步数据。'),
+        title: Text(context.zhL10n.webdavClearTitle),
+        content: Text(context.zhL10n.webdavClearMessage),
         actions: [
           TextButton(
             key: const ValueKey('webdav-clear-cancel'),
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('取消'),
+            child: Text(context.zhL10n.commonCancel),
           ),
           FilledButton(
             key: const ValueKey('webdav-clear-confirm'),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('清除'),
+            child: Text(context.zhL10n.commonClear),
           ),
         ],
       ),
@@ -164,9 +175,11 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         _usernameController.clear();
         _secretController.clear();
       });
-      _showMessage('本机 WebDAV 配置和凭据已清除');
+      _showMessage(context.zhL10n.webdavCleared);
     } on Object catch (error) {
-      if (mounted) _showMessage('清除失败：$error');
+      if (mounted) {
+        _showMessage(context.zhL10n.webdavClearFailed(error.toString()));
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -179,10 +192,41 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       ..showSnackBar(SnackBar(content: Text(message)));
   }
 
+  String _providerLabel(AppLocalizations l10n, WebDavProviderKind provider) =>
+      switch (provider) {
+        WebDavProviderKind.generic => l10n.webdavProviderGeneric,
+        WebDavProviderKind.googleDriveGateway => l10n.webdavProviderGoogle,
+        WebDavProviderKind.microsoftOneDrive => l10n.webdavProviderOneDrive,
+      };
+
+  String _providerDescription(
+    AppLocalizations l10n,
+    WebDavProviderKind provider,
+  ) => switch (provider) {
+    WebDavProviderKind.generic => l10n.webdavProviderGenericDescription,
+    WebDavProviderKind.googleDriveGateway =>
+      l10n.webdavProviderGoogleDescription,
+    WebDavProviderKind.microsoftOneDrive =>
+      l10n.webdavProviderOneDriveDescription,
+  };
+
+  String _providerHint(AppLocalizations l10n, WebDavProviderKind provider) =>
+      switch (provider) {
+        WebDavProviderKind.generic => l10n.webdavProviderGenericHint,
+        WebDavProviderKind.googleDriveGateway => l10n.webdavProviderGoogleHint,
+        WebDavProviderKind.microsoftOneDrive => l10n.webdavProviderOneDriveHint,
+      };
+
+  String _authMethodLabel(AppLocalizations l10n, WebDavAuthMethod method) =>
+      switch (method) {
+        WebDavAuthMethod.basic => l10n.webdavAuthBasic,
+        WebDavAuthMethod.bearer => l10n.webdavAuthBearer,
+      };
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: ZhTopBar(title: const Text('WebDAV 同步')),
+      appBar: ZhTopBar(title: Text(context.zhL10n.webdavTitle)),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : ZhPageWidth(
@@ -224,10 +268,13 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('跨设备同步本地内容', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.zhL10n.webdavIntroTitle,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: 6),
               Text(
-                '只同步搜索记录、浏览历史、盐选离线章节/书架和回答详情缓存。登录凭据、Cookie、设备标识与本设置不会上传。',
+                context.zhL10n.webdavIntroMessage,
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: ZhPalette.subtleInk),
@@ -245,15 +292,21 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('连接设置', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          context.zhL10n.webdavConnectionSettings,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: ZhSpace.sm),
         ZhChoiceField<WebDavProviderKind>(
           key: const ValueKey('webdav-provider'),
-          label: '服务类型',
+          label: context.zhL10n.webdavProviderType,
           value: _provider,
           items: [
             for (final item in WebDavProviderKind.values)
-              ZhChoiceItem(value: item, label: item.label),
+              ZhChoiceItem(
+                value: item,
+                label: _providerLabel(context.zhL10n, item),
+              ),
           ],
           onChanged: _saving
               ? null
@@ -261,7 +314,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         ),
         const SizedBox(height: ZhSpace.sm),
         Text(
-          _provider.description,
+          _providerDescription(context.zhL10n, _provider),
           style: Theme.of(
             context,
           ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),
@@ -273,9 +326,9 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           enabled: !_saving,
           keyboardType: TextInputType.url,
           decoration: InputDecoration(
-            labelText: 'WebDAV 地址',
-            hintText: _provider.endpointHint,
-            helperText: '仅支持 HTTPS，不要把密码写进 URL',
+            labelText: context.zhL10n.webdavEndpoint,
+            hintText: _providerHint(context.zhL10n, _provider),
+            helperText: context.zhL10n.webdavHttpsHint,
           ),
         ),
         const SizedBox(height: ZhSpace.sm),
@@ -283,20 +336,23 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           key: const ValueKey('webdav-directory'),
           controller: _directoryController,
           enabled: !_saving,
-          decoration: const InputDecoration(
-            labelText: '远程目录',
+          decoration: InputDecoration(
+            labelText: context.zhL10n.webdavRemoteDirectory,
             hintText: 'zhiyue',
-            helperText: '会自动创建 v1、answers 和 chapters 子目录',
+            helperText: context.zhL10n.webdavRemoteDirectoryHint,
           ),
         ),
         const SizedBox(height: ZhSpace.sm),
         ZhChoiceField<WebDavAuthMethod>(
           key: const ValueKey('webdav-auth-method'),
-          label: '认证方式',
+          label: context.zhL10n.webdavAuthMethod,
           value: _authMethod,
           items: [
             for (final item in WebDavAuthMethod.values)
-              ZhChoiceItem(value: item, label: item.label),
+              ZhChoiceItem(
+                value: item,
+                label: _authMethodLabel(context.zhL10n, item),
+              ),
           ],
           onChanged: _saving
               ? null
@@ -308,7 +364,9 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
             key: const ValueKey('webdav-username'),
             controller: _usernameController,
             enabled: !_saving,
-            decoration: const InputDecoration(labelText: '用户名'),
+            decoration: InputDecoration(
+              labelText: context.zhL10n.webdavUsername,
+            ),
           ),
         if (_authMethod == WebDavAuthMethod.basic)
           const SizedBox(height: ZhSpace.sm),
@@ -319,15 +377,15 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           obscureText: true,
           decoration: InputDecoration(
             labelText: _authMethod == WebDavAuthMethod.basic
-                ? '密码 / 应用专用密码'
-                : '访问令牌',
+                ? context.zhL10n.webdavPasswordOrAppPassword
+                : context.zhL10n.webdavAccessToken,
           ),
         ),
         const SizedBox(height: ZhSpace.sm),
         ZhLiquidGlassSwitchTile(
           key: const ValueKey('webdav-enabled'),
-          title: '启用 WebDAV 同步',
-          subtitle: '关闭后不会执行网络同步，已保存的本机配置不会删除',
+          title: context.zhL10n.webdavEnable,
+          subtitle: context.zhL10n.webdavEnableSubtitle,
           value: _enabled,
           onChanged: _saving
               ? null
@@ -335,8 +393,8 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         ),
         ZhLiquidGlassSwitchTile(
           key: const ValueKey('webdav-sync-on-startup'),
-          title: '启动后自动同步',
-          subtitle: '后台执行，不阻塞首页首帧；失败后可手动重试',
+          title: context.zhL10n.webdavStartupSync,
+          subtitle: context.zhL10n.webdavStartupSyncSubtitle,
           value: _syncOnStartup,
           onChanged: _saving
               ? null
@@ -353,12 +411,22 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('同步内容', style: Theme.of(context).textTheme.titleMedium),
+        Text(
+          context.zhL10n.webdavSyncContent,
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
         const SizedBox(height: 8),
-        const Text('• 搜索记录与浏览历史\n• 盐选书架及已下载章节\n• 回答详情缓存（恢复后仍可手动刷新获取最新内容）'),
+        Text(context.zhL10n.webdavSyncContentSummary),
         const SizedBox(height: 8),
         Text(
-          '状态：${service.status.message.isEmpty ? '尚未同步' : service.status.message}',
+          context.zhL10n.webdavStatus(
+            service.status.message.isEmpty
+                ? context.zhL10n.webdavNotSynced
+                : localizedWebDavStatusMessage(
+                    context.zhL10n,
+                    service.status.message,
+                  ),
+          ),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: service.status.phase == WebDavSyncPhase.failure
                 ? ZhPalette.danger
@@ -379,25 +447,25 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           key: const ValueKey('webdav-sync'),
           onPressed: _saving || !_enabled ? null : _sync,
           icon: const Icon(Icons.sync_rounded),
-          label: const Text('立即同步'),
+          label: Text(context.zhL10n.webdavSyncNow),
         ),
         const SizedBox(height: ZhSpace.sm),
         OutlinedButton.icon(
           key: const ValueKey('webdav-test'),
           onPressed: _saving || !_enabled ? null : _testConnection,
           icon: const Icon(Icons.network_check_rounded),
-          label: const Text('测试连接'),
+          label: Text(context.zhL10n.webdavTestConnection),
         ),
         const SizedBox(height: ZhSpace.sm),
         TextButton(
           key: const ValueKey('webdav-disable'),
           onPressed: _saving ? null : _disable,
-          child: const Text('关闭同步'),
+          child: Text(context.zhL10n.webdavDisable),
         ),
         TextButton(
           key: const ValueKey('webdav-clear'),
           onPressed: _saving ? null : _clearSettings,
-          child: const Text('清除本机配置和凭据'),
+          child: Text(context.zhL10n.webdavClearLocalSettings),
         ),
         if (_saving) ...[
           const SizedBox(height: ZhSpace.sm),

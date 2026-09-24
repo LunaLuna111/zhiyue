@@ -6,8 +6,8 @@
 /// version declared below.
 library;
 
-const zhiyueVersionName = '0.6.0';
-const zhiyueAndroidVersionCode = 6000;
+const zhiyueVersionName = '0.6.2';
+const zhiyueAndroidVersionCode = 6002;
 
 int androidVersionCodeFor(String versionName) {
   final match = RegExp(r'^(\d+)\.(\d+)\.(\d+)$').firstMatch(versionName);

@@ -899,7 +899,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       // Selection text deliberately ignores blank trailing glyph space so a
       // long press there cannot create a menu. Dismiss from the whole detail
       // surface instead, including the app bar and bottom action bar.
-      onPointerDown: (_) => ContextMenuController.removeAny(),
+      onPointerDown: (_) => _ZhihuSelectionDismissal.dismiss(),
       child: Scaffold(
         extendBody: true,
         extendBodyBehindAppBar: true,

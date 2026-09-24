@@ -1,5 +1,41 @@
 part of '../content_pages.dart';
 
+/// Tracks the editable states used by the detail-page selection toolbars.
+///
+/// [SelectableText] keeps its selection inside an internal [EditableText].
+/// Removing the context-menu overlay alone leaves the selection highlight and
+/// handles alive, so a blank tap must also collapse that internal selection.
+class _ZhihuSelectionDismissal {
+  static final Set<EditableTextState> _states = <EditableTextState>{};
+
+  static void register(EditableTextState state) => _states.add(state);
+
+  static void unregister(EditableTextState state) => _states.remove(state);
+
+  static void dismiss() {
+    final states = List<EditableTextState>.of(_states);
+    for (final state in states) {
+      if (!state.mounted) {
+        _states.remove(state);
+        continue;
+      }
+      final value = state.textEditingValue;
+      if (value.selection.isValid && !value.selection.isCollapsed) {
+        state.userUpdateTextEditingValue(
+          value.copyWith(
+            selection: TextSelection.collapsed(
+              offset: value.selection.extentOffset,
+            ),
+          ),
+          SelectionChangedCause.tap,
+        );
+      }
+      state.hideToolbar();
+    }
+    ContextMenuController.removeAny();
+  }
+}
+
 /// The official mobile client keeps the first selection affordance focused on
 /// the two actions people use most often.  The platform menu remains available
 /// behind “更多”, which also preserves Android's share/read-aloud extensions
@@ -23,6 +59,27 @@ class _ZhihuSelectionToolbar extends StatefulWidget {
 
 class _ZhihuSelectionToolbarState extends State<_ZhihuSelectionToolbar> {
   var _showPlatformActions = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ZhihuSelectionDismissal.register(widget.state);
+  }
+
+  @override
+  void didUpdateWidget(covariant _ZhihuSelectionToolbar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.state != widget.state) {
+      _ZhihuSelectionDismissal.unregister(oldWidget.state);
+      _ZhihuSelectionDismissal.register(widget.state);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ZhihuSelectionDismissal.unregister(widget.state);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {

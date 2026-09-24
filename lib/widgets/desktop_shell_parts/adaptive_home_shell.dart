@@ -37,12 +37,15 @@ class ZhAdaptiveHomeShell extends StatefulWidget {
 
 class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     with SingleTickerProviderStateMixin {
-  static const _motionCurve = Cubic(.2, .9, .3, 1);
+  // Keep the sheet's travel continuous with the changing silhouette.  The
+  // previous curve reached its resting position too aggressively, which made
+  // the first frame of the rounded page surface feel like a hard cut.
+  static const _motionCurve = Cubic(.22, 1, .36, 1);
   static const _drawerCornerRadius = 28.0;
   late final AnimationController _progress = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 360),
-    reverseDuration: const Duration(milliseconds: 300),
+    duration: const Duration(milliseconds: 420),
+    reverseDuration: const Duration(milliseconds: 360),
   );
   late final ZhPushDrawerController _ownedController = ZhPushDrawerController();
   late ZhPushDrawerController _drawerController;
@@ -305,13 +308,14 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
       animation: _progress,
       builder: (context, _) {
         final value = _progress.value;
-        final drawerVisible = _drawerController.drawerVisible.value;
-        final mainSurfaceBorderRadius = drawerVisible
-            ? const BorderRadius.vertical(
-                top: Radius.circular(_drawerCornerRadius),
-                bottom: Radius.circular(_drawerCornerRadius),
-              )
-            : BorderRadius.zero;
+        final surfaceRadius = _drawerCornerRadius * value;
+        final mainSurfaceBorderRadius = surfaceRadius == 0
+            ? BorderRadius.zero
+            : BorderRadius.vertical(
+                top: Radius.circular(surfaceRadius),
+                bottom: Radius.circular(surfaceRadius),
+              );
+        final surfaceShadowOpacity = .22 * value;
         return PopScope(
           canPop: value == 0 && !_confirmsAndroidRootExit,
           onPopInvokedWithResult: (didPop, _) =>
@@ -379,13 +383,15 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                       excluding: value > 0,
                       child: PhysicalModel(
                         color: ZhPalette.background,
-                        // Keep expensive physical shape/shadow geometry stable
-                        // through the 360 ms slide; only toggle it at the
-                        // visible/hidden boundary.
-                        elevation: drawerVisible ? 18 : 0,
-                        shadowColor: drawerVisible
-                            ? Colors.black.withValues(alpha: .22)
-                            : Colors.transparent,
+                        // Follow the same progress as the horizontal travel so
+                        // the page does not suddenly acquire a full radius or
+                        // shadow on the first animation tick.
+                        elevation: 18 * value,
+                        shadowColor: surfaceShadowOpacity == 0
+                            ? Colors.transparent
+                            : Colors.black.withValues(
+                                alpha: surfaceShadowOpacity,
+                              ),
                         borderRadius: mainSurfaceBorderRadius,
                         clipBehavior: Clip.none,
                         child: PhysicalModel(

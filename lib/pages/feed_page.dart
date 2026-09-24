@@ -13,6 +13,7 @@ import '../core/negative_feedback.dart';
 import '../core/recommendation_behavior.dart';
 import '../core/recommendation_engine.dart';
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';
@@ -547,7 +548,10 @@ class _FeedPageState extends State<FeedPage>
             left: 0,
             right: 0,
             child: ZhLiquidGlassTopNavigation(
-              labels: [for (final channel in _channels) channel.label],
+              labels: [
+                for (final channel in _channels)
+                  channel.localizedLabel(context.zhL10n),
+              ],
               selectedIndex: _channels.indexOf(_channel),
               onTabSelected: (index) => _selectChannel(_channels[index]),
               onMenuPressed: widget.onMenuPressed,

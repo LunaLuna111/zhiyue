@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/api_client.dart';
+import '../core/app_locale.dart';
 import '../core/app_version.dart';
 import '../core/content_filter_stats.dart';
 import '../core/recommendation_behavior.dart';
@@ -10,6 +11,7 @@ import '../core/recommendation_engine.dart';
 import '../core/salt_chapter_cache.dart';
 import '../core/session_store.dart';
 import '../core/webdav_sync_service.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import 'app_update_page.dart';
@@ -59,7 +61,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(context.zhL10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
@@ -137,7 +139,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
       ..clear()
       ..clearLiveImages();
     setState(() {});
-    _showMessage(count == 0 ? '图片缓存已经是空的' : '已清理 $count 张缓存图片');
+    _showMessage(
+      count == 0
+          ? context.zhL10n.settingsNoCacheImages
+          : context.zhL10n.settingsCachedImages(count),
+    );
   }
 
   Future<void> _clearSaltChapterCache() async {
@@ -174,10 +180,13 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('首页分区排序', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                context.zhL10n.settingsFeedOrder,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               const SizedBox(height: 4),
               Text(
-                '按住右侧拖动，首页顶栏与左右滑动顺序会同步更新。',
+                context.zhL10n.settingsFeedOrderSubtitle,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: ZhSpace.md),
@@ -214,7 +223,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                           child: Text('${index + 1}'),
                         ),
                         title: Text(
-                          channel.label,
+                          channel.localizedLabel(context.zhL10n),
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         trailing: ReorderableDragStartListener(
@@ -238,7 +247,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         SessionStore.defaultHomeFeedOrder,
                       ),
                     ),
-                    child: const Text('恢复默认'),
+                    child: Text(context.zhL10n.commonReset),
                   ),
                   const Spacer(),
                   FilledButton(
@@ -248,7 +257,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                         Navigator.of(sheetContext).pop();
                       }
                     },
-                    child: const Text('保存排序'),
+                    child: Text(context.zhL10n.commonSave),
                   ),
                 ],
               ),
@@ -261,24 +270,24 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
 
   Future<void> _resetPreferences() async {
     final confirmed = await _confirm(
-      title: '恢复默认设置？',
-      message: '所有设置将恢复默认，不会退出账号。',
-      action: '恢复默认',
+      title: context.zhL10n.settingsRestoreDefaults,
+      message: context.zhL10n.settingsRestoreDefaultsMessage,
+      action: context.zhL10n.commonReset,
     );
     if (!confirmed) return;
     await session.resetAppPreferences();
-    if (mounted) _showMessage('软件设置已恢复默认');
+    if (mounted) _showMessage(context.zhL10n.settingsRestored);
   }
 
   Future<void> _signOut() async {
     final confirmed = await _confirm(
-      title: '退出登录？',
-      message: '本机保存的登录信息将被删。',
-      action: '退出',
+      title: context.zhL10n.settingsSignOut,
+      message: context.zhL10n.settingsSignOutMessage,
+      action: context.zhL10n.settingsSignOut,
     );
     if (!confirmed) return;
     await session.clear();
-    if (mounted) _showMessage('已退出登录');
+    if (mounted) _showMessage(context.zhL10n.settingsSignedOut);
   }
 
   String _cacheSummary() {
@@ -301,397 +310,426 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
           onPressed: () {
             Navigator.of(context).maybePop();
           },
-          semanticLabel: '返回',
+          semanticLabel: context.zhL10n.commonBack,
           size: 46,
           iconSize: 24,
         ),
-        title: const Text('设置'),
+        title: Text(context.zhL10n.settingsTitle),
       ),
       body: ZhPageWidth(
         maxWidth: 680,
         child: AnimatedBuilder(
           animation: session,
-          builder: (context, _) => ListView(
-            padding: EdgeInsets.fromLTRB(
-              ZhSpace.md,
-              topInset + ZhSpace.xs,
-              ZhSpace.md,
-              ZhSpace.xl,
-            ),
-            children: [
-              const _SectionLabel('首页与内容'),
-              _SettingsGroup(
-                children: [
-                  _ChoiceTile<AppStartupPage>(
-                    icon: Icons.rocket_launch_outlined,
-                    title: '启动页面',
-                    value: session.startupPage,
-                    values: const {
-                      AppStartupPage.recommend: '推荐',
-                      AppStartupPage.bookshelf: '书架',
-                    },
-                    onChanged: session.setStartupPage,
-                  ),
-                  const Divider(),
-                  _ChoiceTile<RecommendationMode>(
-                    icon: Icons.auto_awesome_outlined,
-                    title: '推荐策略',
-                    value: session.recommendationMode,
-                    values: const {
-                      RecommendationMode.server: '服务器',
-                      RecommendationMode.local: '本地',
-                      RecommendationMode.hybrid: '混合',
-                    },
-                    onChanged: session.setRecommendationMode,
-                  ),
-                  const Divider(),
-                  _ChoiceTile<FeedDensity>(
-                    icon: Icons.view_agenda_outlined,
-                    title: '内容密度',
-                    value: session.feedDensity,
-                    values: const {
-                      FeedDensity.comfortable: '舒适',
-                      FeedDensity.compact: '紧凑',
-                    },
-                    onChanged: session.setFeedDensity,
-                  ),
-                ],
+          builder: (context, _) {
+            final l10n = context.zhL10n;
+            return ListView(
+              padding: EdgeInsets.fromLTRB(
+                ZhSpace.md,
+                topInset + ZhSpace.xs,
+                ZhSpace.md,
+                ZhSpace.xl,
               ),
-              const SizedBox(height: ZhSpace.sm),
-              _SettingsGroup(
-                children: [
-                  _SwitchTile(
-                    key: const ValueKey('home-reselect-refresh-setting'),
-                    icon: Icons.vertical_align_top_rounded,
-                    title: '重复点击首页时刷新',
-                    subtitle: '再次点击已选中的首页按钮时回到顶部并刷新',
-                    value: session.refreshHomeOnReselect,
-                    onChanged: session.setRefreshHomeOnReselect,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.image_outlined,
-                    title: '显示推荐图片',
-                    subtitle: '关闭后首页只显示文字、作者和互动信息',
-                    value: session.showFeedImages,
-                    onChanged: session.setShowFeedImages,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.bar_chart_rounded,
-                    title: '显示互动数据',
-                    subtitle: '显示赞同、收藏、评论和发布日期',
-                    value: session.showFeedMetrics,
-                    onChanged: session.setShowFeedMetrics,
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZhSpace.sm),
-              _SettingsGroup(
-                children: [
-                  _ActionTile(
-                    key: const ValueKey('recommendation-behavior-setting'),
-                    icon: Icons.insights_outlined,
-                    title: '本地推荐行为',
-                    subtitle:
-                        '本机已记录 ${RecommendationBehaviorStore.instance.profile.totalEvents} 条行为',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const RecommendationBehaviorPage(),
-                      ),
+              children: [
+                _SectionLabel(l10n.settingsHomeContent),
+                _SettingsGroup(
+                  children: [
+                    _ChoiceTile<AppStartupPage>(
+                      icon: Icons.rocket_launch_outlined,
+                      title: l10n.settingsStartupPage,
+                      value: session.startupPage,
+                      values: {
+                        AppStartupPage.recommend: l10n.navRecommend,
+                        AppStartupPage.bookshelf: l10n.navBookshelf,
+                      },
+                      onChanged: session.setStartupPage,
                     ),
-                  ),
-                  const Divider(),
-                  _ActionTile(
-                    key: const ValueKey('home-feed-order-setting'),
-                    icon: Icons.swap_vert_rounded,
-                    title: '首页分区排序',
-                    subtitle: session.homeFeedOrder
-                        .map((channel) => channel.label)
-                        .join(' · '),
-                    onTap: _editHomeFeedOrder,
-                  ),
-                  const Divider(),
-                  AnimatedBuilder(
-                    animation: ContentFilterStatsStore.instance,
-                    builder: (context, _) => _ActionTile(
-                      key: const ValueKey('content-filter-stats-setting'),
-                      icon: Icons.filter_alt_outlined,
-                      title: '内容过滤统计',
-                      subtitle:
-                          ContentFilterStatsStore.instance.stats.summaryLabel,
+                    const Divider(),
+                    _ChoiceTile<RecommendationMode>(
+                      icon: Icons.auto_awesome_outlined,
+                      title: l10n.settingsRecommendation,
+                      value: session.recommendationMode,
+                      values: {
+                        RecommendationMode.server: l10n.settingsServer,
+                        RecommendationMode.local: l10n.settingsLocal,
+                        RecommendationMode.hybrid: l10n.settingsHybrid,
+                      },
+                      onChanged: session.setRecommendationMode,
+                    ),
+                    const Divider(),
+                    _ChoiceTile<FeedDensity>(
+                      icon: Icons.view_agenda_outlined,
+                      title: l10n.settingsDensity,
+                      value: session.feedDensity,
+                      values: {
+                        FeedDensity.comfortable: l10n.settingsComfortable,
+                        FeedDensity.compact: l10n.settingsCompact,
+                      },
+                      onChanged: session.setFeedDensity,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: ZhSpace.sm),
+                _SettingsGroup(
+                  children: [
+                    _SwitchTile(
+                      key: const ValueKey('home-reselect-refresh-setting'),
+                      icon: Icons.vertical_align_top_rounded,
+                      title: l10n.settingsRefreshHome,
+                      subtitle: l10n.settingsRefreshHomeSubtitle,
+                      value: session.refreshHomeOnReselect,
+                      onChanged: session.setRefreshHomeOnReselect,
+                    ),
+                    const Divider(),
+                    _SwitchTile(
+                      icon: Icons.image_outlined,
+                      title: l10n.settingsShowImages,
+                      subtitle: l10n.settingsShowImagesSubtitle,
+                      value: session.showFeedImages,
+                      onChanged: session.setShowFeedImages,
+                    ),
+                    const Divider(),
+                    _SwitchTile(
+                      icon: Icons.bar_chart_rounded,
+                      title: l10n.settingsShowMetrics,
+                      subtitle: l10n.settingsShowMetricsSubtitle,
+                      value: session.showFeedMetrics,
+                      onChanged: session.setShowFeedMetrics,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: ZhSpace.sm),
+                _SettingsGroup(
+                  children: [
+                    _ActionTile(
+                      key: const ValueKey('recommendation-behavior-setting'),
+                      icon: Icons.insights_outlined,
+                      title: l10n.settingsLocalBehavior,
+                      subtitle: l10n.settingsLocalEvents(
+                        RecommendationBehaviorStore
+                            .instance
+                            .profile
+                            .totalEvents,
+                      ),
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
-                          builder: (_) => const ContentFilterStatsPage(),
+                          builder: (_) => const RecommendationBehaviorPage(),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const _SectionLabel('阅读与显示'),
-              _SettingsGroup(
-                children: [
-                  _SwitchTile(
-                    key: const ValueKey('dark-mode-setting'),
-                    icon: Icons.dark_mode_outlined,
-                    title: '黑夜模式',
-                    subtitle: session.darkModeEnabled
-                        ? '使用深色背景和低亮度表面'
-                        : '使用浅色背景和明亮表面',
-                    value: session.darkModeEnabled,
-                    onChanged: session.setDarkModeEnabled,
-                  ),
-                  const Divider(),
-                  _ChoiceTile<ReadingTextSize>(
-                    icon: Icons.text_fields_rounded,
-                    title: '阅读字号',
-                    value: session.readingTextSize,
-                    values: const {
-                      ReadingTextSize.compact: '小',
-                      ReadingTextSize.standard: '标准',
-                      ReadingTextSize.large: '大',
-                    },
-                    onChanged: session.setReadingTextSize,
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZhSpace.sm),
-              _SettingsGroup(
-                children: [
-                  _SwitchTile(
-                    icon: Icons.accessibility_new_rounded,
-                    title: '跟随系统字号',
-                    subtitle: '在阅读字号基础上叠加系统显示大小',
-                    value: session.followSystemTextScale,
-                    onChanged: session.setFollowSystemTextScale,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.motion_photos_off_outlined,
-                    title: '减少动态效果',
-                    subtitle: '减少页面切换和组件动画',
-                    value: session.reduceMotion,
-                    onChanged: session.setReduceMotion,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.blur_on_outlined,
-                    title: '液态玻璃效果',
-                    subtitle: session.glassEffectsEnabled
-                        ? '保留玻璃反馈与透明层次'
-                        : '流畅模式：使用低开销的实色按钮和导航栏',
-                    value: session.glassEffectsEnabled,
-                    onChanged: session.setGlassEffectsEnabled,
-                  ),
-                ],
-              ),
-              const _SectionLabel('个性化功能'),
-              _SettingsGroup(
-                children: [
-                  _SwitchTile(
-                    key: const ValueKey('focus-search-on-open-setting'),
-                    icon: Icons.keyboard_alt_outlined,
-                    title: '进入搜索页时自动打开输入法',
-                    subtitle: session.focusSearchOnOpen
-                        ? '进入搜索页后自动聚焦搜索框'
-                        : '进入搜索页后手动点击搜索框',
-                    value: session.focusSearchOnOpen,
-                    onChanged: session.setFocusSearchOnOpen,
-                  ),
-                ],
-              ),
-              const _SectionLabel('图片与存储'),
-              _SettingsGroup(
-                children: [
-                  _SwitchTile(
-                    icon: Icons.visibility_outlined,
-                    title: '保留浏览记录',
-                    subtitle: session.rememberBrowsingHistory
-                        ? '仅保存在本机 · ${session.browsingHistory.length} 条'
-                        : '打开内容不会写入本机历史',
-                    value: session.rememberBrowsingHistory,
-                    onChanged: _toggleBrowsingHistory,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    icon: Icons.photo_library_outlined,
-                    title: '预加载列表图片',
-                    subtitle: '提前加载即将显示的头像和正文图片',
-                    value: session.prefetchImages,
-                    onChanged: session.setPrefetchImages,
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZhSpace.sm),
-              _SettingsGroup(
-                children: [
-                  _ChoiceTile<ImageCachePreset>(
-                    icon: Icons.storage_rounded,
-                    title: '图片缓存容量',
-                    value: session.imageCachePreset,
-                    values: const {
-                      ImageCachePreset.economy: '节省',
-                      ImageCachePreset.standard: '标准',
-                      ImageCachePreset.roomy: '充足',
-                    },
-                    onChanged: session.setImageCachePreset,
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZhSpace.sm),
-              _SettingsGroup(
-                children: [
-                  _ActionTile(
-                    icon: Icons.delete_outline_rounded,
-                    title: '清空浏览记录',
-                    subtitle: session.browsingHistory.isEmpty
-                        ? '目前没有记录'
-                        : '删除 ${session.browsingHistory.length} 条本机记录',
-                    onTap: _clearBrowsingHistory,
-                  ),
-                  const Divider(),
-                  _ActionTile(
-                    icon: Icons.cleaning_services_outlined,
-                    title: '清理图片缓存',
-                    subtitle: _cacheSummary(),
-                    onTap: _clearImageCache,
-                  ),
-                  const Divider(),
-                  _ActionTile(
-                    icon: Icons.auto_stories_outlined,
-                    title: '清理离线章节',
-                    subtitle: '删除阅读和下载时保存的盐选正文',
-                    onTap: _clearSaltChapterCache,
-                  ),
-                ],
-              ),
-              const _SectionLabel('隐私与数据'),
-              _SettingsGroup(
-                children: [
-                  _SwitchTile(
-                    icon: Icons.history_rounded,
-                    title: '保留搜索记录',
-                    subtitle: session.rememberSearchHistory
-                        ? '仅保存在本机 · ${session.searchHistory.length} 条'
-                        : '新搜索不会写入本机',
-                    value: session.rememberSearchHistory,
-                    onChanged: _toggleSearchHistory,
-                  ),
-                  const Divider(),
-                  _SwitchTile(
-                    key: const ValueKey('show-search-hot-setting'),
-                    icon: Icons.local_fire_department_outlined,
-                    title: '显示热搜',
-                    subtitle: session.showSearchHotSearch
-                        ? '在搜索页显示知乎热搜'
-                        : '搜索页不加载热搜内容',
-                    value: session.showSearchHotSearch,
-                    onChanged: session.setShowSearchHotSearch,
-                  ),
-                ],
-              ),
-              const SizedBox(height: ZhSpace.sm),
-              _SettingsGroup(
-                children: [
-                  _ActionTile(
-                    icon: Icons.delete_sweep_outlined,
-                    title: '清空搜索记录',
-                    subtitle: session.searchHistory.isEmpty
-                        ? '目前没有记录'
-                        : '删除 ${session.searchHistory.length} 条本机记录',
-                    onTap: _clearSearchHistory,
-                  ),
-                  const Divider(),
-                  AnimatedBuilder(
-                    animation: _webDav,
-                    builder: (context, _) => _ActionTile(
-                      key: const ValueKey('webdav-sync-setting'),
-                      icon: Icons.cloud_sync_outlined,
-                      title: 'WebDAV 同步',
-                      subtitle: _webDav.settings?.isConfigured == true
-                          ? (_webDav.status.message.isEmpty
-                                ? '已配置 · 搜索、历史、离线小说和回答缓存'
-                                : _webDav.status.message)
-                          : '同步搜索记录、浏览历史、离线小说和回答缓存',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => WebDavSyncPage(service: _webDav),
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (widget.api != null) ...[
                     const Divider(),
                     _ActionTile(
-                      key: const ValueKey('account-sessions-setting'),
-                      icon: Icons.devices_other_outlined,
-                      title: '账号与多端登录',
-                      subtitle: '扫码登录、保存账号槽位并快速切换',
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => AccountSessionsPage(
-                            api: widget.api!,
-                            session: session,
+                      key: const ValueKey('home-feed-order-setting'),
+                      icon: Icons.swap_vert_rounded,
+                      title: l10n.settingsFeedOrder,
+                      subtitle: session.homeFeedOrder
+                          .map((channel) => channel.localizedLabel(l10n))
+                          .join(' · '),
+                      onTap: _editHomeFeedOrder,
+                    ),
+                    const Divider(),
+                    AnimatedBuilder(
+                      animation: ContentFilterStatsStore.instance,
+                      builder: (context, _) => _ActionTile(
+                        key: const ValueKey('content-filter-stats-setting'),
+                        icon: Icons.filter_alt_outlined,
+                        title: l10n.settingsFilterStats,
+                        subtitle:
+                            ContentFilterStatsStore.instance.stats.summaryLabel,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const ContentFilterStatsPage(),
                           ),
                         ),
                       ),
                     ),
                   ],
-                  if (session.hasAuthorization) ...[
+                ),
+                _SectionLabel(l10n.settingsReadingDisplay),
+                _SettingsGroup(
+                  children: [
+                    _SwitchTile(
+                      key: const ValueKey('dark-mode-setting'),
+                      icon: Icons.dark_mode_outlined,
+                      title: l10n.settingsDarkMode,
+                      subtitle: session.darkModeEnabled
+                          ? l10n.settingsDarkModeOnSubtitle
+                          : l10n.settingsDarkModeOffSubtitle,
+                      value: session.darkModeEnabled,
+                      onChanged: session.setDarkModeEnabled,
+                    ),
                     const Divider(),
-                    _ActionTile(
-                      icon: Icons.logout_rounded,
-                      title: '退出登录',
-                      subtitle: '移除本机登录信息',
-                      destructive: true,
-                      onTap: _signOut,
+                    _ChoiceTile<ZhLocale>(
+                      icon: Icons.translate_rounded,
+                      title: l10n.settingsLanguage,
+                      subtitle: l10n.settingsLanguageSubtitle,
+                      value: session.locale,
+                      values: {
+                        for (final locale in ZhLocale.values)
+                          locale: locale.nativeName,
+                      },
+                      onChanged: session.setLocale,
+                    ),
+                    const Divider(),
+                    _ChoiceTile<ReadingTextSize>(
+                      icon: Icons.text_fields_rounded,
+                      title: l10n.settingsTextSize,
+                      value: session.readingTextSize,
+                      values: {
+                        ReadingTextSize.compact: l10n.settingsSmall,
+                        ReadingTextSize.standard: l10n.settingsStandard,
+                        ReadingTextSize.large: l10n.settingsLarge,
+                      },
+                      onChanged: session.setReadingTextSize,
                     ),
                   ],
-                ],
-              ),
-              const _SectionLabel('其他'),
-              _SettingsGroup(
-                children: [
-                  _ActionTile(
-                    icon: Icons.bug_report_outlined,
-                    title: '诊断日志',
-                    subtitle: session.appLoggingEnabled
-                        ? '已开启 · 管理网络、性能日志并导出'
-                        : '定位接口异常、内容加载失败和卡顿问题',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => DiagnosticLogsPage(session: session),
+                ),
+                const SizedBox(height: ZhSpace.sm),
+                _SettingsGroup(
+                  children: [
+                    _SwitchTile(
+                      icon: Icons.accessibility_new_rounded,
+                      title: l10n.settingsFollowSystemTextScale,
+                      subtitle: l10n.settingsFollowSystemTextScaleSubtitle,
+                      value: session.followSystemTextScale,
+                      onChanged: session.setFollowSystemTextScale,
+                    ),
+                    const Divider(),
+                    _SwitchTile(
+                      icon: Icons.motion_photos_off_outlined,
+                      title: l10n.settingsReduceMotion,
+                      subtitle: l10n.settingsReduceMotionSubtitle,
+                      value: session.reduceMotion,
+                      onChanged: session.setReduceMotion,
+                    ),
+                    const Divider(),
+                    _SwitchTile(
+                      icon: Icons.blur_on_outlined,
+                      title: l10n.settingsGlass,
+                      subtitle: session.glassEffectsEnabled
+                          ? l10n.settingsGlassOnSubtitle
+                          : l10n.settingsGlassOffSubtitle,
+                      value: session.glassEffectsEnabled,
+                      onChanged: session.setGlassEffectsEnabled,
+                    ),
+                  ],
+                ),
+                _SectionLabel(l10n.settingsPersonalization),
+                _SettingsGroup(
+                  children: [
+                    _SwitchTile(
+                      key: const ValueKey('focus-search-on-open-setting'),
+                      icon: Icons.keyboard_alt_outlined,
+                      title: l10n.settingsFocusSearch,
+                      subtitle: session.focusSearchOnOpen
+                          ? l10n.settingsFocusSearchOn
+                          : l10n.settingsFocusSearchOff,
+                      value: session.focusSearchOnOpen,
+                      onChanged: session.setFocusSearchOnOpen,
+                    ),
+                  ],
+                ),
+                _SectionLabel(l10n.settingsImagesStorage),
+                _SettingsGroup(
+                  children: [
+                    _SwitchTile(
+                      icon: Icons.visibility_outlined,
+                      title: l10n.settingsKeepHistory,
+                      subtitle: session.rememberBrowsingHistory
+                          ? l10n.settingsKeepHistoryOn(
+                              session.browsingHistory.length,
+                            )
+                          : l10n.settingsKeepHistoryOff,
+                      value: session.rememberBrowsingHistory,
+                      onChanged: _toggleBrowsingHistory,
+                    ),
+                    const Divider(),
+                    _SwitchTile(
+                      icon: Icons.photo_library_outlined,
+                      title: l10n.settingsPrefetchImages,
+                      subtitle: l10n.settingsPrefetchImagesSubtitle,
+                      value: session.prefetchImages,
+                      onChanged: session.setPrefetchImages,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: ZhSpace.sm),
+                _SettingsGroup(
+                  children: [
+                    _ChoiceTile<ImageCachePreset>(
+                      icon: Icons.storage_rounded,
+                      title: l10n.settingsImageCache,
+                      value: session.imageCachePreset,
+                      values: {
+                        ImageCachePreset.economy: l10n.settingsEconomy,
+                        ImageCachePreset.standard: l10n.settingsStandard,
+                        ImageCachePreset.roomy: l10n.settingsRoomy,
+                      },
+                      onChanged: session.setImageCachePreset,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: ZhSpace.sm),
+                _SettingsGroup(
+                  children: [
+                    _ActionTile(
+                      icon: Icons.delete_outline_rounded,
+                      title: l10n.settingsClearBrowsing,
+                      subtitle: session.browsingHistory.isEmpty
+                          ? l10n.settingsNoBrowsingHistory
+                          : l10n.settingsDeleteBrowsing(
+                              session.browsingHistory.length,
+                            ),
+                      onTap: _clearBrowsingHistory,
+                    ),
+                    const Divider(),
+                    _ActionTile(
+                      icon: Icons.cleaning_services_outlined,
+                      title: l10n.settingsClearImageCache,
+                      subtitle: _cacheSummary(),
+                      onTap: _clearImageCache,
+                    ),
+                    const Divider(),
+                    _ActionTile(
+                      icon: Icons.auto_stories_outlined,
+                      title: l10n.settingsClearOfflineChapters,
+                      subtitle: l10n.settingsClearOfflineChaptersSubtitle,
+                      onTap: _clearSaltChapterCache,
+                    ),
+                  ],
+                ),
+                _SectionLabel(l10n.settingsPrivacyData),
+                _SettingsGroup(
+                  children: [
+                    _SwitchTile(
+                      icon: Icons.history_rounded,
+                      title: l10n.settingsKeepSearch,
+                      subtitle: session.rememberSearchHistory
+                          ? l10n.settingsKeepSearchOn(
+                              session.searchHistory.length,
+                            )
+                          : l10n.settingsKeepSearchOff,
+                      value: session.rememberSearchHistory,
+                      onChanged: _toggleSearchHistory,
+                    ),
+                    const Divider(),
+                    _SwitchTile(
+                      key: const ValueKey('show-search-hot-setting'),
+                      icon: Icons.local_fire_department_outlined,
+                      title: l10n.settingsShowHot,
+                      subtitle: session.showSearchHotSearch
+                          ? l10n.settingsShowHotOn
+                          : l10n.settingsShowHotOff,
+                      value: session.showSearchHotSearch,
+                      onChanged: session.setShowSearchHotSearch,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: ZhSpace.sm),
+                _SettingsGroup(
+                  children: [
+                    _ActionTile(
+                      icon: Icons.delete_sweep_outlined,
+                      title: l10n.settingsClearSearch,
+                      subtitle: session.searchHistory.isEmpty
+                          ? l10n.settingsNoSearchHistory
+                          : l10n.settingsDeleteSearch(
+                              session.searchHistory.length,
+                            ),
+                      onTap: _clearSearchHistory,
+                    ),
+                    const Divider(),
+                    AnimatedBuilder(
+                      animation: _webDav,
+                      builder: (context, _) => _ActionTile(
+                        key: const ValueKey('webdav-sync-setting'),
+                        icon: Icons.cloud_sync_outlined,
+                        title: l10n.settingsWebDav,
+                        subtitle: _webDav.settings?.isConfigured == true
+                            ? (_webDav.status.message.isEmpty
+                                  ? l10n.settingsWebDavConfigured
+                                  : _webDav.status.message)
+                            : l10n.settingsWebDavSubtitle,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => WebDavSyncPage(service: _webDav),
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const Divider(),
-                  _ActionTile(
-                    key: const ValueKey('app-update-setting'),
-                    icon: Icons.system_update_alt_rounded,
-                    title: '软件更新',
-                    subtitle: '安全检查、下载并安装新版本',
-                    onTap: () => Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const AppUpdatePage()),
+                    if (widget.api != null) ...[
+                      const Divider(),
+                      _ActionTile(
+                        key: const ValueKey('account-sessions-setting'),
+                        icon: Icons.devices_other_outlined,
+                        title: l10n.settingsAccountSessions,
+                        subtitle: l10n.settingsAccountSessionsSubtitle,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => AccountSessionsPage(
+                              api: widget.api!,
+                              session: session,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (session.hasAuthorization) ...[
+                      const Divider(),
+                      _ActionTile(
+                        icon: Icons.logout_rounded,
+                        title: l10n.settingsSignOut,
+                        subtitle: l10n.settingsSignOutSubtitle,
+                        destructive: true,
+                        onTap: _signOut,
+                      ),
+                    ],
+                  ],
+                ),
+                _SectionLabel(l10n.settingsOther),
+                _SettingsGroup(
+                  children: [
+                    _ActionTile(
+                      icon: Icons.bug_report_outlined,
+                      title: l10n.settingsDiagnostics,
+                      subtitle: session.appLoggingEnabled
+                          ? l10n.settingsDiagnosticsOn
+                          : l10n.settingsDiagnosticsOff,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => DiagnosticLogsPage(session: session),
+                        ),
+                      ),
                     ),
-                  ),
-                  const Divider(),
-                  _ActionTile(
-                    icon: Icons.restart_alt_rounded,
-                    title: '恢复默认设置',
-                    subtitle: '不会退出账号',
-                    onTap: _resetPreferences,
-                  ),
-                  const Divider(),
-                  const _ActionTile(
-                    icon: Icons.info_outline_rounded,
-                    title: '关于知阅',
-                    subtitle: '版本 $zhiyueVersionName',
-                  ),
-                ],
-              ),
-            ],
-          ),
+                    const Divider(),
+                    _ActionTile(
+                      key: const ValueKey('app-update-setting'),
+                      icon: Icons.system_update_alt_rounded,
+                      title: l10n.settingsUpdate,
+                      subtitle: l10n.settingsUpdateSubtitle,
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AppUpdatePage(),
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                    _ActionTile(
+                      icon: Icons.restart_alt_rounded,
+                      title: l10n.settingsRestoreDefaults,
+                      subtitle: l10n.settingsRestoreDefaultsSubtitle,
+                      onTap: _resetPreferences,
+                    ),
+                    const Divider(),
+                    _ActionTile(
+                      icon: Icons.info_outline_rounded,
+                      title: l10n.settingsAbout,
+                      subtitle: l10n.settingsVersion(zhiyueVersionName),
+                    ),
+                  ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -798,6 +836,7 @@ class _ChoiceTile<T> extends StatelessWidget {
   const _ChoiceTile({
     required this.icon,
     required this.title,
+    this.subtitle,
     required this.value,
     required this.values,
     required this.onChanged,
@@ -805,6 +844,7 @@ class _ChoiceTile<T> extends StatelessWidget {
 
   final IconData icon;
   final String title;
+  final String? subtitle;
   final T value;
   final Map<T, String> values;
   final ValueChanged<T> onChanged;
@@ -813,8 +853,9 @@ class _ChoiceTile<T> extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, constraints) {
       final textScale = MediaQuery.textScalerOf(context).scale(1);
-      final stacked = constraints.maxWidth < 340 || textScale > 1.2;
       final entries = values.entries.toList(growable: false);
+      final stacked =
+          constraints.maxWidth < 340 || textScale > 1.2 || entries.length > 3;
       final selectedIndex = entries.indexWhere((entry) => entry.key == value);
       final choices = SizedBox(
         key: ValueKey('settings-choice-$title'),
@@ -832,7 +873,21 @@ class _ChoiceTile<T> extends StatelessWidget {
           _SettingIcon(icon: icon),
           const SizedBox(width: 14),
           Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       );

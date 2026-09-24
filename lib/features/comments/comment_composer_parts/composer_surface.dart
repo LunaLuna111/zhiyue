@@ -50,7 +50,7 @@ class _ComposerToolbar extends StatelessWidget {
       children: [
         _ComposerToolbarIcon(
           key: const Key('comment-composer-image'),
-          semanticLabel: '图片评论',
+          semanticLabel: context.zhL10n.commentImage,
           onPointerDown: onImage,
           icon: const Icon(Icons.image_outlined, size: 26),
         ),
@@ -83,7 +83,7 @@ class _ComposerToolbar extends StatelessWidget {
               shape: const StadiumBorder(),
             ),
             child: Text(
-              sending ? '发布中' : submitLabel,
+              sending ? context.zhL10n.commonPublishing : submitLabel,
               style: const TextStyle(fontSize: 17, height: 1),
             ),
           ),
@@ -114,7 +114,7 @@ class _ComposerHeader extends StatelessWidget {
       children: [
         Semantics(
           button: true,
-          label: '提及用户',
+          label: context.zhL10n.commentMention,
           child: GestureDetector(
             key: const Key('comment-composer-mention'),
             behavior: HitTestBehavior.opaque,
@@ -146,10 +146,14 @@ class _ComposerHeader extends StatelessWidget {
         ),
         Semantics(
           button: true,
-          label: expanded ? '收起编辑器' : '展开编辑器',
+          label: expanded
+              ? context.zhL10n.commentCollapse
+              : context.zhL10n.commentExpand,
           child: IconButton(
             key: const Key('comment-composer-expand'),
-            tooltip: expanded ? '收起编辑器' : '展开编辑器',
+            tooltip: expanded
+                ? context.zhL10n.commentCollapse
+                : context.zhL10n.commentExpand,
             onPressed: onToggleExpanded,
             visualDensity: VisualDensity.compact,
             icon: Icon(

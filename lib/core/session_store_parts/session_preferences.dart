@@ -8,6 +8,13 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     _notifyChanged();
   }
 
+  Future<void> setLocale(ZhLocale value) async {
+    if (locale == value) return;
+    locale = value;
+    await _writePreference(_SessionStoreCore._localeKey, value.storageValue);
+    _notifyChanged();
+  }
+
   Future<void> setDarkModeEnabled(bool value) async {
     if (darkModeEnabled == value) return;
     darkModeEnabled = value;
@@ -223,6 +230,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
   }
 
   Future<void> resetAppPreferences() async {
+    locale = ZhLocale.simplifiedChinese;
     readingTextSize = ReadingTextSize.standard;
     darkModeEnabled = false;
     reduceMotion = false;
@@ -249,6 +257,7 @@ mixin _SessionStorePreferencesMixin on _SessionStoreCore {
     authenticationLoggingEnabled = true;
     if (!kIsWeb) {
       await Future.wait([
+        _safeDelete(_SessionStoreCore._localeKey),
         _safeDelete(_SessionStoreCore._readingTextSizeKey),
         _safeDelete(_SessionStoreCore._darkModeEnabledKey),
         _safeDelete(_SessionStoreCore._reduceMotionKey),

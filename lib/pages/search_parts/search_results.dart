@@ -140,14 +140,14 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   Widget _searchActions({bool collapsed = false}) {
     final actions = <ZhLiquidGlassCapsuleAction>[
       ZhLiquidGlassCapsuleAction(
-        icon: const Tooltip(
-          message: '搜索',
+        icon: Tooltip(
+          message: context.zhL10n.commonSearch,
           child: Icon(
             Icons.arrow_forward_rounded,
             key: ValueKey('search-submit'),
           ),
         ),
-        semanticLabel: '搜索',
+        semanticLabel: context.zhL10n.commonSearch,
         onPressed: () => _submit(_query.text),
       ),
     ];
@@ -155,14 +155,16 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
       actions.add(
         ZhLiquidGlassCapsuleAction(
           icon: const Icon(Icons.clear_rounded, key: ValueKey('search-clear')),
-          semanticLabel: '清除搜索内容',
+          semanticLabel: context.zhL10n.commonClear,
           onPressed: _clearQuery,
         ),
       );
     }
     final selectedCount = _selectedFilters.length;
     final active = _showFilters || selectedCount > 0;
-    final semanticLabel = selectedCount == 0 ? '筛选' : '筛选，已选择 $selectedCount 项';
+    final semanticLabel = selectedCount == 0
+        ? context.zhL10n.searchFilter
+        : '${context.zhL10n.searchFilter} ($selectedCount)';
     actions.add(
       ZhLiquidGlassCapsuleAction(
         icon: KeyedSubtree(
@@ -424,7 +426,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
               automaticallyImplyLeading: false,
               leading: ZhLiquidGlassIconButton(
                 key: const ValueKey('search-results-back'),
-                semanticLabel: '返回',
+                semanticLabel: context.zhL10n.commonBack,
                 onPressed: Navigator.of(context).pop,
                 icon: const Icon(Icons.arrow_back_rounded),
                 size: 44,
@@ -495,7 +497,7 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                               _SearchField(
                                 controller: _query,
                                 focusNode: _queryFocus,
-                                hintText: '搜索知乎内容',
+                                hintText: context.zhL10n.searchPlaceholder,
                                 compact: true,
                                 inlineActions: false,
                                 onChanged: _onQueryChanged,
@@ -528,10 +530,11 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                             child: ZhLiquidGlassSegmentedTabs(
                               key: const ValueKey('search-scope-glass-tabs'),
                               labels: [
-                                for (final tab in officialSearchTabs) tab.label,
+                                for (final tab in officialSearchTabs)
+                                  localizedSearchTabLabel(context.zhL10n, tab),
                               ],
                               selectedIndex: _index,
-                              semanticPrefix: '搜索范围 ',
+                              semanticPrefix: '${context.zhL10n.searchFilter} ',
                               scrollable: true,
                               onSelected: _switchToTab,
                               height: 46,
@@ -614,7 +617,9 @@ class _SearchFilterPanel extends StatelessWidget {
         for (final group in groups)
           Semantics(
             container: true,
-            label: '${_groupLabel(group)}筛选',
+            label:
+                '${localizedSearchFilterGroupLabel(context.zhL10n, group)}'
+                '${context.zhL10n.searchFilter}',
             child: SizedBox(
               height: 42,
               child: ListView.separated(
@@ -672,14 +677,6 @@ class _SearchFilterPanel extends StatelessWidget {
       ],
     ),
   );
-
-  static String _groupLabel(List<SearchFilterOption> group) =>
-      switch (group.firstOrNull?.group) {
-        'vertical' => '内容类型',
-        'sort' => '排序',
-        'time_interval' => '时间范围',
-        _ => '搜索',
-      };
 }
 
 class _SearchDesktopRail extends StatelessWidget {
@@ -706,10 +703,13 @@ class _SearchDesktopRail extends StatelessWidget {
             children: [
               const Icon(Icons.search_rounded, size: 24),
               const SizedBox(height: ZhSpace.sm),
-              Text('搜索概览', style: Theme.of(context).textTheme.titleMedium),
+              Text(
+                context.zhL10n.searchOverview,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
               const SizedBox(height: ZhSpace.xs),
               Text(
-                query.isEmpty ? '输入关键词开始搜索' : '“$query”',
+                query.isEmpty ? context.zhL10n.searchStartHint : '“$query”',
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(
@@ -719,17 +719,23 @@ class _SearchDesktopRail extends StatelessWidget {
               const SizedBox(height: ZhSpace.md),
               const Divider(height: 1),
               const SizedBox(height: ZhSpace.md),
-              Text('当前范围', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                context.zhL10n.searchCurrentScope,
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               const SizedBox(height: 4),
               Text(
-                tab.label,
+                localizedSearchTabLabel(context.zhL10n, tab),
                 style: Theme.of(
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
               ),
               if (selectedFilters.isNotEmpty) ...[
                 const SizedBox(height: ZhSpace.md),
-                Text('已启用筛选', style: Theme.of(context).textTheme.labelLarge),
+                Text(
+                  context.zhL10n.searchActiveFilters,
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
                 const SizedBox(height: ZhSpace.xs),
                 Wrap(
                   spacing: 6,

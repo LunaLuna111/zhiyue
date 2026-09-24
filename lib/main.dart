@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -29,6 +30,7 @@ import 'ui/zh_scroll_behavior.dart';
 import 'ui/zh_components.dart';
 import 'ui/zh_glass.dart';
 import 'ui/zh_theme.dart';
+import 'l10n/zh_localization.dart';
 import 'widgets/app_drawer.dart';
 import 'widgets/account_session_cleanup_prompt.dart';
 import 'widgets/desktop_shell.dart';
@@ -101,6 +103,7 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
 
   int get _currentPresentationFingerprint => Object.hash(
     widget.session.readingTextSize,
+    widget.session.locale,
     widget.session.darkModeEnabled,
     widget.session.followSystemTextScale,
     widget.session.reduceMotion,
@@ -145,8 +148,14 @@ class _ZhiyueAppState extends State<ZhiyueApp> {
     final app = ShadTheme(
       data: ZhTheme.shadFor(isDark ? Brightness.dark : Brightness.light),
       child: MaterialApp(
-        title: '知阅',
+        onGenerateTitle: (context) => context.zhL10n.appTitle,
         debugShowCheckedModeBanner: false,
+        locale: widget.session.locale.locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          ...GlobalMaterialLocalizations.delegates,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
         themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
         theme: ZhTheme.materialFor(Brightness.light),
         darkTheme: ZhTheme.materialFor(Brightness.dark),
@@ -542,22 +551,25 @@ class _HomeShellState extends State<HomeShell> {
       selectedIndex: _index,
       onSelectedIndex: _selectNavigation,
       onOpenDrawer: _drawerController.open,
-      destinations: const [
+      destinations: [
         NavigationDestination(
           icon: Icon(Icons.home_outlined),
           selectedIcon: Icon(Icons.home),
-          label: '推荐',
+          label: context.zhL10n.navRecommend,
         ),
-        NavigationDestination(icon: Icon(Icons.search), label: '搜索'),
+        NavigationDestination(
+          icon: Icon(Icons.search),
+          label: context.zhL10n.navSearch,
+        ),
         NavigationDestination(
           icon: Icon(Icons.menu_book_outlined),
           selectedIcon: Icon(Icons.menu_book),
-          label: '书架',
+          label: context.zhL10n.navBookshelf,
         ),
         NavigationDestination(
           icon: Icon(Icons.person_outline),
           selectedIcon: Icon(Icons.person),
-          label: '我',
+          label: context.zhL10n.navMe,
         ),
       ],
     );

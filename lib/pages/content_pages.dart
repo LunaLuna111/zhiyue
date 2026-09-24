@@ -21,6 +21,7 @@ import '../core/platform_environment.dart'
 import '../core/recommendation_behavior.dart';
 import '../core/salt_chapter_export.dart';
 import '../core/tts_service.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';

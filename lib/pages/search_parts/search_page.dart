@@ -30,6 +30,23 @@ const officialSearchTabs = <SearchTabSpec>[
   SearchTabSpec('podcast', '播客'),
 ];
 
+String localizedSearchTabLabel(AppLocalizations l10n, SearchTabSpec tab) =>
+    switch (tab.type) {
+      'general' => l10n.searchGeneral,
+      'recent' => l10n.searchRealtime,
+      'people' => l10n.searchUsers,
+      'km_general' => l10n.searchStories,
+      'scholar' => l10n.searchArticles,
+      'zvideo' => l10n.searchVideos,
+      'topic' => l10n.searchTopics,
+      'column' => l10n.searchColumns,
+      'publication' => l10n.searchKnowledge,
+      'pin' => l10n.searchIdeas,
+      'ring' => l10n.searchCircles,
+      'podcast' => l10n.searchPodcasts,
+      _ => tab.label,
+    };
+
 class SearchFilterOption {
   const SearchFilterOption({
     required this.group,
@@ -41,6 +58,16 @@ class SearchFilterOption {
   final String title;
   final String linkName;
 }
+
+String localizedSearchFilterGroupLabel(
+  AppLocalizations l10n,
+  List<SearchFilterOption> group,
+) => switch (group.firstOrNull?.group) {
+  'vertical' => l10n.searchFilterType,
+  'sort' => l10n.searchFilterSort,
+  'time_interval' => l10n.searchFilterTime,
+  _ => l10n.searchTitle,
+};
 
 class _SearchHotCacheEntry {
   List<SearchHotItem> items = const [];
@@ -359,14 +386,14 @@ class _SearchPageState extends State<SearchPage>
     return ZhLiquidGlassCapsuleMenuActionGroup<_SearchMenuAction>(
       key: const ValueKey('search-menu'),
       primaryAction: ZhLiquidGlassCapsuleAction(
-        icon: const Tooltip(
-          message: '搜索',
+        icon: Tooltip(
+          message: context.zhL10n.commonSearch,
           child: Icon(
             Icons.arrow_forward_rounded,
             key: ValueKey('search-submit'),
           ),
         ),
-        semanticLabel: '搜索',
+        semanticLabel: context.zhL10n.commonSearch,
         onPressed: () => _submit(),
       ),
       additionalActions: _query.text.trim().isEmpty
@@ -377,23 +404,25 @@ class _SearchPageState extends State<SearchPage>
                   Icons.clear_rounded,
                   key: ValueKey('search-clear'),
                 ),
-                semanticLabel: '清除搜索内容',
+                semanticLabel: context.zhL10n.commonClear,
                 onPressed: _clearQuery,
               ),
             ],
       menuIcon: const Icon(Icons.more_vert_rounded),
-      menuSemanticLabel: '搜索选项',
+      menuSemanticLabel: context.zhL10n.commonMore,
       onSelected: (action) => unawaited(_handleSearchMenuAction(action)),
       menuItems: [
         ZhLiquidGlassMenuItem<_SearchMenuAction>(
           value: _SearchMenuAction.clearHistory,
-          label: '清空历史记录',
+          label: '${context.zhL10n.commonClear}${context.zhL10n.searchHistory}',
           icon: const Icon(Icons.delete_sweep_outlined),
           enabled: session.searchHistory.isNotEmpty,
         ),
         ZhLiquidGlassMenuItem<_SearchMenuAction>(
           value: _SearchMenuAction.toggleHotSearch,
-          label: session.showSearchHotSearch ? '关闭热搜显示' : '开启热搜显示',
+          label: session.showSearchHotSearch
+              ? context.zhL10n.settingsShowHotOff
+              : context.zhL10n.settingsShowHotOn,
           icon: Icon(
             session.showSearchHotSearch
                 ? Icons.visibility_off_outlined
@@ -402,13 +431,15 @@ class _SearchPageState extends State<SearchPage>
         ),
         ZhLiquidGlassMenuItem<_SearchMenuAction>(
           value: _SearchMenuAction.refreshHotSearch,
-          label: '刷新热搜',
+          label: context.zhL10n.commonRefresh,
           icon: const Icon(Icons.refresh_rounded),
           enabled: session.showSearchHotSearch,
         ),
         ZhLiquidGlassMenuItem<_SearchMenuAction>(
           value: _SearchMenuAction.toggleSearchHistory,
-          label: session.rememberSearchHistory ? '关闭历史搜索记录' : '开启历史搜索记录',
+          label: session.rememberSearchHistory
+              ? context.zhL10n.settingsKeepSearchOff
+              : context.zhL10n.settingsKeepSearchOn(0),
           icon: Icon(
             session.rememberSearchHistory
                 ? Icons.history_toggle_off_rounded
@@ -531,14 +562,14 @@ class _SearchPageState extends State<SearchPage>
       appBar: ZhTopBar(
         leading: ZhLiquidGlassIconButton(
           key: const ValueKey('search-back'),
-          semanticLabel: '返回',
+          semanticLabel: context.zhL10n.commonBack,
           onPressed: _handleBack,
           icon: const Icon(Icons.arrow_back_rounded),
           size: 46,
           iconSize: 24,
         ),
         title: Text(
-          '搜索',
+          context.zhL10n.searchTitle,
           style: TextStyle(
             color: ZhPalette.ink,
             fontSize: 28,
@@ -567,7 +598,7 @@ class _SearchPageState extends State<SearchPage>
                 focusNode: _queryFocus,
                 autofocus:
                     widget.focusOnOpen && widget.api.session.focusSearchOnOpen,
-                hintText: '搜索知乎内容',
+                hintText: context.zhL10n.searchPlaceholder,
                 inlineActions: false,
                 onChanged: _onQueryChanged,
                 onSubmitted: _submit,
@@ -578,7 +609,10 @@ class _SearchPageState extends State<SearchPage>
               ),
               if (!queryEmpty) ...[
                 const SizedBox(height: 20),
-                _SectionHeading(title: '搜索范围', trailing: '左右滑动查看更多'),
+                _SectionHeading(
+                  title: context.zhL10n.searchScope,
+                  trailing: context.zhL10n.searchMoreScopes,
+                ),
                 const SizedBox(height: 10),
                 SizedBox(
                   height: _SearchChoice.rowHeight(context),
@@ -591,7 +625,7 @@ class _SearchPageState extends State<SearchPage>
                     itemBuilder: (context, index) {
                       final tab = officialSearchTabs[index];
                       return _SearchChoice(
-                        label: tab.label,
+                        label: localizedSearchTabLabel(context.zhL10n, tab),
                         selected: tab.type == _type,
                         onTap: () => setState(() => _type = tab.type),
                       );
@@ -601,7 +635,7 @@ class _SearchPageState extends State<SearchPage>
               ],
               if (historyVisible) ...[
                 const SizedBox(height: 26),
-                const _SectionHeading(title: '历史搜索'),
+                _SectionHeading(title: context.zhL10n.searchHistory),
                 const SizedBox(height: ZhSpace.sm),
                 if (widget.api.session.searchHistory.isEmpty)
                   const _EmptyHistory()

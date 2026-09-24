@@ -6,6 +6,7 @@ import 'package:zhihu_api/zhihu_api.dart' as zhihu_api;
 
 import '../core/api_client.dart';
 import '../core/json_tools.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 import '../widgets/api_views.dart';

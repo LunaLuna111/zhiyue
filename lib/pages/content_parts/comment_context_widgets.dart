@@ -270,7 +270,9 @@ Widget? commentListSummaryHeader(
       children: [
         Expanded(
           child: Text(
-            total == null ? '评论' : '评论 ${compactCount(total)}',
+            total == null
+                ? context.zhL10n.commentAll
+                : context.zhL10n.commentCount(compactCount(total)),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
@@ -301,7 +303,10 @@ Widget? commentListSummaryHeader(
                       ),
                     _OfficialSortChoice(
                       semanticKey: 'comment-sort-${sortOptions[index].$1}',
-                      label: _officialSortLabel(sortOptions[index]),
+                      label: _officialSortLabel(
+                        context.zhL10n,
+                        sortOptions[index],
+                      ),
                       selected: sortOptions[index].$1 == selectedOrder,
                       onTap: onOrderChanged == null
                           ? null
@@ -317,9 +322,9 @@ Widget? commentListSummaryHeader(
   );
 }
 
-String _officialSortLabel((String, String) option) {
-  if (option.$1 == 'score') return '默认';
-  if (option.$1 == 'time' || option.$1 == 'ts') return '最新';
+String _officialSortLabel(AppLocalizations l10n, (String, String) option) {
+  if (option.$1 == 'score') return l10n.commentDefault;
+  if (option.$1 == 'time' || option.$1 == 'ts') return l10n.commentLatest;
   final characters = option.$2.characters;
   return characters.length <= 3 ? option.$2 : characters.take(3).toString();
 }

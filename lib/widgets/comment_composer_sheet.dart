@@ -9,6 +9,7 @@ import '../core/app_log.dart';
 import '../core/comment_emoticon_assets.dart';
 import '../core/json_tools.dart';
 import '../core/native_image_picker.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_theme.dart';
 
 part '../features/comments/comment_composer_parts/composer_surface.dart';
@@ -225,15 +226,21 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
 
   bool get _compactComposer => widget.maxLength <= 5000;
 
-  String get _composerTitle {
-    if (widget.title.startsWith('回复')) return '发布你的回复';
+  String _composerTitle(BuildContext context) {
+    final l10n = context.zhL10n;
+    if (widget.replyTarget?.isReply == true || widget.title.startsWith('回复')) {
+      return l10n.commentPublishReply;
+    }
     if (widget.title == '写评论' || widget.title == '评论这段话') {
-      return '发布你的评论';
+      return l10n.commentPublishComment;
     }
     return widget.title;
   }
 
-  String get _submitLabel => widget.title.startsWith('回复') ? '回复' : '发布';
+  String _submitLabel(BuildContext context) =>
+      widget.replyTarget?.isReply == true || widget.title.startsWith('回复')
+      ? context.zhL10n.commonReply
+      : context.zhL10n.commonPublish;
 
   Future<void> _submit() async {
     if (!_canSubmit) return;
@@ -688,7 +695,13 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
     final targetHeight = _showEmoticons
         ? maxHeight.clamp(390.0, 520.0)
         : collapsedHeight.clamp(164.0, maxHeight);
-    final replyHint = widget.title.startsWith('回复') ? widget.title : '';
+    final replyHint = widget.replyTarget?.isReply == true
+        ? (widget.replyTarget!.targetUserName.trim().isEmpty
+              ? context.zhL10n.commentReply
+              : context.zhL10n.commentReplyTo(
+                  widget.replyTarget!.targetUserName.trim(),
+                ))
+        : '';
     return _KeyboardInsetLift(
       // Once selected, the emoticon panel owns the keyboard area. Do not
       // translate it with the retiring IME inset or it can disappear below
@@ -723,7 +736,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
             children: [
               if (_compactComposer)
                 _ComposerHeader(
-                  title: _composerTitle,
+                  title: _composerTitle(context),
                   expanded: _expandedComposer,
                   onMention: _mention,
                   onToggleExpanded: () =>
@@ -761,7 +774,9 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   decoration: InputDecoration(
                     filled: true,
                     fillColor: Colors.transparent,
-                    hintText: replyHint.isEmpty ? '理性发言，友善互动' : replyHint,
+                    hintText: replyHint.isEmpty
+                        ? context.zhL10n.commentInputPlaceholder
+                        : replyHint,
                     hintStyle: TextStyle(
                       color: ZhPalette.subtleInk,
                       fontSize: 17,
@@ -802,7 +817,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                 child: _ComposerToolbar(
                   canSubmit: _canSubmit,
                   sending: _sending,
-                  submitLabel: _submitLabel,
+                  submitLabel: _submitLabel(context),
                   onEmoticons: _toggleEmoticons,
                   onImage: widget.enableImage ? _pickImage : null,
                   onGift: widget.enableGift ? _openGiftPanel : null,

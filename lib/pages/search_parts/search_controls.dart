@@ -135,7 +135,7 @@ class _EmptyHistory extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: Text(
-            '搜索过的关键词会显示在这里',
+            context.zhL10n.searchHistory,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
@@ -162,12 +162,12 @@ class _SearchHotSection extends StatelessWidget {
     if (items.isEmpty && !loading) return const SizedBox.shrink();
     return Semantics(
       container: true,
-      label: '热搜',
+      label: context.zhL10n.searchHot,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '热搜',
+            context.zhL10n.searchHot,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
               fontSize: 18,
               fontWeight: FontWeight.w700,
@@ -181,7 +181,7 @@ class _SearchHotSection extends StatelessWidget {
           for (var index = 0; index < items.length; index++)
             Semantics(
               button: true,
-              label: '热搜 ${items[index].displayQuery}',
+              label: '${context.zhL10n.searchHot} ${items[index].displayQuery}',
               child: InkWell(
                 key: ValueKey('search-hot:${items[index].query}'),
                 onTap: () => onSelected(items[index].query),

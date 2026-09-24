@@ -7,6 +7,7 @@ import 'package:zhihu_api/zhihu_api.dart' as zhihu_api;
 
 import 'platform_environment.dart'
     if (dart.library.io) 'platform_environment_io.dart';
+import 'app_locale.dart';
 import 'cloud_id_signer.dart';
 import 'app_log.dart';
 import 'private_app_storage.dart';
@@ -72,6 +73,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   static const _searchHistoryKey = 'zh_search_history';
   static const _maxSearchHistoryItems = 20;
   static const _readingTextSizeKey = 'zh_setting_reading_text_size';
+  static const _localeKey = 'zh_setting_locale';
   static const _darkModeEnabledKey = 'zh_setting_dark_mode_enabled';
   static const _reduceMotionKey = 'zh_setting_reduce_motion';
   static const _glassEffectsEnabledKey = 'zh_setting_glass_effects_enabled';
@@ -141,6 +143,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
   String accountUnlockTicket = '';
   int accountLockInSeconds = 0;
   List<String> searchHistory = const [];
+  ZhLocale locale = ZhLocale.simplifiedChinese;
   ReadingTextSize readingTextSize = ReadingTextSize.standard;
   bool darkModeEnabled = false;
   bool reduceMotion = false;
@@ -491,6 +494,7 @@ abstract class _SessionStoreCore extends ChangeNotifier {
       ReadingTextSize.values,
       ReadingTextSize.standard,
     );
+    locale = ZhLocale.fromStorage(read(_localeKey));
     darkModeEnabled = _decodeBool(read(_darkModeEnabledKey), fallback: false);
     reduceMotion = _decodeBool(read(_reduceMotionKey), fallback: false);
     glassEffectsEnabled = _decodeBool(

@@ -127,151 +127,154 @@ class ZhDesktopSidebar extends StatelessWidget {
   final VoidCallback onSettings;
 
   @override
-  Widget build(BuildContext context) => Material(
-    key: const ValueKey('desktop-side-navigation'),
-    color: ZhPalette.background,
-    child: SizedBox(
-      width: 264,
-      child: SafeArea(
-        right: false,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 18, 20, 18),
-              child: Row(
-                children: [
-                  const ZhBrandMark(size: 42),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '知阅',
-                      style: Theme.of(context).textTheme.titleLarge,
+  Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    return Material(
+      key: const ValueKey('desktop-side-navigation'),
+      color: ZhPalette.background,
+      child: SizedBox(
+        width: 264,
+        child: SafeArea(
+          right: false,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 18, 20, 18),
+                child: Row(
+                  children: [
+                    const ZhBrandMark(size: 42),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        l10n.appTitle,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
-                children: [
-                  const _DesktopSectionLabel('工作区'),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-recommend'),
-                    icon: Icons.home_outlined,
-                    selectedIcon: Icons.home,
-                    label: '推荐',
-                    selected: selectedNavigationIndex == 0,
-                    shortcut: '⌘/Ctrl 1',
-                    onTap: () => onNavigationSelected(0),
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-search'),
-                    icon: Icons.search,
-                    label: '搜索',
-                    selected: selectedNavigationIndex == 1,
-                    shortcut: '⌘/Ctrl 2',
-                    onTap: () => onNavigationSelected(1),
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-bookshelf'),
-                    icon: Icons.menu_book_outlined,
-                    selectedIcon: Icons.menu_book,
-                    label: '书架',
-                    selected: selectedNavigationIndex == 2,
-                    shortcut: '⌘/Ctrl 3',
-                    onTap: () => onNavigationSelected(2),
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-account'),
-                    icon: Icons.person_outline,
-                    selectedIcon: Icons.person,
-                    label: '我',
-                    selected: selectedNavigationIndex == 3,
-                    shortcut: '⌘/Ctrl 4',
-                    onTap: () => onNavigationSelected(3),
-                  ),
-                  const SizedBox(height: 16),
-                  const _DesktopSectionLabel('浏览'),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-columns'),
-                    icon: Icons.view_column_outlined,
-                    label: '专栏推荐',
-                    onTap: onColumns,
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-topic-categories'),
-                    icon: Icons.category_outlined,
-                    label: '话题分类',
-                    onTap: onTopicCategories,
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-hot-topics'),
-                    icon: Icons.local_fire_department_outlined,
-                    label: '热门话题',
-                    onTap: onHotTopics,
-                  ),
-                  AnimatedBuilder(
-                    animation: session.browsingHistoryChanges,
-                    builder: (context, _) => _DesktopNavTile(
-                      key: const ValueKey('desktop-nav-history'),
-                      icon: Icons.history_rounded,
-                      label: '历史记录',
-                      badge: session.browsingHistory.isEmpty
-                          ? null
-                          : '${session.browsingHistory.length}',
-                      onTap: onHistory,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const _DesktopSectionLabel('我的内容'),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-notifications'),
-                    icon: Icons.notifications_none_rounded,
-                    label: '消息',
-                    onTap: onNotifications,
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-collections'),
-                    icon: Icons.star_border_rounded,
-                    label: '收藏',
-                    onTap: onCollections,
-                  ),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-users'),
-                    icon: Icons.person_search_outlined,
-                    label: '查找用户',
-                    onTap: onUsers,
-                  ),
-                  const SizedBox(height: 16),
-                  const _DesktopSectionLabel('应用'),
-                  _DesktopNavTile(
-                    key: const ValueKey('desktop-nav-settings'),
-                    icon: Icons.tune_rounded,
-                    label: '设置',
-                    onTap: onSettings,
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 10, 22, 18),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  '知阅 $zhiyueVersionName',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),
+                  ],
                 ),
               ),
-            ),
-          ],
+              const Divider(height: 1),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 18),
+                  children: [
+                    _DesktopSectionLabel(l10n.navWorkspace),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-recommend'),
+                      icon: Icons.home_outlined,
+                      selectedIcon: Icons.home,
+                      label: l10n.navRecommend,
+                      selected: selectedNavigationIndex == 0,
+                      shortcut: '⌘/Ctrl 1',
+                      onTap: () => onNavigationSelected(0),
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-search'),
+                      icon: Icons.search,
+                      label: l10n.navSearch,
+                      selected: selectedNavigationIndex == 1,
+                      shortcut: '⌘/Ctrl 2',
+                      onTap: () => onNavigationSelected(1),
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-bookshelf'),
+                      icon: Icons.menu_book_outlined,
+                      selectedIcon: Icons.menu_book,
+                      label: l10n.navBookshelf,
+                      selected: selectedNavigationIndex == 2,
+                      shortcut: '⌘/Ctrl 3',
+                      onTap: () => onNavigationSelected(2),
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-account'),
+                      icon: Icons.person_outline,
+                      selectedIcon: Icons.person,
+                      label: l10n.navMe,
+                      selected: selectedNavigationIndex == 3,
+                      shortcut: '⌘/Ctrl 4',
+                      onTap: () => onNavigationSelected(3),
+                    ),
+                    const SizedBox(height: 16),
+                    _DesktopSectionLabel(l10n.drawerBrowse),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-columns'),
+                      icon: Icons.view_column_outlined,
+                      label: l10n.drawerColumns,
+                      onTap: onColumns,
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-topic-categories'),
+                      icon: Icons.category_outlined,
+                      label: l10n.drawerTopicCategories,
+                      onTap: onTopicCategories,
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-hot-topics'),
+                      icon: Icons.local_fire_department_outlined,
+                      label: l10n.drawerHotTopics,
+                      onTap: onHotTopics,
+                    ),
+                    AnimatedBuilder(
+                      animation: session.browsingHistoryChanges,
+                      builder: (context, _) => _DesktopNavTile(
+                        key: const ValueKey('desktop-nav-history'),
+                        icon: Icons.history_rounded,
+                        label: l10n.drawerHistory,
+                        badge: session.browsingHistory.isEmpty
+                            ? null
+                            : '${session.browsingHistory.length}',
+                        onTap: onHistory,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _DesktopSectionLabel(l10n.drawerMyContent),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-notifications'),
+                      icon: Icons.notifications_none_rounded,
+                      label: l10n.drawerMessages,
+                      onTap: onNotifications,
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-collections'),
+                      icon: Icons.star_border_rounded,
+                      label: l10n.drawerCollections,
+                      onTap: onCollections,
+                    ),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-users'),
+                      icon: Icons.person_search_outlined,
+                      label: l10n.drawerFindUsers,
+                      onTap: onUsers,
+                    ),
+                    const SizedBox(height: 16),
+                    _DesktopSectionLabel(l10n.drawerApp),
+                    _DesktopNavTile(
+                      key: const ValueKey('desktop-nav-settings'),
+                      icon: Icons.tune_rounded,
+                      label: l10n.drawerSettings,
+                      onTap: onSettings,
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(22, 10, 22, 18),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    l10n.drawerVersion(zhiyueVersionName),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class _DesktopSectionLabel extends StatelessWidget {

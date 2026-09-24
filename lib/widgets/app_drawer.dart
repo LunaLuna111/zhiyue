@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../core/account_session_store.dart';
 import '../core/app_version.dart';
 import '../core/session_store.dart';
+import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
 
@@ -49,6 +50,7 @@ class ZhAppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
     final screenWidth = MediaQuery.sizeOf(context).width;
     final preferredDrawerWidth = (screenWidth * .86)
         .clamp(300.0, 368.0)
@@ -86,7 +88,7 @@ class ZhAppDrawer extends StatelessWidget {
                       const Spacer(),
                       ZhLiquidGlassIconButton(
                         key: const ValueKey('close-side-drawer'),
-                        semanticLabel: '关闭侧边栏',
+                        semanticLabel: l10n.drawerClose,
                         size: 46,
                         onPressed:
                             onClose ?? () => Navigator.of(context).maybePop(),
@@ -99,23 +101,23 @@ class ZhAppDrawer extends StatelessWidget {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(12, 10, 12, 18),
                     children: [
-                      const _DrawerSectionLabel('浏览'),
+                      _DrawerSectionLabel(l10n.drawerBrowse),
                       _DrawerTile(
                         key: const ValueKey('drawer-columns'),
                         icon: Icons.view_column_outlined,
-                        label: '专栏推荐',
+                        label: l10n.drawerColumns,
                         onTap: onColumns,
                       ),
                       _DrawerTile(
                         key: const ValueKey('drawer-topic-categories'),
                         icon: Icons.category_outlined,
-                        label: '话题分类',
+                        label: l10n.drawerTopicCategories,
                         onTap: onTopicCategories,
                       ),
                       _DrawerTile(
                         key: const ValueKey('drawer-hot-topics'),
                         icon: Icons.local_fire_department_outlined,
-                        label: '热门话题',
+                        label: l10n.drawerHotTopics,
                         onTap: onHotTopics,
                       ),
                       AnimatedBuilder(
@@ -123,7 +125,7 @@ class ZhAppDrawer extends StatelessWidget {
                         builder: (context, _) => _DrawerTile(
                           key: const ValueKey('drawer-history'),
                           icon: Icons.history_rounded,
-                          label: '历史记录',
+                          label: l10n.drawerHistory,
                           badge: session.browsingHistory.isEmpty
                               ? null
                               : '${session.browsingHistory.length}',
@@ -131,30 +133,30 @@ class ZhAppDrawer extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 13),
-                      const _DrawerSectionLabel('我的内容'),
+                      _DrawerSectionLabel(l10n.drawerMyContent),
                       _DrawerTile(
                         key: const ValueKey('drawer-notifications'),
                         icon: Icons.notifications_none_rounded,
-                        label: '消息',
+                        label: l10n.drawerMessages,
                         onTap: onNotifications,
                       ),
                       _DrawerTile(
                         key: const ValueKey('drawer-collections'),
                         icon: Icons.star_border_rounded,
-                        label: '收藏',
+                        label: l10n.drawerCollections,
                         onTap: onCollections,
                       ),
                       _DrawerTile(
                         key: const ValueKey('drawer-bookshelf'),
                         icon: Icons.menu_book_outlined,
                         selected: selectedNavigationIndex == 2,
-                        label: '书架',
+                        label: l10n.drawerBookshelf,
                         onTap: onBookshelf,
                       ),
                       _DrawerTile(
                         key: const ValueKey('drawer-users'),
                         icon: Icons.person_search_outlined,
-                        label: '查找用户',
+                        label: l10n.drawerFindUsers,
                         onTap: onUsers,
                       ),
                       const SizedBox(height: 13),
@@ -176,11 +178,11 @@ class ZhAppDrawer extends StatelessWidget {
                           );
                         },
                       ),
-                      const _DrawerSectionLabel('应用'),
+                      _DrawerSectionLabel(l10n.drawerApp),
                       _DrawerTile(
                         key: const ValueKey('drawer-settings'),
                         icon: Icons.tune_rounded,
-                        label: '设置',
+                        label: l10n.drawerSettings,
                         onTap: onSettings,
                       ),
                     ],
@@ -191,7 +193,7 @@ class ZhAppDrawer extends StatelessWidget {
                   child: Row(
                     children: [
                       Text(
-                        '知阅 $zhiyueVersionName',
+                        l10n.drawerVersion(zhiyueVersionName),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: ZhPalette.subtleInk,
                         ),
@@ -222,29 +224,34 @@ class _DrawerAccounts extends StatelessWidget {
   final VoidCallback onManageAccounts;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const _DrawerSectionLabel('账号'),
-      for (final account in store.accounts)
+  Widget build(BuildContext context) {
+    final l10n = context.zhL10n;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _DrawerSectionLabel(l10n.drawerAccount),
+        for (final account in store.accounts)
+          _DrawerTile(
+            key: ValueKey('drawer-account-${account.id}'),
+            icon: account.isQr
+                ? Icons.qr_code_2_rounded
+                : Icons.account_circle_outlined,
+            label: account.displayName,
+            selected: account.id == store.activeId,
+            badge: account.isExpired && !account.isQr ? '过期' : null,
+            onTap: () => onAccountSelected(account.id),
+          ),
         _DrawerTile(
-          key: ValueKey('drawer-account-${account.id}'),
-          icon: account.isQr
-              ? Icons.qr_code_2_rounded
-              : Icons.account_circle_outlined,
-          label: account.displayName,
-          selected: account.id == store.activeId,
-          badge: account.isExpired && !account.isQr ? '过期' : null,
-          onTap: () => onAccountSelected(account.id),
+          key: const ValueKey('drawer-account-manager'),
+          icon: Icons.manage_accounts_outlined,
+          label: store.accounts.isEmpty
+              ? l10n.drawerLoginOrAddAccount
+              : l10n.drawerAccountManagement,
+          onTap: onManageAccounts,
         ),
-      _DrawerTile(
-        key: const ValueKey('drawer-account-manager'),
-        icon: Icons.manage_accounts_outlined,
-        label: store.accounts.isEmpty ? '登录或添加账号' : '账号管理',
-        onTap: onManageAccounts,
-      ),
-    ],
-  );
+      ],
+    );
+  }
 }
 
 class _DrawerSectionLabel extends StatelessWidget {

@@ -304,8 +304,9 @@ bool contentIdentityMatches({
 void openDetectedObject(
   BuildContext context,
   ZhihuApiClient api,
-  Map<String, dynamic> source,
-) {
+  Map<String, dynamic> source, {
+  Rect? sourceRect,
+}) {
   final object = unwrapObject(source);
   final type = typeOf(source).replaceAll('search_', '').toLowerCase();
   var id = idOf(source);
@@ -411,7 +412,156 @@ void openDetectedObject(
       ),
     );
   }
-  Navigator.of(context).push(MaterialPageRoute(builder: (_) => page!));
+  final canMorphIntoDetail =
+      sourceRect != null &&
+      page is ContentDetailPage &&
+      ZhGlassScope.enabledOf(context) &&
+      !MediaQuery.disableAnimationsOf(context);
+  if (canMorphIntoDetail) {
+    // GlassModalSheet's native morph is designed for a sheet detent. A post
+    // detail is a full-screen page, so keep the source-aware geometry here to
+    // avoid the sheet's bottom-up handoff and preserve a clean reverse frame.
+    unawaited(
+      Navigator.of(
+        context,
+      ).push<void>(_SourceMorphPageRoute(page: page, sourceRect: sourceRect)),
+    );
+  } else {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page!));
+  }
+}
+
+/// Source-aware fallback for renderers without the shader blend used by the
+/// package's metaball morph. It keeps the same interaction contract: the
+/// detail page grows from the tapped point and reverses into that point when
+/// dismissed, instead of silently falling back to a bottom sheet.
+class _SourceMorphPageRoute<T> extends PageRouteBuilder<T> {
+  _SourceMorphPageRoute({required Widget page, required this.sourceRect})
+    : super(
+        opaque: false,
+        barrierColor: Colors.transparent,
+        barrierDismissible: false,
+        transitionDuration: const Duration(milliseconds: 430),
+        reverseTransitionDuration: const Duration(milliseconds: 330),
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) =>
+            _SourceMorphTransition(
+              animation: animation,
+              sourceRect: sourceRect,
+              child: child,
+            ),
+      );
+
+  final Rect sourceRect;
+}
+
+class _SourceMorphTransition extends StatelessWidget {
+  const _SourceMorphTransition({
+    required this.animation,
+    required this.sourceRect,
+    required this.child,
+  });
+
+  final Animation<double> animation;
+  final Rect sourceRect;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    final center = Offset(
+      sourceRect.center.dx.clamp(0.0, size.width),
+      sourceRect.center.dy.clamp(0.0, size.height),
+    );
+    final maxRadius = math.max(
+      math.max(center.distance, (Offset(size.width, 0) - center).distance),
+      math.max(
+        (Offset(0, size.height) - center).distance,
+        (Offset(size.width, size.height) - center).distance,
+      ),
+    );
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeInCubic,
+    );
+
+    return AnimatedBuilder(
+      animation: curved,
+      builder: (context, _) {
+        final t = curved.value.clamp(0.0, 1.0);
+        final radius = 26.0 + (maxRadius - 26.0) * t;
+        final morphRect = Rect.fromCircle(center: center, radius: radius);
+        final contentOpacity = ((t - 0.22) / 0.68).clamp(0.0, 1.0);
+        final glassOpacity = ((1.0 - t) / 0.78).clamp(0.0, 1.0);
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            IgnorePointer(
+              child: ColoredBox(
+                color: Colors.black.withValues(alpha: 0.18 * t),
+              ),
+            ),
+            ClipPath(
+              clipper: _RadialMorphClipper(center: center, radius: radius),
+              clipBehavior: Clip.antiAlias,
+              child: Opacity(opacity: contentOpacity, child: child),
+            ),
+            if (glassOpacity > 0.0)
+              Positioned.fromRect(
+                rect: morphRect,
+                child: Opacity(
+                  opacity: glassOpacity,
+                  child: ClipOval(
+                    child: BackdropFilter(
+                      filter: ui.ImageFilter.blur(
+                        sigmaX: 18 * (1 - t),
+                        sigmaY: 18 * (1 - t),
+                      ),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: ZhPalette.background.withValues(alpha: .64),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: .86),
+                            width: 1.2,
+                          ),
+                          boxShadow: const [
+                            BoxShadow(
+                              color: Color(0x33000000),
+                              blurRadius: 24,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RadialMorphClipper extends CustomClipper<Path> {
+  const _RadialMorphClipper({required this.center, required this.radius});
+
+  final Offset center;
+  final double radius;
+
+  @override
+  Path getClip(Size size) {
+    return Path()..addOval(Rect.fromCircle(center: center, radius: radius));
+  }
+
+  @override
+  bool shouldReclip(covariant _RadialMorphClipper oldClipper) {
+    return oldClipper.center != center || oldClipper.radius != radius;
+  }
 }
 
 ({String type, String id}) interactiveContentIdentityOf(

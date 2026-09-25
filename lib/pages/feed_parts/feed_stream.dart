@@ -521,6 +521,19 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
               _warmRowBeforeOpen(row);
               openDetectedObject(context, widget.api, row);
             },
+            onTapAt: (position) {
+              _warmRowBeforeOpen(row);
+              openDetectedObject(
+                context,
+                widget.api,
+                row,
+                sourceRect: Rect.fromCenter(
+                  center: position,
+                  width: 52,
+                  height: 52,
+                ),
+              );
+            },
             onAuthorTap: authorIdOf(row).isEmpty
                 ? null
                 : () => openContentAuthor(context, widget.api, row),

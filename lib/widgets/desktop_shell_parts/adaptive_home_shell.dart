@@ -37,11 +37,17 @@ class ZhAdaptiveHomeShell extends StatefulWidget {
 
 class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     with SingleTickerProviderStateMixin {
-  // Keep the sheet's travel continuous with the changing silhouette.  The
-  // previous curve reached its resting position too aggressively, which made
-  // the first frame of the rounded page surface feel like a hard cut.
-  static const _motionCurve = Cubic(.22, 1, .36, 1);
   static const _drawerCornerRadius = 28.0;
+  // Use the same spring family as the package's liquid controls. The drawer
+  // remains a cached translated surface, but its settle now has the soft
+  // native catch instead of a fixed ease-out landing.
+  static final _drawerOpenSpring = GlassSpring.snappy(
+    duration: const Duration(milliseconds: 440),
+    extraBounce: .02,
+  );
+  static final _drawerCloseSpring = GlassSpring.smooth(
+    duration: const Duration(milliseconds: 360),
+  );
   late final AnimationController _progress = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 420),
@@ -91,7 +97,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     _drawerController._setAnimationProgress(_progress.value);
   }
 
-  Future<bool> _animateDrawer(bool open) async {
+  Future<bool> _animateDrawer(bool open, {double initialVelocity = 0}) async {
     final target = open ? 1.0 : 0.0;
     if (_progress.value == target) return true;
     final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations == true;
@@ -100,14 +106,28 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
       return true;
     }
     try {
-      await _progress.animateTo(target, curve: _motionCurve).orCancel;
+      final drawerVelocity = _drawerExtent <= 0
+          ? 0.0
+          : initialVelocity / _drawerExtent;
+      await _progress
+          .animateWith(
+            SpringSimulation(
+              open ? _drawerOpenSpring : _drawerCloseSpring,
+              _progress.value,
+              target,
+              drawerVelocity,
+            ),
+          )
+          .orCancel;
     } on TickerCanceled {
       // A reverse request, breakpoint change, or direct manipulation can
       // cancel the ticker. Resolve the old request instead of leaving route
       // navigation awaiting a TickerFuture that never completes.
       return false;
     }
-    return mounted && _progress.value == target;
+    if (!mounted) return false;
+    _progress.value = target;
+    return true;
   }
 
   void _rememberDragOrigin(PointerDownEvent details) {
@@ -143,7 +163,7 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
     final open = velocity.abs() >= 450 ? velocity > 0 : _progress.value >= .5;
     _finishDrag();
     _drawerController._synchronize(open);
-    unawaited(_animateDrawer(open));
+    unawaited(_animateDrawer(open, initialVelocity: velocity));
   }
 
   void _dragCancel() {

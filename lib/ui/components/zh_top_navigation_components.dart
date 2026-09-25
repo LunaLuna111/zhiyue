@@ -140,6 +140,20 @@ class _ZhPlainActionGroup extends StatelessWidget {
   );
 }
 
+/// Keeps menu labels on one vertical axis even when an item has no icon.
+///
+/// [GlassMenuItem] only reserves leading space when its `icon` is non-null.
+/// That makes menus with a mix of icon and text-only actions jump horizontally
+/// from row to row. The empty slot also keeps the non-glass PopupMenu fallback
+/// visually identical to the glass menu.
+Widget _zhMenuIconSlot(Widget? icon) {
+  return SizedBox(
+    width: 20,
+    height: 20,
+    child: icon == null ? null : Center(child: icon),
+  );
+}
+
 /// A circular iOS 26-style glass control for navigation and toolbar actions.
 class ZhLiquidGlassIconButton extends StatelessWidget {
   const ZhLiquidGlassIconButton({
@@ -264,17 +278,15 @@ class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
               enabled: item.enabled,
               child: Row(
                 children: [
-                  if (item.icon != null) ...[
-                    IconTheme(
-                      data: IconThemeData(
-                        color: item.destructive
-                            ? ZhPalette.danger
-                            : ZhPalette.ink,
-                      ),
-                      child: item.icon!,
+                  IconTheme(
+                    data: IconThemeData(
+                      color: item.destructive
+                          ? ZhPalette.danger
+                          : ZhPalette.ink,
                     ),
-                    const SizedBox(width: 10),
-                  ],
+                    child: _zhMenuIconSlot(item.icon),
+                  ),
+                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       item.label,
@@ -319,7 +331,7 @@ class ZhLiquidGlassMenuButton<T> extends StatelessWidget {
         for (final item in items)
           GlassMenuItem(
             title: item.label,
-            icon: item.icon,
+            icon: _zhMenuIconSlot(item.icon),
             enabled: item.enabled,
             isDestructive: item.destructive,
             onTap: item.enabled ? () => onSelected(item.value) : () {},
@@ -632,7 +644,7 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
               for (final item in menuItems)
                 GlassMenuItem(
                   title: item.label,
-                  icon: item.icon,
+                  icon: _zhMenuIconSlot(item.icon),
                   subtitle: item.subtitle,
                   enabled: item.enabled,
                   isDestructive: item.destructive,
@@ -771,7 +783,7 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
         for (final item in items)
           GlassMenuItem(
             title: item.label,
-            icon: item.icon,
+            icon: _zhMenuIconSlot(item.icon),
             subtitle: item.subtitle,
             enabled: item.enabled,
             isDestructive: item.destructive,
@@ -801,17 +813,13 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
             enabled: item.enabled,
             child: Row(
               children: [
-                if (item.icon != null) ...[
-                  IconTheme(
-                    data: IconThemeData(
-                      color: item.destructive
-                          ? ZhPalette.danger
-                          : ZhPalette.ink,
-                    ),
-                    child: item.icon!,
+                IconTheme(
+                  data: IconThemeData(
+                    color: item.destructive ? ZhPalette.danger : ZhPalette.ink,
                   ),
-                  const SizedBox(width: 10),
-                ],
+                  child: _zhMenuIconSlot(item.icon),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     item.label,

@@ -130,6 +130,7 @@ class ObjectCard extends StatelessWidget {
     super.key,
     required this.value,
     this.onTap,
+    this.onTapAt,
     this.onLongPress,
     this.answerListMode = false,
     this.feedMode = false,
@@ -144,6 +145,11 @@ class ObjectCard extends StatelessWidget {
 
   final Map<String, dynamic> value;
   final VoidCallback? onTap;
+
+  /// Pointer position from the card's successful tap, used by optional
+  /// source-aware transitions. Keyboard and semantic activation still use
+  /// [onTap] directly.
+  final ValueChanged<Offset>? onTapAt;
   final VoidCallback? onLongPress;
   final bool answerListMode;
   final bool feedMode;
@@ -161,6 +167,7 @@ class ObjectCard extends StatelessWidget {
       return _FeedObjectCard(
         value: value,
         onTap: onTap,
+        onTapAt: onTapAt,
         onLongPress: onLongPress,
         onAction: onAction,
         onAuthorTap: onAuthorTap,

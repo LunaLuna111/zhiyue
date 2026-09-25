@@ -8,6 +8,7 @@ class _FeedObjectCard extends StatelessWidget {
     required this.showMetrics,
     required this.presentation,
     this.onTap,
+    this.onTapAt,
     this.onLongPress,
     this.onAction,
     this.onAuthorTap,
@@ -15,6 +16,7 @@ class _FeedObjectCard extends StatelessWidget {
 
   final Map<String, dynamic> value;
   final VoidCallback? onTap;
+  final ValueChanged<Offset>? onTapAt;
   final VoidCallback? onLongPress;
   final ValueChanged<ContentCardAction>? onAction;
   final VoidCallback? onAuthorTap;
@@ -25,6 +27,17 @@ class _FeedObjectCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Offset? tapOrigin;
+
+    void handleTap() {
+      final origin = tapOrigin;
+      if (origin != null && onTapAt != null) {
+        onTapAt!(origin);
+        return;
+      }
+      onTap?.call();
+    }
+
     final data = _feedCardStaticDataCache[value] ??= _FeedCardStaticData.from(
       value,
     );
@@ -48,7 +61,10 @@ class _FeedObjectCard extends StatelessWidget {
     return Material(
       color: ZhPalette.background,
       child: InkWell(
-        onTap: onTap,
+        onTap: handleTap,
+        onTapDown: onTapAt == null
+            ? null
+            : (details) => tapOrigin = details.globalPosition,
         onLongPress: onLongPress,
         child: Container(
           padding: EdgeInsets.fromLTRB(

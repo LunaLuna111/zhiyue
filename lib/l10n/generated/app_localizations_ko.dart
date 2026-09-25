@@ -2340,6 +2340,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get detailMoreActions => '추가 작업';
 
   @override
+  String get detailExportActions => '콘텐츠 내보내기';
+
+  @override
   String get detailSignInFromMe => '먼저 ‘나’ 페이지에서 로그인하세요.';
 
   @override

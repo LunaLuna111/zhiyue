@@ -789,6 +789,7 @@
   "detailJumpToBottom": "跳到文章底部",
   "detailCollapseMore": "收起更多功能",
   "detailMoreActions": "更多操作",
+  "detailExportActions": "匯出內容",
   "detailSignInFromMe": "請先在「我」中登入。",
   "detailReadAloud": "朗讀正文",
   "detailWriteAnswerSubtitle": "為這個問題建立新回答",

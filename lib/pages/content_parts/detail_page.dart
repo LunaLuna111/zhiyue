@@ -463,5 +463,6 @@ enum _DetailMoreAction {
   exportPdf,
   search,
   copy,
+  followAuthor,
   clearCache,
 }

@@ -2321,6 +2321,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get detailMoreActions => '更多操作';
 
   @override
+  String get detailExportActions => '导出内容';
+
+  @override
   String get detailSignInFromMe => '请先在“我”中登录。';
 
   @override
@@ -6519,6 +6522,9 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get detailMoreActions => '更多操作';
+
+  @override
+  String get detailExportActions => '匯出內容';
 
   @override
   String get detailSignInFromMe => '請先在「我」中登入。';

@@ -789,6 +789,7 @@
   "detailJumpToBottom": "投稿の末尾へ",
   "detailCollapseMore": "その他の機能を閉じる",
   "detailMoreActions": "その他の操作",
+  "detailExportActions": "コンテンツを書き出す",
   "detailSignInFromMe": "先に「マイページ」からログインしてください。",
   "detailReadAloud": "本文を読み上げる",
   "detailWriteAnswerSubtitle": "この質問への新しい回答を作成",

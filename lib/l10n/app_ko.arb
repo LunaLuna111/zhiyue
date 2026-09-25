@@ -789,6 +789,7 @@
   "detailJumpToBottom": "게시물 하단으로",
   "detailCollapseMore": "추가 기능 닫기",
   "detailMoreActions": "추가 작업",
+  "detailExportActions": "콘텐츠 내보내기",
   "detailSignInFromMe": "먼저 ‘나’ 페이지에서 로그인하세요.",
   "detailReadAloud": "본문 소리 내어 읽기",
   "detailWriteAnswerSubtitle": "이 질문에 새 답변 만들기",

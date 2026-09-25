@@ -824,6 +824,7 @@
   "detailJumpToBottom": "跳到帖子底部",
   "detailCollapseMore": "收起更多功能",
   "detailMoreActions": "更多操作",
+  "detailExportActions": "导出内容",
   "detailSignInFromMe": "请先在“我”中登录。",
   "detailReadAloud": "朗读正文",
   "detailWriteAnswerSubtitle": "创建对这个问题的新回答",

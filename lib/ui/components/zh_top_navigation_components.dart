@@ -520,6 +520,11 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
     super.key,
     required this.primaryAction,
     this.additionalActions = const <ZhLiquidGlassCapsuleAction>[],
+    this.secondaryMenuIcon,
+    this.secondaryMenuSemanticLabel,
+    this.secondaryMenuItems,
+    this.secondaryMenuWidth = 240,
+    this.secondaryMenuAlignment,
     required this.menuIcon,
     required this.menuSemanticLabel,
     required this.menuItems,
@@ -530,6 +535,11 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
 
   final ZhLiquidGlassCapsuleAction primaryAction;
   final List<ZhLiquidGlassCapsuleAction> additionalActions;
+  final Widget? secondaryMenuIcon;
+  final String? secondaryMenuSemanticLabel;
+  final List<ZhLiquidGlassMenuItem<T>>? secondaryMenuItems;
+  final double secondaryMenuWidth;
+  final GlassMenuAlignment? secondaryMenuAlignment;
   final Widget menuIcon;
   final String menuSemanticLabel;
   final List<ZhLiquidGlassMenuItem<T>> menuItems;
@@ -537,8 +547,15 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
   final double menuWidth;
   final GlassMenuAlignment? menuAlignment;
 
+  bool get _hasSecondaryMenu =>
+      secondaryMenuIcon != null &&
+      secondaryMenuSemanticLabel != null &&
+      secondaryMenuItems != null &&
+      secondaryMenuItems!.isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
+    if (_hasSecondaryMenu) return _buildDualMenuGroup(context);
     if (!ZhGlassScope.enabledOf(context)) {
       return _ZhPlainActionGroup(
         children: [
@@ -633,6 +650,189 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
         quality: GlassQuality.standard,
         useOwnLayer: true,
         showDividers: false,
+      ),
+    );
+  }
+
+  Widget _buildDualMenuGroup(BuildContext context) {
+    final directActions = [primaryAction, ...additionalActions];
+    if (!ZhGlassScope.enabledOf(context)) {
+      return _ZhPlainActionGroup(
+        children: [
+          for (final action in directActions)
+            _ZhPlainIconButtonVisual(
+              icon: action.icon,
+              onPressed: action.onPressed,
+              semanticLabel: action.semanticLabel,
+              size: 44,
+              iconSize: 22,
+              shape: GlassIconButtonShape.circle,
+              borderRadius: 16,
+              grouped: true,
+            ),
+          _buildPlainMenuButton(
+            icon: secondaryMenuIcon!,
+            semanticLabel: secondaryMenuSemanticLabel!,
+            items: secondaryMenuItems!,
+            menuWidth: secondaryMenuWidth,
+          ),
+          _buildPlainMenuButton(
+            icon: menuIcon,
+            semanticLabel: menuSemanticLabel,
+            items: menuItems,
+            menuWidth: menuWidth,
+          ),
+        ],
+      );
+    }
+
+    // The package's lightweight items mode supports one morphing menu per
+    // group. The detail toolbar needs two independently scrollable menus, so
+    // use children mode: one shared glass shell, with two GlassMenu triggers
+    // inside it. Both menus clamp to safe screen bounds and scroll when the
+    // available height is smaller than the item list.
+    return GlassButtonGroup(
+      borderRadius: 28,
+      settings: ZhLiquidGlassCapsuleActionGroup._settings,
+      quality: GlassQuality.standard,
+      useOwnLayer: true,
+      showDividers: false,
+      children: [
+        for (final action in directActions) _buildGlassActionButton(action),
+        _buildGlassMenu(
+          icon: secondaryMenuIcon!,
+          semanticLabel: secondaryMenuSemanticLabel!,
+          items: secondaryMenuItems!,
+          menuWidth: secondaryMenuWidth,
+          menuAlignment: secondaryMenuAlignment,
+          onSelected: onSelected,
+        ),
+        _buildGlassMenu(
+          icon: menuIcon,
+          semanticLabel: menuSemanticLabel,
+          items: menuItems,
+          menuWidth: menuWidth,
+          menuAlignment: menuAlignment,
+          onSelected: onSelected,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGlassActionButton(
+    ZhLiquidGlassCapsuleAction action, {
+    VoidCallback? onPressed,
+  }) {
+    final callback = onPressed ?? action.onPressed;
+    return GlassButton.custom(
+      onTap: callback ?? _disabledAction,
+      enabled: callback != null,
+      label: action.semanticLabel,
+      width: 44,
+      height: 44,
+      shape: const LiquidOval(),
+      style: GlassButtonStyle.transparent,
+      quality: GlassQuality.standard,
+      child: IconTheme(
+        data: IconThemeData(
+          color: callback == null ? ZhPalette.subtleInk : ZhPalette.ink,
+          size: 22,
+        ),
+        child: action.icon,
+      ),
+    );
+  }
+
+  Widget _buildGlassMenu({
+    required Widget icon,
+    required String semanticLabel,
+    required List<ZhLiquidGlassMenuItem<T>> items,
+    required double menuWidth,
+    required GlassMenuAlignment? menuAlignment,
+    required ValueChanged<T> onSelected,
+  }) {
+    return GlassMenu(
+      menuAlignment: menuAlignment,
+      autoAdjustToScreen: true,
+      menuPadding: const EdgeInsets.all(12),
+      menuWidth: menuWidth,
+      menuBorderRadius: 28,
+      itemBorderRadius: 20,
+      settings: _zhFrostedMenuSettings,
+      quality: GlassQuality.minimal,
+      triggerBuilder: (context, toggleMenu) => _buildGlassActionButton(
+        ZhLiquidGlassCapsuleAction(
+          icon: icon,
+          semanticLabel: semanticLabel,
+          onPressed: toggleMenu,
+        ),
+      ),
+      items: [
+        for (final item in items)
+          GlassMenuItem(
+            title: item.label,
+            icon: item.icon,
+            subtitle: item.subtitle,
+            enabled: item.enabled,
+            isDestructive: item.destructive,
+            onTap: item.enabled
+                ? () => onSelected(item.value)
+                : _disabledAction,
+          ),
+      ],
+    );
+  }
+
+  Widget _buildPlainMenuButton({
+    required Widget icon,
+    required String semanticLabel,
+    required List<ZhLiquidGlassMenuItem<T>> items,
+    required double menuWidth,
+  }) {
+    return PopupMenuButton<T>(
+      tooltip: semanticLabel,
+      padding: EdgeInsets.zero,
+      constraints: BoxConstraints(minWidth: menuWidth, maxWidth: menuWidth),
+      onSelected: onSelected,
+      itemBuilder: (context) => [
+        for (final item in items)
+          PopupMenuItem<T>(
+            value: item.value,
+            enabled: item.enabled,
+            child: Row(
+              children: [
+                if (item.icon != null) ...[
+                  IconTheme(
+                    data: IconThemeData(
+                      color: item.destructive
+                          ? ZhPalette.danger
+                          : ZhPalette.ink,
+                    ),
+                    child: item.icon!,
+                  ),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(
+                  child: Text(
+                    item.label,
+                    style: item.destructive
+                        ? TextStyle(color: ZhPalette.danger)
+                        : null,
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+      child: _ZhPlainIconButtonVisual(
+        icon: icon,
+        onPressed: null,
+        semanticLabel: semanticLabel,
+        size: 44,
+        iconSize: 22,
+        shape: GlassIconButtonShape.circle,
+        borderRadius: 16,
+        grouped: true,
       ),
     );
   }

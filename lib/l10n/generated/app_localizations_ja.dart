@@ -2334,6 +2334,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get detailMoreActions => 'その他の操作';
 
   @override
+  String get detailExportActions => 'コンテンツを書き出す';
+
+  @override
   String get detailSignInFromMe => '先に「マイページ」からログインしてください。';
 
   @override

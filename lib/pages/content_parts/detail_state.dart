@@ -775,43 +775,11 @@ class _ContentDetailPageState extends State<ContentDetailPage>
     final contentLabel = answerToolbar
         ? context.zhL10n.contentTypeAnswer
         : context.zhL10n.contentTypeContent;
-    final detailMenuItems = <ZhLiquidGlassMenuItem<_DetailMoreAction>>[
-      if (answerToolbar && questionId.isNotEmpty)
-        ZhLiquidGlassMenuItem(
-          value: _DetailMoreAction.write,
-          label: context.zhL10n.detailWriteAnswer,
-          icon: const Icon(Icons.edit_outlined),
-          subtitle: context.zhL10n.detailWriteAnswerSubtitle,
-        ),
-      ZhLiquidGlassMenuItem(
-        value: _DetailMoreAction.refresh,
-        label: context.zhL10n.detailRefreshContent(contentLabel),
-        icon: const Icon(Icons.refresh_rounded),
-        subtitle: context.zhL10n.detailRefreshSubtitle,
-      ),
-      ZhLiquidGlassMenuItem(
-        value: _DetailMoreAction.search,
-        label: context.zhL10n.detailSearchBodyTitle,
-        icon: const Icon(Icons.search_rounded),
-        subtitle: context.zhL10n.detailSearchSubtitle,
-      ),
-      ZhLiquidGlassMenuItem(
-        value: _DetailMoreAction.readAloud,
-        label: TtsService.instance.isPlaying
-            ? context.zhL10n.detailStoppedReading
-            : context.zhL10n.detailReadAloud,
-        icon: Icon(
-          TtsService.instance.isPlaying
-              ? Icons.stop_circle_outlined
-              : Icons.volume_up_outlined,
-        ),
-        subtitle: context.zhL10n.detailReadAloudSubtitle(contentLabel),
-      ),
+    final detailExportItems = <ZhLiquidGlassMenuItem<_DetailMoreAction>>[
       ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.exportTxt,
         label: context.zhL10n.detailExportTxt,
         icon: const Icon(Icons.text_snippet_outlined),
-        subtitle: context.zhL10n.detailExportTextSubtitle,
       ),
       for (final format in ContentExportFormat.values)
         ZhLiquidGlassMenuItem(
@@ -826,17 +794,55 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             ContentExportFormat.html => Icons.language_rounded,
             ContentExportFormat.pdf => Icons.picture_as_pdf_outlined,
           }),
-          subtitle: format == ContentExportFormat.pdf
-              ? context.zhL10n.detailExportPdfSubtitle
-              : context.zhL10n.detailExportDocumentSubtitle,
         ),
-      if (!answerToolbar)
+    ];
+    final detailMenuItems = <ZhLiquidGlassMenuItem<_DetailMoreAction>>[
+      if (answerToolbar && questionId.isNotEmpty)
         ZhLiquidGlassMenuItem(
-          value: _DetailMoreAction.copy,
-          label: context.zhL10n.detailCopyAll,
-          icon: const Icon(Icons.copy_all_outlined),
-          subtitle: context.zhL10n.detailCopySubtitle,
+          value: _DetailMoreAction.write,
+          label: context.zhL10n.detailWriteAnswer,
+          icon: const Icon(Icons.edit_outlined),
         ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.refresh,
+        label: context.zhL10n.detailRefreshContent(contentLabel),
+        icon: const Icon(Icons.refresh_rounded),
+      ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.search,
+        label: context.zhL10n.detailSearchBodyTitle,
+        icon: const Icon(Icons.search_rounded),
+      ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.readAloud,
+        label: TtsService.instance.isPlaying
+            ? context.zhL10n.detailStoppedReading
+            : context.zhL10n.detailReadAloud,
+        icon: Icon(
+          TtsService.instance.isPlaying
+              ? Icons.stop_circle_outlined
+              : Icons.volume_up_outlined,
+        ),
+      ),
+      if (!answerToolbar &&
+          authorActionId.isNotEmpty &&
+          documentRelationship?.isAuthor != true)
+        ZhLiquidGlassMenuItem(
+          value: _DetailMoreAction.followAuthor,
+          label: authorFollowing
+              ? context.zhL10n.detailUnfollowAuthor
+              : context.zhL10n.detailFollowAuthor,
+          icon: Icon(
+            authorFollowing
+                ? Icons.person_remove_alt_1
+                : Icons.person_add_alt_1,
+          ),
+        ),
+      ZhLiquidGlassMenuItem(
+        value: _DetailMoreAction.copy,
+        label: context.zhL10n.detailCopyAll,
+        icon: const Icon(Icons.copy_all_outlined),
+      ),
       ZhLiquidGlassMenuItem(
         value: _DetailMoreAction.clearCache,
         label: context.zhL10n.detailClearCache,
@@ -865,31 +871,10 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                       ? null
                       : () => _openAuthorPage(authorPageId),
                 ),
-          additionalActions: [
-            answerToolbar
-                ? ZhLiquidGlassCapsuleAction(
-                    icon: const Icon(Icons.copy_rounded),
-                    semanticLabel: context.zhL10n.detailCopyAnswer,
-                    onPressed: () => unawaited(_copyCurrentText()),
-                  )
-                : ZhLiquidGlassCapsuleAction(
-                    icon: Icon(
-                      authorFollowing ? Icons.check_rounded : Icons.add_rounded,
-                    ),
-                    semanticLabel: authorFollowing
-                        ? context.zhL10n.detailUnfollowAuthor
-                        : context.zhL10n.detailFollowAuthor,
-                    onPressed:
-                        authorActionId.isEmpty ||
-                            documentRelationship?.isAuthor == true ||
-                            _authorFollowBusy
-                        ? null
-                        : () => _toggleAuthorFollowing(
-                            detailObject,
-                            authorActionId,
-                          ),
-                  ),
-          ],
+          secondaryMenuIcon: const Icon(Icons.ios_share_rounded),
+          secondaryMenuSemanticLabel: context.zhL10n.detailExportActions,
+          secondaryMenuItems: detailExportItems,
+          secondaryMenuWidth: 292,
           menuIcon: const Icon(Icons.more_horiz_rounded),
           menuSemanticLabel: context.zhL10n.detailMoreActions,
           menuWidth: 280,
@@ -898,6 +883,8 @@ class _ContentDetailPageState extends State<ContentDetailPage>
               action,
               questionId: questionId,
               questionTitle: questionTitle,
+              detailObject: detailObject,
+              authorActionId: authorActionId,
             ),
           ),
           menuItems: detailMenuItems,

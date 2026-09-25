@@ -259,6 +259,8 @@ extension _ContentDetailActions on _ContentDetailPageState {
     _DetailMoreAction action, {
     required String questionId,
     required String questionTitle,
+    required Map<String, dynamic> detailObject,
+    required String authorActionId,
   }) async {
     switch (action) {
       case _DetailMoreAction.write:
@@ -287,6 +289,9 @@ extension _ContentDetailActions on _ContentDetailPageState {
         break;
       case _DetailMoreAction.copy:
         await _copyCurrentText();
+        break;
+      case _DetailMoreAction.followAuthor:
+        await _toggleAuthorFollowing(detailObject, authorActionId);
         break;
       case _DetailMoreAction.clearCache:
         await AnswerDetailCache.instance.remove(

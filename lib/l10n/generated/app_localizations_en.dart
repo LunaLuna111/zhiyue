@@ -2384,6 +2384,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailMoreActions => 'More actions';
 
   @override
+  String get detailExportActions => 'Export content';
+
+  @override
   String get detailSignInFromMe => 'Sign in from the Me page first.';
 
   @override

@@ -4417,6 +4417,12 @@ abstract class AppLocalizations {
   /// **'更多操作'**
   String get detailMoreActions;
 
+  /// No description provided for @detailExportActions.
+  ///
+  /// In zh, this message translates to:
+  /// **'导出内容'**
+  String get detailExportActions;
+
   /// No description provided for @detailSignInFromMe.
   ///
   /// In zh, this message translates to:

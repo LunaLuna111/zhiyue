@@ -510,7 +510,11 @@ class ZhLiquidGlassCapsuleActionGroup extends StatelessWidget {
             onTap: action.onPressed ?? _disabledAction,
           ),
       ],
-      borderRadius: 28,
+      // Use a capsule radius instead of a fixed corner radius. The glass
+      // button group can be scaled by the device pixel ratio and by its
+      // animated layout, so 28 logical pixels is not always enough to keep
+      // the expanded toolbar surface fully pill-shaped.
+      borderRadius: 999,
       itemPadding: const EdgeInsets.symmetric(horizontal: 9, vertical: 10),
       iconSize: 22,
       settings: _settings,

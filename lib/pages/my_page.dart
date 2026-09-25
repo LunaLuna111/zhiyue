@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/api_client.dart';
 import '../core/app_locale.dart';
@@ -87,6 +88,16 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _openGithubRepository() async {
+    final opened = await launchUrl(
+      Uri.parse('https://github.com/LunaLuna111/zhiyue'),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && mounted) {
+      _showMessage(context.zhL10n.settingsGithubOpenFailed);
+    }
   }
 
   Future<void> _toggleSearchHistory(bool enabled) async {
@@ -412,15 +423,11 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                 onChanged: session.setDarkModeEnabled,
               ),
               const Divider(),
-              _ChoiceTile<ZhLocale>(
+              _LanguageChoiceTile(
                 icon: Icons.translate_rounded,
                 title: l10n.settingsLanguage,
                 subtitle: l10n.settingsLanguageSubtitle,
                 value: session.locale,
-                values: {
-                  for (final locale in ZhLocale.values)
-                    locale: locale.nativeName,
-                },
                 onChanged: session.setLocale,
               ),
               const Divider(),
@@ -696,6 +703,14 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
                 icon: Icons.info_outline_rounded,
                 title: l10n.settingsAbout,
                 subtitle: l10n.settingsVersion(zhiyueVersionName),
+              ),
+              const Divider(),
+              _ActionTile(
+                key: const ValueKey('settings-github-repository'),
+                icon: Icons.code_rounded,
+                title: l10n.settingsGithub,
+                subtitle: l10n.settingsGithubSubtitle,
+                onTap: _openGithubRepository,
               ),
             ],
           ),
@@ -987,6 +1002,86 @@ class _SwitchTile extends StatelessWidget {
         semanticLabel: title,
       ),
       onTap: () => onChanged(!value),
+    ),
+  );
+}
+
+class _LanguageChoiceTile extends StatelessWidget {
+  const _LanguageChoiceTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final ZhLocale value;
+  final ValueChanged<ZhLocale> onChanged;
+
+  Future<void> _pick(BuildContext context) async {
+    final selected = await showModalBottomSheet<ZhLocale>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.only(bottom: 8),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 4, 24, 8),
+              child: Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+            for (final locale in ZhLocale.values)
+              ListTile(
+                selected: locale == value,
+                title: Text(locale.nativeName),
+                trailing: locale == value
+                    ? const Icon(Icons.check_rounded)
+                    : null,
+                onTap: () => Navigator.of(context).pop(locale),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && selected != value) onChanged(selected);
+  }
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: Colors.transparent,
+    child: ListTile(
+      key: const ValueKey('settings-language-setting'),
+      minTileHeight: 72,
+      leading: _SettingIcon(icon: icon),
+      title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis),
+      subtitle: Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 112),
+            child: Text(
+              value.nativeName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+              style: TextStyle(color: ZhPalette.mutedInk),
+            ),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right_rounded, size: 22),
+        ],
+      ),
+      onTap: () => _pick(context),
     ),
   );
 }

@@ -1071,6 +1071,16 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your account will remain signed in';
 
   @override
+  String get settingsGithub => 'GitHub repository';
+
+  @override
+  String get settingsGithubSubtitle =>
+      'View source code, issues, and release history';
+
+  @override
+  String get settingsGithubOpenFailed => 'Unable to open the GitHub repository';
+
+  @override
   String get searchTitle => 'Search';
 
   @override

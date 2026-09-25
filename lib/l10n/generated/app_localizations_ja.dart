@@ -1043,6 +1043,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsRestoreDefaultsSubtitle => 'アカウントはログアウトされません';
 
   @override
+  String get settingsGithub => 'GitHub オープンソース';
+
+  @override
+  String get settingsGithubSubtitle => 'ソースコード、Issue、リリース履歴を確認';
+
+  @override
+  String get settingsGithubOpenFailed => 'GitHub アドレスを開けません';
+
+  @override
   String get searchTitle => '検索';
 
   @override

@@ -365,17 +365,27 @@ class _SearchNovelResultCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (cover.isNotEmpty) ...[
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: ZhihuImage.network(
-                    cover,
-                    headers: zhihuImageRequestHeaders,
-                    width: 92,
-                    height: 124,
-                    fit: BoxFit.cover,
-                    cacheWidth: 276,
-                    cacheHeight: 372,
-                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                SizedBox(
+                  width: 92,
+                  height: 124,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ColoredBox(
+                      color: ZhPalette.canvas,
+                      child: ZhihuImage.network(
+                        cover,
+                        headers: zhihuImageRequestHeaders,
+                        width: 92,
+                        height: 124,
+                        // Novel covers are not guaranteed to use one exact
+                        // ratio. Contain keeps the source aspect ratio and
+                        // avoids the stretched/cropped covers seen in the
+                        // narrow search result card.
+                        fit: BoxFit.contain,
+                        cacheWidth: 276,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                      ),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 13),

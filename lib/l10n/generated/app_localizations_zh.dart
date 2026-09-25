@@ -1043,6 +1043,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRestoreDefaultsSubtitle => '不会退出账号';
 
   @override
+  String get settingsGithub => 'GitHub 开源地址';
+
+  @override
+  String get settingsGithubSubtitle => '查看源码、提交问题和发布记录';
+
+  @override
+  String get settingsGithubOpenFailed => '无法打开 GitHub 地址';
+
+  @override
   String get searchTitle => '搜索';
 
   @override
@@ -5287,6 +5296,15 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settingsRestoreDefaultsSubtitle => '不會登出帳號';
+
+  @override
+  String get settingsGithub => 'GitHub 開源地址';
+
+  @override
+  String get settingsGithubSubtitle => '查看原始碼、提交問題和發佈記錄';
+
+  @override
+  String get settingsGithubOpenFailed => '無法開啟 GitHub 地址';
 
   @override
   String get searchTitle => '搜尋';

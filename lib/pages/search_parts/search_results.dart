@@ -437,20 +437,27 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeOutCubic,
                   alignment: Alignment.centerRight,
+                  clipBehavior: Clip.none,
                   child: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 180),
                     reverseDuration: const Duration(milliseconds: 150),
                     switchInCurve: Curves.easeOutCubic,
                     switchOutCurve: Curves.easeInCubic,
-                    layoutBuilder: (currentChild, previousChildren) => Stack(
-                      alignment: Alignment.centerRight,
-                      children: [...previousChildren, ?currentChild],
-                    ),
+                    // Do not keep the outgoing multi-button capsule in the
+                    // layout while the filter-only capsule is shrinking.
+                    // The current child still paints its own rounded glass
+                    // surface and shadow without a rectangular clip layer.
+                    layoutBuilder: (currentChild, _) =>
+                        currentChild ?? const SizedBox.shrink(),
                     transitionBuilder: (child, animation) => FadeTransition(
                       opacity: animation,
-                      child: SizeTransition(
-                        sizeFactor: animation,
-                        axis: Axis.horizontal,
+                      child: ScaleTransition(
+                        scale: Tween<double>(begin: .94, end: 1).animate(
+                          CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                         alignment: Alignment.centerRight,
                         child: child,
                       ),

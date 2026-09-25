@@ -1044,6 +1044,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsRestoreDefaultsSubtitle => '계정은 로그아웃되지 않습니다';
 
   @override
+  String get settingsGithub => 'GitHub 오픈 소스 저장소';
+
+  @override
+  String get settingsGithubSubtitle => '소스 코드, 이슈 및 릴리스 기록 보기';
+
+  @override
+  String get settingsGithubOpenFailed => 'GitHub 주소를 열 수 없습니다';
+
+  @override
   String get searchTitle => '검색';
 
   @override

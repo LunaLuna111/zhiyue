@@ -2059,6 +2059,24 @@ abstract class AppLocalizations {
   /// **'不会退出账号'**
   String get settingsRestoreDefaultsSubtitle;
 
+  /// No description provided for @settingsGithub.
+  ///
+  /// In zh, this message translates to:
+  /// **'GitHub 开源地址'**
+  String get settingsGithub;
+
+  /// No description provided for @settingsGithubSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'查看源码、提交问题和发布记录'**
+  String get settingsGithubSubtitle;
+
+  /// No description provided for @settingsGithubOpenFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法打开 GitHub 地址'**
+  String get settingsGithubOpenFailed;
+
   /// No description provided for @searchTitle.
   ///
   /// In zh, this message translates to:

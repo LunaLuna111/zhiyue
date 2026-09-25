@@ -1435,6 +1435,96 @@ abstract class AppLocalizations {
   /// **'设置'**
   String get settingsTitle;
 
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In zh, this message translates to:
+  /// **'外观'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsBackup.
+  ///
+  /// In zh, this message translates to:
+  /// **'备份'**
+  String get settingsBackup;
+
+  /// No description provided for @settingsAccount.
+  ///
+  /// In zh, this message translates to:
+  /// **'账号'**
+  String get settingsAccount;
+
+  /// No description provided for @settingsLogs.
+  ///
+  /// In zh, this message translates to:
+  /// **'日志'**
+  String get settingsLogs;
+
+  /// No description provided for @settingsAboutSection.
+  ///
+  /// In zh, this message translates to:
+  /// **'关于'**
+  String get settingsAboutSection;
+
+  /// No description provided for @settingsUpdates.
+  ///
+  /// In zh, this message translates to:
+  /// **'更新'**
+  String get settingsUpdates;
+
+  /// No description provided for @settingsData.
+  ///
+  /// In zh, this message translates to:
+  /// **'数据'**
+  String get settingsData;
+
+  /// No description provided for @settingsAppearanceSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'深色模式、语言与显示'**
+  String get settingsAppearanceSubtitle;
+
+  /// No description provided for @settingsPersonalizationSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'首页、推荐与内容偏好'**
+  String get settingsPersonalizationSubtitle;
+
+  /// No description provided for @settingsBackupSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'WebDAV 数据同步'**
+  String get settingsBackupSubtitle;
+
+  /// No description provided for @settingsAccountSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'会话与登录状态'**
+  String get settingsAccountSubtitle;
+
+  /// No description provided for @settingsLogsSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'诊断日志与问题排查'**
+  String get settingsLogsSubtitle;
+
+  /// No description provided for @settingsAboutSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'恢复默认设置与应用信息'**
+  String get settingsAboutSubtitle;
+
+  /// No description provided for @settingsUpdatesSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'检查并安装新版本'**
+  String get settingsUpdatesSubtitle;
+
+  /// No description provided for @settingsDataSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'历史记录、缓存与存储'**
+  String get settingsDataSubtitle;
+
   /// No description provided for @settingsHomeContent.
   ///
   /// In zh, this message translates to:

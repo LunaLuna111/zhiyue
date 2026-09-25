@@ -717,6 +717,51 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsTitle => '설정';
 
   @override
+  String get settingsAppearance => '외관';
+
+  @override
+  String get settingsBackup => '백업';
+
+  @override
+  String get settingsAccount => '계정';
+
+  @override
+  String get settingsLogs => '로그';
+
+  @override
+  String get settingsAboutSection => '정보';
+
+  @override
+  String get settingsUpdates => '업데이트';
+
+  @override
+  String get settingsData => '데이터';
+
+  @override
+  String get settingsAppearanceSubtitle => '다크 모드, 언어 및 표시';
+
+  @override
+  String get settingsPersonalizationSubtitle => '홈, 추천 및 콘텐츠 설정';
+
+  @override
+  String get settingsBackupSubtitle => 'WebDAV 데이터 동기화';
+
+  @override
+  String get settingsAccountSubtitle => '세션 및 로그인 상태';
+
+  @override
+  String get settingsLogsSubtitle => '진단 로그 및 문제 해결';
+
+  @override
+  String get settingsAboutSubtitle => '기본값 복원 및 앱 정보';
+
+  @override
+  String get settingsUpdatesSubtitle => '새 버전 확인 및 설치';
+
+  @override
+  String get settingsDataSubtitle => '기록, 캐시 및 저장 공간';
+
+  @override
   String get settingsHomeContent => '홈 및 콘텐츠';
 
   @override

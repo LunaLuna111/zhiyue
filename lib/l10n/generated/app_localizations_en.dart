@@ -721,6 +721,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsBackup => 'Backup';
+
+  @override
+  String get settingsAccount => 'Account';
+
+  @override
+  String get settingsLogs => 'Logs';
+
+  @override
+  String get settingsAboutSection => 'About';
+
+  @override
+  String get settingsUpdates => 'Updates';
+
+  @override
+  String get settingsData => 'Data';
+
+  @override
+  String get settingsAppearanceSubtitle => 'Dark mode, language, and display';
+
+  @override
+  String get settingsPersonalizationSubtitle =>
+      'Home, recommendations, and content';
+
+  @override
+  String get settingsBackupSubtitle => 'WebDAV data sync';
+
+  @override
+  String get settingsAccountSubtitle => 'Sessions and sign-in status';
+
+  @override
+  String get settingsLogsSubtitle => 'Diagnostics and troubleshooting';
+
+  @override
+  String get settingsAboutSubtitle => 'Defaults and app information';
+
+  @override
+  String get settingsUpdatesSubtitle => 'Check for and install new versions';
+
+  @override
+  String get settingsDataSubtitle => 'History, cache, and storage';
+
+  @override
   String get settingsHomeContent => 'Home & content';
 
   @override

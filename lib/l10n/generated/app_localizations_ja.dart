@@ -717,6 +717,51 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsTitle => '設定';
 
   @override
+  String get settingsAppearance => '外観';
+
+  @override
+  String get settingsBackup => 'バックアップ';
+
+  @override
+  String get settingsAccount => 'アカウント';
+
+  @override
+  String get settingsLogs => 'ログ';
+
+  @override
+  String get settingsAboutSection => '情報';
+
+  @override
+  String get settingsUpdates => '更新';
+
+  @override
+  String get settingsData => 'データ';
+
+  @override
+  String get settingsAppearanceSubtitle => 'ダークモード、言語、表示';
+
+  @override
+  String get settingsPersonalizationSubtitle => 'ホーム、おすすめ、コンテンツ設定';
+
+  @override
+  String get settingsBackupSubtitle => 'WebDAV データ同期';
+
+  @override
+  String get settingsAccountSubtitle => 'セッションとログイン状態';
+
+  @override
+  String get settingsLogsSubtitle => '診断ログとトラブルシューティング';
+
+  @override
+  String get settingsAboutSubtitle => '初期設定とアプリ情報';
+
+  @override
+  String get settingsUpdatesSubtitle => '新しいバージョンを確認してインストール';
+
+  @override
+  String get settingsDataSubtitle => '履歴、キャッシュ、ストレージ';
+
+  @override
   String get settingsHomeContent => 'ホームとコンテンツ';
 
   @override

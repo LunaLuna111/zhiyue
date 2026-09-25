@@ -717,6 +717,51 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTitle => '设置';
 
   @override
+  String get settingsAppearance => '外观';
+
+  @override
+  String get settingsBackup => '备份';
+
+  @override
+  String get settingsAccount => '账号';
+
+  @override
+  String get settingsLogs => '日志';
+
+  @override
+  String get settingsAboutSection => '关于';
+
+  @override
+  String get settingsUpdates => '更新';
+
+  @override
+  String get settingsData => '数据';
+
+  @override
+  String get settingsAppearanceSubtitle => '深色模式、语言与显示';
+
+  @override
+  String get settingsPersonalizationSubtitle => '首页、推荐与内容偏好';
+
+  @override
+  String get settingsBackupSubtitle => 'WebDAV 数据同步';
+
+  @override
+  String get settingsAccountSubtitle => '会话与登录状态';
+
+  @override
+  String get settingsLogsSubtitle => '诊断日志与问题排查';
+
+  @override
+  String get settingsAboutSubtitle => '恢复默认设置与应用信息';
+
+  @override
+  String get settingsUpdatesSubtitle => '检查并安装新版本';
+
+  @override
+  String get settingsDataSubtitle => '历史记录、缓存与存储';
+
+  @override
   String get settingsHomeContent => '首页与内容';
 
   @override
@@ -4916,6 +4961,51 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settingsTitle => '設定';
+
+  @override
+  String get settingsAppearance => '外觀';
+
+  @override
+  String get settingsBackup => '備份';
+
+  @override
+  String get settingsAccount => '帳號';
+
+  @override
+  String get settingsLogs => '記錄';
+
+  @override
+  String get settingsAboutSection => '關於';
+
+  @override
+  String get settingsUpdates => '更新';
+
+  @override
+  String get settingsData => '資料';
+
+  @override
+  String get settingsAppearanceSubtitle => '深色模式、語言與顯示';
+
+  @override
+  String get settingsPersonalizationSubtitle => '首頁、推薦與內容偏好';
+
+  @override
+  String get settingsBackupSubtitle => 'WebDAV 資料同步';
+
+  @override
+  String get settingsAccountSubtitle => '工作階段與登入狀態';
+
+  @override
+  String get settingsLogsSubtitle => '診斷記錄與問題排查';
+
+  @override
+  String get settingsAboutSubtitle => '還原預設設定與應用程式資訊';
+
+  @override
+  String get settingsUpdatesSubtitle => '檢查並安裝新版本';
+
+  @override
+  String get settingsDataSubtitle => '歷史記錄、快取與儲存空間';
 
   @override
   String get settingsHomeContent => '首頁與內容';

@@ -335,7 +335,10 @@ class _SearchResultTabState extends State<_SearchResultTab> {
     return id == null ? null : SaltStoryNavigation(businessId: id);
   }
 
-  void _openResult(Map<String, dynamic> value) {
+  void _openResult(Map<String, dynamic> value, [Offset? position]) {
+    final sourceRect = position == null
+        ? null
+        : Rect.fromCenter(center: position, width: 52, height: 52);
     if (value['_search_novel_card'] != true) {
       if (typeOf(value).replaceAll('search_', '').toLowerCase() == 'ring') {
         final object = unwrapObject(value);
@@ -359,7 +362,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
           return;
         }
       }
-      openDetectedObject(context, widget.api, value);
+      openDetectedObject(context, widget.api, value, sourceRect: sourceRect);
       return;
     }
     final object = unwrapObject(value);
@@ -392,7 +395,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
       );
       return;
     }
-    openDetectedObject(context, widget.api, value);
+    openDetectedObject(context, widget.api, value, sourceRect: sourceRect);
   }
 
   @override
@@ -474,26 +477,29 @@ class _SearchResultTabState extends State<_SearchResultTab> {
                   'video_answer',
                 }.contains(contentType) &&
                 authorIdOf(row).isNotEmpty;
+            void openRow([Offset? position]) {
+              if (isQueryCard && relatedQuery.isNotEmpty) {
+                widget.api.session.rememberSearch(relatedQuery);
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => SearchResultsPage(
+                      api: widget.api,
+                      initialQuery: relatedQuery,
+                    ),
+                  ),
+                );
+                return;
+              }
+              _openResult(row, position);
+            }
+
             return _SearchResultCard(
               value: row,
               onAuthorTap: hasAnswerAuthor
                   ? () => openContentAuthor(context, widget.api, row)
                   : null,
-              onTap: () {
-                if (isQueryCard && relatedQuery.isNotEmpty) {
-                  widget.api.session.rememberSearch(relatedQuery);
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => SearchResultsPage(
-                        api: widget.api,
-                        initialQuery: relatedQuery,
-                      ),
-                    ),
-                  );
-                  return;
-                }
-                _openResult(row);
-              },
+              onTap: () => openRow(),
+              onTapAt: (position) => openRow(position),
             );
           }
           if (_error != null) {

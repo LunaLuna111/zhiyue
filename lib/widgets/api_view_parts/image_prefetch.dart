@@ -51,7 +51,7 @@ VoidCallback prefetchObjectImages(
         : null;
     final contentUrls =
         feedData?.images.take(3).toList(growable: false) ??
-        contentImageUrlsOf(row, limit: 3);
+        contentPreviewImageUrlsOf(row, limit: 3);
     final usesThumbnailStrip = contentUrls.length > 1;
     for (final url in contentUrls) {
       if (candidates.length >= limit) break;

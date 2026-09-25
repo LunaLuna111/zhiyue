@@ -801,7 +801,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRefreshHomeSubtitle => '再次点击已选中的首页按钮时回到顶部并刷新';
 
   @override
-  String get settingsShowImages => '显示推荐图片';
+  String get settingsShowImages => '显示首页图片';
 
   @override
   String get settingsShowImagesSubtitle => '关闭后首页只显示文字、作者和互动信息';
@@ -5068,7 +5068,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settingsRefreshHomeSubtitle => '再次點選已選取的首頁按鈕時回到頂部並重新整理';
 
   @override
-  String get settingsShowImages => '顯示推薦圖片';
+  String get settingsShowImages => '顯示首頁圖片';
 
   @override
   String get settingsShowImagesSubtitle => '關閉後首頁只顯示文字、作者和互動資訊';

@@ -1,5 +1,189 @@
 part of '../api_views.dart';
 
+/// Returns the compact image set used by feed and search cards.
+///
+/// The shared parser handles the normal answer/article contracts. Some mobile
+/// recommendation responses, however, keep the media list inside a nested
+/// ComponentCard payload or expose a content image node without the usual
+/// `content_*` marker. Keep that narrow fallback at the UI projection edge so
+/// the reusable API parser remains free of Flutter card-presentation rules.
+List<String> contentPreviewImageUrlsOf(
+  Map<String, dynamic> source, {
+  int limit = 3,
+}) {
+  if (limit <= 0) return const [];
+  final object = unwrapObject(source);
+  final authorAvatar = authorAvatarOf(object);
+  final urls = <String>[];
+  final seen = <String>{};
+
+  void add(Object? raw) {
+    final url = httpsImageUrl(raw);
+    if (url == null || url == authorAvatar) return;
+    final uri = Uri.tryParse(url);
+    final key = uri == null
+        ? url
+        : uri.replace(query: '', fragment: '').toString();
+    if (seen.add(key)) urls.add(url);
+  }
+
+  for (final url in contentImageUrlsOf(source, limit: limit)) {
+    add(url);
+    if (urls.length >= limit) return urls;
+  }
+
+  final visitedNested = <Map<String, dynamic>>{};
+
+  void addNestedMap(Object? raw) {
+    if (urls.length >= limit) return;
+    if (raw is List) {
+      for (final item in raw) {
+        addNestedMap(item);
+        if (urls.length >= limit) return;
+      }
+      return;
+    }
+    if (raw is String) {
+      for (final url in contentImageUrlsOf({'content': raw}, limit: limit)) {
+        add(url);
+        if (urls.length >= limit) return;
+      }
+      return;
+    }
+    final map = stringMap(raw);
+    if (map == null || !visitedNested.add(map)) return;
+    for (final url in contentImageUrlsOf(map, limit: limit)) {
+      add(url);
+      if (urls.length >= limit) return;
+    }
+    for (final key in const [
+      'images',
+      'image_list',
+      'media_detail',
+      'media_info',
+      'media_infos',
+      'content',
+      'content_data',
+      'body',
+      'ori_content',
+      'blocks',
+      'nodes',
+      'children',
+      'elements',
+      'paragraphs',
+      'rich_text',
+      'richText',
+      'source',
+      'original',
+      'thumbnail',
+      'image',
+    ]) {
+      addNestedMap(map[key]);
+      if (urls.length >= limit) return;
+    }
+  }
+
+  // These are all image-bearing containers used by the feed/search wire
+  // formats. Do not recursively inspect arbitrary `url` fields: those are
+  // often article links rather than bitmap URLs.
+  for (final key in const [
+    'image_url',
+    'imageUrl',
+    'title_image',
+    'thumbnail',
+    'thumbnail_url',
+    'cover',
+    'cover_url',
+    'cover_image',
+    'artwork',
+    'image',
+    'images',
+    'image_list',
+    'thumbnails',
+    'thumbnails_v2',
+    'media_detail',
+    'media_info',
+    'media_infos',
+    'image_content',
+    'imageContent',
+  ]) {
+    add(object[key]);
+    addNestedMap(object[key]);
+    if (urls.length >= limit) return urls;
+  }
+
+  // The canonical parser already covers ordinary answer/article/search
+  // objects. The deeper walk below is only needed for SDUI ComponentCards;
+  // keeping it out of normal rows avoids extra tree traversal while scrolling.
+  if (object['component_card'] != true) return urls;
+
+  final extra = stringMap(object['extra']);
+  final business = stringMap(extra?['business_ext_map']);
+  final contentInfo = stringMap(business?['content_info']);
+  final passthrough = stringMap(business?['passthrough_info']);
+  for (final nested in [
+    business,
+    contentInfo,
+    stringMap(contentInfo?['detail']),
+    passthrough,
+    stringMap(passthrough?['content']),
+    object['media_detail'],
+    object['ori_content'],
+    object['content'],
+    object['content_data'],
+    object['body'],
+  ]) {
+    addNestedMap(nested);
+    if (urls.length >= limit) return urls;
+  }
+
+  // A few ComponentCard versions only expose the image as a child node. The
+  // marker filter avoids turning author avatars, badges, close buttons, or
+  // action links into content previews.
+  for (final node in walkVisibleMaps(object['children'])) {
+    final marker = [
+      node['type'],
+      node['style'],
+      node['test_id'],
+      node['id'],
+    ].whereType<Object>().join(' ').toLowerCase();
+    if (marker.isEmpty ||
+        const [
+          'avatar',
+          'author',
+          'user',
+          'badge',
+          'icon',
+          'tail',
+          'close',
+          'action',
+        ].any(marker.contains)) {
+      continue;
+    }
+    final imageNode =
+        marker.contains('image') ||
+        marker.contains('cover') ||
+        marker.contains('thumbnail') ||
+        marker.contains('media') ||
+        marker.contains('content') ||
+        plainText(node['type']).toLowerCase() == 'image';
+    if (!imageNode) continue;
+    for (final key in const [
+      'image_url',
+      'imageUrl',
+      'image',
+      'source',
+      'original',
+      'thumbnail',
+      'url_template',
+    ]) {
+      add(node[key]);
+      if (urls.length >= limit) return urls;
+    }
+  }
+  return urls;
+}
+
 final _contentCardStaticDataCache = Expando<_ContentCardStaticData>(
   'content-card-static-data',
 );
@@ -29,7 +213,7 @@ class _ContentCardStaticData {
       authorHeadline: authorHeadlineOf(value),
       authorBadges: authorBadgeLabelsOf(value),
       image: ObjectCard._imageOf(object),
-      contentImages: contentImageUrlsOf(value, limit: 12),
+      contentImages: contentPreviewImageUrlsOf(value, limit: 12),
       showsObjectSummary:
           type == 'people' ||
           type == 'member' ||
@@ -112,7 +296,8 @@ class _FeedCardStaticData {
   final String kindLabel;
   List<String>? _images;
 
-  List<String> get images => _images ??= contentImageUrlsOf(source, limit: 12);
+  List<String> get images =>
+      _images ??= contentPreviewImageUrlsOf(source, limit: 12);
 }
 
 String? _feedAvatarOf(Map<String, dynamic> object) {

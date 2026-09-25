@@ -413,29 +413,16 @@ class _ZhAdaptiveHomeShellState extends State<ZhAdaptiveHomeShell>
                                 alpha: surfaceShadowOpacity,
                               ),
                         borderRadius: mainSurfaceBorderRadius,
-                        clipBehavior: Clip.none,
-                        child: PhysicalModel(
-                          key: const ValueKey('push-main-physical-surface'),
-                          // Keep the page's physical node static; the outer
-                          // surface owns the animated silhouette and shadow.
-                          color: Colors.transparent,
-                          elevation: 0,
-                          shadowColor: Colors.transparent,
-                          borderRadius: BorderRadius.zero,
-                          clipBehavior: Clip.none,
-                          child: ClipRRect(
-                            borderRadius: mainSurfaceBorderRadius,
-                            clipBehavior: Clip.antiAlias,
-                            // Cache the page below the animated physical
-                            // shape so each radius/shadow tick doesn't repaint
-                            // image-heavy feed content.
-                            child: RepaintBoundary(
-                              key: const ValueKey(
-                                'push-main-content-repaint-boundary',
-                              ),
-                              child: mainScaffold,
-                            ),
+                        // One physical layer owns both the animated shadow and
+                        // the rounded clip. The previous nested
+                        // PhysicalModel + ClipRRect stack forced two full
+                        // viewport compositing passes on every drawer tick.
+                        clipBehavior: Clip.antiAlias,
+                        child: RepaintBoundary(
+                          key: const ValueKey(
+                            'push-main-content-repaint-boundary',
                           ),
+                          child: mainScaffold,
                         ),
                       ),
                     ),

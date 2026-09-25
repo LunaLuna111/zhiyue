@@ -171,11 +171,13 @@ class _SearchEntityResultRow extends StatelessWidget {
   const _SearchEntityResultRow({
     required this.value,
     required this.onTap,
+    this.onTapAt,
     this.compact = false,
   });
 
   final Map<String, dynamic> value;
   final VoidCallback onTap;
+  final ValueChanged<Offset>? onTapAt;
   final bool compact;
 
   @override
@@ -195,10 +197,23 @@ class _SearchEntityResultRow extends StatelessWidget {
         .toList(growable: false);
     final date = data.date;
     final circular = type == 'people' || type == 'member' || type == 'topic';
+    Offset? tapOrigin;
+    void handleTap() {
+      final origin = tapOrigin;
+      if (origin != null && onTapAt != null) {
+        onTapAt!(origin);
+      } else {
+        onTap();
+      }
+    }
+
     return Material(
       color: ZhPalette.background,
       child: InkWell(
-        onTap: onTap,
+        onTap: handleTap,
+        onTapDown: onTapAt == null
+            ? null
+            : (details) => tapOrigin = details.globalPosition,
         child: Container(
           padding: EdgeInsets.fromLTRB(
             15,

@@ -402,9 +402,10 @@ class _FeedPageState extends State<FeedPage>
     // The home body is already hosted by the shell's edge-to-edge glass
     // scaffold. Its scroll views contribute the system safe-area padding;
     // reserving it a second time here creates the blank band seen below the
-    // channel tabs. Keep only the floating tab track's height in the page
-    // contract so every channel starts at the same visual edge.
-    final contentTopInset = ZhLiquidGlassTopNavigation.barHeight * .75;
+    // The channel bar floats above the feed. Reserve its complete height so
+    // the first question, author row, excerpt, and metrics start below the
+    // glass instead of sliding underneath its lower edge.
+    final contentTopInset = ZhLiquidGlassTopNavigation.barHeight;
     final refreshSignal = _refreshSignals[channel]!;
     final requestScopeEpoch = _requestScopeEpoch;
     bool isRequestScopeCurrent() =>

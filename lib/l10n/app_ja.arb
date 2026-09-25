@@ -270,7 +270,7 @@
   "settingsCompact": "コンパクト",
   "settingsRefreshHome": "ホームを再タップしたら更新",
   "settingsRefreshHomeSubtitle": "選択中のホームを再タップすると先頭に戻って更新します",
-  "settingsShowImages": "おすすめ画像を表示",
+  "settingsShowImages": "ホーム画像を表示",
   "settingsShowImagesSubtitle": "オフにすると文字、作者、反応のみ表示します",
   "settingsShowMetrics": "反応数を表示",
   "settingsShowMetricsSubtitle": "賛成、保存、コメント、日付を表示します",

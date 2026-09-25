@@ -275,7 +275,7 @@
   "settingsCompact": "紧凑",
   "settingsRefreshHome": "重复点击首页时刷新",
   "settingsRefreshHomeSubtitle": "再次点击已选中的首页按钮时回到顶部并刷新",
-  "settingsShowImages": "显示推荐图片",
+  "settingsShowImages": "显示首页图片",
   "settingsShowImagesSubtitle": "关闭后首页只显示文字、作者和互动信息",
   "settingsShowMetrics": "显示互动数据",
   "settingsShowMetricsSubtitle": "显示赞同、收藏、评论和发布日期",

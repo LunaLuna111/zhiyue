@@ -808,7 +808,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Return to the top and refresh when tapping the selected Home tab';
 
   @override
-  String get settingsShowImages => 'Show recommendation images';
+  String get settingsShowImages => 'Show Home images';
 
   @override
   String get settingsShowImagesSubtitle =>

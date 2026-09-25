@@ -24,7 +24,7 @@ class _SearchResultCardStaticData {
       excerpt: subtitleOf(value),
       author: authorNameOf(value),
       avatar: authorAvatarOf(value),
-      images: contentImageUrlsOf(value, limit: 3),
+      images: contentPreviewImageUrlsOf(value, limit: 3),
       statistics: searchStatisticsOf(value),
       metrics: metrics,
       date: contentDateLabel(metrics),
@@ -48,11 +48,13 @@ class _SearchResultCard extends StatelessWidget {
     required this.value,
     required this.onTap,
     this.onAuthorTap,
+    this.onTapAt,
   });
 
   final Map<String, dynamic> value;
   final VoidCallback onTap;
   final VoidCallback? onAuthorTap;
+  final ValueChanged<Offset>? onTapAt;
 
   @override
   Widget build(BuildContext context) {
@@ -60,10 +62,23 @@ class _SearchResultCard extends StatelessWidget {
     final relatedQuery = searchQueryOf(value);
     if ((rawType == 'relevant_query' || rawType == 'search_query_correction') &&
         relatedQuery.isNotEmpty) {
+      Offset? tapOrigin;
+      void handleTap() {
+        final origin = tapOrigin;
+        if (origin != null && onTapAt != null) {
+          onTapAt!(origin);
+        } else {
+          onTap();
+        }
+      }
+
       return Material(
         color: ZhPalette.background,
         child: InkWell(
-          onTap: onTap,
+          onTap: handleTap,
+          onTapDown: onTapAt == null
+              ? null
+              : (details) => tapOrigin = details.globalPosition,
           child: Container(
             padding: const EdgeInsets.fromLTRB(15, 13, 10, 13),
             decoration: BoxDecoration(
@@ -108,7 +123,11 @@ class _SearchResultCard extends StatelessWidget {
       );
     }
     if (value['_search_novel_card'] == true) {
-      return _SearchNovelResultCard(value: value, onTap: onTap);
+      return _SearchNovelResultCard(
+        value: value,
+        onTap: onTap,
+        onTapAt: onTapAt,
+      );
     }
     final type = typeOf(value).replaceAll('search_', '');
     if (type == 'zvideo' ||
@@ -119,10 +138,15 @@ class _SearchResultCard extends StatelessWidget {
         value: value,
         onTap: onTap,
         onAuthorTap: onAuthorTap,
+        onTapAt: onTapAt,
       );
     }
     if (_isSearchEntityType(type)) {
-      return _SearchEntityResultRow(value: value, onTap: onTap);
+      return _SearchEntityResultRow(
+        value: value,
+        onTap: onTap,
+        onTapAt: onTapAt,
+      );
     }
     final data = _searchResultCardStaticDataCache[value] ??=
         _SearchResultCardStaticData.from(value);
@@ -135,10 +159,23 @@ class _SearchResultCard extends StatelessWidget {
     final metrics = data.metrics;
     final date = data.date;
     final typeLabel = data.typeLabel;
+    Offset? tapOrigin;
+    void handleTap() {
+      final origin = tapOrigin;
+      if (origin != null && onTapAt != null) {
+        onTapAt!(origin);
+      } else {
+        onTap();
+      }
+    }
+
     return Material(
       color: ZhPalette.background,
       child: InkWell(
-        onTap: onTap,
+        onTap: handleTap,
+        onTapDown: onTapAt == null
+            ? null
+            : (details) => tapOrigin = details.globalPosition,
         child: Container(
           padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
           decoration: BoxDecoration(
@@ -326,14 +363,19 @@ class _SearchResultCard extends StatelessWidget {
 /// small engagement line.  They are deliberately not rendered as a generic
 /// publication entity, otherwise the cover and the chapter route disappear.
 class _SearchNovelResultCard extends StatelessWidget {
-  const _SearchNovelResultCard({required this.value, required this.onTap});
+  const _SearchNovelResultCard({
+    required this.value,
+    required this.onTap,
+    this.onTapAt,
+  });
 
   final Map<String, dynamic> value;
   final VoidCallback onTap;
+  final ValueChanged<Offset>? onTapAt;
 
   @override
   Widget build(BuildContext context) {
-    final images = contentImageUrlsOf(value, limit: 1);
+    final images = contentPreviewImageUrlsOf(value, limit: 1);
     final cover = images.isEmpty ? _searchEntityImageOf(value) : images.first;
     final title = titleOf(value).isEmpty
         ? context.zhL10n.searchUntitledNovel
@@ -350,10 +392,23 @@ class _SearchNovelResultCard extends StatelessWidget {
         context.zhL10n.metricComment(compactCount(count)),
       if (date.isNotEmpty) date,
     ];
+    Offset? tapOrigin;
+    void handleTap() {
+      final origin = tapOrigin;
+      if (origin != null && onTapAt != null) {
+        onTapAt!(origin);
+      } else {
+        onTap();
+      }
+    }
+
     return Material(
       color: ZhPalette.background,
       child: InkWell(
-        onTap: onTap,
+        onTap: handleTap,
+        onTapDown: onTapAt == null
+            ? null
+            : (details) => tapOrigin = details.globalPosition,
         child: Container(
           padding: const EdgeInsets.fromLTRB(15, 14, 15, 14),
           decoration: BoxDecoration(
@@ -464,11 +519,13 @@ class _SearchVideoResultCard extends StatelessWidget {
     required this.value,
     required this.onTap,
     this.onAuthorTap,
+    this.onTapAt,
   });
 
   final Map<String, dynamic> value;
   final VoidCallback onTap;
   final VoidCallback? onAuthorTap;
+  final ValueChanged<Offset>? onTapAt;
 
   String _durationLabel(int? totalSeconds) {
     if (totalSeconds == null || totalSeconds <= 0) return '';
@@ -490,7 +547,7 @@ class _SearchVideoResultCard extends StatelessWidget {
     final avatar = authorAvatarOf(value);
     final videos = contentVideosOf(value);
     final video = videos.isEmpty ? null : videos.first;
-    final fallbackImages = contentImageUrlsOf(value, limit: 1);
+    final fallbackImages = contentPreviewImageUrlsOf(value, limit: 1);
     final poster = video?.posterUrl.isNotEmpty == true
         ? video!.posterUrl
         : fallbackImages.isEmpty
@@ -511,11 +568,24 @@ class _SearchVideoResultCard extends StatelessWidget {
         context.zhL10n.metricComment(compactCount(metrics.commentCount!)),
       if (date.isNotEmpty) date,
     ];
+    Offset? tapOrigin;
+    void handleTap() {
+      final origin = tapOrigin;
+      if (origin != null && onTapAt != null) {
+        onTapAt!(origin);
+      } else {
+        onTap();
+      }
+    }
+
     return Material(
       key: ValueKey('search-video-card-${idOf(value)}'),
       color: ZhPalette.background,
       child: InkWell(
-        onTap: onTap,
+        onTap: handleTap,
+        onTapDown: onTapAt == null
+            ? null
+            : (details) => tapOrigin = details.globalPosition,
         child: Container(
           padding: const EdgeInsets.fromLTRB(15, 15, 15, 14),
           decoration: BoxDecoration(

@@ -270,7 +270,7 @@
   "settingsCompact": "緊湊",
   "settingsRefreshHome": "重複點選首頁時重新整理",
   "settingsRefreshHomeSubtitle": "再次點選已選取的首頁按鈕時回到頂部並重新整理",
-  "settingsShowImages": "顯示推薦圖片",
+  "settingsShowImages": "顯示首頁圖片",
   "settingsShowImagesSubtitle": "關閉後首頁只顯示文字、作者和互動資訊",
   "settingsShowMetrics": "顯示互動資料",
   "settingsShowMetricsSubtitle": "顯示讚同、收藏、評論和發佈日期",

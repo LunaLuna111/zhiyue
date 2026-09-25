@@ -1606,7 +1606,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsShowImages.
   ///
   /// In zh, this message translates to:
-  /// **'显示推荐图片'**
+  /// **'显示首页图片'**
   String get settingsShowImages;
 
   /// No description provided for @settingsShowImagesSubtitle.

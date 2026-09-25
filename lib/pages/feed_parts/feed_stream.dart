@@ -410,7 +410,13 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
     if (_loading && _rows.isEmpty && !_refreshing) {
       return ZhListLoadingSkeleton(
         key: ValueKey('home-${widget.channel.name}-scroll'),
-        topInset: widget.topInset,
+        // The following page has a second people/filter header skeleton. Give
+        // that top shimmer below the floating channel bar and its refractive
+        // backdrop. Account for the device status inset so it stays clear on
+        // both the phone emulator and devices with a taller status area.
+        topInset:
+            widget.topInset +
+            (followingHeader ? MediaQuery.viewPaddingOf(context).top + 24 : 0),
         showImages: widget.showImages,
         headerHeight: followingHeader ? 96 : 0,
       );
@@ -605,7 +611,7 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
   }
 
   Future<void> _showNegativeFeedback(Map<String, dynamic> row) async {
-    final identity = NegativeFeedbackIdentity.fromFeed(row);
+    final identity = negativeFeedbackIdentityFromFeed(row);
     if (!identity.isUsable) return;
     final removed = await showNegativeFeedbackSheet(
       context: context,

@@ -270,7 +270,7 @@
   "settingsCompact": "Compact",
   "settingsRefreshHome": "Refresh when tapping Home again",
   "settingsRefreshHomeSubtitle": "Return to the top and refresh when tapping the selected Home tab",
-  "settingsShowImages": "Show recommendation images",
+  "settingsShowImages": "Show Home images",
   "settingsShowImagesSubtitle": "When off, Home shows only text, authors, and interactions",
   "settingsShowMetrics": "Show interaction metrics",
   "settingsShowMetricsSubtitle": "Show votes, collections, comments, and dates",

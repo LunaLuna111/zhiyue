@@ -802,7 +802,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsRefreshHomeSubtitle => '선택한 홈을 다시 누르면 맨 위로 이동해 새로고침합니다';
 
   @override
-  String get settingsShowImages => '추천 이미지 표시';
+  String get settingsShowImages => '홈 이미지 표시';
 
   @override
   String get settingsShowImagesSubtitle => '끄면 텍스트, 작성자, 반응만 표시합니다';

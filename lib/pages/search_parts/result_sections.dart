@@ -17,7 +17,7 @@ class _SearchHotTimingItemStaticData {
 
   factory _SearchHotTimingItemStaticData.from(Map<String, dynamic> value) {
     final metrics = ContentMetrics.from(value);
-    final images = contentImageUrlsOf(value, limit: 1);
+    final images = contentPreviewImageUrlsOf(value, limit: 1);
     return _SearchHotTimingItemStaticData(
       title: titleOf(value),
       author: authorNameOf(value),
@@ -44,7 +44,7 @@ class _SearchHotTimingCard extends StatelessWidget {
   });
 
   final Map<String, dynamic> value;
-  final ValueChanged<Map<String, dynamic>> onItemTap;
+  final void Function(Map<String, dynamic>, [Offset?]) onItemTap;
   final VoidCallback? onMore;
 
   @override
@@ -99,7 +99,7 @@ class _SearchHotTimingCard extends StatelessWidget {
                   if (index > 0) const Divider(height: 1),
                   _SearchHotTimingItem(
                     value: items[index],
-                    onTap: () => onItemTap(items[index]),
+                    onTap: ([position]) => onItemTap(items[index], position),
                   ),
                 ],
               ],
@@ -119,7 +119,7 @@ class _SearchSectionCard extends StatelessWidget {
   });
 
   final Map<String, dynamic> value;
-  final ValueChanged<Map<String, dynamic>> onItemTap;
+  final void Function(Map<String, dynamic>, [Offset?]) onItemTap;
   final VoidCallback? onMore;
 
   @override
@@ -175,6 +175,7 @@ class _SearchSectionCard extends StatelessWidget {
                 _SearchEntityResultRow(
                   value: items[index],
                   onTap: () => onItemTap(items[index]),
+                  onTapAt: (position) => onItemTap(items[index], position),
                   compact: true,
                 ),
               ],
@@ -190,7 +191,7 @@ class _SearchHotTimingItem extends StatelessWidget {
   const _SearchHotTimingItem({required this.value, required this.onTap});
 
   final Map<String, dynamic> value;
-  final VoidCallback onTap;
+  final void Function([Offset?]) onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -202,8 +203,14 @@ class _SearchHotTimingItem extends StatelessWidget {
     final metrics = data.metrics;
     final date = data.date;
     final image = data.image;
+    Offset? tapOrigin;
+    void handleTap() {
+      onTap(tapOrigin);
+    }
+
     return InkWell(
-      onTap: onTap,
+      onTap: handleTap,
+      onTapDown: (details) => tapOrigin = details.globalPosition,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 11),
         child: Row(

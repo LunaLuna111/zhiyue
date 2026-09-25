@@ -412,15 +412,16 @@ void openDetectedObject(
       ),
     );
   }
-  final canMorphIntoDetail =
+  final canMorphIntoContent =
       sourceRect != null &&
-      page is ContentDetailPage &&
+      (page is ContentDetailPage || page is QuestionAnswersPage) &&
       ZhGlassScope.enabledOf(context) &&
       !MediaQuery.disableAnimationsOf(context);
-  if (canMorphIntoDetail) {
+  if (canMorphIntoContent) {
     // GlassModalSheet's native morph is designed for a sheet detent. A post
-    // detail is a full-screen page, so keep the source-aware geometry here to
-    // avoid the sheet's bottom-up handoff and preserve a clean reverse frame.
+    // detail or a hot-list question is a full-screen page, so keep the
+    // source-aware geometry here to avoid the sheet's bottom-up handoff and
+    // preserve a clean reverse frame.
     unawaited(
       Navigator.of(
         context,

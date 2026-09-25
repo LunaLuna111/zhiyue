@@ -802,7 +802,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsRefreshHomeSubtitle => '選択中のホームを再タップすると先頭に戻って更新します';
 
   @override
-  String get settingsShowImages => 'おすすめ画像を表示';
+  String get settingsShowImages => 'ホーム画像を表示';
 
   @override
   String get settingsShowImagesSubtitle => 'オフにすると文字、作者、反応のみ表示します';

@@ -270,7 +270,7 @@
   "settingsCompact": "간결함",
   "settingsRefreshHome": "홈을 다시 누르면 새로고침",
   "settingsRefreshHomeSubtitle": "선택한 홈을 다시 누르면 맨 위로 이동해 새로고침합니다",
-  "settingsShowImages": "추천 이미지 표시",
+  "settingsShowImages": "홈 이미지 표시",
   "settingsShowImagesSubtitle": "끄면 텍스트, 작성자, 반응만 표시합니다",
   "settingsShowMetrics": "반응 수 표시",
   "settingsShowMetricsSubtitle": "추천, 저장, 댓글, 날짜를 표시합니다",

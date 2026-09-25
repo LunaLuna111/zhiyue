@@ -1507,6 +1507,18 @@ abstract class AppLocalizations {
   /// **'诊断日志与问题排查'**
   String get settingsLogsSubtitle;
 
+  /// No description provided for @settingsOpenSourceLicenses.
+  ///
+  /// In zh, this message translates to:
+  /// **'开源许可'**
+  String get settingsOpenSourceLicenses;
+
+  /// No description provided for @settingsOpenSourceLicensesSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'查看应用使用的开源库与许可'**
+  String get settingsOpenSourceLicensesSubtitle;
+
   /// No description provided for @settingsAboutSubtitle.
   ///
   /// In zh, this message translates to:
@@ -2076,6 +2088,18 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'无法打开 GitHub 地址'**
   String get settingsGithubOpenFailed;
+
+  /// No description provided for @settingsOpenSourceLicensesIntro.
+  ///
+  /// In zh, this message translates to:
+  /// **'以下为知阅直接使用的开源项目及其许可证信息。'**
+  String get settingsOpenSourceLicensesIntro;
+
+  /// No description provided for @settingsOpenSourceLicenseOpenFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法打开项目地址'**
+  String get settingsOpenSourceLicenseOpenFailed;
 
   /// No description provided for @searchTitle.
   ///

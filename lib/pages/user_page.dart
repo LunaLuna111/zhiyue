@@ -469,7 +469,7 @@ class _ResolvedUserListPageState extends State<ResolvedUserListPage> {
         maxWidth: 1040,
         desktopGutter: 24,
         child: state == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const ZhListLoadingSkeleton(topInset: 0, showImages: true)
             : ApiErrorView(error: state, onRetry: _resolve),
       ),
     );

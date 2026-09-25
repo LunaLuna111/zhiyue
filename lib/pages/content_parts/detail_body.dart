@@ -58,7 +58,10 @@ extension _ContentDetailBody on _ContentDetailPageState {
   Widget _body({double topInset = 0, Widget? answerQuestionHeader}) {
     final l10n = context.zhL10n;
     if (_loading && _document == null) {
-      return const Center(child: CircularProgressIndicator());
+      return ZhContentDetailSkeleton(
+        topInset: topInset,
+        showQuestionHeader: answerQuestionHeader != null,
+      );
     }
     if (_error != null) {
       return ListView(

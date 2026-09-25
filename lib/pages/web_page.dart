@@ -58,11 +58,10 @@ Future<void> openZhihuSafetyVerification(BuildContext context) async {
   await Navigator.of(context).push<void>(
     MaterialPageRoute<void>(
       settings: const RouteSettings(name: 'zhihu-safety-verification'),
-      builder: (_) =>
-          OfficialWebPage(
-            title: context.zhL10n.webSafetyTitle,
-            url: zhihuSafetyVerificationUrl,
-          ),
+      builder: (_) => OfficialWebPage(
+        title: context.zhL10n.webSafetyTitle,
+        url: zhihuSafetyVerificationUrl,
+      ),
     ),
   );
 }
@@ -534,19 +533,52 @@ class _OfficialWebPageState extends State<OfficialWebPage> {
               Positioned.fill(
                 child: ColoredBox(
                   color: ZhPalette.background,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const CircularProgressIndicator(),
-                        const SizedBox(height: ZhSpace.md),
-                        Text(
-                          widget.requiresSessionCookie
-                              ? context.zhL10n.webOpeningChapter
-                              : context.zhL10n.webOpeningPage,
+                  child: ListView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(20, 34, 20, 40),
+                    children: [
+                      const ZhSkeleton(width: 168, height: 24, radius: 10),
+                      const SizedBox(height: 18),
+                      const ZhSkeleton(
+                        width: double.infinity,
+                        height: 18,
+                        radius: 8,
+                      ),
+                      const SizedBox(height: 10),
+                      const ZhSkeleton(
+                        width: double.infinity,
+                        height: 18,
+                        radius: 8,
+                      ),
+                      const SizedBox(height: 10),
+                      const FractionallySizedBox(
+                        widthFactor: .72,
+                        child: ZhSkeleton(
+                          width: double.infinity,
+                          height: 18,
+                          radius: 8,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 24),
+                      const ZhSkeleton(height: 230, radius: ZhRadius.card),
+                      const SizedBox(height: 24),
+                      const ZhSkeleton(width: 220, height: 22, radius: 10),
+                      const SizedBox(height: 14),
+                      const ZhSkeleton(
+                        width: double.infinity,
+                        height: 18,
+                        radius: 8,
+                      ),
+                      const SizedBox(height: 10),
+                      const FractionallySizedBox(
+                        widthFactor: .86,
+                        child: ZhSkeleton(
+                          width: double.infinity,
+                          height: 18,
+                          radius: 8,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

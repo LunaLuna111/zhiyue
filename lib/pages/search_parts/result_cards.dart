@@ -398,7 +398,11 @@ class _SearchResultTabState extends State<_SearchResultTab> {
   @override
   Widget build(BuildContext context) {
     if (_loading && _rows.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return ZhListLoadingSkeleton(
+        topInset: widget.contentTopPadding,
+        showImages: true,
+        count: 4,
+      );
     }
     if (_error != null && _rows.isEmpty) {
       return RefreshIndicator(

@@ -71,7 +71,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
       maxWidth: 760,
       desktopGutter: 24,
       child: _loading && _settings == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const ZhFormLoadingSkeleton()
           : _error != null && _settings == null
           ? ApiErrorView(error: _error!, onRetry: _load)
           : _settingsList(),

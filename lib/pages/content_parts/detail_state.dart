@@ -911,7 +911,9 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             iconSize: 24,
           ),
           actions: [detailActionGroup],
-          title: ContentDetailAppBarTitle(title: authorDisplayName),
+          title: document == null
+              ? const ZhSkeleton(width: 132, height: 18, radius: 9)
+              : ContentDetailAppBarTitle(title: authorDisplayName),
         ),
         body: Builder(
           builder: (bodyContext) {

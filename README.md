@@ -288,6 +288,10 @@ flutter build apk \
 2. 客户端只保留 UI、状态管理和平台适配。
 3. 静态分析及相关测试通过。
 
+## 致谢
+
+感谢 [liquid_glass_widgets](https://github.com/sdegenaar/liquid_glass_widgets) 提供 Liquid Glass UI 组件，为知阅的 iOS 26 风格界面提供了基础。
+
 ## 免责声明
 
 本项目仅用于学习和技术交流，不得用于任何商业用途。项目完全免费、开源、非商用，不收取费用，也不接受任何形式的打赏。项目所涉及的接口资料来自互联网及 GitHub 上可公开获取的信息，经整理后用于学习研究。

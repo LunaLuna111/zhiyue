@@ -228,7 +228,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
     return Scaffold(
       appBar: ZhTopBar(title: Text(context.zhL10n.webdavTitle)),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const ZhFormLoadingSkeleton()
           : ZhPageWidth(
               maxWidth: 680,
               child: AnimatedBuilder(

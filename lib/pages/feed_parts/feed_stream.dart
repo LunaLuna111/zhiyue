@@ -408,17 +408,11 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
     final followingHeader = widget.channel == HomeFeedChannel.following;
     final headerCount = followingHeader ? 2 : 0;
     if (_loading && _rows.isEmpty && !_refreshing) {
-      return ListView(
+      return ZhListLoadingSkeleton(
         key: ValueKey('home-${widget.channel.name}-scroll'),
-        controller: _scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          SizedBox(height: widget.topInset),
-          const SizedBox(
-            height: 440,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ],
+        topInset: widget.topInset,
+        showImages: widget.showImages,
+        headerHeight: followingHeader ? 96 : 0,
       );
     }
     if (_error != null && _rows.isEmpty) {

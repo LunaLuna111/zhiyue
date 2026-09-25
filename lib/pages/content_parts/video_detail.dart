@@ -205,7 +205,7 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
     ContentMetrics? metrics,
   }) {
     if (_loading && document == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const ZhContentDetailSkeleton(topInset: 0);
     }
     if (document == null) {
       return ApiErrorView(

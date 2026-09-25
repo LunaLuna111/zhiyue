@@ -187,7 +187,12 @@ class _NotificationsPageState extends State<NotificationsPage> {
       return _LoginRequired(onBack: () => Navigator.of(context).pop());
     }
     if (_loading && _root == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const ZhListLoadingSkeleton(
+        topInset: 0,
+        showImages: false,
+        count: 6,
+        headerHeight: 82,
+      );
     }
     if (_error != null && _root == null) {
       return ApiErrorView(

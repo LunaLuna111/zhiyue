@@ -424,7 +424,11 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
     AppLocalizations l10n,
   ) {
     if (_loading && rows.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const ZhListLoadingSkeleton(
+        topInset: 0,
+        showImages: false,
+        count: 6,
+      );
     }
     if (_error != null && rows.isEmpty) {
       return ApiErrorView(

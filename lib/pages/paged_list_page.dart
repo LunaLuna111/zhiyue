@@ -279,7 +279,11 @@ class _PagedListPageState extends State<PagedListPage> {
           )
         : 0.0;
     if (_loading && _rows.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return ZhListLoadingSkeleton(
+        topInset: topInset,
+        showImages: widget.answerListMode,
+        headerHeight: widget.header == null ? 0 : 84,
+      );
     }
     if (_error != null && _rows.isEmpty) {
       return ListView(

@@ -194,7 +194,7 @@ class _MessageConversationPageState extends State<MessageConversationPage> {
         children: [
           Expanded(
             child: _loading && _messages.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const ZhConversationLoadingSkeleton()
                 : _error != null && _messages.isEmpty
                 ? ApiErrorView(
                     error: _error!,

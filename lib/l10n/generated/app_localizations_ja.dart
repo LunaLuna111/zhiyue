@@ -753,6 +753,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsLogsSubtitle => '診断ログとトラブルシューティング';
 
   @override
+  String get settingsOpenSourceLicenses => 'オープンソースライセンス';
+
+  @override
+  String get settingsOpenSourceLicensesSubtitle =>
+      'アプリで使用しているオープンソースライブラリとライセンスを確認';
+
+  @override
   String get settingsAboutSubtitle => '初期設定とアプリ情報';
 
   @override
@@ -1050,6 +1057,13 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsGithubOpenFailed => 'GitHub アドレスを開けません';
+
+  @override
+  String get settingsOpenSourceLicensesIntro =>
+      '以下は知閲が直接使用しているオープンソースプロジェクトとライセンス情報です。';
+
+  @override
+  String get settingsOpenSourceLicenseOpenFailed => 'プロジェクトのアドレスを開けません';
 
   @override
   String get searchTitle => '検索';

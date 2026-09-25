@@ -68,7 +68,7 @@ class _UserProfileDetailPageState extends State<UserProfileDetailPage> {
   Widget build(BuildContext context) {
     final state = _state;
     if (state == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: ZhProfileLoadingSkeleton());
     }
     if (state is! ApiResponse || !state.isSuccess || state.jsonMap == null) {
       return Scaffold(

@@ -753,6 +753,12 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsLogsSubtitle => '诊断日志与问题排查';
 
   @override
+  String get settingsOpenSourceLicenses => '开源许可';
+
+  @override
+  String get settingsOpenSourceLicensesSubtitle => '查看应用使用的开源库与许可';
+
+  @override
   String get settingsAboutSubtitle => '恢复默认设置与应用信息';
 
   @override
@@ -1050,6 +1056,12 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsGithubOpenFailed => '无法打开 GitHub 地址';
+
+  @override
+  String get settingsOpenSourceLicensesIntro => '以下为知阅直接使用的开源项目及其许可证信息。';
+
+  @override
+  String get settingsOpenSourceLicenseOpenFailed => '无法打开项目地址';
 
   @override
   String get searchTitle => '搜索';
@@ -5008,6 +5020,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settingsLogsSubtitle => '診斷記錄與問題排查';
 
   @override
+  String get settingsOpenSourceLicenses => '開源授權';
+
+  @override
+  String get settingsOpenSourceLicensesSubtitle => '查看應用程式使用的開源套件與授權';
+
+  @override
   String get settingsAboutSubtitle => '還原預設設定與應用程式資訊';
 
   @override
@@ -5305,6 +5323,12 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get settingsGithubOpenFailed => '無法開啟 GitHub 地址';
+
+  @override
+  String get settingsOpenSourceLicensesIntro => '以下是知閱直接使用的開源專案及其授權資訊。';
+
+  @override
+  String get settingsOpenSourceLicenseOpenFailed => '無法開啟專案地址';
 
   @override
   String get searchTitle => '搜尋';

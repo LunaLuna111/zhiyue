@@ -19,6 +19,7 @@ import 'app_update_page.dart';
 import 'account_sessions_page.dart';
 import 'diagnostic_logs_page.dart';
 import 'content_filter_stats_page.dart';
+import 'open_source_licenses_page.dart';
 import 'recommendation_behavior_page.dart';
 import 'webdav_sync_page.dart';
 
@@ -28,9 +29,10 @@ enum _SettingsCategory {
   backup,
   account,
   logs,
+  data,
+  licenses,
   about,
   updates,
-  data,
 }
 
 class AppSettingsPage extends StatefulWidget {
@@ -337,12 +339,14 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
         return l10n.settingsAccount;
       case _SettingsCategory.logs:
         return l10n.settingsLogs;
+      case _SettingsCategory.data:
+        return l10n.settingsData;
+      case _SettingsCategory.licenses:
+        return l10n.settingsOpenSourceLicenses;
       case _SettingsCategory.about:
         return l10n.settingsAboutSection;
       case _SettingsCategory.updates:
         return l10n.settingsUpdates;
-      case _SettingsCategory.data:
-        return l10n.settingsData;
     }
   }
 
@@ -359,12 +363,14 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
         return l10n.settingsAccountSubtitle;
       case _SettingsCategory.logs:
         return l10n.settingsLogsSubtitle;
+      case _SettingsCategory.data:
+        return l10n.settingsDataSubtitle;
+      case _SettingsCategory.licenses:
+        return l10n.settingsOpenSourceLicensesSubtitle;
       case _SettingsCategory.about:
         return l10n.settingsAboutSubtitle;
       case _SettingsCategory.updates:
         return l10n.settingsUpdatesSubtitle;
-      case _SettingsCategory.data:
-        return l10n.settingsDataSubtitle;
     }
   }
 
@@ -380,16 +386,24 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
         return Icons.person_outline;
       case _SettingsCategory.logs:
         return Icons.bug_report_outlined;
+      case _SettingsCategory.data:
+        return Icons.storage_outlined;
+      case _SettingsCategory.licenses:
+        return Icons.article_outlined;
       case _SettingsCategory.about:
         return Icons.info_outline;
       case _SettingsCategory.updates:
         return Icons.system_update_alt;
-      case _SettingsCategory.data:
-        return Icons.storage_outlined;
     }
   }
 
   void _openCategory(_SettingsCategory category) {
+    if (category == _SettingsCategory.licenses) {
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const OpenSourceLicensesPage()));
+      return;
+    }
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _SettingsCategoryPage(
@@ -688,6 +702,10 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
             ],
           ),
         ];
+      case _SettingsCategory.licenses:
+        // The top-level entry opens the dedicated page directly. Keep this
+        // branch exhaustive for the category switch if a caller reuses it.
+        return const <Widget>[];
       case _SettingsCategory.about:
         return [
           _SettingsGroup(

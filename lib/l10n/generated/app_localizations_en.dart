@@ -758,6 +758,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLogsSubtitle => 'Diagnostics and troubleshooting';
 
   @override
+  String get settingsOpenSourceLicenses => 'Open-source licenses';
+
+  @override
+  String get settingsOpenSourceLicensesSubtitle =>
+      'View the open-source libraries and licenses used by the app';
+
+  @override
   String get settingsAboutSubtitle => 'Defaults and app information';
 
   @override
@@ -1079,6 +1086,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsGithubOpenFailed => 'Unable to open the GitHub repository';
+
+  @override
+  String get settingsOpenSourceLicensesIntro =>
+      'The list below covers the open-source projects used directly by Zhiyue and their license information.';
+
+  @override
+  String get settingsOpenSourceLicenseOpenFailed =>
+      'Unable to open the project link';
 
   @override
   String get searchTitle => 'Search';

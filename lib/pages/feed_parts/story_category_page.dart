@@ -155,7 +155,12 @@ class _SaltStoryCategoryPageState extends State<SaltStoryCategoryPage> {
         future: _request,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
+            return const ZhListLoadingSkeleton(
+              topInset: 0,
+              showImages: true,
+              count: 4,
+              headerHeight: 76,
+            );
           }
           final payload = snapshot.data;
           if (payload == null || !payload.hasSuccess) {

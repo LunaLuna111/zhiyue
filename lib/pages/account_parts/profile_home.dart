@@ -149,7 +149,7 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
     final l10n = context.zhL10n;
     final profile = _profile;
     if (_loading && profile == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: ZhProfileLoadingSkeleton());
     }
     if (profile == null) {
       return Scaffold(

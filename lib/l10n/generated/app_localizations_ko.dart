@@ -753,6 +753,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsLogsSubtitle => '진단 로그 및 문제 해결';
 
   @override
+  String get settingsOpenSourceLicenses => '오픈 소스 라이선스';
+
+  @override
+  String get settingsOpenSourceLicensesSubtitle =>
+      '앱에서 사용하는 오픈 소스 라이브러리와 라이선스 보기';
+
+  @override
   String get settingsAboutSubtitle => '기본값 복원 및 앱 정보';
 
   @override
@@ -1051,6 +1058,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsGithubOpenFailed => 'GitHub 주소를 열 수 없습니다';
+
+  @override
+  String get settingsOpenSourceLicensesIntro =>
+      '아래에는 지열이 직접 사용하는 오픈 소스 프로젝트와 라이선스 정보가 정리되어 있습니다.';
+
+  @override
+  String get settingsOpenSourceLicenseOpenFailed => '프로젝트 주소를 열 수 없습니다';
 
   @override
   String get searchTitle => '검색';

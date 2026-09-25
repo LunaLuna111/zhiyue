@@ -1,23 +1,28 @@
 part of '../salt_page.dart';
 
 extension _SaltReaderContent on _SaltReaderPageState {
-  Widget _readerLoading(BuildContext context) => Center(
-    child: Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const SizedBox.square(
-          dimension: 28,
-          child: CircularProgressIndicator(strokeWidth: 2.5),
-        ),
-        const SizedBox(height: 14),
-        Text(
-          context.zhL10n.commonLoading,
-          style: Theme.of(
-            context,
-          ).textTheme.bodyMedium?.copyWith(color: ZhPalette.mutedInk),
-        ),
-      ],
+  Widget _readerLoading(BuildContext context) => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(
+      ZhSpace.md,
+      ZhSpace.sm,
+      ZhSpace.md,
+      ZhSpace.xl,
     ),
+    children: [
+      const ZhSkeleton(width: 180, height: 24, radius: 10),
+      const SizedBox(height: 16),
+      const ZhSkeleton(width: double.infinity, height: 18, radius: 8),
+      const SizedBox(height: 10),
+      const ZhSkeleton(width: double.infinity, height: 18, radius: 8),
+      const SizedBox(height: 10),
+      const FractionallySizedBox(
+        widthFactor: .74,
+        child: ZhSkeleton(width: double.infinity, height: 18, radius: 8),
+      ),
+      const SizedBox(height: 26),
+      const ZhSkeleton(height: 250, radius: ZhRadius.card),
+    ],
   );
 
   Widget _textReader(

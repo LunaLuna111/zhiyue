@@ -689,9 +689,9 @@ class _SaltProductPageState extends State<SaltProductPage> {
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           ...?fallbackHeader == null ? null : <Widget>[fallbackHeader],
-          const SizedBox(
-            height: 180,
-            child: Center(child: CircularProgressIndicator()),
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: ZhSkeleton(height: 180, radius: ZhRadius.card),
           ),
         ],
       );

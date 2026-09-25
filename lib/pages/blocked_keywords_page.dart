@@ -149,7 +149,7 @@ class _BlockedKeywordsPageState extends State<BlockedKeywordsPage> {
   );
 
   Widget _body() {
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) return const ZhFormLoadingSkeleton();
     if (_error != null) {
       return Center(
         child: Padding(

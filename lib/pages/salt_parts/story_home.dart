@@ -326,13 +326,7 @@ class _SaltStoryLoading extends StatelessWidget {
         children: [
           for (var index = 0; index < 4; index++) ...[
             Expanded(
-              child: Container(
-                height: 68,
-                decoration: BoxDecoration(
-                  color: ZhPalette.canvas,
-                  borderRadius: BorderRadius.circular(ZhRadius.card),
-                ),
-              ),
+              child: const ZhSkeleton(height: 68, radius: ZhRadius.card),
             ),
             if (index != 3) const SizedBox(width: 8),
           ],
@@ -340,13 +334,7 @@ class _SaltStoryLoading extends StatelessWidget {
       ),
       const SizedBox(height: 24),
       for (var index = 0; index < 3; index++) ...[
-        Container(
-          height: 126,
-          decoration: BoxDecoration(
-            color: ZhPalette.canvas,
-            borderRadius: BorderRadius.circular(ZhRadius.card),
-          ),
-        ),
+        const ZhSkeleton(height: 126, radius: ZhRadius.card),
         const SizedBox(height: 10),
       ],
     ],

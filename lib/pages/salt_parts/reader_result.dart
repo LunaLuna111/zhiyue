@@ -153,7 +153,12 @@ extension _SaltReaderResult on _SaltReaderPageState {
   Widget _result(BuildContext context) {
     final l10n = context.zhL10n;
     final state = _state;
-    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loading) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 8),
+        child: ZhSkeleton(height: 320, radius: ZhRadius.card),
+      );
+    }
     if (state == null) return const SizedBox.shrink();
     if (state is! ApiResponse) {
       return ApiErrorView(error: state, onRetry: _read, compact: true);

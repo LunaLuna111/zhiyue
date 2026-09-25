@@ -720,7 +720,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAppearance => '외관';
 
   @override
-  String get settingsBackup => '백업';
+  String get settingsBackup => '클라우드 백업';
 
   @override
   String get settingsAccount => '계정';

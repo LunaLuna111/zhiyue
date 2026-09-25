@@ -1444,7 +1444,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackup.
   ///
   /// In zh, this message translates to:
-  /// **'备份'**
+  /// **'云备份'**
   String get settingsBackup;
 
   /// No description provided for @settingsAccount.

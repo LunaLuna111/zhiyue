@@ -720,7 +720,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAppearance => '外観';
 
   @override
-  String get settingsBackup => 'バックアップ';
+  String get settingsBackup => 'クラウドバックアップ';
 
   @override
   String get settingsAccount => 'アカウント';

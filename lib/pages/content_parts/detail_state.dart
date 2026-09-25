@@ -26,6 +26,8 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   double _answerOverscrollRaw = 0;
   bool _answerSwitchBusy = false;
   bool _answerJumpInProgress = false;
+  bool _showInitialSkeleton = false;
+  DateTime? _initialSkeletonStartedAt;
   String _busyAction = '';
   bool _authorFollowBusy = false;
   bool? _authorFollowingOverride;
@@ -49,6 +51,12 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       if (_readableLength(object) > 0 || _hasUsablePreview(object)) {
         _document = object;
         _source = '推荐/列表响应随附内容';
+        // The list already gave us a stable first frame. Keep the skeleton
+        // for one short frame so the route does not flash raw preview text,
+        // but do not couple it to the slower metadata requests below.
+        _showInitialSkeleton = true;
+        _initialSkeletonStartedAt = DateTime.now();
+        unawaited(_finishInitialSkeleton());
       }
     }
     _previousAnswerPreview = widget.previousAnswer;
@@ -324,8 +332,22 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _maybeLoadRelatedAnswers();
         });
+        await _finishInitialSkeleton();
       }
     }
+  }
+
+  Future<void> _finishInitialSkeleton() async {
+    final startedAt = _initialSkeletonStartedAt;
+    if (startedAt == null) return;
+    const minimumVisible = Duration(milliseconds: 360);
+    final remaining = minimumVisible - DateTime.now().difference(startedAt);
+    if (remaining > Duration.zero) await Future<void>.delayed(remaining);
+    if (!mounted || !_showInitialSkeleton) return;
+    setState(() {
+      _showInitialSkeleton = false;
+      _initialSkeletonStartedAt = null;
+    });
   }
 
   Future<void> _persistAnswerCache(Map<String, dynamic> document) async {
@@ -722,6 +744,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   @override
   Widget build(BuildContext context) {
     final document = _document;
+    final detailReady = document != null && !_showInitialSkeleton;
     final semantic = document ?? _initialSemantic ?? const <String, dynamic>{};
     final question = semantic['question'];
     final questionMap = question is Map
@@ -910,8 +933,13 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             size: 46,
             iconSize: 24,
           ),
-          actions: [detailActionGroup],
-          title: document == null
+          actions: [
+            if (_showInitialSkeleton)
+              const ZhSkeleton(width: 104, height: 40, radius: 20)
+            else
+              detailActionGroup,
+          ],
+          title: !detailReady
               ? const ZhSkeleton(width: 132, height: 18, radius: 9)
               : ContentDetailAppBarTitle(title: authorDisplayName),
         ),
@@ -923,7 +951,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             // body, so later content can continue underneath the translucent
             // top chrome and be progressively blurred while scrolling.
             final topInset = MediaQuery.paddingOf(bodyContext).top;
-            final body = desktop && document != null
+            final body = desktop && detailReady
                 ? ZhResponsiveTwoPane(
                     primary: _body(
                       topInset: topInset,
@@ -947,7 +975,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             return body;
           },
         ),
-        bottomNavigationBar: document == null
+        bottomNavigationBar: !detailReady
             ? null
             : DetailEngagementBar(
                 metrics: documentMetrics!,

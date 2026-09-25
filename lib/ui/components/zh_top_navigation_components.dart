@@ -1843,30 +1843,35 @@ class ZhLiquidGlassTopNavigation extends StatelessWidget
               const Positioned.fill(child: ZhProgressiveGlassBackdrop()),
               Padding(
                 padding: EdgeInsets.fromLTRB(8, topInset + 8, 12, 8),
-                child: Row(
-                  children: [
-                    if (onMenuPressed != null) ...[
-                      Semantics(
-                        button: true,
-                        label: context.zhL10n.drawerOpen,
-                        child: ZhLiquidGlassIconButton(
-                          key: const ValueKey('home-drawer-button'),
-                          icon: const Icon(Icons.menu_rounded),
-                          onPressed: onMenuPressed,
-                          semanticLabel: context.zhL10n.drawerOpen,
-                          size: 48,
-                          iconSize: 23,
+                child: Transform.translate(
+                  // Leave a little more breathing room below the status
+                  // chrome without changing the feed's scroll contract.
+                  offset: const Offset(0, 6),
+                  child: Row(
+                    children: [
+                      if (onMenuPressed != null) ...[
+                        Semantics(
+                          button: true,
+                          label: context.zhL10n.drawerOpen,
+                          child: ZhLiquidGlassIconButton(
+                            key: const ValueKey('home-drawer-button'),
+                            icon: const Icon(Icons.menu_rounded),
+                            onPressed: onMenuPressed,
+                            semanticLabel: context.zhL10n.drawerOpen,
+                            size: 48,
+                            iconSize: 23,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.center,
+                          child: constrainedTabs,
                         ),
                       ),
-                      const SizedBox(width: 6),
                     ],
-                    Expanded(
-                      child: Align(
-                        alignment: Alignment.center,
-                        child: constrainedTabs,
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ],

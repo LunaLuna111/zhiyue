@@ -724,7 +724,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppearance => 'Appearance';
 
   @override
-  String get settingsBackup => 'Backup';
+  String get settingsBackup => 'Cloud backup';
 
   @override
   String get settingsAccount => 'Account';

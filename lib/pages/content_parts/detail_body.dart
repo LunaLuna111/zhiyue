@@ -57,7 +57,7 @@ extension _ContentDetailBody on _ContentDetailPageState {
 
   Widget _body({double topInset = 0, Widget? answerQuestionHeader}) {
     final l10n = context.zhL10n;
-    if (_loading && _document == null) {
+    if (_showInitialSkeleton || (_loading && _document == null)) {
       return ZhContentDetailSkeleton(
         topInset: topInset,
         showQuestionHeader: answerQuestionHeader != null,
@@ -360,7 +360,10 @@ class _CollapsibleAnswerQuestionHeaderDelegate
     required this.topInset,
   });
 
-  static const double _height = 80;
+  // Two-line question titles plus the source/count row can exceed 80 logical
+  // pixels on Android's default text metrics. Leave a small fixed reserve so
+  // the collapsing header never paints a RenderFlex overflow stripe.
+  static const double _height = 88;
 
   final Widget child;
   final double topInset;

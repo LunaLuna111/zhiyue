@@ -398,10 +398,15 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
   }
 
   void _openCategory(_SettingsCategory category) {
-    if (category == _SettingsCategory.licenses) {
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const OpenSourceLicensesPage()));
+    final Widget? directPage = switch (category) {
+      _SettingsCategory.backup => WebDavSyncPage(service: _webDav),
+      _SettingsCategory.logs => DiagnosticLogsPage(session: session),
+      _SettingsCategory.licenses => const OpenSourceLicensesPage(),
+      _SettingsCategory.updates => const AppUpdatePage(),
+      _ => null,
+    };
+    if (directPage != null) {
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => directPage));
       return;
     }
     Navigator.of(context).push(
@@ -616,33 +621,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
           ),
         ];
       case _SettingsCategory.backup:
-        return [
-          _SettingsGroup(
-            children: [
-              AnimatedBuilder(
-                animation: _webDav,
-                builder: (context, _) => _ActionTile(
-                  key: const ValueKey('webdav-sync-setting'),
-                  icon: Icons.cloud_sync_outlined,
-                  title: l10n.settingsWebDav,
-                  subtitle: _webDav.settings?.isConfigured == true
-                      ? (_webDav.status.message.isEmpty
-                            ? l10n.settingsWebDavConfigured
-                            : localizedWebDavStatusMessage(
-                                l10n,
-                                _webDav.status.message,
-                              ))
-                      : l10n.settingsWebDavSubtitle,
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => WebDavSyncPage(service: _webDav),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ];
+        return const <Widget>[];
       case _SettingsCategory.account:
         final hasAccountFeatures =
             widget.api != null || session.hasAuthorization;
@@ -684,24 +663,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
           ),
         ];
       case _SettingsCategory.logs:
-        return [
-          _SettingsGroup(
-            children: [
-              _ActionTile(
-                icon: Icons.bug_report_outlined,
-                title: l10n.settingsDiagnostics,
-                subtitle: session.appLoggingEnabled
-                    ? l10n.settingsDiagnosticsOn
-                    : l10n.settingsDiagnosticsOff,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => DiagnosticLogsPage(session: session),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ];
+        return const <Widget>[];
       case _SettingsCategory.licenses:
         // The top-level entry opens the dedicated page directly. Keep this
         // branch exhaustive for the category switch if a caller reuses it.
@@ -734,21 +696,7 @@ class _AppSettingsPageState extends State<AppSettingsPage> {
           ),
         ];
       case _SettingsCategory.updates:
-        return [
-          _SettingsGroup(
-            children: [
-              _ActionTile(
-                key: const ValueKey('app-update-setting'),
-                icon: Icons.system_update_alt_rounded,
-                title: l10n.settingsUpdate,
-                subtitle: l10n.settingsUpdateSubtitle,
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const AppUpdatePage()),
-                ),
-              ),
-            ],
-          ),
-        ];
+        return const <Widget>[];
       case _SettingsCategory.data:
         return [
           _SettingsGroup(

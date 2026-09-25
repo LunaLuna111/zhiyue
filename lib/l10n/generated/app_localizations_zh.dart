@@ -720,7 +720,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAppearance => '外观';
 
   @override
-  String get settingsBackup => '备份';
+  String get settingsBackup => '云备份';
 
   @override
   String get settingsAccount => '账号';
@@ -4987,7 +4987,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settingsAppearance => '外觀';
 
   @override
-  String get settingsBackup => '備份';
+  String get settingsBackup => '雲端備份';
 
   @override
   String get settingsAccount => '帳號';

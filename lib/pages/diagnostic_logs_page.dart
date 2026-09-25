@@ -229,29 +229,41 @@ class _LogEntryTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: ZhSpace.sm),
       child: ZhSurface(
         padding: EdgeInsets.zero,
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-          leading: Icon(Icons.circle, size: 10, color: color),
-          title: Text(entry.message),
-          subtitle: Text(
-            '${formatTime(entry.occurredAt)} · ${_categoryLabel(l10n)} · ${_levelLabel(l10n)}',
-          ),
-          children: [
-            if (entry.details.isEmpty)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(context.zhL10n.diagnosticNoDetails),
-              )
-            else
-              Align(
-                alignment: Alignment.centerLeft,
-                child: SelectableText(
-                  const JsonEncoder.withIndent('  ').convert(entry.details),
-                  style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+        // ShadCard paints its fill through a DecoratedBox. ExpansionTile's
+        // ink must have a Material immediately above it, otherwise Flutter's
+        // debug check reports an unhandled error and hides the splash.
+        child: Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 2,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            leading: Icon(Icons.circle, size: 10, color: color),
+            title: Text(entry.message),
+            subtitle: Text(
+              '${formatTime(entry.occurredAt)} · ${_categoryLabel(l10n)} · ${_levelLabel(l10n)}',
+            ),
+            children: [
+              if (entry.details.isEmpty)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(context.zhL10n.diagnosticNoDetails),
+                )
+              else
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: SelectableText(
+                    const JsonEncoder.withIndent('  ').convert(entry.details),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -134,10 +134,7 @@ class _CommentEditingController extends TextEditingController {
     TextStyle? style,
     required bool withComposing,
   }) {
-    if (_inlineEmoticons.isEmpty ||
-        (withComposing &&
-            value.composing.isValid &&
-            !value.composing.isCollapsed)) {
+    if (_inlineEmoticons.isEmpty) {
       return super.buildTextSpan(
         context: context,
         style: style,
@@ -145,13 +142,49 @@ class _CommentEditingController extends TextEditingController {
       );
     }
     final spans = <InlineSpan>[];
+    final composing =
+        withComposing && value.composing.isValid && !value.composing.isCollapsed
+        ? value.composing
+        : null;
+
+    void appendPlainText(int start, int end) {
+      if (start >= end) return;
+      if (composing == null ||
+          end <= composing.start ||
+          start >= composing.end) {
+        spans.add(TextSpan(text: text.substring(start, end)));
+        return;
+      }
+      final composingStyle = style?.copyWith(
+        decoration: TextDecoration.underline,
+      );
+      if (start < composing.start) {
+        spans.add(TextSpan(text: text.substring(start, composing.start)));
+      }
+      final composingStart = start < composing.start ? composing.start : start;
+      final composingEnd = end > composing.end ? composing.end : end;
+      if (composingStart < composingEnd) {
+        spans.add(
+          TextSpan(
+            text: text.substring(composingStart, composingEnd),
+            style:
+                composingStyle ??
+                const TextStyle(decoration: TextDecoration.underline),
+          ),
+        );
+      }
+      if (composingEnd < end) {
+        spans.add(TextSpan(text: text.substring(composingEnd, end)));
+      }
+    }
+
     final pattern = RegExp(r'\[[^\]\n]{1,32}\]');
     var offset = 0;
     for (final match in pattern.allMatches(text)) {
       final emoticon = _inlineEmoticons[match.group(0)];
       if (emoticon == null) continue;
       if (match.start > offset) {
-        spans.add(TextSpan(text: text.substring(offset, match.start)));
+        appendPlainText(offset, match.start);
       }
       spans.add(
         WidgetSpan(
@@ -165,7 +198,7 @@ class _CommentEditingController extends TextEditingController {
       );
       offset = match.end;
     }
-    if (offset < text.length) spans.add(TextSpan(text: text.substring(offset)));
+    if (offset < text.length) appendPlainText(offset, text.length);
     return TextSpan(style: style, children: spans);
   }
 

@@ -203,19 +203,13 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
     }
   }
 
-  Map<String, String> get _requestHeaders =>
-      _homeFeedRequestHeaders(widget.channel);
   Future<ApiResponse> _initialRequest() => switch (widget.channel) {
     HomeFeedChannel.following => widget.api.getUri(
       widget.api.followingFeedInitialUri(
         feedType: _followingFeedTypeForLabel(_followingFilter),
       ),
-      headers: _requestHeaders,
     ),
-    HomeFeedChannel.hot => widget.api.getUri(
-      widget.api.hotListInitialUri(),
-      headers: _requestHeaders,
-    ),
+    HomeFeedChannel.hot => widget.api.getUri(widget.api.hotListInitialUri()),
     _ => widget.api.getUri(widget.api.recommendationFeedInitialUri()),
   };
   Future<ApiResponse> _initialOrPreloadedRequest() {
@@ -283,7 +277,6 @@ class _FeedStreamTabState extends State<_FeedStreamTab>
                 : _initialOrPreloadedRequest())
           : await widget.api.getUri(
               widget.api.validatePagingUri(_next!),
-              headers: _requestHeaders,
             );
       if (!mounted || !isRequestScopeCurrent()) return;
       if (!response.isSuccess) {

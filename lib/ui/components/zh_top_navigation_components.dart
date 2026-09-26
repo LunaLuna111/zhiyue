@@ -702,35 +702,58 @@ class ZhLiquidGlassCapsuleMenuActionGroup<T> extends StatelessWidget {
       );
     }
 
-    // The package's lightweight items mode supports one morphing menu per
-    // group. The detail toolbar needs two independently scrollable menus, so
-    // use children mode: one shared glass shell, with two GlassMenu triggers
-    // inside it. Both menus clamp to safe screen bounds and scroll when the
-    // available height is smaller than the item list.
-    return GlassButtonGroup(
-      borderRadius: 28,
-      settings: ZhLiquidGlassCapsuleActionGroup._settings,
-      quality: GlassQuality.standard,
-      useOwnLayer: true,
-      showDividers: false,
-      children: [
-        for (final action in directActions) _buildGlassActionButton(action),
-        _buildGlassMenu(
-          icon: secondaryMenuIcon!,
-          semanticLabel: secondaryMenuSemanticLabel!,
-          items: secondaryMenuItems!,
-          menuWidth: secondaryMenuWidth,
-          menuAlignment: secondaryMenuAlignment,
-          onSelected: onSelected,
-        ),
-        _buildGlassMenu(
-          icon: menuIcon,
-          semanticLabel: menuSemanticLabel,
-          items: menuItems,
-          menuWidth: menuWidth,
-          menuAlignment: menuAlignment,
-          onSelected: onSelected,
-        ),
+    // There are two menus in the detail toolbar. Keep the export menu as a
+    // local morphing trigger, but let the main menu own the whole toolbar
+    // capsule. This is the same composition used by the search page: when
+    // the rightmost button is tapped, the source capsule disappears and the
+    // Liquid Glass menu grows from that toolbar instead of leaving a second
+    // static glass shell behind it.
+    return GlassMenu(
+      menuAlignment: menuAlignment,
+      autoAdjustToScreen: true,
+      menuPadding: const EdgeInsets.all(12),
+      menuWidth: menuWidth,
+      menuBorderRadius: 28,
+      itemBorderRadius: 20,
+      settings: _zhFrostedMenuSettings,
+      quality: GlassQuality.minimal,
+      triggerBuilder: (context, toggleMenu) => GlassButtonGroup(
+        borderRadius: 28,
+        settings: ZhLiquidGlassCapsuleActionGroup._settings,
+        quality: GlassQuality.standard,
+        useOwnLayer: true,
+        showDividers: false,
+        children: [
+          for (final action in directActions) _buildGlassActionButton(action),
+          _buildGlassMenu(
+            icon: secondaryMenuIcon!,
+            semanticLabel: secondaryMenuSemanticLabel!,
+            items: secondaryMenuItems!,
+            menuWidth: secondaryMenuWidth,
+            menuAlignment: secondaryMenuAlignment,
+            onSelected: onSelected,
+          ),
+          _buildGlassActionButton(
+            ZhLiquidGlassCapsuleAction(
+              icon: menuIcon,
+              semanticLabel: menuSemanticLabel,
+              onPressed: toggleMenu,
+            ),
+          ),
+        ],
+      ),
+      items: [
+        for (final item in menuItems)
+          GlassMenuItem(
+            title: item.label,
+            icon: _zhMenuIconSlot(item.icon),
+            subtitle: item.subtitle,
+            enabled: item.enabled,
+            isDestructive: item.destructive,
+            onTap: item.enabled
+                ? () => onSelected(item.value)
+                : _disabledAction,
+          ),
       ],
     );
   }

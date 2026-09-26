@@ -18,10 +18,7 @@ class ColumnArticlesPage extends StatelessWidget {
         ? context.zhL10n.columnFallbackTitle(columnToken)
         : title,
     api: api,
-    loadInitial: () => api.get(
-      '/columns/${Uri.encodeComponent(columnToken)}/articles',
-      query: const {'limit': 10, 'offset': 0},
-    ),
+    loadInitial: () => api.getUri(api.columnArticlesUri(columnToken)),
     header: ColumnMetadataHeader(api: api, columnToken: columnToken),
     onObjectTap: (context, value) => openDetectedObject(context, api, value),
   );
@@ -67,8 +64,8 @@ class _ColumnMetadataHeaderState extends State<ColumnMetadataHeader> {
   Future<void> _load() async {
     setState(() => _state = null);
     try {
-      final response = await widget.api.get(
-        '/columns/${Uri.encodeComponent(widget.columnToken)}',
+      final response = await widget.api.getUri(
+        widget.api.columnDetailUri(widget.columnToken),
       );
       if (mounted) setState(() => _state = response);
     } catch (error) {
@@ -82,9 +79,8 @@ class _ColumnMetadataHeaderState extends State<ColumnMetadataHeader> {
         builder: (_) => PagedListPage(
           title: context.zhL10n.columnFollowersTitle,
           api: widget.api,
-          loadInitial: () => widget.api.get(
-            '/columns/${Uri.encodeComponent(widget.columnToken)}/followers',
-            query: const {'offset': 0},
+          loadInitial: () => widget.api.getUri(
+            widget.api.columnFollowersUri(widget.columnToken),
           ),
           onObjectTap: (context, value) =>
               openDetectedObject(context, widget.api, value),

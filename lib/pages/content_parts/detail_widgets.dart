@@ -410,7 +410,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
     ZhLiquidGlassActionItem(
       icon: Icon(
         Icons.change_history_outlined,
-        color: widget.relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
+        color: widget.relationship.isUpvoted ? ZhPalette.accent : null,
       ),
       label: widget.metrics.voteupCount == null
           ? context.zhL10n.commonLike
@@ -429,9 +429,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
         quarterTurns: 2,
         child: Icon(
           Icons.change_history_outlined,
-          color: widget.relationship.isDownvoted
-              ? ZhPalette.accent
-              : ZhPalette.ink,
+          color: widget.relationship.isDownvoted ? ZhPalette.accent : null,
         ),
       ),
       label: context.zhL10n.detailDownvote,
@@ -459,7 +457,7 @@ class _DetailEngagementBarState extends State<DetailEngagementBar> {
         Icons.star_border_rounded,
         color: widget.relationship.isFavorited == true
             ? ZhPalette.accent
-            : ZhPalette.ink,
+            : null,
       ),
       label: widget.metrics.favoriteCount == null
           ? context.zhL10n.detailFavorite

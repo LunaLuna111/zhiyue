@@ -27,7 +27,9 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   bool _answerSwitchBusy = false;
   bool _answerJumpInProgress = false;
   bool _showInitialSkeleton = false;
+  bool _initialSkeletonFinishing = false;
   DateTime? _initialSkeletonStartedAt;
+  bool _answerMetadataWarmupStarted = false;
   String _busyAction = '';
   bool _authorFollowBusy = false;
   bool? _authorFollowingOverride;
@@ -52,11 +54,12 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         _document = object;
         _source = '推荐/列表响应随附内容';
         // The list already gave us a stable first frame. Keep the skeleton
-        // for one short frame so the route does not flash raw preview text,
-        // but do not couple it to the slower metadata requests below.
+        // until the detail request has settled. Do not reveal the compact
+        // list projection while the full answer/article body is still being
+        // assembled; that intermediate frame is visually misleading and
+        // makes the route look like it loaded twice.
         _showInitialSkeleton = true;
         _initialSkeletonStartedAt = DateTime.now();
-        unawaited(_finishInitialSkeleton());
       }
     }
     _previousAnswerPreview = widget.previousAnswer;
@@ -82,13 +85,6 @@ class _ContentDetailPageState extends State<ContentDetailPage>
       ..dispose();
     super.dispose();
   }
-
-  String get _path => switch (widget.contentType) {
-    'answer' => '/answers/v2/${Uri.encodeComponent(widget.contentId)}',
-    'article' => '/articles/v2/${Uri.encodeComponent(widget.contentId)}',
-    'pin' => '/pins/v2/${Uri.encodeComponent(widget.contentId)}',
-    _ => throw StateError('unsupported content type'),
-  };
 
   bool _hasUsablePreview(Map<String, dynamic> value) {
     final hasBodyPreview =
@@ -187,6 +183,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
                 cached.document,
                 cacheIsFresh ? '本地缓存（30 分钟内）' : '本地缓存（已过期，正在更新）',
               );
+              _revealInitialSkeletonIfReady();
             }
             // A previous failed/partial response must never become a fresh
             // blank detail. Keep the list preview visible, then let the
@@ -235,73 +232,54 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           )) {
             networkSucceeded = true;
             _adopt(normalized, '回答详情预加载');
+            _revealInitialSkeletonIfReady();
             useCachedDocument = true;
           }
         }
       }
       if (!useCachedDocument) {
         final detailQuery = contentDetailRequestParameters(widget.initialValue);
-        final response = await widget.api.get(
-          _path,
-          query: widget.contentType == 'pin'
-              ? {...detailQuery, 'scene': ''}
-              : detailQuery,
+        final response = await widget.api.getUri(
+          widget.api.contentDetailUri(
+            contentType: widget.contentType,
+            contentId: widget.contentId,
+            query: widget.contentType == 'pin'
+                ? {...detailQuery, 'scene': ''}
+                : detailQuery,
+          ),
         );
         if (!mounted) return;
         if (response.isSuccess && response.jsonMap != null) {
           networkSucceeded = true;
           _adopt(response.jsonMap!, '官方 App v2 移动接口');
+          _revealInitialSkeletonIfReady();
           // Do not wait for the detail metadata chain before warming the next
           // answer. The question feed and the current answer metadata are
           // independent requests, so starting here removes the most visible
           // source of a loading ring during vertical continuation.
           _startRelatedAnswerPreload();
           if (widget.contentType == 'answer') {
-            final metadata = await widget.api.get(
-              '/v4/answers/${Uri.encodeComponent(widget.contentId)}',
-            );
-            if (!mounted) return;
-            if (metadata.isSuccess && metadata.jsonMap != null) {
-              _mergeVerifiedMetadata(metadata.jsonMap!);
-            }
-            final current = _document;
-            final needsVideoMetadata =
-                current != null &&
-                contentVideosOf(current).any(
-                  (video) =>
-                      video.videoId.isNotEmpty && video.sourceUrls.isEmpty,
-                );
-            if (current == null ||
-                ContentMetrics.from(current).createdTime == null ||
-                needsVideoMetadata) {
-              final publicMetadata = await widget.api.publicWebGet(
-                '/api/v4/answers/${Uri.encodeComponent(widget.contentId)}',
-                query: const {
-                  'include':
-                      'author,question,attachment,video_info,thumbnail_extra_info',
-                },
-              );
-              if (!mounted) return;
-              if (publicMetadata.isSuccess && publicMetadata.jsonMap != null) {
-                _mergeVerifiedMetadata(publicMetadata.jsonMap!);
-              }
-            }
+            _startAnswerMetadataWarmup();
           }
         } else {
           if (widget.contentType == 'answer') {
-            final fallback = await widget.api.publicWebGet(
-              '/api/v4/answers/${Uri.encodeComponent(widget.contentId)}',
-              query: const {
-                'include':
-                    'content,excerpt,author,question,attachment,video_info,'
-                    'thumbnail_extra_info',
-              },
+            final fallback = await widget.api.publicWebGetUri(
+              widget.api.publicAnswerUri(
+                widget.contentId,
+                query: const {
+                  'include':
+                      'content,excerpt,author,question,attachment,video_info,'
+                      'thumbnail_extra_info',
+                },
+              ),
             );
             if (!mounted) return;
             if (fallback.isSuccess && fallback.jsonMap != null) {
               networkSucceeded = true;
               _adopt(fallback.jsonMap!, '匿名 www API v4 回退');
+              _revealInitialSkeletonIfReady();
               _startRelatedAnswerPreload();
+              _startAnswerMetadataWarmup();
             } else if (_document == null) {
               setState(() {
                 _error = response;
@@ -338,16 +316,91 @@ class _ContentDetailPageState extends State<ContentDetailPage>
   }
 
   Future<void> _finishInitialSkeleton() async {
+    if (_initialSkeletonFinishing) return;
     final startedAt = _initialSkeletonStartedAt;
     if (startedAt == null) return;
+    _initialSkeletonFinishing = true;
     const minimumVisible = Duration(milliseconds: 360);
     final remaining = minimumVisible - DateTime.now().difference(startedAt);
-    if (remaining > Duration.zero) await Future<void>.delayed(remaining);
-    if (!mounted || !_showInitialSkeleton) return;
-    setState(() {
-      _showInitialSkeleton = false;
-      _initialSkeletonStartedAt = null;
-    });
+    try {
+      if (remaining > Duration.zero) await Future<void>.delayed(remaining);
+      if (!mounted || !_showInitialSkeleton) return;
+      setState(() {
+        _showInitialSkeleton = false;
+        _initialSkeletonStartedAt = null;
+      });
+    } finally {
+      _initialSkeletonFinishing = false;
+    }
+  }
+
+  void _revealInitialSkeletonIfReady() {
+    final document = _document;
+    if (document == null || !_hasReadableBody(document)) return;
+    if (_source == '推荐/列表响应随附内容') return;
+    unawaited(_finishInitialSkeleton());
+  }
+
+  void _startAnswerMetadataWarmup() {
+    if (widget.contentType != 'answer' || _answerMetadataWarmupStarted) {
+      return;
+    }
+    _answerMetadataWarmupStarted = true;
+    unawaited(_loadAnswerMetadata());
+  }
+
+  Future<void> _loadAnswerMetadata() async {
+    try {
+      final metadata = await widget.api.getUri(
+        widget.api.answerMetadataUri(widget.contentId),
+      );
+      if (!mounted) return;
+      if (metadata.isSuccess && metadata.jsonMap != null) {
+        _mergeVerifiedMetadata(metadata.jsonMap!);
+      }
+      final current = _document;
+      final needsVideoMetadata =
+          current != null &&
+          contentVideosOf(current).any(
+            (video) => video.videoId.isNotEmpty && video.sourceUrls.isEmpty,
+          );
+      if (current == null ||
+          ContentMetrics.from(current).createdTime == null ||
+          needsVideoMetadata) {
+        final publicMetadata = await widget.api.publicWebGetUri(
+          widget.api.publicAnswerUri(
+            widget.contentId,
+            query: const {
+              'include':
+                  'author,question,attachment,video_info,thumbnail_extra_info',
+            },
+          ),
+        );
+        if (!mounted) return;
+        if (publicMetadata.isSuccess && publicMetadata.jsonMap != null) {
+          _mergeVerifiedMetadata(publicMetadata.jsonMap!);
+        }
+      }
+      final latest = _document;
+      if (latest != null) {
+        _revealInitialSkeletonIfReady();
+        unawaited(_persistAnswerCache(latest));
+      }
+    } catch (error, stackTrace) {
+      _recordAnswerPreload(
+        '回答详情元数据后台补全失败',
+        level: AppLogLevel.warning,
+        details: {'content_id': widget.contentId},
+      );
+      unawaited(
+        AppLogStore.instance.recordError(
+          error,
+          stackTrace,
+          message: '回答详情元数据后台补全失败',
+          category: AppLogCategory.performance,
+        ),
+      );
+    }
   }
 
   Future<void> _persistAnswerCache(Map<String, dynamic> document) async {
@@ -537,9 +590,12 @@ class _ContentDetailPageState extends State<ContentDetailPage>
         return cached.document;
       }
       final stopwatch = Stopwatch()..start();
-      final response = await widget.api.get(
-        '/answers/v2/${Uri.encodeComponent(answerId)}',
-        query: contentDetailRequestParameters(source),
+      final response = await widget.api.getUri(
+        widget.api.contentDetailUri(
+          contentType: 'answer',
+          contentId: answerId,
+          query: contentDetailRequestParameters(source),
+        ),
       );
       if (!response.isSuccess || response.jsonMap == null) {
         _recordAnswerPreload(
@@ -732,6 +788,9 @@ class _ContentDetailPageState extends State<ContentDetailPage>
           }
         }
         _document = merged;
+      }
+      if (_source == '推荐/列表响应随附内容' && _hasReadableBody(normalized)) {
+        _source = '官方详情元数据补全';
       }
       _error = null;
     });
@@ -934,7 +993,7 @@ class _ContentDetailPageState extends State<ContentDetailPage>
             iconSize: 24,
           ),
           actions: [
-            if (_showInitialSkeleton)
+            if (!detailReady)
               const ZhSkeleton(width: 104, height: 40, radius: 20)
             else
               detailActionGroup,

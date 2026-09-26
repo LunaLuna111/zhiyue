@@ -13,18 +13,6 @@ import 'api_response.dart';
 class ApiTransport implements zhihu_api.ApiTransport {
   ApiTransport() : _client = http.Client();
 
-  static const _allowedHeaders = {
-    'accept',
-    'x-api-version',
-    'x-app-version',
-    'x-app-build',
-    'x-app-bundleid',
-    'x-app-flavor',
-    'x-network-type',
-    'x-zse-93',
-    'x-ad-styles',
-  };
-
   final http.Client _client;
 
   @override
@@ -35,7 +23,7 @@ class ApiTransport implements zhihu_api.ApiTransport {
     required List<int>? body,
     required int maxResponseBytes,
   }) async {
-    if (uri.host == 'lens.zhihu.com') {
+    if (zhihu_api.ZhihuApiTransportPolicy.isLensVideoMetadataUri(uri)) {
       throw const ApiTransportException('浏览器预览暂不代理 Lens 视频元数据；请使用回答内已有播放列表');
     }
     if (method != 'GET' || body != null) {
@@ -43,17 +31,15 @@ class ApiTransport implements zhihu_api.ApiTransport {
         '桌面浏览器预览只允许访客 GET；POST 请在 Android/macOS 原生客户端中执行',
       );
     }
-    final bridgePrefix = uri.host == 'www.zhihu.com' ? '/web-api' : '/api';
-    final previewUri = Uri(
-      path: '$bridgePrefix${uri.path}',
-      query: uri.hasQuery ? uri.query : null,
-    );
+    final previewUri = zhihu_api.ZhihuApiTransportPolicy.browserBridgeUri(uri);
     try {
       final request = http.Request(method, previewUri)
         ..followRedirects = false
         ..maxRedirects = 0;
       for (final entry in headers.entries) {
-        if (_allowedHeaders.contains(entry.key.toLowerCase())) {
+        if (zhihu_api.ZhihuApiTransportPolicy.browserAllowedHeaders.contains(
+          entry.key.toLowerCase(),
+        )) {
           request.headers[entry.key] = entry.value;
         }
       }

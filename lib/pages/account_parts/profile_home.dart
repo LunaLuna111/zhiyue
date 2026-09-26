@@ -75,7 +75,9 @@ class _AccountProfileHomeState extends State<_AccountProfileHome> {
     });
     var loadStateCommitted = false;
     try {
-      final selfResponse = await widget.api.get('/people/self');
+      final selfResponse = await widget.api.getUri(
+        widget.api.accountSelfProfileUri(),
+      );
       if (!widget.session.hasAccountSession) {
         return;
       }

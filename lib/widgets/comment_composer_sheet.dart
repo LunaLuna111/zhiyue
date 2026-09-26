@@ -58,22 +58,28 @@ class CommentComposerSheet extends StatefulWidget {
     required this.onSubmit,
     this.maxLength = 5000,
     this.initialText = '',
+    this.initialSticker,
+    this.initialImage,
     this.initialEmoticonGroups,
     this.initialShowEmoticons = false,
     this.replyTarget,
     this.enableImage = true,
-    this.enableGift = true,
+    this.fullEditor = false,
+    this.onDraftChanged,
   });
 
   final ZhihuApiClient api;
   final String title;
   final int maxLength;
   final String initialText;
+  final CommentEmoticon? initialSticker;
+  final CommentImageAttachment? initialImage;
   final List<CommentEmoticonGroup>? initialEmoticonGroups;
   final bool initialShowEmoticons;
   final CommentReplyTarget? replyTarget;
   final bool enableImage;
-  final bool enableGift;
+  final bool fullEditor;
+  final ValueChanged<CommentComposerValue>? onDraftChanged;
   final Future<String?> Function(CommentComposerValue value) onSubmit;
 
   @override
@@ -92,7 +98,6 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
   CommentEmoticon? _selectedSticker;
   int _selectedGroup = 0;
   bool _showEmoticons = false;
-  bool _expandedComposer = true;
   bool _pendingEmoticons = false;
   int _surfaceTransition = 0;
   Timer? _imeTransitionTimer;
@@ -101,7 +106,6 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
   CommentImageAttachment? _image;
   Future<void>? _imageUploadFuture;
   bool _imageUploading = false;
-  bool _giftPanelPending = false;
   DateTime? _emoticonTransitionStartedAt;
   bool _emoticonFrameScheduled = false;
   bool _loadingCatalog = true;
@@ -121,6 +125,8 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       );
       _hasText = widget.initialText.trim().isNotEmpty;
     }
+    _selectedSticker = widget.initialSticker;
+    _image = widget.initialImage;
     _controller.addListener(_refresh);
     final initial = widget.initialEmoticonGroups;
     if (initial != null) {
@@ -203,6 +209,83 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
   void _refresh() {
     final hasText = _controller.text.trim().isNotEmpty;
     if (mounted && hasText != _hasText) setState(() => _hasText = hasText);
+    widget.onDraftChanged?.call(_draftValue());
+  }
+
+  CommentComposerValue _draftValue() => CommentComposerValue(
+    text: _controller.text,
+    sticker: _selectedSticker,
+    replyTarget: widget.replyTarget,
+    image: _image,
+  );
+
+  void _notifyDraftChanged() => widget.onDraftChanged?.call(_draftValue());
+
+  Future<void> _toggleFullEditor() async {
+    if (widget.fullEditor) {
+      Navigator.of(context).maybePop();
+      return;
+    }
+    final result = await Navigator.of(context).push<bool>(
+      PageRouteBuilder<bool>(
+        transitionDuration: const Duration(milliseconds: 260),
+        reverseTransitionDuration: const Duration(milliseconds: 220),
+        pageBuilder: (context, animation, secondaryAnimation) => Scaffold(
+          backgroundColor: ZhPalette.background,
+          resizeToAvoidBottomInset: true,
+          body: SafeArea(
+            bottom: false,
+            child: CommentComposerSheet(
+              api: widget.api,
+              title: widget.title,
+              maxLength: widget.maxLength,
+              initialText: _controller.text,
+              initialSticker: _selectedSticker,
+              initialImage: _image,
+              initialEmoticonGroups: _groups.isEmpty ? null : _groups,
+              initialShowEmoticons: _showEmoticons,
+              replyTarget: widget.replyTarget,
+              enableImage: widget.enableImage,
+              fullEditor: true,
+              onDraftChanged: (draft) {
+                if (!mounted) return;
+                if (_controller.text != draft.text) {
+                  _controller.value = TextEditingValue(
+                    text: draft.text,
+                    selection: TextSelection.collapsed(
+                      offset: draft.text.length,
+                    ),
+                  );
+                }
+                if (_selectedSticker != draft.sticker ||
+                    _image != draft.image) {
+                  setState(() {
+                    _selectedSticker = draft.sticker;
+                    _image = draft.image;
+                  });
+                }
+              },
+              onSubmit: widget.onSubmit,
+            ),
+          ),
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          final curved = CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          );
+          return FadeTransition(
+            opacity: curved,
+            child: ScaleTransition(
+              scale: Tween(begin: .97, end: 1.0).animate(curved),
+              alignment: Alignment.bottomCenter,
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+    if (mounted && result == true) Navigator.of(context).pop(true);
   }
 
   @override
@@ -225,15 +308,6 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       (_hasText || _selectedSticker != null || _image != null);
 
   bool get _compactComposer => widget.maxLength <= 5000;
-
-  String _composerTitle(BuildContext context) {
-    final l10n = context.zhL10n;
-    if (widget.replyTarget?.isReply == true) {
-      return l10n.commentPublishReply;
-    }
-    if (_compactComposer) return l10n.commentPublishComment;
-    return widget.title;
-  }
 
   String _submitLabel(BuildContext context) =>
       widget.replyTarget?.isReply == true
@@ -483,6 +557,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       return;
     }
     setState(() => _selectedSticker = value);
+    _notifyDraftChanged();
   }
 
   void _mention() {
@@ -498,46 +573,6 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       _showTip(context.zhL10n.commentMentioned(targetName));
     }
     _focusNode.requestFocus();
-  }
-
-  int? get _giftGroupIndex {
-    for (var index = 0; index < _groups.length; index++) {
-      if (_groups[index].emoticons.any((value) => !value.isInlineEmoji)) {
-        return index;
-      }
-    }
-    for (var index = 0; index < _groups.length; index++) {
-      if (_groups[index].type.trim().toLowerCase() == 'vip') return index;
-    }
-    return _groups.isEmpty ? null : 0;
-  }
-
-  void _openGiftPanel() {
-    final index = _giftGroupIndex;
-    if (index == null) {
-      if (_loadingCatalog) {
-        if (_giftPanelPending) return;
-        _giftPanelPending = true;
-        _showTip(context.zhL10n.commentLoadingGift);
-        unawaited(
-          _loadCatalog().whenComplete(() {
-            if (!mounted || !_giftPanelPending) return;
-            _giftPanelPending = false;
-            _openGiftPanel();
-          }),
-        );
-      } else {
-        _showTip(context.zhL10n.commentNoGifts);
-      }
-      return;
-    }
-    _giftPanelPending = false;
-    if (_showEmoticons) {
-      setState(() => _selectedGroup = index);
-      return;
-    }
-    _selectedGroup = index;
-    _toggleEmoticons();
   }
 
   Future<void> _pickImage() async {
@@ -556,6 +591,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         _pendingEmoticons = false;
         _error = '';
       });
+      _notifyDraftChanged();
       if (widget.api.canWrite) {
         await _ensureImageUploaded();
       } else {
@@ -603,6 +639,7 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
       }
       if (mounted && identical(_image, attachment)) {
         setState(() => _image = attachment.copyWith(url: url));
+        _notifyDraftChanged();
       }
     } finally {
       if (mounted) setState(() => _imageUploading = false);
@@ -677,6 +714,26 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
 
   @override
   Widget build(BuildContext context) {
+    if (widget.fullEditor) {
+      return _buildSurface(context, fullscreen: true);
+    }
+    return _KeyboardInsetLift(
+      // Once selected, the emoticon panel owns the keyboard area. Do not
+      // translate it with the retiring IME inset or it can disappear below
+      // the bottom-sheet gesture surface during Android's animation.
+      enabled: !_showEmoticons,
+      child: _buildSurface(context, fullscreen: false),
+    );
+  }
+
+  Widget _buildSurface(BuildContext context, {required bool fullscreen}) {
+    if (fullscreen) {
+      return SizedBox.expand(child: _buildSurfaceContent(context, true));
+    }
+    return _buildSurfaceContent(context, false);
+  }
+
+  Widget _buildSurfaceContent(BuildContext context, bool fullscreen) {
     // Subscribe only to stable metrics here. Reading MediaQuery.of(context)
     // made the complete editor (including the emoji grid) rebuild for every
     // intermediate IME inset during keyboard animation.
@@ -684,16 +741,16 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
         MediaQuery.sizeOf(context).height -
         MediaQuery.viewPaddingOf(context).top -
         ZhSpace.sm;
-    // The official editor uses a compact 164dp bottom surface and grows only
-    // when its own emoticon panel is visible. It is not a second titled page.
-    final collapsedHeight =
-        (_compactComposer ? (_expandedComposer ? 156.0 : 148.0) : 164.0) +
+    // The compact editor keeps the field and toolbar close together. The
+    // full editor takes the page's available height and has no title band.
+    final compactHeight =
+        (_compactComposer ? 140.0 : 164.0) +
         (_selectedSticker == null ? 0 : 48) +
         (_image == null ? 0 : 64) +
         (_error.isEmpty ? 0 : 36);
     final targetHeight = _showEmoticons
         ? maxHeight.clamp(390.0, 520.0)
-        : collapsedHeight.clamp(164.0, maxHeight);
+        : compactHeight.clamp(140.0, maxHeight);
     final replyHint = widget.replyTarget?.isReply == true
         ? (widget.replyTarget!.targetUserName.trim().isEmpty
               ? context.zhL10n.commentReply
@@ -701,143 +758,196 @@ class _CommentComposerSheetState extends State<CommentComposerSheet>
                   widget.replyTarget!.targetUserName.trim(),
                 ))
         : '';
-    return _KeyboardInsetLift(
-      // Once selected, the emoticon panel owns the keyboard area. Do not
-      // translate it with the retiring IME inset or it can disappear below
-      // the bottom-sheet gesture surface during Android's animation.
-      enabled: !_showEmoticons,
-      child: Material(
-        key: const Key('comment-composer-surface'),
-        color: Colors.transparent,
-        clipBehavior: Clip.none,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-        ),
-        child: Container(
-          height: targetHeight,
-          margin: const EdgeInsets.fromLTRB(2, 0, 2, 2),
-          padding: const EdgeInsets.fromLTRB(12, 4, 12, ZhSpace.xs),
-          decoration: BoxDecoration(
-            color: ZhPalette.background,
-            borderRadius: BorderRadius.circular(32),
-            border: Border.all(color: ZhPalette.border),
-            boxShadow: const [
-              BoxShadow(
-                color: Color(0x22000000),
-                blurRadius: 24,
-                offset: Offset(0, 8),
+    return Material(
+      key: const Key('comment-composer-surface'),
+      color: Colors.transparent,
+      clipBehavior: Clip.none,
+      shape: fullscreen
+          ? null
+          : const RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+      child: Container(
+        height: fullscreen ? double.infinity : targetHeight,
+        margin: fullscreen ? EdgeInsets.zero : const EdgeInsets.only(bottom: 2),
+        padding: fullscreen
+            ? EdgeInsets.fromLTRB(
+                16,
+                4,
+                16,
+                MediaQuery.viewPaddingOf(context).bottom,
+              )
+            : const EdgeInsets.fromLTRB(12, 4, 12, ZhSpace.xs),
+        decoration: fullscreen
+            ? BoxDecoration(color: ZhPalette.background)
+            : BoxDecoration(
+                color: ZhPalette.background,
+                borderRadius: BorderRadius.circular(28),
+                border: Border.all(color: ZhPalette.border),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x22000000),
+                    blurRadius: 24,
+                    offset: Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (_compactComposer)
-                _ComposerHeader(
-                  title: _composerTitle(context),
-                  expanded: _expandedComposer,
-                  onMention: _mention,
-                  onToggleExpanded: () =>
-                      setState(() => _expandedComposer = !_expandedComposer),
+        clipBehavior: fullscreen ? Clip.none : Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (fullscreen)
+              Expanded(
+                child: _buildTextEditor(
+                  context,
+                  replyHint: replyHint,
+                  fullscreen: true,
                 ),
+              )
+            else
               SizedBox(
-                height: _compactComposer
-                    ? (_expandedComposer ? 52.0 : 44.0)
-                    : 104.0,
-                child: TextField(
-                  key: const Key('comment-composer-field'),
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  autofocus: !_showEmoticons && !_pendingEmoticons,
-                  expands: true,
-                  minLines: null,
-                  maxLines: null,
-                  maxLength: widget.maxLength,
-                  textInputAction: TextInputAction.newline,
-                  style: TextStyle(
-                    color: ZhPalette.ink,
-                    fontSize: 15,
-                    height: 1.45,
-                  ),
-                  onTapOutside: (_) {},
-                  onTap: () {
-                    _pendingEmoticons = false;
-                    if (_showEmoticons) {
-                      setState(() => _showEmoticons = false);
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) _focusNode.requestFocus();
-                      });
-                    }
-                  },
-                  decoration: InputDecoration(
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    hintText: replyHint.isEmpty
-                        ? context.zhL10n.commentInputPlaceholder
-                        : replyHint,
-                    hintStyle: TextStyle(
-                      color: ZhPalette.subtleInk,
-                      fontSize: 17,
-                    ),
-                    counterText: '',
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-                  ),
+                height: _compactComposer ? 72.0 : 104.0,
+                child: _buildTextEditor(
+                  context,
+                  replyHint: replyHint,
+                  fullscreen: false,
                 ),
               ),
-              if (_selectedSticker != null)
-                _SelectedSticker(
-                  value: _selectedSticker!,
-                  onRemove: () => setState(() => _selectedSticker = null),
-                ),
-              if (_image != null)
-                _SelectedImage(
-                  value: _image!,
-                  uploading: _imageUploading,
-                  onRemove: () => setState(() => _image = null),
-                ),
-              if (_error.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: ZhSpace.xs),
-                  child: Text(
-                    _error,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                  ),
-                ),
+            if (_selectedSticker != null)
+              _SelectedSticker(
+                value: _selectedSticker!,
+                onRemove: () {
+                  setState(() => _selectedSticker = null);
+                  _notifyDraftChanged();
+                },
+              ),
+            if (_image != null)
+              _SelectedImage(
+                value: _image!,
+                uploading: _imageUploading,
+                onRemove: () {
+                  setState(() => _image = null);
+                  _notifyDraftChanged();
+                },
+              ),
+            if (_error.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: _ComposerToolbar(
-                  canSubmit: _canSubmit,
-                  sending: _sending,
-                  submitLabel: _submitLabel(context),
-                  onEmoticons: _toggleEmoticons,
-                  onImage: widget.enableImage ? _pickImage : null,
-                  onGift: widget.enableGift ? _openGiftPanel : null,
-                  onSubmit: _submit,
-                ),
-              ),
-              if (_showEmoticons)
-                Expanded(
-                  child: _EmoticonPanel(
-                    loading: _loadingCatalog,
-                    groups: _groups,
-                    selectedGroup: _selectedGroup,
-                    onGroup: (index) => setState(() => _selectedGroup = index),
-                    onEmoticon: _selectEmoticon,
-                    onBackspace: _backspace,
+                padding: const EdgeInsets.only(top: ZhSpace.xs),
+                child: Text(
+                  _error,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.error,
                   ),
                 ),
-            ],
-          ),
+              ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: fullscreen ? 0 : 4),
+              child: _ComposerToolbar(
+                canSubmit: _canSubmit,
+                sending: _sending,
+                submitLabel: _submitLabel(context),
+                onEmoticons: _toggleEmoticons,
+                onMention: _mention,
+                onImage: widget.enableImage ? _pickImage : null,
+                onSubmit: _submit,
+              ),
+            ),
+            if (_showEmoticons)
+              Expanded(
+                child: _EmoticonPanel(
+                  loading: _loadingCatalog,
+                  groups: _groups,
+                  selectedGroup: _selectedGroup,
+                  onGroup: (index) => setState(() => _selectedGroup = index),
+                  onEmoticon: _selectEmoticon,
+                  onBackspace: _backspace,
+                ),
+              ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildTextEditor(
+    BuildContext context, {
+    required String replyHint,
+    required bool fullscreen,
+  }) => Stack(
+    fit: StackFit.expand,
+    children: [
+      Padding(
+        padding: EdgeInsets.only(right: fullscreen ? 44 : 42),
+        child: TextField(
+          key: const Key('comment-composer-field'),
+          controller: _controller,
+          focusNode: _focusNode,
+          autofocus: !_showEmoticons && !_pendingEmoticons,
+          expands: true,
+          minLines: null,
+          maxLines: null,
+          maxLength: widget.maxLength,
+          textInputAction: TextInputAction.newline,
+          style: TextStyle(
+            color: ZhPalette.ink,
+            fontSize: fullscreen ? 17 : 15,
+            height: 1.45,
+          ),
+          onTapOutside: (_) {},
+          onTap: () {
+            _pendingEmoticons = false;
+            if (_showEmoticons) {
+              setState(() => _showEmoticons = false);
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) _focusNode.requestFocus();
+              });
+            }
+          },
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.transparent,
+            hintText: replyHint.isEmpty
+                ? context.zhL10n.commentInputPlaceholder
+                : replyHint,
+            hintStyle: TextStyle(
+              color: ZhPalette.subtleInk,
+              fontSize: fullscreen ? 18 : 17,
+            ),
+            counterText: '',
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            focusedBorder: InputBorder.none,
+            contentPadding: EdgeInsets.fromLTRB(4, fullscreen ? 12 : 8, 4, 4),
+          ),
+        ),
+      ),
+      Positioned(
+        top: -4,
+        right: -8,
+        child: Semantics(
+          button: true,
+          label: fullscreen
+              ? context.zhL10n.commentCollapse
+              : context.zhL10n.commentExpand,
+          child: IconButton(
+            key: const Key('comment-composer-expand'),
+            tooltip: fullscreen
+                ? context.zhL10n.commentCollapse
+                : context.zhL10n.commentExpand,
+            onPressed: _toggleFullEditor,
+            visualDensity: VisualDensity.compact,
+            icon: Icon(
+              fullscreen
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.open_in_full_rounded,
+              color: ZhPalette.mutedInk,
+              size: 22,
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 }

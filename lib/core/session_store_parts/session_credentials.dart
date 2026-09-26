@@ -19,9 +19,8 @@ mixin _SessionStoreCredentialsMixin on _SessionStoreCore {
     _SessionStoreCore._validateHeaderValue('Cookie', cookie);
     _SessionStoreCore._validateHeaderValue('X-MS-ID', msId);
     _SessionStoreCore._validateHeaderValue('X-Zse-96', xZse96);
-    final normalizedTarget = _SessionStoreCore.normalizeSignatureTarget(
-      xZse96Target,
-    );
+    final normalizedTarget = zhihu_api
+        .ZhihuApiSessionProtocol.normalizeSignatureTarget(xZse96Target);
     if (xZse96.trim().isEmpty != normalizedTarget.isEmpty) {
       throw const FormatException('X-Zse-96 与精确请求目标必须同时填写或同时留空');
     }

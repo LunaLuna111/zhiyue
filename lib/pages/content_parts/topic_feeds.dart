@@ -29,8 +29,8 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
   Future<void> _loadBasic() async {
     setState(() => _topicError = null);
     try {
-      final response = await widget.api.get(
-        '/topics/${Uri.encodeComponent(widget.topicId)}/basic',
+      final response = await widget.api.getUri(
+        widget.api.topicBasicUri(widget.topicId),
       );
       if (!mounted) return;
       setState(() {
@@ -51,9 +51,8 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
         builder: (_) => PagedListPage(
           title: context.zhL10n.topicFollowersTitle,
           api: widget.api,
-          loadInitial: () => widget.api.get(
-            '/topics/${Uri.encodeComponent(widget.topicId)}/followers',
-            query: const {'offset': 0},
+          loadInitial: () => widget.api.getUri(
+            widget.api.topicFollowersUri(widget.topicId),
           ),
           onObjectTap: (context, value) =>
               openDetectedObject(context, widget.api, value),
@@ -68,9 +67,8 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
         builder: (_) => PagedListPage(
           title: context.zhL10n.topicUnansweredTitle,
           api: widget.api,
-          loadInitial: () => widget.api.get(
-            '/topics/${Uri.encodeComponent(widget.topicId)}/unanswered_questions',
-            query: const {'offset': 0, 'limit': 10},
+          loadInitial: () => widget.api.getUri(
+            widget.api.topicUnansweredQuestionsUri(widget.topicId),
           ),
           onObjectTap: (context, value) =>
               openDetectedObject(context, widget.api, value),
@@ -109,9 +107,8 @@ class _TopicFeedsPageState extends State<TopicFeedsPage> {
         onFollowers: _openFollowers,
         onUnanswered: _openUnanswered,
       ),
-      loadInitial: () => widget.api.get(
-        '/topics/${Uri.encodeComponent(widget.topicId)}/essence_feeds',
-        query: const {'offset': 0, 'limit': 10},
+      loadInitial: () => widget.api.getUri(
+        widget.api.topicEssenceFeedsUri(widget.topicId),
       ),
       onObjectTap: (context, value) =>
           openDetectedObject(context, widget.api, value),

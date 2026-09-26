@@ -30,8 +30,8 @@ class _ComposerToolbar extends StatelessWidget {
     required this.sending,
     required this.submitLabel,
     required this.onEmoticons,
+    required this.onMention,
     required this.onImage,
-    required this.onGift,
     required this.onSubmit,
   });
 
@@ -39,8 +39,8 @@ class _ComposerToolbar extends StatelessWidget {
   final bool sending;
   final String submitLabel;
   final VoidCallback onEmoticons;
+  final VoidCallback onMention;
   final VoidCallback? onImage;
-  final VoidCallback? onGift;
   final VoidCallback onSubmit;
 
   @override
@@ -55,16 +55,16 @@ class _ComposerToolbar extends StatelessWidget {
           icon: const Icon(Icons.image_outlined, size: 26),
         ),
         _ComposerToolbarIcon(
-          key: const Key('comment-composer-gift'),
-          semanticLabel: 'GIF',
-          onPointerDown: onGift,
-          icon: const _GifToolbarIcon(),
-        ),
-        _ComposerToolbarIcon(
           key: const Key('comment-composer-emoticons'),
           semanticLabel: context.zhL10n.commentEmoji,
           onPointerDown: onEmoticons,
           icon: const _ComposerEmojiCircle(),
+        ),
+        _ComposerToolbarIcon(
+          key: const Key('comment-composer-mention'),
+          semanticLabel: context.zhL10n.commentMention,
+          onPointerDown: onMention,
+          icon: const Icon(Icons.alternate_email_rounded, size: 24),
         ),
         const Spacer(),
         SizedBox(
@@ -94,121 +94,29 @@ class _ComposerToolbar extends StatelessWidget {
   );
 }
 
-class _ComposerHeader extends StatelessWidget {
-  const _ComposerHeader({
-    required this.title,
-    required this.expanded,
-    required this.onToggleExpanded,
-    required this.onMention,
-  });
-
-  final String title;
-  final bool expanded;
-  final VoidCallback onToggleExpanded;
-  final VoidCallback onMention;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 48,
-    child: Row(
-      children: [
-        Semantics(
-          button: true,
-          label: context.zhL10n.commentMention,
-          child: GestureDetector(
-            key: const Key('comment-composer-mention'),
-            behavior: HitTestBehavior.opaque,
-            onTap: onMention,
-            child: CircleAvatar(
-              radius: 20,
-              backgroundColor: ZhPalette.softSurface,
-              child: Icon(
-                Icons.person_outline_rounded,
-                size: 24,
-                color: ZhPalette.mutedInk,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: ZhPalette.ink,
-              fontSize: 19,
-              fontWeight: FontWeight.w700,
-              height: 1.2,
-            ),
-          ),
-        ),
-        Semantics(
-          button: true,
-          label: expanded
-              ? context.zhL10n.commentCollapse
-              : context.zhL10n.commentExpand,
-          child: IconButton(
-            key: const Key('comment-composer-expand'),
-            tooltip: expanded
-                ? context.zhL10n.commentCollapse
-                : context.zhL10n.commentExpand,
-            onPressed: onToggleExpanded,
-            visualDensity: VisualDensity.compact,
-            icon: Icon(
-              expanded
-                  ? Icons.fullscreen_exit_rounded
-                  : Icons.open_in_full_rounded,
-              color: ZhPalette.mutedInk,
-              size: 22,
-            ),
-          ),
-        ),
-      ],
-    ),
-  );
-}
-
-class _GifToolbarIcon extends StatelessWidget {
-  const _GifToolbarIcon();
-
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 30,
-    height: 24,
-    alignment: Alignment.center,
-    decoration: BoxDecoration(
-      border: Border.all(color: ZhPalette.ink, width: 2),
-      borderRadius: BorderRadius.circular(6),
-    ),
-    child: Text(
-      'GIF',
-      style: TextStyle(
-        color: ZhPalette.ink,
-        fontSize: 9,
-        fontWeight: FontWeight.w800,
-      ),
-    ),
-  );
-}
-
 class _ComposerEmojiCircle extends StatelessWidget {
   const _ComposerEmojiCircle();
 
   @override
   Widget build(BuildContext context) => Container(
-    width: 24,
-    height: 24,
+    width: 30,
+    height: 30,
     alignment: Alignment.center,
     decoration: BoxDecoration(
       color: ZhPalette.softSurface,
       shape: BoxShape.circle,
-      border: Border.all(color: ZhPalette.softBorder, width: 1.5),
+      border: Border.all(color: ZhPalette.softBorder, width: 1),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: ZhPalette.isDark ? .18 : .06),
+          blurRadius: 5,
+          offset: const Offset(0, 2),
+        ),
+      ],
     ),
     child: Icon(
-      Icons.sentiment_satisfied_alt_rounded,
-      size: 17,
+      Icons.sentiment_satisfied_alt_outlined,
+      size: 19,
       color: ZhPalette.mutedInk,
     ),
   );

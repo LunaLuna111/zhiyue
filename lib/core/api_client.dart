@@ -15,6 +15,7 @@ import 'mobile_login_body_encoder.dart';
 export 'package:zhihu_api/zhihu_api.dart'
     show
         ZhihuApiClientBootstrapAndDiagnostics,
+        ZhihuApiClientContentRoutes,
         ZhihuApiClientContentWrites,
         ZhihuApiClientGuestBootstrap,
         ZhihuApiClientMobileLogin,

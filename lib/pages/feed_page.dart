@@ -599,30 +599,12 @@ class _HomeFeedPreloadPool {
       api.followingFeedInitialUri(
         feedType: _followingFeedTypeForLabel(_followingChoice),
       ),
-      headers: _homeFeedRequestHeaders(channel),
     ),
-    HomeFeedChannel.hot => api.getUri(
-      api.hotListInitialUri(),
-      headers: _homeFeedRequestHeaders(channel),
-    ),
+    HomeFeedChannel.hot => api.getUri(api.hotListInitialUri()),
     HomeFeedChannel.story => api.getSaltUri(api.saltStoryHomeUri()),
     HomeFeedChannel.recommend => api.getUri(api.recommendationFeedInitialUri()),
   };
 }
-
-Map<String, String> _homeFeedRequestHeaders(HomeFeedChannel channel) =>
-    switch (channel) {
-      HomeFeedChannel.following => const {
-        'x-api-version': '3.0.93',
-        'need_debug': '0',
-      },
-      HomeFeedChannel.hot => const {
-        'x-api-version': '3.1.8',
-        'x-ad-styles': '',
-        'isPreload': 'false',
-      },
-      _ => const {},
-    };
 
 bool isHomeFeedServiceRow(Map<String, dynamic> row) {
   final object = unwrapObject(row);

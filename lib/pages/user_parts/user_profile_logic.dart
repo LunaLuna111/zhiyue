@@ -55,17 +55,7 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
       number == null || number <= 0 ? name : '$name ${compactCount(number)}';
   Uri? _profileTabUri(Object? value) {
     final text = plainText(value);
-    if (text.isEmpty) return null;
-    final parsed = Uri.tryParse(text);
-    if (parsed == null) return null;
-    if (parsed.hasScheme) {
-      if (parsed.scheme != 'https' || parsed.host != ZhihuApiClient.apiHost) {
-        return null;
-      }
-      return parsed;
-    }
-    if (!text.startsWith('/')) return null;
-    return Uri.parse('https://${ZhihuApiClient.apiHost}$text');
+    return widget.api.apiUriFromServerValue(text);
   }
 
   List<_UserProfileTabSpec> _tabs(
@@ -385,7 +375,6 @@ extension _UserProfileDetailActions on _UserProfileDetailPageState {
           l10n.userProfileFollowingCollections,
           () => widget.api.getUri(
             widget.api.userFollowingCollectionsInitialUri(id),
-            headers: const {'x-api-version': '3.0.94'},
           ),
         ),
       ),

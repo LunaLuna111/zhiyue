@@ -19,7 +19,7 @@ Widget discoverColumnsPage(
   return PagedListPage(
     title: l10n.discoverColumns,
     api: api,
-    loadInitial: () => api.get('/column/column_tab/feed'),
+    loadInitial: () => api.getUri(api.columnTabFeedUri()),
     onObjectTap: (context, value) => openDetectedObject(context, api, value),
   );
 }
@@ -32,7 +32,7 @@ Widget discoverTopicCategoriesPage(
   return PagedListPage(
     title: l10n.discoverTopics,
     api: api,
-    loadInitial: () => api.get('/topic_square/categories'),
+    loadInitial: () => api.getUri(api.topicSquareCategoriesUri()),
     onObjectTap: (context, value) {
       final id = idOf(value);
       if (id.isEmpty) return;
@@ -41,9 +41,7 @@ Widget discoverTopicCategoriesPage(
           builder: (_) => PagedListPage(
             title: titleOf(value),
             api: api,
-            loadInitial: () => api.get(
-              '/topic_square/categories/${Uri.encodeComponent(id)}/topics',
-            ),
+            loadInitial: () => api.getUri(api.topicSquareCategoryTopicsUri(id)),
             onObjectTap: (context, topic) =>
                 openDetectedObject(context, api, topic),
           ),
@@ -62,7 +60,7 @@ Widget discoverHotTopicsPage(
     title: l10n.discoverHotTopics,
     api: api,
     emptyMessage: l10n.discoverHotTopicsEmpty,
-    loadInitial: () => api.get('/hot/topics'),
+    loadInitial: () => api.getUri(api.hotTopicsUri()),
     onObjectTap: (context, value) => openDetectedObject(context, api, value),
   );
 }

@@ -48,11 +48,8 @@ class _ZVideoDetailPageState extends State<ZVideoDetailPage> {
     });
     var loadStateCommitted = false;
     try {
-      final response = await widget.api.get(
-        '/zvideos/${Uri.encodeComponent(widget.videoId)}',
-        query: const {
-          'include': 'contribute,interactive_plugin,creation_relationship',
-        },
+      final response = await widget.api.getUri(
+        widget.api.videoEntityUri(widget.videoId),
       );
       if (!mounted) return;
       final candidate = response.isSuccess ? response.jsonMap : null;
@@ -429,7 +426,7 @@ class _ZVideoEngagementBar extends StatelessWidget {
         ZhLiquidGlassActionItem(
           icon: Icon(
             Icons.thumb_up_alt_outlined,
-            color: relationship.isUpvoted ? ZhPalette.accent : ZhPalette.ink,
+            color: relationship.isUpvoted ? ZhPalette.accent : null,
           ),
           label: metrics.voteupCount == null
               ? l10n.zvideoVoteup
@@ -448,9 +445,7 @@ class _ZVideoEngagementBar extends StatelessWidget {
         ZhLiquidGlassActionItem(
           icon: Icon(
             Icons.star_border_rounded,
-            color: relationship.isFavorited == true
-                ? ZhPalette.accent
-                : ZhPalette.ink,
+            color: relationship.isFavorited == true ? ZhPalette.accent : null,
           ),
           label: metrics.favoriteCount == null
               ? l10n.zvideoFavorite

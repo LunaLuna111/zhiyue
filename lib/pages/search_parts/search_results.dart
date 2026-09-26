@@ -229,7 +229,6 @@ class _SearchResultsPageState extends State<SearchResultsPage> {
   Future<List<List<SearchFilterOption>>> _requestFilterCatalog() async {
     final response = await widget.api.getUri(
       widget.api.searchCustomizeUri(),
-      headers: const {'x-api-version': '3.0.91'},
     );
     if (!response.isSuccess) throw response.failure;
     return parseSearchFilterGroups(response.json);

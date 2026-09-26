@@ -379,7 +379,7 @@ class _ProfileContentSearchPageState extends State<_ProfileContentSearchPage> {
                   keyword: _submitted,
                   memberHashId: widget.memberId,
                 ),
-                headers: const {'x-api-version': '3.0.65'},
+                headers: widget.api.profileContentSearchHeaders(),
               ),
               rowBuilder: (context, value, onTap) => _UserProfileFeedRow(
                 api: widget.api,
@@ -621,7 +621,6 @@ class _UserPageState extends State<UserPage> {
           title: l10n.userFollowingCollections,
           id: id,
           initialUri: widget.api.userFollowingCollectionsInitialUri,
-          headers: const {'x-api-version': '3.0.94'},
         ),
       ),
       _UserAction(

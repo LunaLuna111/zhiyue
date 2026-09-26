@@ -556,7 +556,6 @@ extension _ContentDetailActions on _ContentDetailPageState {
         title: context.zhL10n.detailWriteAnswer,
         maxLength: 100000,
         enableImage: false,
-        enableGift: false,
         onSubmit: (value) async {
           if (value.text.trim().isEmpty) {
             return context.zhL10n.detailAnswerRequired;

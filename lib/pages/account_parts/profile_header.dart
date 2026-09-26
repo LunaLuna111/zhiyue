@@ -331,10 +331,7 @@ class _ProfileOverview extends StatelessWidget {
         () => _openList(
           context,
           l10n.profileMyCollections,
-          () => api.getUri(
-            api.userCollectionsInitialUri(memberId),
-            headers: const {'x-api-version': '3.0.94'},
-          ),
+          () => api.getUri(api.userCollectionsInitialUri(memberId)),
         ),
       ),
     ];

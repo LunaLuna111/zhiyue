@@ -47,125 +47,50 @@ class ApiTransport implements zhihu_api.ApiTransport {
   static const debugLoginCaptureProxyPort = int.fromEnvironment(
     'ZH_LOGIN_CAPTURE_PROXY_PORT',
   );
-  static const _saltRelayPrefixes = [
-    '/km-vip-zhihu-web/',
-    '/km-indep-home-comm/',
-    '/km-indep-home-vip-comment/',
-    '/comment_v5/doc_sections/',
-    '/remix-pre-web/manuscript/',
-  ];
-
   @visibleForTesting
   static bool isApprovedLoginCaptureTarget(Uri uri) =>
-      uri.scheme == 'https' &&
-      uri.host == 'api.zhihu.com' &&
-      (!uri.hasPort || uri.port == 443) &&
-      uri.userInfo.isEmpty;
+      zhihu_api.ZhihuApiTransportPolicy.isApprovedLoginCaptureTarget(uri);
 
   @visibleForTesting
   static bool isApprovedLoginCaptureRequest(
     String method,
     Uri uri,
     List<int>? body,
-  ) =>
-      isApprovedLoginCaptureTarget(uri) &&
-      ((method == 'GET' && body == null) ||
-          (method == 'POST' && body != null && body.length <= 256 * 1024));
+  ) => zhihu_api.ZhihuApiTransportPolicy.isApprovedLoginCaptureRequest(
+    method,
+    uri,
+    body,
+  );
 
   @visibleForTesting
   static bool isApprovedSaltRelayTarget(Uri uri) =>
-      uri.scheme == 'https' &&
-      uri.host == 'api.zhihu.com' &&
-      (!uri.hasPort || uri.port == 443) &&
-      _saltRelayPrefixes.any(uri.path.startsWith);
+      zhihu_api.ZhihuApiTransportPolicy.isApprovedSaltRelayTarget(uri);
 
   @visibleForTesting
   static bool isApprovedSaltRelayRequest(
     String method,
     Uri uri,
     List<int>? body,
-  ) {
-    if (!isApprovedSaltRelayTarget(uri)) return false;
-    if (method == 'GET') return body == null;
-    return method == 'POST' &&
-        body != null &&
-        RegExp(
-          r'^/remix-pre-web/manuscript/\d+/\d+/content$',
-        ).hasMatch(uri.path);
-  }
+  ) => zhihu_api.ZhihuApiTransportPolicy.isApprovedSaltRelayRequest(
+    method,
+    uri,
+    body,
+  );
 
   @visibleForTesting
   static bool isApprovedNativeHttpTarget(Uri uri) =>
-      uri.scheme == 'https' &&
-      const {
-        'api.zhihu.com',
-        'appcloud.zhihu.com',
-        'www.zhihu.com',
-        'lens.zhihu.com',
-      }.contains(uri.host) &&
-      (!uri.hasPort || uri.port == 443) &&
-      uri.userInfo.isEmpty &&
-      uri.fragment.isEmpty &&
-      (uri.host != 'www.zhihu.com' ||
-          uri.path.startsWith('/api/v4/') ||
-          uri.path == '/signin' ||
-          uri.path == '/udid' ||
-          uri.path == '/api/v3/oauth/captcha/v2' ||
-          uri.path == '/api/v3/account/api/login/qrcode' ||
-          RegExp(
-            r'^/api/v3/account/api/login/qrcode/[A-Za-z0-9._~-]{1,256}/scan_info$',
-          ).hasMatch(uri.path)) &&
-      (uri.host != 'lens.zhihu.com' ||
-          RegExp(r'^/api/v4/videos/[A-Za-z0-9_-]{1,128}$').hasMatch(uri.path));
+      zhihu_api.ZhihuApiTransportPolicy.isApprovedNativeHttpTarget(uri);
 
   @visibleForTesting
   static bool isApprovedNativeHttpRequest(
     String method,
     Uri uri,
     List<int>? body,
-  ) {
-    final normalizedMethod = method.toUpperCase();
-    final maxRequestBytes =
-        uri.host == 'api.zhihu.com' && uri.path == '/upload_image'
-        ? 20 * 1024 * 1024
-        : 4 * 1024 * 1024;
-    final qrPath =
-        uri.host == 'www.zhihu.com' &&
-        (uri.path == '/api/v3/account/api/login/qrcode' ||
-            RegExp(
-              r'^/api/v3/account/api/login/qrcode/[A-Za-z0-9._~-]{1,256}/scan_info$',
-            ).hasMatch(uri.path));
-    final qrMethodAllowed =
-        (uri.path == '/api/v3/account/api/login/qrcode' &&
-            normalizedMethod == 'POST') ||
-        (RegExp(
-              r'^/api/v3/account/api/login/qrcode/[A-Za-z0-9._~-]{1,256}/scan_info$',
-            ).hasMatch(uri.path) &&
-            normalizedMethod == 'GET');
-    final loginPrefetchPath =
-        uri.host == 'www.zhihu.com' &&
-        (uri.path == '/signin' ||
-            uri.path == '/udid' ||
-            uri.path == '/api/v3/oauth/captcha/v2');
-    final loginPrefetchMethodAllowed =
-        (uri.path == '/signin' && normalizedMethod == 'GET') ||
-        (uri.path == '/udid' && normalizedMethod == 'POST') ||
-        (uri.path == '/api/v3/oauth/captcha/v2' && normalizedMethod == 'GET');
-    return isApprovedNativeHttpTarget(uri) &&
-        const {
-          'GET',
-          'POST',
-          'PUT',
-          'PATCH',
-          'DELETE',
-        }.contains(normalizedMethod) &&
-        ((!qrPath && !loginPrefetchPath) ||
-            qrMethodAllowed ||
-            loginPrefetchMethodAllowed) &&
-        (uri.host != 'lens.zhihu.com' || normalizedMethod == 'GET') &&
-        !(normalizedMethod == 'GET' && body != null) &&
-        (body?.length ?? 0) <= maxRequestBytes;
-  }
+  ) => zhihu_api.ZhihuApiTransportPolicy.isApprovedNativeHttpRequest(
+    method,
+    uri,
+    body,
+  );
 
   static const _androidNativeHttp = MethodChannel(
     'com.zhiyue.client/native_http',
@@ -182,7 +107,7 @@ class ApiTransport implements zhihu_api.ApiTransport {
     required List<int>? body,
     required int maxResponseBytes,
   }) async {
-    if (uri.host == 'lens.zhihu.com' &&
+    if (zhihu_api.ZhihuApiTransportPolicy.isLensVideoMetadataUri(uri) &&
         headers.keys.any(
           (key) => !const {'accept', 'user-agent'}.contains(key.toLowerCase()),
         )) {
@@ -297,9 +222,7 @@ class ApiTransport implements zhihu_api.ApiTransport {
     required int maxResponseBytes,
   }) async {
     if (!isApprovedLoginCaptureRequest(method, uri, body)) {
-      throw const ApiTransportException(
-        '登录抓包通道只允许 api.zhihu.com 的 GET 或有正文 POST',
-      );
+      throw const ApiTransportException('登录抓包通道只允许已审核目标的 GET 或有正文 POST');
     }
     try {
       final raw = await _androidSaltRelay

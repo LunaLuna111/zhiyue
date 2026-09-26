@@ -394,13 +394,14 @@ class _OfficialCommentEditorBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) => DecoratedBox(
     key: const Key('official-comment-editor-bar'),
-    decoration: BoxDecoration(color: ZhPalette.background),
+    decoration: const BoxDecoration(color: Colors.transparent),
     child: Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
+      padding: const EdgeInsets.fromLTRB(0, 6, 0, 8),
       child: Material(
         color: enabled ? ZhPalette.softSurface : ZhPalette.canvas,
         shape: const StadiumBorder(),
-        elevation: 0,
+        elevation: 6,
+        shadowColor: const Color(0x26000000),
         child: InkWell(
           key: const Key('comment-editor-entry'),
           onTap: enabled ? onTap : null,

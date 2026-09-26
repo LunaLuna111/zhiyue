@@ -1015,11 +1015,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.2.14"
-      resolved-ref: dd46c3345ba5348497a2622f0e77ce880e23d056
+      ref: "v0.2.17"
+      resolved-ref: "0a2eb8633b392d94519bbb4563c71c8d8c9df168"
       url: "https://github.com/LunaLuna111/zhihu_api.git"
     source: git
-    version: "0.2.14"
+    version: "0.2.17"
 sdks:
   dart: ">=3.12.2 <4.0.0"
   flutter: ">=3.44.0"

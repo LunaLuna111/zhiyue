@@ -62,9 +62,8 @@ class _FollowingPeopleStripState extends State<_FollowingPeopleStrip> {
       // Some anonymous/server variants do not expose /moments/recent yet.
       // Keep the rail useful by also reading the public recommendation
       // contract; its actor wrapper is normalized to the same shape.
-      final fallback = await widget.api.publicWebGet(
-        '/api/v4/moments/recommend_follow_people',
-        query: const {'rec_type': 'follow_tab'},
+      final fallback = await widget.api.publicWebGetUri(
+        widget.api.followingPeopleRecommendationsUri(),
       );
       if (fallback.isSuccess) {
         _appendPeople(_normalizeRecommendationPeople(fallback.json));

@@ -135,7 +135,7 @@ class _AccountSessionsPageState extends State<AccountSessionsPage> {
   }
 
   Future<bool> _verifyAccount(StoredAccountSession account) async {
-    final response = await widget.api.get('/people/self');
+    final response = await widget.api.getUri(widget.api.accountSelfProfileUri());
     if (!response.isSuccess) return false;
     if (response.jsonMap == null) return false;
     final profile = unwrapObject(response.jsonMap!);

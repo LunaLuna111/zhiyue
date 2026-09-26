@@ -7,7 +7,7 @@ import '../l10n/zh_localization.dart';
 import '../pages/blocked_keywords_page.dart';
 import '../pages/native_login_page.dart';
 import '../pages/web_page.dart';
-import '../ui/zh_theme.dart';
+import '../ui/components/zh_overlay_components.dart';
 
 Future<bool> showNegativeFeedbackSheet({
   required BuildContext context,
@@ -18,11 +18,8 @@ Future<bool> showNegativeFeedbackSheet({
   ValueChanged<NegativeFeedbackMenuItem>? onAction,
 }) async {
   if (!identity.isUsable) return false;
-  return await showModalBottomSheet<bool>(
+  return await showZhLiquidGlassSheet<bool>(
         context: context,
-        useSafeArea: true,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
         builder: (_) => NegativeFeedbackSheet(
           api: api,
           identity: identity,
@@ -261,49 +258,35 @@ class _NegativeFeedbackSheetState extends State<NegativeFeedbackSheet> {
     return SizedBox(
       key: const Key('negative-feedback-sheet'),
       height: sheetHeight,
-      child: Material(
-        color: ZhPalette.background,
-        clipBehavior: Clip.antiAlias,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        child: Column(
-          children: [
-            const SizedBox(height: 10),
-            Container(
-              width: 42,
-              height: 5,
-              decoration: BoxDecoration(
-                color: ZhPalette.mutedInk,
-                borderRadius: BorderRadius.circular(3),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(22, 2, 10, 0),
-              child: SizedBox(
-                height: 48,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Semantics(
-                        header: true,
-                        child: Text(
-                          context.zhL10n.feedbackTitle,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w600),
-                        ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 2, 10, 0),
+            child: SizedBox(
+              height: 48,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      child: Text(
+                        context.zhL10n.feedbackTitle,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
                       ),
                     ),
-                    IconButton(
-                      tooltip: context.zhL10n.commonClose,
-                      onPressed: () => Navigator.of(context).pop(false),
-                      icon: const Icon(Icons.close_rounded),
-                    ),
-                  ],
-                ),
+                  ),
+                  IconButton(
+                    tooltip: context.zhL10n.commonClose,
+                    onPressed: () => Navigator.of(context).pop(false),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
               ),
             ),
-            Expanded(child: _content()),
-          ],
-        ),
+          ),
+          Expanded(child: _content()),
+        ],
       ),
     );
   }

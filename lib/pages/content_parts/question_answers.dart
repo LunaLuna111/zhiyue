@@ -281,7 +281,6 @@ class _QuestionAnswersPageState extends State<QuestionAnswersPage> {
         title: l10n.detailWriteAnswer,
         maxLength: 100000,
         enableImage: false,
-        enableGift: false,
         onSubmit: (value) async {
           if (value.text.trim().isEmpty) return l10n.detailAnswerRequired;
           final resolvedQuestion = _resolvedQuestion;

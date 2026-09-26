@@ -409,7 +409,7 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   Future<bool> _verifyAccount(StoredAccountSession account) async {
-    final response = await widget.api.get('/people/self');
+    final response = await widget.api.getUri(widget.api.accountSelfProfileUri());
     if (!response.isSuccess) return false;
     if (response.jsonMap == null) return false;
     final profile = unwrapObject(response.jsonMap!);
@@ -448,7 +448,7 @@ class _HomeShellState extends State<HomeShell> {
     final saved = widget.session.accountUid.trim();
     if (saved.isNotEmpty) return saved;
     if (!widget.session.hasAuthorization) return null;
-    final response = await widget.api.get('/people/self');
+    final response = await widget.api.getUri(widget.api.accountSelfProfileUri());
     if (!response.isSuccess || response.jsonMap == null) return null;
     final profile = unwrapObject(response.jsonMap!);
     final id = plainText(profile['id']);
@@ -475,7 +475,6 @@ class _HomeShellState extends State<HomeShell> {
           api: widget.api,
           loadInitial: () => widget.api.getUri(
             widget.api.userCollectionsInitialUri(memberId),
-            headers: const {'x-api-version': '3.0.94'},
           ),
           onObjectTap: (context, value) {
             final collectionId = idOf(value);

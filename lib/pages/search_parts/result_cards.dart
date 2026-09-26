@@ -178,7 +178,7 @@ class _SearchResultTabState extends State<_SearchResultTab> {
         }
         final response = await widget.api.getUri(
           uri,
-          headers: {'x-api-version': '3.0.91', 'x-search-id': _searchId},
+          headers: widget.api.searchRequestHeaders(searchId: _searchId),
         );
         if (!mounted) return;
         if (!response.isSuccess) {

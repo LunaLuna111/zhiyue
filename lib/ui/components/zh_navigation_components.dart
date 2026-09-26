@@ -179,6 +179,68 @@ class ZhLiquidGlassActionItem {
   final VoidCallback? onPressed;
 }
 
+/// Animates only the tab content when a detail bar changes action modes.
+///
+/// The glass platter and its backdrop must stay mounted while the actions
+/// change. Animating the whole [GlassTabBar] makes a backdrop filter briefly
+/// paint as a transparent layer before the next frame restores the blur. The
+/// package already animates the indicator; this small transition complements
+/// it without putting an opacity/transform boundary around the glass surface.
+class _ZhAnimatedGlassActionContent extends StatelessWidget {
+  const _ZhAnimatedGlassActionContent({
+    required this.icon,
+    required this.label,
+    required this.contentKey,
+  });
+
+  final Widget icon;
+  final String label;
+  final String contentKey;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = IconTheme.of(context).color ?? ZhPalette.mutedInk;
+    return SizedBox(
+      height: 40,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        switchInCurve: Curves.easeOutCubic,
+        switchOutCurve: Curves.easeInCubic,
+        transitionBuilder: (child, animation) {
+          final scale = Tween<double>(begin: .9, end: 1).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+          );
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(scale: scale, child: child),
+          );
+        },
+        child: KeyedSubtree(
+          key: ValueKey(contentKey),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(width: 22, height: 22, child: Center(child: icon)),
+              const SizedBox(height: 3),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  height: 1.1,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Gates a package tab callback until the pointer is released inside the tab
 /// that the package resolved. The upstream bottom bar intentionally selects on
 /// pointer-down for its default native mode; the app's navigation should not
@@ -433,9 +495,9 @@ class ZhLiquidGlassFloatingActionBar extends StatefulWidget {
   final int initialIndex;
   final Widget? trailing;
 
-  /// Changes when the bar switches between distinct action sets. The key
-  /// lets the wrapper animate the whole glass surface while the package keeps
-  /// ownership of the indicator's spring interaction inside each surface.
+  /// Changes when the bar switches between distinct action sets. The key is
+  /// passed to the individual tab contents so those contents can morph while
+  /// the package-owned glass surface stays mounted.
   final String transitionKey;
 
   @override
@@ -444,19 +506,12 @@ class ZhLiquidGlassFloatingActionBar extends StatefulWidget {
 }
 
 class _ZhLiquidGlassFloatingActionBarState
-    extends State<ZhLiquidGlassFloatingActionBar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _modeTransitionController;
+    extends State<ZhLiquidGlassFloatingActionBar> {
   late int _selectedIndex;
 
   @override
   void initState() {
     super.initState();
-    _modeTransitionController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 360),
-      value: 1,
-    );
     _selectedIndex = _safeIndex(widget.initialIndex, widget.items.length);
   }
 
@@ -466,15 +521,6 @@ class _ZhLiquidGlassFloatingActionBarState
     if (oldWidget.items.length != widget.items.length) {
       _selectedIndex = _safeIndex(_selectedIndex, widget.items.length);
     }
-    if (oldWidget.transitionKey != widget.transitionKey) {
-      _modeTransitionController.forward(from: 0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _modeTransitionController.dispose();
-    super.dispose();
   }
 
   int _safeIndex(int index, int length) => index.clamp(0, length - 1).toInt();
@@ -483,6 +529,29 @@ class _ZhLiquidGlassFloatingActionBarState
     if (!mounted) return;
     setState(() => _selectedIndex = index);
     widget.items[index].onPressed?.call();
+  }
+
+  GlassTab _buildTab(int index) {
+    final item = widget.items[index];
+    final baseKey = '${widget.transitionKey}:$index:${item.semanticLabel}';
+    final icon = _ZhAnimatedGlassActionContent(
+      icon: item.icon,
+      label: item.label,
+      contentKey: '$baseKey:inactive',
+    );
+    final activeIcon = item.activeIcon == null
+        ? null
+        : _ZhAnimatedGlassActionContent(
+            icon: item.activeIcon!,
+            label: item.label,
+            contentKey: '$baseKey:active',
+          );
+    return GlassTab(
+      icon: icon,
+      activeIcon: activeIcon,
+      label: null,
+      semanticLabel: item.semanticLabel,
+    );
   }
 
   @override
@@ -515,13 +584,8 @@ class _ZhLiquidGlassFloatingActionBarState
       );
     }
     final tabs = [
-      for (final item in widget.items)
-        GlassTab(
-          icon: item.icon,
-          activeIcon: item.activeIcon ?? item.icon,
-          label: item.label,
-          semanticLabel: item.semanticLabel,
-        ),
+      for (var index = 0; index < widget.items.length; index++)
+        _buildTab(index),
     ];
     final glassBar = _ZhReleaseActivatedGlassTabBar(
       tabCount: tabs.length,
@@ -569,31 +633,12 @@ class _ZhLiquidGlassFloatingActionBarState
         pressScale: 1.02,
       ),
     );
-    final animatedGlassBar = AnimatedBuilder(
-      animation: _modeTransitionController,
-      child: glassBar,
-      builder: (context, child) {
-        final progress = Curves.easeOutCubic.transform(
-          _modeTransitionController.value,
-        );
-        return Opacity(
-          opacity: .84 + (.16 * progress),
-          child: Transform.scale(
-            scale: .96 + (.04 * progress),
-            alignment: Alignment.center,
-            child: child,
-          ),
-        );
-      },
-    );
     if (widget.trailing == null) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
-        child: animatedGlassBar,
+        child: glassBar,
       );
     }
-    // Keep the mode toggle outside the animated subtree so its semantic
-    // label and hit target change immediately while the glass tabs crossfade.
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: SizedBox(
@@ -601,7 +646,7 @@ class _ZhLiquidGlassFloatingActionBarState
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Expanded(child: animatedGlassBar),
+            Expanded(child: glassBar),
             const SizedBox(width: 8),
             widget.trailing!,
           ],

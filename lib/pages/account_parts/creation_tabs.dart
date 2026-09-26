@@ -200,7 +200,7 @@ class _CreationMoreList extends StatelessWidget {
         l10n.creationFavorites,
         _count(const ['favorite_count', 'collection_count'], l10n),
         api.userCollectionsInitialUri(memberId),
-        const {'x-api-version': '3.0.94'},
+        null,
       ),
       (
         l10n.creationHighlights,
@@ -230,7 +230,7 @@ class _CreationMoreList extends StatelessWidget {
           'following_collections_count',
         ], l10n),
         api.userFollowingCollectionsInitialUri(memberId),
-        const {'x-api-version': '3.0.94'},
+        null,
       ),
       (
         l10n.creationFollowingQuestions,

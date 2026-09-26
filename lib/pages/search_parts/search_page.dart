@@ -520,7 +520,7 @@ class _SearchPageState extends State<SearchPage>
   }
 
   Future<List<SearchHotItem>> _requestHotSearch() async {
-    final response = await widget.api.publicWebGet('/api/v4/search/hot_search');
+    final response = await widget.api.publicWebGetUri(widget.api.searchHotUri());
     if (!response.isSuccess) throw response.failure;
     return parseSearchHotItems(response.json);
   }

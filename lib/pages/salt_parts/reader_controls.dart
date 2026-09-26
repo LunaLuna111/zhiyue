@@ -108,12 +108,15 @@ extension _SaltReaderControls on _SaltReaderPageState {
                               label: _readerFlow == SaltReaderFlow.vertical
                                   ? l10n.saltHorizontalPage
                                   : l10n.saltVerticalScroll,
-                              onTap: () => _updateState(() {
-                                _readerFlow =
-                                    _readerFlow == SaltReaderFlow.vertical
-                                    ? SaltReaderFlow.paginated
-                                    : SaltReaderFlow.vertical;
-                              }),
+                              onTap: () {
+                                _updateState(() {
+                                  _readerFlow =
+                                      _readerFlow == SaltReaderFlow.vertical
+                                      ? SaltReaderFlow.paginated
+                                      : SaltReaderFlow.vertical;
+                                });
+                                _scheduleReaderPreferencesPersistence();
+                              },
                             ),
                           ],
                         ),
@@ -170,6 +173,10 @@ extension _SaltReaderControls on _SaltReaderPageState {
   }
 
   Future<void> _showCatalog(SaltManuscriptEnvelope manuscript) async {
+    final localSections =
+        manuscript.isLong == true || manuscript.propertyType == 'long_story'
+        ? const <SaltTextSection>[]
+        : (_textChapter?.shortSections ?? const <SaltTextSection>[]);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -189,9 +196,14 @@ extension _SaltReaderControls on _SaltReaderPageState {
             title: manuscript.parentTitle.isNotEmpty
                 ? manuscript.parentTitle
                 : manuscript.title,
+            localSections: localSections,
             onOpenSection: (sectionId) {
               Navigator.of(sheetContext).pop();
               if (sectionId != widget.sectionId) _openSection(sectionId);
+            },
+            onOpenParagraph: (paragraphIndex) {
+              Navigator.of(sheetContext).pop();
+              _jumpToShortSection(paragraphIndex);
             },
           ),
         ),

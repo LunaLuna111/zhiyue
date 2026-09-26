@@ -744,7 +744,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsPersonalizationSubtitle => 'ホーム、おすすめ、コンテンツ設定';
 
   @override
-  String get settingsBackupSubtitle => 'WebDAV データ同期';
+  String get settingsBackupSubtitle => 'WebDAV、Google Drive、OneDrive 同期';
 
   @override
   String get settingsAccountSubtitle => 'セッションとログイン状態';
@@ -951,7 +951,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsShowHotOff => '人気検索を読み込まない';
 
   @override
-  String get settingsWebDav => 'WebDAV 同期';
+  String get settingsWebDav => 'クラウド同期';
 
   @override
   String get settingsAccountSessions => 'アカウントと複数端末ログイン';
@@ -1029,7 +1029,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsWebDavConfigured => '設定済み · 検索、履歴、オフライン小説、回答キャッシュ';
 
   @override
-  String get settingsWebDavSubtitle => '検索履歴、閲覧履歴、オフライン小説、回答キャッシュを同期';
+  String get settingsWebDavSubtitle => '検索、履歴、オフライン書籍、回答キャッシュを同期';
 
   @override
   String get settingsAccountSessionsSubtitle => 'QR ログイン、アカウント枠の保存、すばやい切り替え';
@@ -2121,7 +2121,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get userProfileNoPublicContent => '公開コンテンツはまだありません';
 
   @override
-  String get webdavTitle => 'WebDAV同期';
+  String get webdavTitle => 'クラウド同期';
 
   @override
   String get webdavIntroTitle => '端末間でローカルコンテンツを同期';
@@ -2144,6 +2144,46 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get webdavProviderOneDrive => 'Microsoft OneDrive（WebDAV）';
+
+  @override
+  String get webdavProviderGoogleDirect => 'Google Drive（直接認証）';
+
+  @override
+  String get webdavProviderOneDriveDirect => 'Microsoft OneDrive（システムフォルダー）';
+
+  @override
+  String get webdavProviderGoogleDirectDescription =>
+      'Google で認証し、アプリ専用領域に保存します。ユーザーが Client ID を入力する必要はありません。';
+
+  @override
+  String get webdavProviderOneDriveDirectDescription =>
+      'Android のシステム選択画面で OneDrive フォルダーを選択します。Microsoft Client ID は不要です。';
+
+  @override
+  String get webdavCloudAuthorize => 'クラウドストレージを認証';
+
+  @override
+  String get webdavCloudAuthorized => 'クラウドストレージを認証しました';
+
+  @override
+  String get webdavCloudAuthorizationFailed =>
+      '認証に失敗しました。ネットワークとアプリ登録を確認してください。';
+
+  @override
+  String get webdavCloudRegistrationRequired => 'このビルドにはクラウドアプリ登録が設定されていません。';
+
+  @override
+  String get webdavCloudChooseFolder => 'OneDrive フォルダーを選択';
+
+  @override
+  String get webdavCloudFolderSelected => 'OneDrive フォルダーを選択しました';
+
+  @override
+  String get webdavCloudFolderAuthorizationFailed =>
+      'フォルダーにアクセスできません。もう一度選択して読み書きを許可してください。';
+
+  @override
+  String get webdavCloudFolderUnavailable => 'システムフォルダー選択は Android でのみ利用できます。';
 
   @override
   String get webdavProviderGenericDescription =>
@@ -2176,8 +2216,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get webdavRemoteDirectory => 'リモートディレクトリ';
 
   @override
-  String get webdavRemoteDirectoryHint =>
-      'v1、answers、chaptersのサブディレクトリを自動作成します';
+  String get webdavRemoteDirectoryHint => '同期ファイルはこのパスに v1 形式で保存されます';
 
   @override
   String get webdavAuthMethod => '認証方式';
@@ -2198,7 +2237,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get webdavAccessToken => 'アクセストークン';
 
   @override
-  String get webdavEnable => 'WebDAV同期を有効にする';
+  String get webdavEnable => 'クラウド同期を有効にする';
 
   @override
   String get webdavEnableSubtitle => '無効にするとネットワーク同期を停止しますが、保存済みのローカル設定は残ります';
@@ -2226,16 +2265,16 @@ class AppLocalizationsJa extends AppLocalizations {
   String get webdavLoading => 'WebDAV 設定を読み込んでいます';
 
   @override
-  String get webdavConfiguredStatus => 'WebDAV は設定済みです';
+  String get webdavConfiguredStatus => 'クラウド同期を設定済み';
 
   @override
-  String get webdavNotConfigured => 'WebDAV は未設定です';
+  String get webdavNotConfigured => 'クラウド同期は未設定';
 
   @override
-  String get webdavSettingsSaved => 'WebDAV 設定を保存しました';
+  String get webdavSettingsSaved => 'クラウド同期設定を保存しました';
 
   @override
-  String get webdavClosedStatus => 'WebDAV を無効にしました';
+  String get webdavClosedStatus => 'クラウド同期を無効にしました';
 
   @override
   String get webdavTesting => 'WebDAV 接続をテストしています';
@@ -2269,7 +2308,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get webdavDisable => '同期をオフにする';
 
   @override
-  String get webdavClearLocalSettings => 'ローカル設定と認証情報を削除';
+  String get webdavClearLocalSettings => 'ローカル設定と認証を削除';
 
   @override
   String webdavLoadFailed(String error) {
@@ -2298,11 +2337,11 @@ class AppLocalizationsJa extends AppLocalizations {
   String get webdavDisabled => 'WebDAV同期をオフにしました。認証情報はローカルの非公開データベースに残ります';
 
   @override
-  String get webdavClearTitle => 'WebDAV設定を削除しますか？';
+  String get webdavClearTitle => 'クラウド同期設定を削除しますか？';
 
   @override
   String get webdavClearMessage =>
-      'ローカルに保存したWebDAVアドレス、アカウント、認証情報を削除します。リモートの同期データは削除しません。';
+      'この端末に保存したクラウドのアドレス、アカウント、認証を削除します。リモートデータは残ります。';
 
   @override
   String get webdavCleared => 'ローカルのWebDAV設定と認証情報を削除しました';

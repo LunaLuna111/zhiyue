@@ -35,26 +35,29 @@ extension _SaltReaderContent on _SaltReaderPageState {
   }) => Stack(
     children: [
       Positioned.fill(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 30),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 720),
-                child: SaltChapterView(
-                  key: ValueKey('${chapter.contentId}-${_readerFlow.name}'),
-                  chapter: chapter,
-                  flow: _readerFlow,
-                  settings: _readerSettings,
-                  annotations: _paragraphAnnotations,
-                  onReaderTap: () =>
-                      _updateState(() => _controlsVisible = !_controlsVisible),
-                  onScrollDirection: _readerScrollDirectionChanged,
-                  showPageIndicator: _controlsVisible,
-                  onAnnotationTap: (annotation) =>
-                      _showAnnotationComments(manuscript, annotation),
-                ),
-              ),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 720),
+            child: SaltChapterView(
+              key: ValueKey('${chapter.contentId}-${_readerFlow.name}'),
+              chapter: chapter,
+              flow: _readerFlow,
+              settings: _readerSettings,
+              annotations: _paragraphAnnotations,
+              onReaderTap: () =>
+                  _updateState(() => _controlsVisible = !_controlsVisible),
+              onPreviousChapter: _previousCatalogSection(manuscript) == null
+                  ? null
+                  : () => _openSection(_previousCatalogSection(manuscript)!.id),
+              onNextChapter: _nextCatalogSection(manuscript) == null
+                  ? null
+                  : () => _openSection(_nextCatalogSection(manuscript)!.id),
+              jumpToParagraphIndex: _readerJumpParagraphIndex,
+              jumpRequest: _readerJumpRequest,
+              onScrollDirection: _readerScrollDirectionChanged,
+              showPageIndicator: _controlsVisible,
+              onAnnotationTap: (annotation) =>
+                  _showAnnotationComments(manuscript, annotation),
             ),
           ),
         ),
@@ -71,11 +74,12 @@ extension _SaltReaderContent on _SaltReaderPageState {
 
   Widget _readerChapterHint(SaltManuscriptEnvelope manuscript, String title) =>
       Positioned(
-        top: 0,
-        left: 0,
         right: 0,
+        bottom: 0,
         child: SafeArea(
-          bottom: false,
+          top: false,
+          left: false,
+          right: false,
           child: IgnorePointer(
             child: AnimatedOpacity(
               duration: const Duration(milliseconds: 160),
@@ -83,9 +87,9 @@ extension _SaltReaderContent on _SaltReaderPageState {
               child: SizedBox(
                 height: 38,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.only(right: 20),
                   child: Align(
-                    alignment: Alignment.centerLeft,
+                    alignment: Alignment.centerRight,
                     child: Text(
                       _readerSectionLabel(manuscript, title),
                       maxLines: 1,

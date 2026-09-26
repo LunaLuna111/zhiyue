@@ -34,6 +34,7 @@ android {
 
     defaultConfig {
         applicationId = "com.zhiyue.client"
+        manifestPlaceholders["appAuthRedirectScheme"] = "zhiyue-oauth"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -99,6 +100,9 @@ flutter {
 }
 
 dependencies {
+    // Android's system document picker returns a persistable tree URI. The
+    // DocumentFile wrapper keeps OneDrive folder access provider-agnostic.
+    implementation("androidx.documentfile:documentfile:1.0.1")
     // Install the privacy profile before any page JavaScript executes when the
     // device WebView supports DOCUMENT_START_SCRIPT.
     implementation("androidx.webkit:webkit:1.14.0")

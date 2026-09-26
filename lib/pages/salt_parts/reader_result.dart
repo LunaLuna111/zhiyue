@@ -118,6 +118,7 @@ extension _SaltReaderResult on _SaltReaderPageState {
       _readerFlow = flow;
       _readerSettings = settings;
     });
+    _scheduleReaderPreferencesPersistence();
   }
 
   Widget _readerSlider(

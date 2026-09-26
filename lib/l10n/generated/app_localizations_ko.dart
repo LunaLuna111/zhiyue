@@ -744,7 +744,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsPersonalizationSubtitle => '홈, 추천 및 콘텐츠 설정';
 
   @override
-  String get settingsBackupSubtitle => 'WebDAV 데이터 동기화';
+  String get settingsBackupSubtitle => 'WebDAV, Google Drive, OneDrive 동기화';
 
   @override
   String get settingsAccountSubtitle => '세션 및 로그인 상태';
@@ -951,7 +951,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsShowHotOff => '인기 검색을 불러오지 않음';
 
   @override
-  String get settingsWebDav => 'WebDAV 동기화';
+  String get settingsWebDav => '클라우드 동기화';
 
   @override
   String get settingsAccountSessions => '계정 및 다중 기기 로그인';
@@ -1030,7 +1030,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsWebDavConfigured => '설정됨 · 검색, 기록, 오프라인 소설, 답변 캐시';
 
   @override
-  String get settingsWebDavSubtitle => '검색 기록, 탐색 기록, 오프라인 소설, 답변 캐시 동기화';
+  String get settingsWebDavSubtitle => '검색, 방문 기록, 오프라인 책, 답변 캐시 동기화';
 
   @override
   String get settingsAccountSessionsSubtitle => 'QR 로그인, 계정 슬롯 저장, 빠른 전환';
@@ -2125,7 +2125,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get userProfileNoPublicContent => '아직 공개 콘텐츠가 없습니다';
 
   @override
-  String get webdavTitle => 'WebDAV 동기화';
+  String get webdavTitle => '클라우드 동기화';
 
   @override
   String get webdavIntroTitle => '기기 간 로컬 콘텐츠 동기화';
@@ -2148,6 +2148,46 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get webdavProviderOneDrive => 'Microsoft OneDrive(WebDAV)';
+
+  @override
+  String get webdavProviderGoogleDirect => 'Google Drive (직접 인증)';
+
+  @override
+  String get webdavProviderOneDriveDirect => 'Microsoft OneDrive (시스템 폴더)';
+
+  @override
+  String get webdavProviderGoogleDirectDescription =>
+      'Google 인증 후 앱 전용 공간에 저장합니다. 사용자는 Client ID를 입력하지 않습니다.';
+
+  @override
+  String get webdavProviderOneDriveDirectDescription =>
+      'Android 시스템 선택기에서 OneDrive 폴더를 선택합니다. Microsoft Client ID가 필요하지 않습니다.';
+
+  @override
+  String get webdavCloudAuthorize => '클라우드 저장소 인증';
+
+  @override
+  String get webdavCloudAuthorized => '클라우드 저장소 인증 완료';
+
+  @override
+  String get webdavCloudAuthorizationFailed => '인증에 실패했습니다. 네트워크와 앱 등록을 확인하세요.';
+
+  @override
+  String get webdavCloudRegistrationRequired => '이 빌드에는 클라우드 앱 등록이 설정되지 않았습니다.';
+
+  @override
+  String get webdavCloudChooseFolder => 'OneDrive 폴더 선택';
+
+  @override
+  String get webdavCloudFolderSelected => 'OneDrive 폴더를 선택했습니다';
+
+  @override
+  String get webdavCloudFolderAuthorizationFailed =>
+      '폴더에 접근할 수 없습니다. 다시 선택하고 읽기/쓰기 권한을 허용하세요.';
+
+  @override
+  String get webdavCloudFolderUnavailable =>
+      '시스템 폴더 선택기는 Android에서만 사용할 수 있습니다.';
 
   @override
   String get webdavProviderGenericDescription =>
@@ -2180,8 +2220,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get webdavRemoteDirectory => '원격 디렉터리';
 
   @override
-  String get webdavRemoteDirectoryHint =>
-      'v1, answers, chapters 하위 디렉터리를 자동으로 만듭니다';
+  String get webdavRemoteDirectoryHint => '동기화 파일은 이 경로에 v1 형식으로 저장됩니다';
 
   @override
   String get webdavAuthMethod => '인증 방식';
@@ -2202,7 +2241,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get webdavAccessToken => '액세스 토큰';
 
   @override
-  String get webdavEnable => 'WebDAV 동기화 사용';
+  String get webdavEnable => '클라우드 동기화 사용';
 
   @override
   String get webdavEnableSubtitle => '끄면 네트워크 동기화를 중지하지만 저장된 로컬 설정은 삭제하지 않습니다';
@@ -2230,16 +2269,16 @@ class AppLocalizationsKo extends AppLocalizations {
   String get webdavLoading => 'WebDAV 설정을 읽는 중';
 
   @override
-  String get webdavConfiguredStatus => 'WebDAV가 설정됨';
+  String get webdavConfiguredStatus => '클라우드 동기화 설정됨';
 
   @override
-  String get webdavNotConfigured => 'WebDAV가 설정되지 않음';
+  String get webdavNotConfigured => '클라우드 동기화 미설정';
 
   @override
-  String get webdavSettingsSaved => 'WebDAV 설정을 저장함';
+  String get webdavSettingsSaved => '클라우드 동기화 설정 저장됨';
 
   @override
-  String get webdavClosedStatus => 'WebDAV를 비활성화함';
+  String get webdavClosedStatus => '클라우드 동기화 꺼짐';
 
   @override
   String get webdavTesting => 'WebDAV 연결을 테스트하는 중';
@@ -2273,7 +2312,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get webdavDisable => '동기화 끄기';
 
   @override
-  String get webdavClearLocalSettings => '로컬 설정 및 인증 정보 삭제';
+  String get webdavClearLocalSettings => '로컬 설정 및 인증 삭제';
 
   @override
   String webdavLoadFailed(String error) {
@@ -2303,11 +2342,11 @@ class AppLocalizationsKo extends AppLocalizations {
       'WebDAV 동기화를 껐습니다. 인증 정보는 비공개 로컬 데이터베이스에 남아 있습니다';
 
   @override
-  String get webdavClearTitle => 'WebDAV 설정을 삭제할까요?';
+  String get webdavClearTitle => '클라우드 동기화 설정을 삭제할까요?';
 
   @override
   String get webdavClearMessage =>
-      '로컬에 저장된 WebDAV 주소, 계정 및 인증 정보를 삭제하며 원격 동기화 데이터는 삭제하지 않습니다.';
+      '이 기기의 클라우드 주소, 계정 및 인증을 삭제합니다. 원격 데이터는 유지됩니다.';
 
   @override
   String get webdavCleared => '로컬 WebDAV 설정 및 인증 정보를 삭제했습니다';

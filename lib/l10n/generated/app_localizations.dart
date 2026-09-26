@@ -1492,7 +1492,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsBackupSubtitle.
   ///
   /// In zh, this message translates to:
-  /// **'WebDAV 数据同步'**
+  /// **'WebDAV、Google Drive 与 OneDrive 同步'**
   String get settingsBackupSubtitle;
 
   /// No description provided for @settingsAccountSubtitle.
@@ -1888,7 +1888,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsWebDav.
   ///
   /// In zh, this message translates to:
-  /// **'WebDAV 同步'**
+  /// **'云同步'**
   String get settingsWebDav;
 
   /// No description provided for @settingsAccountSessions.
@@ -4048,7 +4048,7 @@ abstract class AppLocalizations {
   /// No description provided for @webdavTitle.
   ///
   /// In zh, this message translates to:
-  /// **'WebDAV 同步'**
+  /// **'云同步'**
   String get webdavTitle;
 
   /// No description provided for @webdavIntroTitle.
@@ -4092,6 +4092,78 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'Microsoft OneDrive（WebDAV）'**
   String get webdavProviderOneDrive;
+
+  /// No description provided for @webdavProviderGoogleDirect.
+  ///
+  /// In zh, this message translates to:
+  /// **'Google Drive（直接授权）'**
+  String get webdavProviderGoogleDirect;
+
+  /// No description provided for @webdavProviderOneDriveDirect.
+  ///
+  /// In zh, this message translates to:
+  /// **'Microsoft OneDrive（系统文件夹）'**
+  String get webdavProviderOneDriveDirect;
+
+  /// No description provided for @webdavProviderGoogleDirectDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'通过 Google 授权，数据保存在应用专用空间，无需用户填写 Client ID。'**
+  String get webdavProviderGoogleDirectDescription;
+
+  /// No description provided for @webdavProviderOneDriveDirectDescription.
+  ///
+  /// In zh, this message translates to:
+  /// **'通过 Android 系统文件选择器选择 OneDrive 文件夹，无需 Microsoft Client ID。'**
+  String get webdavProviderOneDriveDirectDescription;
+
+  /// No description provided for @webdavCloudAuthorize.
+  ///
+  /// In zh, this message translates to:
+  /// **'跳转授权云盘'**
+  String get webdavCloudAuthorize;
+
+  /// No description provided for @webdavCloudAuthorized.
+  ///
+  /// In zh, this message translates to:
+  /// **'云盘授权成功'**
+  String get webdavCloudAuthorized;
+
+  /// No description provided for @webdavCloudAuthorizationFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'授权失败，请检查网络与应用注册配置'**
+  String get webdavCloudAuthorizationFailed;
+
+  /// No description provided for @webdavCloudRegistrationRequired.
+  ///
+  /// In zh, this message translates to:
+  /// **'此构建尚未配置云平台应用注册，暂不能授权。'**
+  String get webdavCloudRegistrationRequired;
+
+  /// No description provided for @webdavCloudChooseFolder.
+  ///
+  /// In zh, this message translates to:
+  /// **'选择 OneDrive 文件夹'**
+  String get webdavCloudChooseFolder;
+
+  /// No description provided for @webdavCloudFolderSelected.
+  ///
+  /// In zh, this message translates to:
+  /// **'OneDrive 文件夹已选择'**
+  String get webdavCloudFolderSelected;
+
+  /// No description provided for @webdavCloudFolderAuthorizationFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'无法访问所选文件夹，请重新选择并授予读写权限'**
+  String get webdavCloudFolderAuthorizationFailed;
+
+  /// No description provided for @webdavCloudFolderUnavailable.
+  ///
+  /// In zh, this message translates to:
+  /// **'系统文件夹选择仅支持 Android'**
+  String get webdavCloudFolderUnavailable;
 
   /// No description provided for @webdavProviderGenericDescription.
   ///
@@ -4150,7 +4222,7 @@ abstract class AppLocalizations {
   /// No description provided for @webdavRemoteDirectoryHint.
   ///
   /// In zh, this message translates to:
-  /// **'会自动创建 v1、answers 和 chapters 子目录'**
+  /// **'同步文件按 v1 格式存储在此路径下'**
   String get webdavRemoteDirectoryHint;
 
   /// No description provided for @webdavAuthMethod.
@@ -4192,7 +4264,7 @@ abstract class AppLocalizations {
   /// No description provided for @webdavEnable.
   ///
   /// In zh, this message translates to:
-  /// **'启用 WebDAV 同步'**
+  /// **'启用云同步'**
   String get webdavEnable;
 
   /// No description provided for @webdavEnableSubtitle.
@@ -4240,25 +4312,25 @@ abstract class AppLocalizations {
   /// No description provided for @webdavConfiguredStatus.
   ///
   /// In zh, this message translates to:
-  /// **'WebDAV 已配置'**
+  /// **'云同步已配置'**
   String get webdavConfiguredStatus;
 
   /// No description provided for @webdavNotConfigured.
   ///
   /// In zh, this message translates to:
-  /// **'尚未配置 WebDAV'**
+  /// **'尚未配置云同步'**
   String get webdavNotConfigured;
 
   /// No description provided for @webdavSettingsSaved.
   ///
   /// In zh, this message translates to:
-  /// **'WebDAV 设置已保存'**
+  /// **'云同步设置已保存'**
   String get webdavSettingsSaved;
 
   /// No description provided for @webdavClosedStatus.
   ///
   /// In zh, this message translates to:
-  /// **'WebDAV 已关闭'**
+  /// **'云同步已关闭'**
   String get webdavClosedStatus;
 
   /// No description provided for @webdavTesting.
@@ -4318,7 +4390,7 @@ abstract class AppLocalizations {
   /// No description provided for @webdavClearLocalSettings.
   ///
   /// In zh, this message translates to:
-  /// **'清除本机配置和凭据'**
+  /// **'清除本机配置和授权'**
   String get webdavClearLocalSettings;
 
   /// No description provided for @webdavLoadFailed.
@@ -4360,13 +4432,13 @@ abstract class AppLocalizations {
   /// No description provided for @webdavClearTitle.
   ///
   /// In zh, this message translates to:
-  /// **'清除 WebDAV 配置？'**
+  /// **'清除云同步配置？'**
   String get webdavClearTitle;
 
   /// No description provided for @webdavClearMessage.
   ///
   /// In zh, this message translates to:
-  /// **'这会删除本机保存的 WebDAV 地址、账号和凭据，不会删除远端同步数据。'**
+  /// **'这会删除本机保存的云同步地址、账号和授权，不会删除远端同步数据。'**
   String get webdavClearMessage;
 
   /// No description provided for @webdavCleared.

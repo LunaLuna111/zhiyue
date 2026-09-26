@@ -152,7 +152,11 @@ class SaltChapterView extends StatefulWidget {
     this.onAnnotationTap,
     this.onPageChanged,
     this.onReaderTap,
+    this.onPreviousChapter,
+    this.onNextChapter,
     this.onScrollDirection,
+    this.jumpToParagraphIndex,
+    this.jumpRequest = 0,
     this.showPageIndicator = false,
   });
 
@@ -163,6 +167,14 @@ class SaltChapterView extends StatefulWidget {
   final ValueChanged<SaltParagraphAnnotation>? onAnnotationTap;
   final ValueChanged<int>? onPageChanged;
   final VoidCallback? onReaderTap;
+  final VoidCallback? onPreviousChapter;
+  final VoidCallback? onNextChapter;
+
+  /// Requests that the reader reveal a paragraph selected from an embedded
+  /// short-story directory.  The request counter makes repeated selections of
+  /// the same subsection observable by the state object.
+  final int? jumpToParagraphIndex;
+  final int jumpRequest;
 
   /// Reports whether the reader controls should be shown. `false` is emitted
   /// when the content scrolls toward later paragraphs, and `true` when the
@@ -183,12 +195,14 @@ class _SaltChapterViewState extends State<SaltChapterView> {
   String? _paginationKey;
   int _page = 0;
   double _lastScrollOffset = 0;
+  final _paragraphKeys = <int, GlobalKey>{};
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_handleScrollDirection);
     _syncPageController();
+    _scheduleParagraphJump();
   }
 
   @override
@@ -200,8 +214,87 @@ class _SaltChapterViewState extends State<SaltChapterView> {
       _page = 0;
       _lastScrollOffset = 0;
       _paginationKey = null;
+      _paragraphKeys.clear();
       _syncPageController();
     }
+    if (oldWidget.jumpRequest != widget.jumpRequest) {
+      _scheduleParagraphJump();
+    }
+  }
+
+  GlobalKey _paragraphKey(int index) =>
+      _paragraphKeys.putIfAbsent(index, GlobalKey.new);
+
+  void _scheduleParagraphJump() {
+    final paragraphIndex = widget.jumpToParagraphIndex;
+    if (paragraphIndex == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _jumpToParagraph(paragraphIndex);
+    });
+  }
+
+  void _jumpToParagraph(int paragraphIndex) {
+    if (paragraphIndex < 0 ||
+        paragraphIndex >= widget.chapter.paragraphs.length) {
+      return;
+    }
+    if (widget.flow == SaltReaderFlow.paginated) {
+      if (_pages.isEmpty || _pageController == null) return;
+      var targetPage = -1;
+      for (var pageIndex = 0; pageIndex < _pages.length; pageIndex++) {
+        if (_pages[pageIndex].any(
+          (segment) => segment.paragraphIndex >= paragraphIndex,
+        )) {
+          targetPage = pageIndex;
+          break;
+        }
+      }
+      if (targetPage < 0) targetPage = _pages.length - 1;
+      if (_pageController!.hasClients) {
+        _pageController!.animateToPage(
+          targetPage,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        );
+      }
+      return;
+    }
+
+    final targetContext = _paragraphKeys[paragraphIndex]?.currentContext;
+    if (targetContext != null) {
+      _ensureParagraphVisible(targetContext);
+      return;
+    }
+    if (!_scrollController.hasClients) return;
+    final maxScroll = _scrollController.position.maxScrollExtent;
+    final lastIndex = widget.chapter.paragraphs.length - 1;
+    final estimate = lastIndex <= 0
+        ? 0.0
+        : maxScroll * (paragraphIndex / lastIndex);
+    _scrollController
+        .animateTo(
+          estimate,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOutCubic,
+        )
+        .then((_) {
+          if (!mounted) return;
+          _ensureParagraphVisibleAt(paragraphIndex);
+        });
+  }
+
+  void _ensureParagraphVisibleAt(int paragraphIndex) {
+    final targetContext = _paragraphKeys[paragraphIndex]?.currentContext;
+    if (targetContext != null) _ensureParagraphVisible(targetContext);
+  }
+
+  void _ensureParagraphVisible(BuildContext context) {
+    Scrollable.ensureVisible(
+      context,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      alignment: 0.08,
+    );
   }
 
   void _syncPageController() {
@@ -252,10 +345,59 @@ class _SaltChapterViewState extends State<SaltChapterView> {
         child: _verticalReader(context, style, gap),
       );
     }
-    return GestureDetector(
-      behavior: HitTestBehavior.translucent,
-      onTap: widget.onReaderTap,
-      child: _paginatedReader(context, style, gap),
+    return LayoutBuilder(
+      builder: (context, constraints) => GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTapUp: (details) => _handlePaginatedTap(
+          details,
+          constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : MediaQuery.sizeOf(context).width,
+        ),
+        child: _paginatedReader(context, style, gap),
+      ),
+    );
+  }
+
+  void _handlePaginatedTap(TapUpDetails details, double width) {
+    if (width <= 0) {
+      widget.onReaderTap?.call();
+      return;
+    }
+    final position = details.localPosition.dx;
+    const edgeFraction = 0.3;
+    if (position < width * edgeFraction) {
+      _movePage(-1);
+      return;
+    }
+    if (position > width * (1 - edgeFraction)) {
+      _movePage(1);
+      return;
+    }
+    widget.onReaderTap?.call();
+  }
+
+  void _movePage(int delta) {
+    final controller = _pageController;
+    if (controller == null || _pages.isEmpty) return;
+    final currentPage = controller.hasClients ? controller.page : null;
+    final current = (currentPage ?? _page)
+        .round()
+        .clamp(0, _pages.length - 1)
+        .toInt();
+    final target = current + delta;
+    if (target < 0) {
+      widget.onPreviousChapter?.call();
+      return;
+    }
+    if (target >= _pages.length) {
+      widget.onNextChapter?.call();
+      return;
+    }
+    controller.animateToPage(
+      target,
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
     );
   }
 
@@ -271,13 +413,16 @@ class _SaltChapterViewState extends State<SaltChapterView> {
       ),
       itemCount: widget.chapter.paragraphs.length,
       separatorBuilder: (_, _) => SizedBox(height: gap),
-      itemBuilder: (context, index) => _ReaderParagraph(
-        text: widget.chapter.paragraphs[index],
-        style: style,
-        selectable: false,
-        isSectionTitle: widget.chapter.textParagraphs[index].isSectionTitle,
-        annotation: widget.annotations[index],
-        onAnnotationTap: widget.onAnnotationTap,
+      itemBuilder: (context, index) => KeyedSubtree(
+        key: _paragraphKey(index),
+        child: _ReaderParagraph(
+          text: widget.chapter.paragraphs[index],
+          style: style,
+          selectable: false,
+          isSectionTitle: widget.chapter.textParagraphs[index].isSectionTitle,
+          annotation: widget.annotations[index],
+          onAnnotationTap: widget.onAnnotationTap,
+        ),
       ),
     );
   }

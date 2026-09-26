@@ -72,6 +72,34 @@ void registerSaltCoreTests() {
     expect(titleSegments.every((segment) => segment.isSectionTitle), isTrue);
   });
 
+  test('Salt short-story numbered sections become a non-empty catalog', () {
+    final chapter = SaltTextChapter.fromXhtml(
+      chapterId: 'short-story',
+      xhtml:
+          '<p>开头正文</p>'
+          '<p>01</p><p>第一小节</p>'
+          '<p>02</p><p>第二小节</p>'
+          '<p>03</p><p>第三小节</p>',
+    );
+
+    expect(chapter.shortSections.map((section) => section.title), [
+      '01',
+      '02',
+      '03',
+    ]);
+    expect(chapter.shortSections.map((section) => section.paragraphIndex), [
+      1,
+      3,
+      5,
+    ]);
+
+    final withoutSections = SaltTextChapter.fromXhtml(
+      chapterId: 'plain-short-story',
+      xhtml: '<p>只有正文，没有小分章。</p>',
+    );
+    expect(withoutSections.shortSections, isEmpty);
+  });
+
   test('Salt reader passes book, catalog and chapter into generic parser', () {
     final manuscript = SaltManuscriptEnvelope.fromJson({
       'data': {

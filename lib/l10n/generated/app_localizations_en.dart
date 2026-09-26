@@ -749,7 +749,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Home, recommendations, and content';
 
   @override
-  String get settingsBackupSubtitle => 'WebDAV data sync';
+  String get settingsBackupSubtitle =>
+      'WebDAV, Google Drive, and OneDrive sync';
 
   @override
   String get settingsAccountSubtitle => 'Sessions and sign-in status';
@@ -967,7 +968,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsShowHotOff => 'Do not load hot searches';
 
   @override
-  String get settingsWebDav => 'WebDAV sync';
+  String get settingsWebDav => 'Cloud sync';
 
   @override
   String get settingsAccountSessions => 'Accounts & multi-device sign-in';
@@ -1051,7 +1052,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsWebDavSubtitle =>
-      'Sync search history, browsing history, offline books, and answer cache';
+      'Sync search, history, offline books, and answer cache';
 
   @override
   String get settingsAccountSessionsSubtitle =>
@@ -2168,7 +2169,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get userProfileNoPublicContent => 'No public content yet';
 
   @override
-  String get webdavTitle => 'WebDAV sync';
+  String get webdavTitle => 'Cloud sync';
 
   @override
   String get webdavIntroTitle => 'Sync local content across devices';
@@ -2191,6 +2192,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webdavProviderOneDrive => 'Microsoft OneDrive (WebDAV)';
+
+  @override
+  String get webdavProviderGoogleDirect =>
+      'Google Drive (direct authorization)';
+
+  @override
+  String get webdavProviderOneDriveDirect =>
+      'Microsoft OneDrive (system folder)';
+
+  @override
+  String get webdavProviderGoogleDirectDescription =>
+      'Authorize with Google. Data stays in the app data folder; users do not enter a client ID.';
+
+  @override
+  String get webdavProviderOneDriveDirectDescription =>
+      'Choose a OneDrive folder in the Android system picker; no Microsoft client ID is required.';
+
+  @override
+  String get webdavCloudAuthorize => 'Authorize cloud storage';
+
+  @override
+  String get webdavCloudAuthorized => 'Cloud storage authorized';
+
+  @override
+  String get webdavCloudAuthorizationFailed =>
+      'Authorization failed. Check the network and app registration.';
+
+  @override
+  String get webdavCloudRegistrationRequired =>
+      'This build has no cloud app registration yet.';
+
+  @override
+  String get webdavCloudChooseFolder => 'Choose OneDrive folder';
+
+  @override
+  String get webdavCloudFolderSelected => 'OneDrive folder selected';
+
+  @override
+  String get webdavCloudFolderAuthorizationFailed =>
+      'Could not access the folder. Choose it again and allow read/write access.';
+
+  @override
+  String get webdavCloudFolderUnavailable =>
+      'The system folder picker is available on Android only.';
 
   @override
   String get webdavProviderGenericDescription =>
@@ -2224,7 +2269,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webdavRemoteDirectoryHint =>
-      'v1, answers, and chapters subdirectories are created automatically';
+      'Sync files use the v1 format under this path';
 
   @override
   String get webdavAuthMethod => 'Authentication method';
@@ -2245,7 +2290,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webdavAccessToken => 'Access token';
 
   @override
-  String get webdavEnable => 'Enable WebDAV sync';
+  String get webdavEnable => 'Enable cloud sync';
 
   @override
   String get webdavEnableSubtitle =>
@@ -2274,16 +2319,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webdavLoading => 'Loading WebDAV settings';
 
   @override
-  String get webdavConfiguredStatus => 'WebDAV configured';
+  String get webdavConfiguredStatus => 'Cloud sync configured';
 
   @override
-  String get webdavNotConfigured => 'WebDAV not configured';
+  String get webdavNotConfigured => 'Cloud sync not configured';
 
   @override
-  String get webdavSettingsSaved => 'WebDAV settings saved';
+  String get webdavSettingsSaved => 'Cloud sync settings saved';
 
   @override
-  String get webdavClosedStatus => 'WebDAV disabled';
+  String get webdavClosedStatus => 'Cloud sync turned off';
 
   @override
   String get webdavTesting => 'Testing WebDAV connection';
@@ -2318,7 +2363,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get webdavDisable => 'Turn off sync';
 
   @override
-  String get webdavClearLocalSettings => 'Clear local settings and credentials';
+  String get webdavClearLocalSettings =>
+      'Clear local settings and authorization';
 
   @override
   String webdavLoadFailed(String error) {
@@ -2348,11 +2394,11 @@ class AppLocalizationsEn extends AppLocalizations {
       'WebDAV sync is off; credentials remain in the private local database';
 
   @override
-  String get webdavClearTitle => 'Clear WebDAV settings?';
+  String get webdavClearTitle => 'Clear cloud sync settings?';
 
   @override
   String get webdavClearMessage =>
-      'This removes the WebDAV address, account, and credentials saved locally without deleting remote sync data.';
+      'This removes saved cloud addresses, accounts, and authorization from this device. Remote data remains.';
 
   @override
   String get webdavCleared => 'Local WebDAV settings and credentials cleared';

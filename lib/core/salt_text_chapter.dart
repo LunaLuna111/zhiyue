@@ -35,6 +35,19 @@ class SaltTextParagraph {
   bool get isSectionTitle => kind == SaltTextParagraphKind.sectionTitle;
 }
 
+/// A numbered subsection embedded in a short-story chapter.
+///
+/// Salt's short stories are sometimes returned as one server chapter even
+/// though the body contains an internal directory such as `01`, `02`, `03`.
+/// Keeping the paragraph index here lets the reader expose those entries
+/// without pretending that they are separate server chapters.
+class SaltTextSection {
+  const SaltTextSection({required this.title, required this.paragraphIndex});
+
+  final String title;
+  final int paragraphIndex;
+}
+
 class SaltTextChapter {
   const SaltTextChapter._({
     required this.chapterId,
@@ -44,6 +57,7 @@ class SaltTextChapter {
     required this.textParagraphs,
     required this.paragraphs,
     required this.plainText,
+    required this.shortSections,
   });
 
   final String chapterId;
@@ -53,6 +67,7 @@ class SaltTextChapter {
   final List<SaltTextParagraph> textParagraphs;
   final List<String> paragraphs;
   final String plainText;
+  final List<SaltTextSection> shortSections;
 
   factory SaltTextChapter.fromXhtml({
     required String chapterId,
@@ -98,6 +113,7 @@ class SaltTextChapter {
     final paragraphs = textParagraphs
         .map((paragraph) => paragraph.text)
         .toList(growable: false);
+    final shortSections = _shortSections(textParagraphs);
     return SaltTextChapter._(
       chapterId: chapterId,
       contentId: '$chapterId-${xhtml.length}-${paragraphs.length}',
@@ -106,6 +122,7 @@ class SaltTextChapter {
       textParagraphs: List.unmodifiable(textParagraphs),
       paragraphs: List.unmodifiable(paragraphs),
       plainText: paragraphs.join('\n\n'),
+      shortSections: shortSections,
     );
   }
 
@@ -175,6 +192,10 @@ class SaltTextChapter {
         .map((value) => value.trim())
         .where((value) => value.isNotEmpty)
         .toList(growable: false);
+    final numberedTitleCount = document.textNodes
+        .map((node) => node.text.trim())
+        .where(_isShortSectionTitle)
+        .length;
     var titleIndex = 0;
     for (final node in document.textNodes) {
       final text = node.text.trim();
@@ -182,6 +203,11 @@ class SaltTextChapter {
       var isSectionTitle =
           node.kind == ReaderNodeKind.heading ||
           node.blockKey == 'paragraphTitle';
+      if (!isSectionTitle &&
+          numberedTitleCount > 1 &&
+          _isShortSectionTitle(text)) {
+        isSectionTitle = true;
+      }
       // universal_reader deliberately preserves data-block-key over CSS
       // classes. Salt XHTML often combines both attributes, so retain the
       // public block key while recovering the paragraphTitle semantic from
@@ -204,6 +230,35 @@ class SaltTextChapter {
       );
     }
     return List.unmodifiable(paragraphs);
+  }
+
+  static List<SaltTextSection> _shortSections(
+    List<SaltTextParagraph> paragraphs,
+  ) {
+    final sections = paragraphs
+        .where(
+          (paragraph) =>
+              paragraph.isSectionTitle && _isShortSectionTitle(paragraph.text),
+        )
+        .map(
+          (paragraph) => SaltTextSection(
+            title: paragraph.text,
+            paragraphIndex: paragraph.index,
+          ),
+        )
+        .toList(growable: false);
+    // A lone numeric paragraph is more likely to be ordinary content than a
+    // usable directory.  The catalog button must stay disabled in that case.
+    return sections.length > 1 ? List.unmodifiable(sections) : const [];
+  }
+
+  static bool _isShortSectionTitle(String value) {
+    final normalized = value.trim().replaceAll('０', '0');
+    final ascii = normalized.replaceAllMapped(
+      RegExp('[１２３４５６７８９]'),
+      (match) => String.fromCharCode(match.group(0)!.codeUnitAt(0) - 0xfee0),
+    );
+    return RegExp(r'^\d{1,3}$').hasMatch(ascii);
   }
 
   static List<String> _sectionTitleTexts(String xhtml) {

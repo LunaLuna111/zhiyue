@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 
 import 'answer_detail_cache.dart';
 import 'app_log.dart';
+import 'cloud_sync_auth.dart';
+import 'google_drive_sync_client.dart';
+import 'one_drive_folder_client.dart';
 import 'salt_bookshelf_store.dart';
 import 'salt_chapter_cache.dart';
 import 'session_store.dart';
@@ -12,7 +15,7 @@ import 'webdav_client.dart';
 import 'webdav_models.dart';
 import 'webdav_settings_store.dart';
 
-typedef WebDavClientFactory = WebDavClient Function(WebDavSettings settings);
+typedef WebDavClientFactory = SyncFileClient Function(WebDavSettings settings);
 
 /// Synchronizes user-selected, non-credential content through a WebDAV
 /// server. The server sees search/history data and cached public content, but
@@ -30,7 +33,16 @@ class WebDavSyncService extends ChangeNotifier {
        _bookshelf = bookshelf ?? SaltBookshelfStore.instance,
        _answerCache = answerCache ?? AnswerDetailCache.instance,
        _clientFactory =
-           clientFactory ?? ((settings) => WebDavClient(settings: settings));
+           clientFactory ??
+           ((settings) => switch (settings.provider) {
+             WebDavProviderKind.googleDrive => GoogleDriveSyncClient(
+               settings: settings,
+             ),
+             WebDavProviderKind.oneDrive => OneDriveFolderClient(
+               settings: settings,
+             ),
+             _ => WebDavClient(settings: settings),
+           });
 
   final SessionStore session;
   final WebDavSettingsStore _settingsStore;
@@ -109,6 +121,8 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<void> clearSettings() async {
+    await OneDriveFolderClient.clearFolder();
+    await CloudSyncAuth.instance.clear();
     await _settingsStore.clear();
     _settings = const WebDavSettings.disabled();
     _setStatus(const WebDavSyncStatus.initial());
@@ -374,7 +388,7 @@ class WebDavSyncService extends ChangeNotifier {
     );
   }
 
-  Future<_RemoteSyncSnapshot> _readRemote(WebDavClient client) async {
+  Future<_RemoteSyncSnapshot> _readRemote(SyncFileClient client) async {
     Map<String, dynamic>? index;
     try {
       index = await client.getJson('v1/index.json');
@@ -399,7 +413,10 @@ class WebDavSyncService extends ChangeNotifier {
     );
   }
 
-  Future<List<String>> _readStringList(WebDavClient client, String path) async {
+  Future<List<String>> _readStringList(
+    SyncFileClient client,
+    String path,
+  ) async {
     final source = await _readOptionalJson(client, path);
     final items = source?['items'];
     if (items is! List) return const [];
@@ -411,7 +428,9 @@ class WebDavSyncService extends ChangeNotifier {
         .toList(growable: false);
   }
 
-  Future<List<BrowsingHistoryEntry>> _readBrowsing(WebDavClient client) async {
+  Future<List<BrowsingHistoryEntry>> _readBrowsing(
+    SyncFileClient client,
+  ) async {
     final source = await _readOptionalJson(client, 'v1/browsing-history.json');
     final items = source?['items'];
     if (items is! List) return const [];
@@ -422,7 +441,7 @@ class WebDavSyncService extends ChangeNotifier {
         .toList(growable: false);
   }
 
-  Future<List<SaltBookshelfEntry>> _readBookshelf(WebDavClient client) async {
+  Future<List<SaltBookshelfEntry>> _readBookshelf(SyncFileClient client) async {
     final source = await _readOptionalJson(client, 'v1/bookshelf.json');
     final items = source?['items'];
     if (items is! List) return const [];
@@ -443,7 +462,7 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<List<AnswerDetailCacheSnapshot>> _readAnswerEntries(
-    WebDavClient client,
+    SyncFileClient client,
     Object? rawReferences,
   ) async {
     final references = _readReferences(rawReferences, kind: 'answer');
@@ -454,7 +473,7 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<List<SaltCachedChapter>> _readChapterEntries(
-    WebDavClient client,
+    SyncFileClient client,
     Object? rawReferences,
   ) async {
     final references = _readReferences(rawReferences, kind: 'chapter');
@@ -489,7 +508,7 @@ class WebDavSyncService extends ChangeNotifier {
   }
 
   Future<Map<String, dynamic>?> _readOptionalJson(
-    WebDavClient client,
+    SyncFileClient client,
     String path,
   ) async {
     try {

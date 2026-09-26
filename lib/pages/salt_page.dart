@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart' show compute, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:universal_reader/universal_reader_flutter.dart';
 
 import '../core/api_client.dart';
@@ -14,6 +15,7 @@ import '../core/content_export_service.dart';
 import '../core/json_tools.dart';
 import '../core/debug_hooks.dart';
 import '../core/privacy_device_profile.dart';
+import '../core/platform_cache.dart';
 import '../core/salt_bookshelf_store.dart';
 import '../core/salt_catalog_store.dart';
 import '../core/salt_chapter_cache.dart';

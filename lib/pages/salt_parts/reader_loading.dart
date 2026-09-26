@@ -31,6 +31,8 @@ extension _SaltReaderLoading on _SaltReaderPageState {
       _catalogError = null;
       _catalogLoading = false;
       _controlsVisible = false;
+      _readerJumpParagraphIndex = null;
+      _readerJumpRequest++;
     });
     try {
       if (!bypassCache) {

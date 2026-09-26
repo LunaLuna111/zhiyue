@@ -45,7 +45,9 @@ class MainActivity : FlutterActivity() {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val ttsController by lazy { TtsController(applicationContext) }
     private val qrCodeController by lazy { QrCodeController() }
+    private val cloudFolderStore by lazy { CloudFolderStore(applicationContext) }
     private var pendingImagePickerResult: MethodChannel.Result? = null
+    private var pendingCloudFolderResult: MethodChannel.Result? = null
     private val privacyDeviceProfile by lazy {
         PrivacyDeviceProfile(applicationContext)
     }
@@ -101,6 +103,51 @@ class MainActivity : FlutterActivity() {
                     "无法打开系统图片选择器",
                     null,
                 )
+            }
+        }
+        MethodChannel(
+            flutterEngine.dartExecutor.binaryMessenger,
+            "com.zhiyue.client/cloud_folder",
+        ).setMethodCallHandler { call, result ->
+            try {
+                when (call.method) {
+                    "pickFolder" -> beginCloudFolderPicker(result)
+                    "hasFolder" -> result.success(cloudFolderStore.hasFolder())
+                    "folderName" -> result.success(cloudFolderStore.folderName())
+                    "clearFolder" -> {
+                        cloudFolderStore.clear()
+                        result.success(null)
+                    }
+                    "testConnection" -> runCloudFolderOperation(result) {
+                        cloudFolderStore.testConnection()
+                        null
+                    }
+                    "ensureDirectory" -> runCloudFolderOperation(result) {
+                        cloudFolderStore.ensureDirectory(
+                            call.argument<String>("path") ?: throw IllegalArgumentException(),
+                        )
+                        null
+                    }
+                    "read" -> runCloudFolderOperation(result) {
+                        cloudFolderStore.read(
+                            call.argument<String>("path") ?: throw IllegalArgumentException(),
+                        )
+                    }
+                    "write" -> runCloudFolderOperation(result) {
+                        val bytes = call.argument<ByteArray>("bytes")
+                            ?: throw IllegalArgumentException()
+                        cloudFolderStore.write(
+                            path = call.argument<String>("path")
+                                ?: throw IllegalArgumentException(),
+                            bytes = bytes,
+                            contentType = call.argument<String>("contentType"),
+                        )
+                        null
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (error: Exception) {
+                sendCloudFolderError(result, error)
             }
         }
         MethodChannel(
@@ -322,8 +369,88 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    private fun beginCloudFolderPicker(result: MethodChannel.Result) {
+        if (pendingCloudFolderResult != null) {
+            result.error("picker_busy", "文件夹选择器正在使用", null)
+            return
+        }
+        pendingCloudFolderResult = result
+        try {
+            startActivityForResult(
+                Intent(Intent.ACTION_OPEN_DOCUMENT_TREE).apply {
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                    addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+                },
+                CLOUD_FOLDER_REQUEST_CODE,
+            )
+        } catch (error: Exception) {
+            pendingCloudFolderResult = null
+            sendCloudFolderError(result, error)
+        }
+    }
+
+    private fun runCloudFolderOperation(
+        result: MethodChannel.Result,
+        operation: () -> Any?,
+    ) {
+        Thread {
+            try {
+                val value = operation()
+                mainHandler.post { result.success(value) }
+            } catch (error: Exception) {
+                mainHandler.post { sendCloudFolderError(result, error) }
+            }
+        }.start()
+    }
+
+    private fun sendCloudFolderError(
+        result: MethodChannel.Result,
+        error: Exception,
+    ) {
+        val code = when (error) {
+            is CloudFolderStore.CloudFolderPathException -> "invalid_path"
+            is CloudFolderStore.CloudFolderSizeException -> "file_too_large"
+            is CloudFolderStore.CloudFolderPermissionException -> "permission_denied"
+            else -> "cloud_folder_error"
+        }
+        val message = when (code) {
+            "invalid_path" -> "文件夹路径无效"
+            "file_too_large" -> "同步文件不能超过 64 MB"
+            "permission_denied" -> "无法访问所选文件夹，请重新授权"
+            else -> "OneDrive 文件夹操作失败"
+        }
+        result.error(code, message, null)
+    }
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == CLOUD_FOLDER_REQUEST_CODE) {
+            val pending = pendingCloudFolderResult ?: return
+            pendingCloudFolderResult = null
+            if (resultCode != RESULT_OK || data?.data == null) {
+                pending.success(null)
+                return
+            }
+            try {
+                val uri = data.data!!
+                val grantedFlags = data.flags and (
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                    )
+                val requiredFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                if (grantedFlags and requiredFlags != requiredFlags) {
+                    throw CloudFolderStore.CloudFolderPermissionException()
+                }
+                contentResolver.takePersistableUriPermission(uri, grantedFlags)
+                cloudFolderStore.remember(uri)
+                pending.success(cloudFolderStore.folderName() ?: "OneDrive")
+            } catch (error: Exception) {
+                sendCloudFolderError(pending, error)
+            }
+            return
+        }
         if (requestCode != IMAGE_PICKER_REQUEST_CODE) return
         val pending = pendingImagePickerResult ?: return
         pendingImagePickerResult = null
@@ -1019,6 +1146,7 @@ class MainActivity : FlutterActivity() {
 
     companion object {
         private const val IMAGE_PICKER_REQUEST_CODE = 4107
+        private const val CLOUD_FOLDER_REQUEST_CODE = 4108
         private const val MAX_PICKED_IMAGE_BYTES = 20 * 1024 * 1024
         private const val MAX_RESPONSE_BYTES = 12 * 1024 * 1024
         private const val MAX_REQUEST_BYTES = 4 * 1024 * 1024

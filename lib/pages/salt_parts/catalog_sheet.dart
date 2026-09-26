@@ -70,7 +70,9 @@ class _SaltCatalogSheet extends StatefulWidget {
     required this.currentSectionIndex,
     required this.sectionCount,
     required this.title,
+    this.localSections = const <SaltTextSection>[],
     this.onOpenSection,
+    this.onOpenParagraph,
     this.exportFormat,
     this.keyProvider,
   });
@@ -81,7 +83,9 @@ class _SaltCatalogSheet extends StatefulWidget {
   final int? currentSectionIndex;
   final int? sectionCount;
   final String title;
+  final List<SaltTextSection> localSections;
   final ValueChanged<String>? onOpenSection;
+  final ValueChanged<int>? onOpenParagraph;
   final SaltChapterExportFormat? exportFormat;
   final SaltManuscriptKeyProvider? keyProvider;
 
@@ -101,6 +105,7 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
   int? _serverTotal;
 
   bool get _isExportMode => widget.exportFormat != null;
+  bool get _isLocalMode => widget.localSections.length > 1;
 
   String _sectionId(Map<String, dynamic> row) =>
       _findString(row, const ['section_id', 'id']) ?? '';
@@ -108,8 +113,26 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
   @override
   void initState() {
     super.initState();
-    unawaited(_loadCatalog());
+    if (_isLocalMode) {
+      _rows.addAll(_localCatalogRows(widget.localSections));
+      _serverTotal = _rows.length;
+    } else {
+      unawaited(_loadCatalog());
+    }
   }
+
+  List<Map<String, dynamic>> _localCatalogRows(
+    List<SaltTextSection> sections,
+  ) => [
+    for (var index = 0; index < sections.length; index++)
+      {
+        'section_id': 'short-subsection-$index',
+        'global_idx': index,
+        'title': sections[index].title,
+        'serial_number_text': sections[index].title,
+        '_paragraph_index': sections[index].paragraphIndex,
+      },
+  ];
 
   Future<void> _loadCatalog({bool forceRefresh = false}) async {
     if (_loading || _exporting) return;
@@ -441,39 +464,52 @@ class _SaltCatalogSheetState extends State<_SaltCatalogSheet> {
     if (rows.isEmpty) {
       return Center(child: Text(l10n.saltDirectoryEmpty));
     }
-    return RefreshIndicator(
-      onRefresh: () => _loadCatalog(forceRefresh: true),
-      child: ListView.builder(
-        physics: const AlwaysScrollableScrollPhysics(),
-        itemCount: rows.length,
-        itemBuilder: (context, index) {
-          final value = rows[index];
-          final sectionId = _findString(value, const ['section_id', 'id']);
-          final selected = sectionId == widget.currentSectionId;
-          return _SaltCatalogRow(
-            value: value,
+    final list = ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
+      itemCount: rows.length,
+      itemBuilder: (context, index) {
+        final value = rows[index];
+        final sectionId = _findString(value, const ['section_id', 'id']);
+        final selected = sectionId == widget.currentSectionId;
+        final paragraphIndex = _localParagraphIndex(value);
+        return _SaltCatalogRow(
+          value: value,
+          selected: selected,
+          selectable: _isExportMode,
+          checked: sectionId != null && _selectedIds.contains(sectionId),
+          cached: sectionId != null && _cachedIds.contains(sectionId),
+          selectionEnabled: !_exporting,
+          progressText: saltCatalogProgressText(
+            value,
             selected: selected,
-            selectable: _isExportMode,
-            checked: sectionId != null && _selectedIds.contains(sectionId),
-            cached: sectionId != null && _cachedIds.contains(sectionId),
-            selectionEnabled: !_exporting,
-            progressText: saltCatalogProgressText(
-              value,
-              selected: selected,
-              currentSectionIndex: widget.currentSectionIndex,
-              sectionCount: total,
-              l10n: l10n,
-            ),
-            onTap: sectionId == null
-                ? null
-                : _isExportMode
-                ? () => _toggleSection(sectionId)
-                : () => widget.onOpenSection?.call(sectionId),
-          );
-        },
-      ),
+            currentSectionIndex: widget.currentSectionIndex,
+            sectionCount: total,
+            l10n: l10n,
+          ),
+          onTap: sectionId == null
+              ? null
+              : _isExportMode
+              ? () => _toggleSection(sectionId)
+              : paragraphIndex != null
+              ? () => widget.onOpenParagraph?.call(paragraphIndex)
+              : () => widget.onOpenSection?.call(sectionId),
+        );
+      },
     );
+    return _isLocalMode
+        ? list
+        : RefreshIndicator(
+            onRefresh: () => _loadCatalog(forceRefresh: true),
+            child: list,
+          );
   }
+}
+
+int? _localParagraphIndex(Map<String, dynamic> value) {
+  final candidate = value['_paragraph_index'];
+  if (candidate is int) return candidate;
+  if (candidate is num) return candidate.round();
+  return int.tryParse(plainText(candidate));
 }
 
 class _SaltCatalogRow extends StatelessWidget {

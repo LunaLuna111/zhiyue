@@ -1,12 +1,20 @@
 import 'dart:convert';
 
-enum WebDavProviderKind { generic, googleDriveGateway, microsoftOneDrive }
+enum WebDavProviderKind {
+  generic,
+  googleDriveGateway,
+  microsoftOneDrive,
+  googleDrive,
+  oneDrive,
+}
 
 extension WebDavProviderKindLabel on WebDavProviderKind {
   String get label => switch (this) {
     WebDavProviderKind.generic => '通用 WebDAV',
     WebDavProviderKind.googleDriveGateway => 'Google Drive（WebDAV 网关）',
     WebDavProviderKind.microsoftOneDrive => 'Microsoft OneDrive（WebDAV）',
+    WebDavProviderKind.googleDrive => 'Google Drive',
+    WebDavProviderKind.oneDrive => 'Microsoft OneDrive',
   };
 
   String get description => switch (this) {
@@ -15,12 +23,15 @@ extension WebDavProviderKindLabel on WebDavProviderKind {
       'Google Drive 本身不提供原生 WebDAV，请填写连接到 Google Drive 的 WebDAV 网关地址。',
     WebDavProviderKind.microsoftOneDrive =>
       '填写 OneDrive 的 WebDAV 兼容入口；部分账号或服务可能已限制旧版入口。',
+    WebDavProviderKind.googleDrive => '跳转到 Google 授权，文件保存在应用专用空间。',
+    WebDavProviderKind.oneDrive => '通过 Android 系统文件选择器选择 OneDrive 文件夹。',
   };
 
   String get endpointHint => switch (this) {
     WebDavProviderKind.generic => 'https://dav.example.com/',
     WebDavProviderKind.googleDriveGateway => 'https://你的网关.example.com/dav/',
     WebDavProviderKind.microsoftOneDrive => 'https://d.docs.live.net/<CID>/',
+    WebDavProviderKind.googleDrive || WebDavProviderKind.oneDrive => '',
   };
 }
 
@@ -66,6 +77,10 @@ class WebDavSettings {
 
   bool get isConfigured => enabled && validate() == null;
 
+  bool get usesDirectCloud =>
+      provider == WebDavProviderKind.googleDrive ||
+      provider == WebDavProviderKind.oneDrive;
+
   Uri? get endpointUri {
     final value = endpoint.trim();
     if (value.isEmpty) return null;
@@ -74,6 +89,15 @@ class WebDavSettings {
 
   String? validate() {
     if (!enabled) return null;
+    if (usesDirectCloud) {
+      final directory = _normalizeDirectory(remoteDirectory);
+      if (_hasHeaderControl(directory) ||
+          directory.isEmpty ||
+          directory.split('/').any((part) => part == '..')) {
+        return '远程目录无效';
+      }
+      return null;
+    }
     final uri = endpointUri;
     if (uri == null || uri.host.trim().isEmpty) return 'WebDAV 地址无效';
     if (uri.scheme.toLowerCase() != 'https') {

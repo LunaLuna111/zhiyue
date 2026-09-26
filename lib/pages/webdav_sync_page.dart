@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../core/cloud_sync_auth.dart';
+import '../core/one_drive_folder_client.dart';
 import '../core/webdav_models.dart';
 import '../core/webdav_sync_service.dart';
 import '../l10n/zh_localization.dart';
@@ -71,13 +73,51 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
   WebDavSettings _draft() => WebDavSettings(
     enabled: _enabled,
     provider: _provider,
-    endpoint: _endpointController.text,
+    endpoint: _directCloud ? '' : _endpointController.text,
     remoteDirectory: _directoryController.text,
-    username: _usernameController.text,
-    secret: _secretController.text,
+    username: _directCloud ? '' : _usernameController.text,
+    secret: _directCloud ? '' : _secretController.text,
     authMethod: _authMethod,
     syncOnStartup: _syncOnStartup,
   );
+
+  bool get _directCloud =>
+      _provider == WebDavProviderKind.googleDrive ||
+      _provider == WebDavProviderKind.oneDrive;
+
+  Future<void> _authorizeCloud() async {
+    setState(() => _saving = true);
+    try {
+      await CloudSyncAuth.instance.signIn(_provider);
+      if (!mounted) return;
+      setState(() => _enabled = true);
+      if (await _saveDraft() && mounted) {
+        _showMessage(context.zhL10n.webdavCloudAuthorized);
+      }
+    } on Object {
+      if (mounted) _showMessage(context.zhL10n.webdavCloudAuthorizationFailed);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _chooseOneDriveFolder() async {
+    setState(() => _saving = true);
+    try {
+      final folderName = await OneDriveFolderClient.pickFolder();
+      if (!mounted || folderName == null) return;
+      setState(() => _enabled = true);
+      if (await _saveDraft() && mounted) {
+        _showMessage(context.zhL10n.webdavCloudFolderSelected);
+      }
+    } on Object {
+      if (mounted) {
+        _showMessage(context.zhL10n.webdavCloudFolderAuthorizationFailed);
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   Future<bool> _saveDraft() async {
     final draft = _draft();
@@ -197,6 +237,8 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         WebDavProviderKind.generic => l10n.webdavProviderGeneric,
         WebDavProviderKind.googleDriveGateway => l10n.webdavProviderGoogle,
         WebDavProviderKind.microsoftOneDrive => l10n.webdavProviderOneDrive,
+        WebDavProviderKind.googleDrive => l10n.webdavProviderGoogleDirect,
+        WebDavProviderKind.oneDrive => l10n.webdavProviderOneDriveDirect,
       };
 
   String _providerDescription(
@@ -208,6 +250,9 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
       l10n.webdavProviderGoogleDescription,
     WebDavProviderKind.microsoftOneDrive =>
       l10n.webdavProviderOneDriveDescription,
+    WebDavProviderKind.googleDrive =>
+      l10n.webdavProviderGoogleDirectDescription,
+    WebDavProviderKind.oneDrive => l10n.webdavProviderOneDriveDirectDescription,
   };
 
   String _providerHint(AppLocalizations l10n, WebDavProviderKind provider) =>
@@ -215,6 +260,7 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
         WebDavProviderKind.generic => l10n.webdavProviderGenericHint,
         WebDavProviderKind.googleDriveGateway => l10n.webdavProviderGoogleHint,
         WebDavProviderKind.microsoftOneDrive => l10n.webdavProviderOneDriveHint,
+        WebDavProviderKind.googleDrive || WebDavProviderKind.oneDrive => '',
       };
 
   String _authMethodLabel(AppLocalizations l10n, WebDavAuthMethod method) =>
@@ -302,7 +348,14 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           label: context.zhL10n.webdavProviderType,
           value: _provider,
           items: [
-            for (final item in WebDavProviderKind.values)
+            for (final item in [
+              WebDavProviderKind.generic,
+              WebDavProviderKind.googleDrive,
+              WebDavProviderKind.oneDrive,
+              if (_provider == WebDavProviderKind.googleDriveGateway ||
+                  _provider == WebDavProviderKind.microsoftOneDrive)
+                _provider,
+            ])
               ZhChoiceItem(
                 value: item,
                 label: _providerLabel(context.zhL10n, item),
@@ -320,18 +373,19 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           ).textTheme.bodySmall?.copyWith(color: ZhPalette.subtleInk),
         ),
         const SizedBox(height: ZhSpace.sm),
-        TextField(
-          key: const ValueKey('webdav-endpoint'),
-          controller: _endpointController,
-          enabled: !_saving,
-          keyboardType: TextInputType.url,
-          decoration: InputDecoration(
-            labelText: context.zhL10n.webdavEndpoint,
-            hintText: _providerHint(context.zhL10n, _provider),
-            helperText: context.zhL10n.webdavHttpsHint,
+        if (!_directCloud)
+          TextField(
+            key: const ValueKey('webdav-endpoint'),
+            controller: _endpointController,
+            enabled: !_saving,
+            keyboardType: TextInputType.url,
+            decoration: InputDecoration(
+              labelText: context.zhL10n.webdavEndpoint,
+              hintText: _providerHint(context.zhL10n, _provider),
+              helperText: context.zhL10n.webdavHttpsHint,
+            ),
           ),
-        ),
-        const SizedBox(height: ZhSpace.sm),
+        if (!_directCloud) const SizedBox(height: ZhSpace.sm),
         TextField(
           key: const ValueKey('webdav-directory'),
           controller: _directoryController,
@@ -343,23 +397,46 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
           ),
         ),
         const SizedBox(height: ZhSpace.sm),
-        ZhChoiceField<WebDavAuthMethod>(
-          key: const ValueKey('webdav-auth-method'),
-          label: context.zhL10n.webdavAuthMethod,
-          value: _authMethod,
-          items: [
-            for (final item in WebDavAuthMethod.values)
-              ZhChoiceItem(
-                value: item,
-                label: _authMethodLabel(context.zhL10n, item),
-              ),
-          ],
-          onChanged: _saving
-              ? null
-              : (value) => setState(() => _authMethod = value),
-        ),
-        const SizedBox(height: ZhSpace.sm),
-        if (_authMethod == WebDavAuthMethod.basic)
+        if (_provider == WebDavProviderKind.googleDrive)
+          FilledButton.icon(
+            onPressed: _saving || !CloudSyncAuth.instance.isAvailable(_provider)
+                ? null
+                : _authorizeCloud,
+            icon: const Icon(Icons.open_in_browser),
+            label: Text(context.zhL10n.webdavCloudAuthorize),
+          ),
+        if (_provider == WebDavProviderKind.googleDrive &&
+            !CloudSyncAuth.instance.isAvailable(_provider))
+          Text(context.zhL10n.webdavCloudRegistrationRequired),
+        if (_provider == WebDavProviderKind.oneDrive)
+          FilledButton.icon(
+            onPressed: _saving || !OneDriveFolderClient.isAvailable
+                ? null
+                : _chooseOneDriveFolder,
+            icon: const Icon(Icons.folder_open),
+            label: Text(context.zhL10n.webdavCloudChooseFolder),
+          ),
+        if (_provider == WebDavProviderKind.oneDrive &&
+            !OneDriveFolderClient.isAvailable)
+          Text(context.zhL10n.webdavCloudFolderUnavailable),
+        if (!_directCloud)
+          ZhChoiceField<WebDavAuthMethod>(
+            key: const ValueKey('webdav-auth-method'),
+            label: context.zhL10n.webdavAuthMethod,
+            value: _authMethod,
+            items: [
+              for (final item in WebDavAuthMethod.values)
+                ZhChoiceItem(
+                  value: item,
+                  label: _authMethodLabel(context.zhL10n, item),
+                ),
+            ],
+            onChanged: _saving
+                ? null
+                : (value) => setState(() => _authMethod = value),
+          ),
+        if (!_directCloud) const SizedBox(height: ZhSpace.sm),
+        if (!_directCloud && _authMethod == WebDavAuthMethod.basic)
           TextField(
             key: const ValueKey('webdav-username'),
             controller: _usernameController,
@@ -368,19 +445,20 @@ class _WebDavSyncPageState extends State<WebDavSyncPage> {
               labelText: context.zhL10n.webdavUsername,
             ),
           ),
-        if (_authMethod == WebDavAuthMethod.basic)
+        if (!_directCloud && _authMethod == WebDavAuthMethod.basic)
           const SizedBox(height: ZhSpace.sm),
-        TextField(
-          key: const ValueKey('webdav-secret'),
-          controller: _secretController,
-          enabled: !_saving,
-          obscureText: true,
-          decoration: InputDecoration(
-            labelText: _authMethod == WebDavAuthMethod.basic
-                ? context.zhL10n.webdavPasswordOrAppPassword
-                : context.zhL10n.webdavAccessToken,
+        if (!_directCloud)
+          TextField(
+            key: const ValueKey('webdav-secret'),
+            controller: _secretController,
+            enabled: !_saving,
+            obscureText: true,
+            decoration: InputDecoration(
+              labelText: _authMethod == WebDavAuthMethod.basic
+                  ? context.zhL10n.webdavPasswordOrAppPassword
+                  : context.zhL10n.webdavAccessToken,
+            ),
           ),
-        ),
         const SizedBox(height: ZhSpace.sm),
         ZhLiquidGlassSwitchTile(
           key: const ValueKey('webdav-enabled'),

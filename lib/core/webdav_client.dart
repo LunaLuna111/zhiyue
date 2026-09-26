@@ -96,7 +96,17 @@ class HttpWebDavTransport implements WebDavTransport {
   static int _effectivePort(Uri uri) => uri.hasPort ? uri.port : 443;
 }
 
-class WebDavClient {
+abstract interface class SyncFileClient {
+  Future<void> close();
+  Future<void> ensureDirectory([String relative]);
+  Future<void> testConnection();
+  Future<List<int>?> getBytes(String relative);
+  Future<void> putBytes(String relative, List<int> body, {String contentType});
+  Future<Map<String, dynamic>?> getJson(String relative);
+  Future<void> putJson(String relative, Map<String, dynamic> value);
+}
+
+class WebDavClient implements SyncFileClient {
   WebDavClient({required this.settings, WebDavTransport? transport})
     : _transport = transport ?? HttpWebDavTransport();
 
@@ -108,12 +118,14 @@ class WebDavClient {
 
   bool _closed = false;
 
+  @override
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
     await _transport.close();
   }
 
+  @override
   Future<void> ensureDirectory([String relative = '']) async {
     final directory = _normalizeRelative(relative);
     final segments = directory.isEmpty
@@ -132,6 +144,7 @@ class WebDavClient {
     }
   }
 
+  @override
   Future<void> testConnection() async {
     await ensureDirectory();
     final response = await _request(
@@ -144,6 +157,7 @@ class WebDavClient {
     }
   }
 
+  @override
   Future<List<int>?> getBytes(String relative) async {
     final response = await _request('GET', relative);
     if (response.isNotFound) return null;
@@ -153,6 +167,7 @@ class WebDavClient {
     return response.body;
   }
 
+  @override
   Future<void> putBytes(
     String relative,
     List<int> body, {
@@ -172,6 +187,7 @@ class WebDavClient {
     }
   }
 
+  @override
   Future<Map<String, dynamic>?> getJson(String relative) async {
     final bytes = await getBytes(relative);
     if (bytes == null) return null;
@@ -186,6 +202,7 @@ class WebDavClient {
     }
   }
 
+  @override
   Future<void> putJson(String relative, Map<String, dynamic> value) async {
     await putBytes(
       relative,

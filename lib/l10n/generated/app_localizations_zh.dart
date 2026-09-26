@@ -744,7 +744,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsPersonalizationSubtitle => '首页、推荐与内容偏好';
 
   @override
-  String get settingsBackupSubtitle => 'WebDAV 数据同步';
+  String get settingsBackupSubtitle => 'WebDAV、Google Drive 与 OneDrive 同步';
 
   @override
   String get settingsAccountSubtitle => '会话与登录状态';
@@ -950,7 +950,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsShowHotOff => '搜索页不加载热搜内容';
 
   @override
-  String get settingsWebDav => 'WebDAV 同步';
+  String get settingsWebDav => '云同步';
 
   @override
   String get settingsAccountSessions => '账号与多端登录';
@@ -2111,7 +2111,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get userProfileNoPublicContent => '还没有公开内容';
 
   @override
-  String get webdavTitle => 'WebDAV 同步';
+  String get webdavTitle => '云同步';
 
   @override
   String get webdavIntroTitle => '跨设备同步本地内容';
@@ -2134,6 +2134,44 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get webdavProviderOneDrive => 'Microsoft OneDrive（WebDAV）';
+
+  @override
+  String get webdavProviderGoogleDirect => 'Google Drive（直接授权）';
+
+  @override
+  String get webdavProviderOneDriveDirect => 'Microsoft OneDrive（系统文件夹）';
+
+  @override
+  String get webdavProviderGoogleDirectDescription =>
+      '通过 Google 授权，数据保存在应用专用空间，无需用户填写 Client ID。';
+
+  @override
+  String get webdavProviderOneDriveDirectDescription =>
+      '通过 Android 系统文件选择器选择 OneDrive 文件夹，无需 Microsoft Client ID。';
+
+  @override
+  String get webdavCloudAuthorize => '跳转授权云盘';
+
+  @override
+  String get webdavCloudAuthorized => '云盘授权成功';
+
+  @override
+  String get webdavCloudAuthorizationFailed => '授权失败，请检查网络与应用注册配置';
+
+  @override
+  String get webdavCloudRegistrationRequired => '此构建尚未配置云平台应用注册，暂不能授权。';
+
+  @override
+  String get webdavCloudChooseFolder => '选择 OneDrive 文件夹';
+
+  @override
+  String get webdavCloudFolderSelected => 'OneDrive 文件夹已选择';
+
+  @override
+  String get webdavCloudFolderAuthorizationFailed => '无法访问所选文件夹，请重新选择并授予读写权限';
+
+  @override
+  String get webdavCloudFolderUnavailable => '系统文件夹选择仅支持 Android';
 
   @override
   String get webdavProviderGenericDescription => '适用于支持 WebDAV 的云盘、NAS 和自建服务。';
@@ -2165,7 +2203,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webdavRemoteDirectory => '远程目录';
 
   @override
-  String get webdavRemoteDirectoryHint => '会自动创建 v1、answers 和 chapters 子目录';
+  String get webdavRemoteDirectoryHint => '同步文件按 v1 格式存储在此路径下';
 
   @override
   String get webdavAuthMethod => '认证方式';
@@ -2186,7 +2224,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webdavAccessToken => '访问令牌';
 
   @override
-  String get webdavEnable => '启用 WebDAV 同步';
+  String get webdavEnable => '启用云同步';
 
   @override
   String get webdavEnableSubtitle => '关闭后不会执行网络同步，已保存的本机配置不会删除';
@@ -2213,16 +2251,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webdavLoading => '正在读取 WebDAV 设置';
 
   @override
-  String get webdavConfiguredStatus => 'WebDAV 已配置';
+  String get webdavConfiguredStatus => '云同步已配置';
 
   @override
-  String get webdavNotConfigured => '尚未配置 WebDAV';
+  String get webdavNotConfigured => '尚未配置云同步';
 
   @override
-  String get webdavSettingsSaved => 'WebDAV 设置已保存';
+  String get webdavSettingsSaved => '云同步设置已保存';
 
   @override
-  String get webdavClosedStatus => 'WebDAV 已关闭';
+  String get webdavClosedStatus => '云同步已关闭';
 
   @override
   String get webdavTesting => '正在测试 WebDAV 连接';
@@ -2256,7 +2294,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webdavDisable => '关闭同步';
 
   @override
-  String get webdavClearLocalSettings => '清除本机配置和凭据';
+  String get webdavClearLocalSettings => '清除本机配置和授权';
 
   @override
   String webdavLoadFailed(String error) {
@@ -2285,10 +2323,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get webdavDisabled => 'WebDAV 同步已关闭，凭据仍保留在本机私有数据库';
 
   @override
-  String get webdavClearTitle => '清除 WebDAV 配置？';
+  String get webdavClearTitle => '清除云同步配置？';
 
   @override
-  String get webdavClearMessage => '这会删除本机保存的 WebDAV 地址、账号和凭据，不会删除远端同步数据。';
+  String get webdavClearMessage => '这会删除本机保存的云同步地址、账号和授权，不会删除远端同步数据。';
 
   @override
   String get webdavCleared => '本机 WebDAV 配置和凭据已清除';
@@ -5011,7 +5049,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settingsPersonalizationSubtitle => '首頁、推薦與內容偏好';
 
   @override
-  String get settingsBackupSubtitle => 'WebDAV 資料同步';
+  String get settingsBackupSubtitle => 'WebDAV、Google Drive 與 OneDrive 同步';
 
   @override
   String get settingsAccountSubtitle => '工作階段與登入狀態';
@@ -5217,7 +5255,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get settingsShowHotOff => '搜尋頁不載入熱搜內容';
 
   @override
-  String get settingsWebDav => 'WebDAV 同步';
+  String get settingsWebDav => '雲端同步';
 
   @override
   String get settingsAccountSessions => '帳號與多端登入';
@@ -6379,7 +6417,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get userProfileNoPublicContent => '還沒有公開內容';
 
   @override
-  String get webdavTitle => 'WebDAV 同步';
+  String get webdavTitle => '雲端同步';
 
   @override
   String get webdavIntroTitle => '跨裝置同步本機內容';
@@ -6402,6 +6440,44 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
 
   @override
   String get webdavProviderOneDrive => 'Microsoft OneDrive（WebDAV）';
+
+  @override
+  String get webdavProviderGoogleDirect => 'Google Drive（直接授權）';
+
+  @override
+  String get webdavProviderOneDriveDirect => 'Microsoft OneDrive（系統資料夾）';
+
+  @override
+  String get webdavProviderGoogleDirectDescription =>
+      '透過 Google 授權，資料儲存在應用程式專用空間，使用者無需填寫 Client ID。';
+
+  @override
+  String get webdavProviderOneDriveDirectDescription =>
+      '透過 Android 系統檔案選擇器選擇 OneDrive 資料夾，不需要 Microsoft Client ID。';
+
+  @override
+  String get webdavCloudAuthorize => '前往授權雲端硬碟';
+
+  @override
+  String get webdavCloudAuthorized => '雲端硬碟授權成功';
+
+  @override
+  String get webdavCloudAuthorizationFailed => '授權失敗，請檢查網路與應用程式註冊設定';
+
+  @override
+  String get webdavCloudRegistrationRequired => '此版本尚未設定雲端平台應用程式註冊，暫時無法授權。';
+
+  @override
+  String get webdavCloudChooseFolder => '選擇 OneDrive 資料夾';
+
+  @override
+  String get webdavCloudFolderSelected => 'OneDrive 資料夾已選擇';
+
+  @override
+  String get webdavCloudFolderAuthorizationFailed => '無法存取所選資料夾，請重新選擇並授予讀寫權限';
+
+  @override
+  String get webdavCloudFolderUnavailable => '系統資料夾選擇僅支援 Android';
 
   @override
   String get webdavProviderGenericDescription =>
@@ -6434,7 +6510,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webdavRemoteDirectory => '遠端目錄';
 
   @override
-  String get webdavRemoteDirectoryHint => '會自動建立 v1、answers 和 chapters 子目錄';
+  String get webdavRemoteDirectoryHint => '同步檔案依 v1 格式儲存在此路徑下';
 
   @override
   String get webdavAuthMethod => '驗證方式';
@@ -6455,7 +6531,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webdavAccessToken => '存取權杖';
 
   @override
-  String get webdavEnable => '啟用 WebDAV 同步';
+  String get webdavEnable => '啟用雲端同步';
 
   @override
   String get webdavEnableSubtitle => '關閉後不會執行網路同步，已儲存的本機設定不會刪除';
@@ -6482,16 +6558,16 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webdavLoading => '正在讀取 WebDAV 設定';
 
   @override
-  String get webdavConfiguredStatus => 'WebDAV 已設定';
+  String get webdavConfiguredStatus => '雲端同步已設定';
 
   @override
-  String get webdavNotConfigured => '尚未設定 WebDAV';
+  String get webdavNotConfigured => '尚未設定雲端同步';
 
   @override
-  String get webdavSettingsSaved => 'WebDAV 設定已儲存';
+  String get webdavSettingsSaved => '雲端同步設定已儲存';
 
   @override
-  String get webdavClosedStatus => 'WebDAV 已關閉';
+  String get webdavClosedStatus => '雲端同步已關閉';
 
   @override
   String get webdavTesting => '正在測試 WebDAV 連線';
@@ -6525,7 +6601,7 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webdavDisable => '關閉同步';
 
   @override
-  String get webdavClearLocalSettings => '清除本機設定和憑據';
+  String get webdavClearLocalSettings => '清除本機設定和授權';
 
   @override
   String webdavLoadFailed(String error) {
@@ -6554,10 +6630,10 @@ class AppLocalizationsZhTw extends AppLocalizationsZh {
   String get webdavDisabled => 'WebDAV 同步已關閉，憑據仍保留在本機私有資料庫';
 
   @override
-  String get webdavClearTitle => '清除 WebDAV 設定？';
+  String get webdavClearTitle => '清除雲端同步設定？';
 
   @override
-  String get webdavClearMessage => '這會刪除本機儲存的 WebDAV 地址、帳號和憑據，不會刪除遠端同步資料。';
+  String get webdavClearMessage => '這會刪除本機儲存的雲端同步地址、帳號和授權，不會刪除遠端同步資料。';
 
   @override
   String get webdavCleared => '本機 WebDAV 設定和憑據已清除';

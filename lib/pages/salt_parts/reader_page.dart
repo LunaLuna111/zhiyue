@@ -38,10 +38,12 @@ class SaltReaderPage extends StatefulWidget {
   State<SaltReaderPage> createState() => _SaltReaderPageState();
 }
 
-class _SaltReaderPageState extends State<SaltReaderPage> {
+class _SaltReaderPageState extends State<SaltReaderPage>
+    with WidgetsBindingObserver {
   static const _useOfficialWebReader = bool.fromEnvironment(
     'ZH_USE_OFFICIAL_WEB_READER',
   );
+  static const _readerPreferencesKey = 'zhiyue.salt.reader.preferences.v1';
 
   Object? _state;
   String? _decodedContent;
@@ -62,15 +64,98 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
   bool _bookshelfSaving = false;
   bool _addedToBookshelf = false;
   bool _exporting = false;
+  Future<void> _readerPreferencesWrite = Future<void>.value();
+  int _readerJumpRequest = 0;
+  int? _readerJumpParagraphIndex;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _readerSettings = widget.layoutSettings;
     _readerFlow = widget.readerFlow;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _applyReaderSystemUi();
+    });
     unawaited(_loadBookshelfState());
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _read();
+      if (!mounted) return;
+      unawaited(_loadReaderPreferences());
+      unawaited(_read());
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _applyReaderSystemUi();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  void _applyReaderSystemUi() {
+    unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
+  }
+
+  Widget _readerSystemUi(Widget child) {
+    final dark = Theme.of(context).brightness == Brightness.dark;
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: dark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: dark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarIconBrightness: dark
+            ? Brightness.light
+            : Brightness.dark,
+        systemNavigationBarContrastEnforced: false,
+        systemStatusBarContrastEnforced: false,
+      ),
+      child: child,
+    );
+  }
+
+  Future<void> _loadReaderPreferences() async {
+    try {
+      final raw = await ZhPlatformCache.instance.read(_readerPreferencesKey);
+      if (!mounted || raw == null || raw.trim().isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+      final encodedSettings = decoded['settings'];
+      if (encodedSettings is! Map) return;
+      final values = <String, Object?>{
+        for (final entry in encodedSettings.entries)
+          entry.key.toString(): entry.value,
+      };
+      final persistedFlow = SaltReaderFlow.values
+          .where((value) => value.name == decoded['flow'])
+          .firstOrNull;
+      final settings = ReaderSettingsCodec.decode(values);
+      _updateState(() {
+        _readerSettings = settings;
+        if (persistedFlow != null) _readerFlow = persistedFlow;
+      });
+    } catch (_) {
+      // Malformed optional preferences must not prevent a chapter from loading.
+    }
+  }
+
+  void _scheduleReaderPreferencesPersistence() {
+    final payload = jsonEncode({
+      'version': 1,
+      'settings': ReaderSettingsCodec.encode(_readerSettings),
+      'flow': _readerFlow.name,
+    });
+    _readerPreferencesWrite = _readerPreferencesWrite.then((_) async {
+      try {
+        await ZhPlatformCache.instance.write(_readerPreferencesKey, payload);
+      } catch (_) {
+        // Reader preferences are best-effort and must not affect reading.
+      }
     });
   }
 
@@ -127,51 +212,64 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
         ? manuscript!.title
         : l10n.saltReadingTitle;
     final textChapter = _textChapter;
+    final shortSections =
+        textChapter?.shortSections ?? const <SaltTextSection>[];
     final hasCatalog =
         manuscript != null &&
         (manuscript.isLong == true ||
-            (_effectiveSectionCount(manuscript) ?? 0) > 1);
+            (_effectiveSectionCount(manuscript) ?? 0) > 1 ||
+            shortSections.length > 1);
     final commentMetadata = manuscript == null
         ? _workDetails
         : _commentTarget(manuscript) != null
         ? manuscript
         : _workDetails;
     if (textChapter != null && manuscript != null) {
-      return Scaffold(
-        body: _textReader(
-          context,
-          manuscript,
-          textChapter,
-          title: readerTitle,
-          hasCatalog: hasCatalog,
-          commentMetadata: commentMetadata,
+      return _readerSystemUi(
+        Scaffold(
+          extendBody: true,
+          extendBodyBehindAppBar: true,
+          body: _textReader(
+            context,
+            manuscript,
+            textChapter,
+            title: readerTitle,
+            hasCatalog: hasCatalog,
+            commentMetadata: commentMetadata,
+          ),
         ),
       );
     }
-    return Scaffold(
-      appBar: ZhTopBar(
-        title: Text(readerTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
-        actions: [
-          ZhLiquidGlassIconButton(
-            onPressed: () => _showReaderMoreMenu(manuscript, textChapter),
-            semanticLabel: l10n.saltMore,
-            icon: const Icon(Icons.more_vert_rounded),
-            size: 44,
-            iconSize: 22,
+    return _readerSystemUi(
+      Scaffold(
+        appBar: ZhTopBar(
+          title: Text(
+            readerTitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-        ],
-      ),
-      body: _loading
-          ? _readerLoading(context)
-          : ListView(
-              padding: const EdgeInsets.fromLTRB(
-                ZhSpace.md,
-                ZhSpace.sm,
-                ZhSpace.md,
-                ZhSpace.xl,
-              ),
-              children: [_result(context)],
+          actions: [
+            ZhLiquidGlassIconButton(
+              onPressed: () => _showReaderMoreMenu(manuscript, textChapter),
+              semanticLabel: l10n.saltMore,
+              icon: const Icon(Icons.more_vert_rounded),
+              size: 44,
+              iconSize: 22,
             ),
+          ],
+        ),
+        body: _loading
+            ? _readerLoading(context)
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  ZhSpace.md,
+                  ZhSpace.sm,
+                  ZhSpace.md,
+                  ZhSpace.xl,
+                ),
+                children: [_result(context)],
+              ),
+      ),
     );
   }
 
@@ -180,5 +278,14 @@ class _SaltReaderPageState extends State<SaltReaderPage> {
   void _readerScrollDirectionChanged(bool showControls) {
     if (!mounted || _controlsVisible == showControls) return;
     _updateState(() => _controlsVisible = showControls);
+  }
+
+  void _jumpToShortSection(int paragraphIndex) {
+    if (!mounted) return;
+    _updateState(() {
+      _readerJumpParagraphIndex = paragraphIndex;
+      _readerJumpRequest++;
+      _controlsVisible = false;
+    });
   }
 }

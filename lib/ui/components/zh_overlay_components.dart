@@ -45,7 +45,10 @@ Future<T?> showZhLiquidGlassSheet<T>({
     return showModalBottomSheet<T>(
       context: context,
       useRootNavigator: useRootNavigator,
-      useSafeArea: true,
+      // Keep the fallback surface behind the system home indicator. The
+      // content owns its own internal breathing room; applying the route
+      // SafeArea here creates a separate opaque-looking strip at the bottom.
+      useSafeArea: false,
       isScrollControlled: true,
       backgroundColor: ZhPalette.background,
       builder: materialContent,
@@ -55,7 +58,9 @@ Future<T?> showZhLiquidGlassSheet<T>({
   return GlassSheet.show<T>(
     context: context,
     useRootNavigator: useRootNavigator,
-    useSafeArea: true,
+    // Let the liquid-glass surface continue behind the home indicator so the
+    // modal does not end in a second white inset.
+    useSafeArea: false,
     showDragIndicator: true,
     topBorderRadius: ZhLiquidGlassSheetStyle.topBorderRadius,
     bottomBorderRadius: ZhLiquidGlassSheetStyle.bottomBorderRadius,

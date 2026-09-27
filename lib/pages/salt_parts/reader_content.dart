@@ -43,6 +43,9 @@ extension _SaltReaderContent on _SaltReaderPageState {
               chapter: chapter,
               flow: _readerFlow,
               settings: _readerSettings,
+              chapterTitle: manuscript.title,
+              topPadding: 58,
+              bottomPadding: 50,
               annotations: _paragraphAnnotations,
               onReaderTap: () =>
                   _updateState(() => _controlsVisible = !_controlsVisible),
@@ -62,6 +65,7 @@ extension _SaltReaderContent on _SaltReaderPageState {
           ),
         ),
       ),
+      _readerBookLabel(title),
       _readerChapterHint(manuscript, title),
       _readerTopToolbar(manuscript, title, chapter: chapter),
       _readerBottomToolbar(
@@ -72,10 +76,40 @@ extension _SaltReaderContent on _SaltReaderPageState {
     ],
   );
 
+  Widget _readerBookLabel(String title) => Positioned(
+    top: 0,
+    left: 0,
+    right: 0,
+    child: SafeArea(
+      bottom: false,
+      child: IgnorePointer(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 160),
+          opacity: _controlsVisible ? 0 : 1,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 7, 20, 4),
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: ZhPalette.mutedInk,
+                  letterSpacing: .1,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
   Widget _readerChapterHint(SaltManuscriptEnvelope manuscript, String title) =>
       Positioned(
         right: 0,
-        bottom: 0,
+        bottom: 2,
         child: SafeArea(
           top: false,
           left: false,
@@ -85,11 +119,11 @@ extension _SaltReaderContent on _SaltReaderPageState {
               duration: const Duration(milliseconds: 160),
               opacity: _controlsVisible ? 0 : 1,
               child: SizedBox(
-                height: 38,
+                height: 30,
                 child: Padding(
-                  padding: const EdgeInsets.only(right: 20),
+                  padding: const EdgeInsets.only(right: 20, bottom: 2),
                   child: Align(
-                    alignment: Alignment.centerRight,
+                    alignment: Alignment.bottomRight,
                     child: Text(
                       _readerSectionLabel(manuscript, title),
                       maxLines: 1,

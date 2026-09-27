@@ -14,6 +14,7 @@ class SaltTextPageSegment {
     required this.paragraphIndex,
     required this.isParagraphEnd,
     required this.isSectionTitle,
+    this.isChapterTitle = false,
   });
 
   final String text;
@@ -21,6 +22,7 @@ class SaltTextPageSegment {
   final int paragraphIndex;
   final bool isParagraphEnd;
   final bool isSectionTitle;
+  final bool isChapterTitle;
 }
 
 @visibleForTesting
@@ -33,6 +35,7 @@ List<List<SaltTextPageSegment>> paginateSaltParagraphs({
   required double maxHeight,
   required double paragraphGap,
   Set<int> sectionTitleIndexes = const {},
+  Set<int> chapterTitleIndexes = const {},
 }) {
   if (paragraphs.isEmpty || maxWidth <= 0 || maxHeight <= 0) return const [];
 
@@ -40,9 +43,12 @@ List<List<SaltTextPageSegment>> paginateSaltParagraphs({
   var page = <SaltTextPageSegment>[];
   var usedHeight = 0.0;
 
-  double textHeight(String text) {
+  double textHeight(String text, {bool isChapterTitle = false}) {
     final painter = TextPainter(
-      text: TextSpan(text: text, style: style),
+      text: TextSpan(
+        text: text,
+        style: isChapterTitle ? _readerChapterTitleStyle(style) : style,
+      ),
       textDirection: textDirection,
       textScaler: textScaler,
     )..layout(maxWidth: maxWidth);
@@ -65,10 +71,11 @@ List<List<SaltTextPageSegment>> paginateSaltParagraphs({
     if (paragraph.isEmpty) continue;
     var remaining = paragraph;
     var startsParagraph = true;
+    final isChapterTitle = chapterTitleIndexes.contains(paragraphIndex);
     while (remaining.isNotEmpty) {
       final gap = startsParagraph && page.isNotEmpty ? paragraphGap : 0.0;
       final available = maxHeight - usedHeight - gap;
-      final height = textHeight(remaining);
+      final height = textHeight(remaining, isChapterTitle: isChapterTitle);
       if (height <= available + 0.01) {
         page.add(
           SaltTextPageSegment(
@@ -77,6 +84,7 @@ List<List<SaltTextPageSegment>> paginateSaltParagraphs({
             paragraphIndex: paragraphIndex,
             isParagraphEnd: true,
             isSectionTitle: sectionTitleIndexes.contains(paragraphIndex),
+            isChapterTitle: isChapterTitle,
           ),
         );
         usedHeight += gap + height;
@@ -87,7 +95,8 @@ List<List<SaltTextPageSegment>> paginateSaltParagraphs({
       final prefixLength = _largestFittingPrefix(
         remaining,
         availableHeight: available,
-        textHeight: textHeight,
+        textHeight: (value) =>
+            textHeight(value, isChapterTitle: isChapterTitle),
       );
       if (prefixLength <= 0) {
         finishPage();
@@ -100,6 +109,7 @@ List<List<SaltTextPageSegment>> paginateSaltParagraphs({
           paragraphIndex: paragraphIndex,
           isParagraphEnd: false,
           isSectionTitle: sectionTitleIndexes.contains(paragraphIndex),
+          isChapterTitle: isChapterTitle,
         ),
       );
       remaining = remaining.substring(prefixLength);
@@ -142,6 +152,12 @@ bool _isHighSurrogate(int value) => value >= 0xD800 && value <= 0xDBFF;
 
 bool _isLowSurrogate(int value) => value >= 0xDC00 && value <= 0xDFFF;
 
+TextStyle _readerChapterTitleStyle(TextStyle style) => style.copyWith(
+  fontSize: (style.fontSize ?? 18) * 1.12,
+  height: 1.35,
+  fontWeight: FontWeight.w600,
+);
+
 class SaltChapterView extends StatefulWidget {
   const SaltChapterView({
     super.key,
@@ -158,6 +174,9 @@ class SaltChapterView extends StatefulWidget {
     this.jumpToParagraphIndex,
     this.jumpRequest = 0,
     this.showPageIndicator = false,
+    this.chapterTitle,
+    this.topPadding = 22,
+    this.bottomPadding = 40,
   });
 
   final SaltTextChapter chapter;
@@ -181,6 +200,14 @@ class SaltChapterView extends StatefulWidget {
   /// user scrolls back toward the beginning.
   final ValueChanged<bool>? onScrollDirection;
   final bool showPageIndicator;
+
+  /// Chapter heading shown above the body when it is not already the first
+  /// parsed paragraph.
+  final String? chapterTitle;
+
+  /// Reader breathing room for the chrome and the system home indicator.
+  final double topPadding;
+  final double bottomPadding;
 
   @override
   State<SaltChapterView> createState() => _SaltChapterViewState();
@@ -210,7 +237,10 @@ class _SaltChapterViewState extends State<SaltChapterView> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.flow != widget.flow ||
         oldWidget.chapter.contentId != widget.chapter.contentId ||
-        oldWidget.settings != widget.settings) {
+        oldWidget.settings != widget.settings ||
+        oldWidget.chapterTitle != widget.chapterTitle ||
+        oldWidget.topPadding != widget.topPadding ||
+        oldWidget.bottomPadding != widget.bottomPadding) {
       _page = 0;
       _lastScrollOffset = 0;
       _paginationKey = null;
@@ -403,29 +433,80 @@ class _SaltChapterViewState extends State<SaltChapterView> {
 
   Widget _verticalReader(BuildContext context, TextStyle style, double gap) {
     final settings = widget.settings;
+    final hasSeparateChapterTitle = _hasSeparateChapterTitle;
+    final itemCount =
+        widget.chapter.paragraphs.length + (hasSeparateChapterTitle ? 1 : 0);
     return ListView.separated(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(
         settings.horizontalMargin,
-        22,
+        widget.topPadding,
         settings.horizontalMargin,
-        40,
+        widget.bottomPadding,
       ),
-      itemCount: widget.chapter.paragraphs.length,
-      separatorBuilder: (_, _) => SizedBox(height: gap),
+      itemCount: itemCount,
+      separatorBuilder: (_, index) => SizedBox(
+        height: hasSeparateChapterTitle && index == 0
+            ? (gap < 20 ? 20 : gap)
+            : gap,
+      ),
       itemBuilder: (context, index) => KeyedSubtree(
-        key: _paragraphKey(index),
-        child: _ReaderParagraph(
-          text: widget.chapter.paragraphs[index],
-          style: style,
-          selectable: false,
-          isSectionTitle: widget.chapter.textParagraphs[index].isSectionTitle,
-          annotation: widget.annotations[index],
-          onAnnotationTap: widget.onAnnotationTap,
-        ),
+        key: hasSeparateChapterTitle && index == 0
+            ? const ValueKey('salt-reader-chapter-title')
+            : _paragraphKey(index - (hasSeparateChapterTitle ? 1 : 0)),
+        child: hasSeparateChapterTitle && index == 0
+            ? _chapterTitle(context, style)
+            : _readerParagraph(
+                context,
+                style,
+                index - (hasSeparateChapterTitle ? 1 : 0),
+              ),
       ),
     );
   }
+
+  Widget _readerParagraph(BuildContext context, TextStyle style, int index) {
+    final isChapterTitle =
+        index == 0 && _chapterTitleMatches(widget.chapter.paragraphs[index]);
+    return _ReaderParagraph(
+      text: widget.chapter.paragraphs[index],
+      style: style,
+      selectable: false,
+      isSectionTitle: widget.chapter.textParagraphs[index].isSectionTitle,
+      isChapterTitle: isChapterTitle,
+      annotation: widget.annotations[index],
+      onAnnotationTap: widget.onAnnotationTap,
+    );
+  }
+
+  Widget _chapterTitle(BuildContext context, TextStyle style) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 4),
+    child: Text(
+      widget.chapterTitle!.trim(),
+      textAlign: TextAlign.center,
+      style: _readerChapterTitleStyle(
+        style,
+      ).copyWith(color: Theme.of(context).colorScheme.onSurface),
+    ),
+  );
+
+  bool get _hasChapterTitle => widget.chapterTitle?.trim().isNotEmpty == true;
+
+  bool get _hasSeparateChapterTitle =>
+      _hasChapterTitle &&
+      (widget.chapter.paragraphs.isEmpty ||
+          !_chapterTitleMatches(widget.chapter.paragraphs.first));
+
+  bool _chapterTitleMatches(String value) {
+    final title = _normalizedChapterTitle(widget.chapterTitle);
+    final paragraph = _normalizedChapterTitle(value);
+    return title.isNotEmpty && title == paragraph;
+  }
+
+  String _normalizedChapterTitle(String? value) => (value ?? '')
+      .trim()
+      .replaceFirst(RegExp(r'^第\s*\d+\s*[章节回]?\s*'), '')
+      .replaceAll(RegExp(r'\s+'), ' ');
 
   Widget _paginatedReader(
     BuildContext context,
@@ -433,19 +514,28 @@ class _SaltChapterViewState extends State<SaltChapterView> {
     double gap,
   ) => LayoutBuilder(
     builder: (context, constraints) {
-      const topPadding = 22.0;
-      const bottomPadding = 38.0;
+      final hasSeparateChapterTitle = _hasSeparateChapterTitle;
+      final topPadding = widget.topPadding;
+      final bottomPadding = widget.bottomPadding;
+      final pageTopPadding = hasSeparateChapterTitle ? 22.0 : topPadding;
+      final headerHeight = hasSeparateChapterTitle
+          ? topPadding + (style.fontSize ?? 18) * 1.35 + 20
+          : 0.0;
       final contentWidth =
           (constraints.maxWidth - widget.settings.horizontalMargin * 2).clamp(
             1.0,
             double.infinity,
           );
-      final contentHeight = (constraints.maxHeight - topPadding - bottomPadding)
-          .clamp(1.0, double.infinity);
+      final contentHeight =
+          (constraints.maxHeight - headerHeight - pageTopPadding - bottomPadding)
+              .clamp(1.0, double.infinity);
       final textScaler = MediaQuery.textScalerOf(context);
       final key = <Object>[
         widget.chapter.contentId,
         widget.settings.hashCode,
+        widget.chapterTitle ?? '',
+        widget.topPadding,
+        widget.bottomPadding,
         contentWidth.round(),
         contentHeight.round(),
         textScaler.scale(100).round(),
@@ -464,10 +554,16 @@ class _SaltChapterViewState extends State<SaltChapterView> {
             for (final paragraph in widget.chapter.textParagraphs)
               if (paragraph.isSectionTitle) paragraph.index,
           },
+          chapterTitleIndexes: {
+            if (!hasSeparateChapterTitle &&
+                widget.chapter.paragraphs.isNotEmpty &&
+                _chapterTitleMatches(widget.chapter.paragraphs.first))
+              0,
+          },
         );
       }
       if (_pages.isEmpty) return const SizedBox.shrink();
-      return Stack(
+      final pageView = Stack(
         children: [
           PageView.builder(
             key: ValueKey('salt-pages-$key'),
@@ -481,7 +577,7 @@ class _SaltChapterViewState extends State<SaltChapterView> {
             itemBuilder: (context, index) => Padding(
               padding: EdgeInsets.fromLTRB(
                 widget.settings.horizontalMargin,
-                topPadding,
+                pageTopPadding,
                 widget.settings.horizontalMargin,
                 bottomPadding,
               ),
@@ -499,6 +595,7 @@ class _SaltChapterViewState extends State<SaltChapterView> {
                       style: style,
                       selectable: false,
                       isSectionTitle: _pages[index][segment].isSectionTitle,
+                      isChapterTitle: _pages[index][segment].isChapterTitle,
                       annotation: _pages[index][segment].isParagraphEnd
                           ? widget.annotations[_pages[index][segment]
                                 .paragraphIndex]
@@ -524,6 +621,17 @@ class _SaltChapterViewState extends State<SaltChapterView> {
             ),
         ],
       );
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (hasSeparateChapterTitle)
+            Padding(
+              padding: EdgeInsets.only(top: topPadding, bottom: 20),
+              child: _chapterTitle(context, style),
+            ),
+          Expanded(child: pageView),
+        ],
+      );
     },
   );
 }
@@ -534,6 +642,7 @@ class _ReaderParagraph extends StatelessWidget {
     required this.style,
     this.selectable = true,
     this.isSectionTitle = false,
+    this.isChapterTitle = false,
     this.annotation,
     this.onAnnotationTap,
   });
@@ -542,19 +651,26 @@ class _ReaderParagraph extends StatelessWidget {
   final TextStyle style;
   final bool selectable;
   final bool isSectionTitle;
+  final bool isChapterTitle;
   final SaltParagraphAnnotation? annotation;
   final ValueChanged<SaltParagraphAnnotation>? onAnnotationTap;
 
   @override
   Widget build(BuildContext context) {
-    final effectiveStyle = isSectionTitle
+    final effectiveStyle = isChapterTitle
+        ? _readerChapterTitleStyle(
+            style,
+          ).copyWith(color: Theme.of(context).colorScheme.onSurface)
+        : isSectionTitle
         ? style.copyWith(
             fontSize: (style.fontSize ?? 18) * 0.9,
             fontWeight: FontWeight.w500,
             color: Theme.of(context).colorScheme.onSurfaceVariant,
           )
         : style;
-    final alignment = isSectionTitle ? TextAlign.center : TextAlign.start;
+    final alignment = isChapterTitle || isSectionTitle
+        ? TextAlign.center
+        : TextAlign.start;
     final annotation = this.annotation;
     if (annotation == null) {
       if (selectable) {

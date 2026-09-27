@@ -105,9 +105,15 @@ class _DetailMetaItem extends StatelessWidget {
 
 @immutable
 class _DetailImageSource {
-  const _DetailImageSource({required this.url, this.width, this.height});
+  const _DetailImageSource({
+    required this.url,
+    this.originalUrl,
+    this.width,
+    this.height,
+  });
 
   final String url;
+  final String? originalUrl;
   final double? width;
   final double? height;
 
@@ -232,6 +238,52 @@ String _detailImageUrl(Object? value) {
   return uri.toString();
 }
 
+String _detailFirstImageUrl(Object? value) {
+  if (value is List) {
+    for (final item in value) {
+      final url = _detailFirstImageUrl(item);
+      if (url.isNotEmpty) return url;
+    }
+    return '';
+  }
+  if (value is Map) {
+    for (final key in const [
+      'url',
+      'url_original',
+      'original_url',
+      'originalUrl',
+      'src',
+    ]) {
+      final url = _detailFirstImageUrl(value[key]);
+      if (url.isNotEmpty) return url;
+    }
+    return '';
+  }
+  return _detailImageUrl(value);
+}
+
+String _detailOriginalImageUrl(Object? metadata) {
+  if (metadata is! Map) return '';
+  final map = metadata.map((key, value) => MapEntry(key.toString(), value));
+  for (final key in const [
+    'original_url',
+    'originalUrl',
+    'original_urls',
+    'originalUrls',
+    'url_original',
+    'urlOriginal',
+    'raw_url',
+    'rawUrl',
+    'large_url',
+    'largeUrl',
+    'original',
+  ]) {
+    final url = _detailFirstImageUrl(map[key]);
+    if (url.isNotEmpty) return url;
+  }
+  return '';
+}
+
 Map<String, _DetailImageDimensions> _detailHtmlImageDimensions(String html) {
   final result = <String, _DetailImageDimensions>{};
   final imageTags = RegExp(r'<img\b[^>]*>', caseSensitive: false);
@@ -267,6 +319,7 @@ Map<String, _DetailImageDimensions> _detailHtmlImageDimensions(String html) {
 _DetailImageSource _detailImageSource(
   String url, {
   Object? metadata,
+  String? originalUrl,
   Map<String, _DetailImageDimensions>? htmlDimensions,
 }) {
   final mapDimensions = _detailImageDimensionsFromMap(metadata);
@@ -278,6 +331,9 @@ _DetailImageSource _detailImageSource(
             url)];
   return _DetailImageSource(
     url: url,
+    originalUrl: (originalUrl ?? _detailOriginalImageUrl(metadata)).isEmpty
+        ? null
+        : (originalUrl ?? _detailOriginalImageUrl(metadata)),
     width: mapDimensions?.width ?? htmlDimension?.width,
     height: mapDimensions?.height ?? htmlDimension?.height,
   );
@@ -490,7 +546,11 @@ class _DetailImageTileState extends State<_DetailImageTile> {
     label: context.zhL10n.detailViewImage,
     child: InkWell(
       key: ValueKey('answer-image-${widget.source.url}'),
-      onTap: () => _showDetailImagePreview(context, widget.source.url),
+      onTap: () => _showDetailImagePreview(
+        context,
+        widget.source.url,
+        originalUrl: widget.source.originalUrl,
+      ),
       borderRadius: BorderRadius.circular(ZhRadius.card),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(ZhRadius.card),
@@ -537,91 +597,24 @@ class _DetailImagePlaceholder extends StatelessWidget {
   );
 }
 
-Future<void> _showDetailImagePreview(BuildContext context, String url) {
-  return showDialog<void>(
-    context: context,
-    barrierColor: Colors.black87,
-    builder: (context) => Dialog.fullscreen(
-      backgroundColor: Colors.black,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: InteractiveViewer(
-                minScale: 1,
-                maxScale: 5,
-                child: SizedBox.expand(
-                  key: ValueKey('answer-image-preview-frame-$url'),
-                  child: ZhihuImage.network(
-                    url,
-                    headers: zhihuImageRequestHeaders,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (_, _, _) => const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white70,
-                      size: 42,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              left: 10,
-              child: IconButton.filled(
-                key: const Key('answer-image-preview-close'),
-                tooltip: context.zhL10n.detailCloseImage,
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton.filled(
-                key: const Key('answer-image-preview-save'),
-                tooltip: context.zhL10n.detailSaveImage,
-                onPressed: () => _saveDetailImage(context, url),
-                icon: const Icon(Icons.download_rounded),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
+Future<void> _showDetailImagePreview(
+  BuildContext context,
+  String url, {
+  String? originalUrl,
+}) {
+  final l10n = context.zhL10n;
+  return showZhImageViewer(
+    context,
+    url: url,
+    originalUrl: originalUrl,
+    keyPrefix: 'answer-image-preview',
+    closeLabel: l10n.detailCloseImage,
+    saveLabel: l10n.detailSaveImage,
+    originalLabel: l10n.detailViewImage,
+    shareLabel: l10n.commonShare,
+    filePrefix: 'zhihu',
+    savedMessage: (location) =>
+        location == null ? l10n.detailImageSaved : l10n.detailImageSavedTo,
+    saveFailedMessage: l10n.detailImageSaveFailed,
   );
-}
-
-Future<void> _saveDetailImage(BuildContext context, String url) async {
-  try {
-    final location = await ImageExportService.saveNetworkImage(
-      url,
-      headers: zhihuImageRequestHeaders,
-      filePrefix: 'zhihu',
-    );
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          location == null
-              ? context.zhL10n.detailImageSaved
-              : context.zhL10n.detailImageSavedTo,
-        ),
-      ),
-    );
-  } catch (error) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
-      SnackBar(content: Text(context.zhL10n.detailImageSaveFailed)),
-    );
-    AppLogStore.instance.record(
-      category: AppLogCategory.app,
-      level: AppLogLevel.warning,
-      message: '正文图片保存失败',
-      details: {'error': error.toString()},
-    );
-  }
 }

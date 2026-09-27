@@ -51,6 +51,12 @@ class StructuredAnswerContent extends StatelessWidget {
     return '';
   }
 
+  String _imageOriginalUrl(Map<String, dynamic> segment) {
+    final image = _contentMap(segment['image']);
+    if (image == null) return '';
+    return _detailOriginalImageUrl(image);
+  }
+
   Map<String, dynamic>? _textNode(Map<String, dynamic> segment, String type) {
     for (final key in [type, 'paragraph', 'heading', 'blockquote', 'quote']) {
       final node = _contentMap(segment[key]);
@@ -74,7 +80,11 @@ class StructuredAnswerContent extends StatelessWidget {
         final url = _imageUrl(segment);
         if (url.isNotEmpty) {
           final image = _contentMap(segment['image']);
-          final source = _detailImageSource(url, metadata: image);
+          final source = _detailImageSource(
+            url,
+            metadata: image,
+            originalUrl: _imageOriginalUrl(segment),
+          );
           imageSources.add(source);
           renderedImageKeys.add(source.identity);
           final caption = plainText(image?['description']);

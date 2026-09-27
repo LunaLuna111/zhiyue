@@ -14,7 +14,6 @@ import '../core/answer_detail_cache.dart';
 import '../core/app_log.dart';
 import '../core/comment_link.dart';
 import '../core/content_export_service.dart';
-import '../core/image_export_service.dart';
 import '../core/json_tools.dart';
 import '../core/platform_environment.dart'
     if (dart.library.io) '../core/platform_environment_io.dart';
@@ -32,6 +31,7 @@ import 'search_page.dart';
 import 'salt_page.dart';
 import 'user_page.dart';
 import 'web_page.dart';
+import '../widgets/zh_image_viewer.dart';
 
 part 'content_parts/routing.dart';
 part 'content_parts/detail_page.dart';

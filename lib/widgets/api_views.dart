@@ -9,11 +9,11 @@ import '../core/api_response.dart';
 import '../core/comment_link.dart';
 import '../core/comment_emoticon_assets.dart';
 import '../core/comment_content_parser.dart';
-import '../core/image_export_service.dart';
 import '../core/json_tools.dart';
 import '../l10n/zh_localization.dart';
 import '../ui/zh_components.dart';
 import '../ui/zh_theme.dart';
+import 'zh_image_viewer.dart';
 
 part 'api_view_parts/image_prefetch.dart';
 part 'api_view_parts/content_cards.dart';

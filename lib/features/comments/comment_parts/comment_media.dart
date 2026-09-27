@@ -78,80 +78,18 @@ class _CommentMediaTile extends StatelessWidget {
 }
 
 Future<void> _showCommentImagePreview(BuildContext context, String url) {
-  return showDialog<void>(
-    context: context,
-    barrierColor: Colors.black87,
-    builder: (context) => Dialog.fullscreen(
-      backgroundColor: Colors.black,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: InteractiveViewer(
-                minScale: 1,
-                maxScale: 5,
-                child: SizedBox.expand(
-                  key: ValueKey('comment-image-preview-frame-$url'),
-                  child: ZhihuImage.network(
-                    url,
-                    headers: zhihuImageRequestHeaders,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    errorBuilder: (_, _, _) => const Icon(
-                      Icons.broken_image_outlined,
-                      color: Colors.white70,
-                      size: 42,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              left: 10,
-              child: IconButton.filled(
-                key: const Key('comment-image-preview-close'),
-                tooltip: context.zhL10n.commentCloseImage,
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ),
-            Positioned(
-              top: 10,
-              right: 10,
-              child: IconButton.filled(
-                key: const Key('comment-image-preview-save'),
-                tooltip: context.zhL10n.commentSaveImage,
-                onPressed: () => _saveCommentImage(context, url),
-                icon: const Icon(Icons.download_rounded),
-              ),
-            ),
-          ],
-        ),
-      ),
-    ),
+  final l10n = context.zhL10n;
+  return showZhImageViewer(
+    context,
+    url: url,
+    keyPrefix: 'comment-image-preview',
+    closeLabel: l10n.commentCloseImage,
+    saveLabel: l10n.commentSaveImage,
+    originalLabel: l10n.detailViewImage,
+    shareLabel: l10n.commonShare,
+    filePrefix: 'zhiyue',
+    savedMessage: (location) =>
+        l10n.commentSavedTo(location ?? l10n.commonSave),
+    saveFailedMessage: l10n.commentSaveFailed,
   );
-}
-
-Future<void> _saveCommentImage(BuildContext context, String url) async {
-  try {
-    final location = await ImageExportService.saveNetworkImage(
-      url,
-      headers: zhihuImageRequestHeaders,
-      filePrefix: 'zhiyue',
-    );
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          context.zhL10n.commentSavedTo(location ?? context.zhL10n.commonSave),
-        ),
-      ),
-    );
-  } catch (_) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(context.zhL10n.commentSaveFailed)));
-  }
 }
